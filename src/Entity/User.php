@@ -21,7 +21,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $email = null;
 
     #[ORM\Column]
-    private array $roles = [];
+    private array $roles = ['ROLE_ADMIN'];
 
     /**
      * @var string The hashed password
@@ -41,10 +41,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Business::class, orphanRemoval: true)]
     private Collection $businesses;
 
+    #[ORM\OneToMany(mappedBy: 'submiter', targetEntity: GuideContent::class, orphanRemoval: true)]
+    private Collection $guideContents;
+
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: StackContent::class, orphanRemoval: true)]
+    private Collection $stackContents;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
         $this->businesses = new ArrayCollection();
+        $this->guideContents = new ArrayCollection();
+        $this->stackContents = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -195,6 +203,66 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($business->getOwner() === $this) {
                 $business->setOwner(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, GuideContent>
+     */
+    public function getGuideContents(): Collection
+    {
+        return $this->guideContents;
+    }
+
+    public function addGuideContent(GuideContent $guideContent): self
+    {
+        if (!$this->guideContents->contains($guideContent)) {
+            $this->guideContents->add($guideContent);
+            $guideContent->setSubmiter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGuideContent(GuideContent $guideContent): self
+    {
+        if ($this->guideContents->removeElement($guideContent)) {
+            // set the owning side to null (unless already changed)
+            if ($guideContent->getSubmiter() === $this) {
+                $guideContent->setSubmiter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StackContent>
+     */
+    public function getStackContents(): Collection
+    {
+        return $this->stackContents;
+    }
+
+    public function addStackContent(StackContent $stackContent): self
+    {
+        if (!$this->stackContents->contains($stackContent)) {
+            $this->stackContents->add($stackContent);
+            $stackContent->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStackContent(StackContent $stackContent): self
+    {
+        if ($this->stackContents->removeElement($stackContent)) {
+            // set the owning side to null (unless already changed)
+            if ($stackContent->getSubmitter() === $this) {
+                $stackContent->setSubmitter(null);
             }
         }
 

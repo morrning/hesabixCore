@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Controller;
+use App\Service\Provider;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\UserToken;
 use Exception;
@@ -69,13 +70,27 @@ class UserController extends AbstractController
         );
     }
 
+    #[Route('/api/user/get/permissions', name: 'api_user_get_permissions')]
+    public function api_user_get_permissions(#[CurrentUser] ?User $user,EntityManagerInterface $entityManager): Response
+    {
+        if (null === $user) {
+            return $this->json([
+                'message' => 'missing credentials',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+        return $this->json(
+            ['is_login'=>true]
+        );
+    }
+
     #[Route('/api/user/current/info', name: 'api_user_current_info')]
-    public function api_user_current_info(#[CurrentUser] ?User $user,EntityManagerInterface $entityManager): Response
+    public function api_user_current_info(#[CurrentUser] ?User $user,Provider $provider,EntityManagerInterface $entityManager): Response
     {
         return $this->json([
             'email'=>$user->getEmail(),
             'fullname'=>$user->getFullName(),
-            'businessCount'=>count($user->getBusinesses())
+            'businessCount'=>count($user->getBusinesses()),
+            'hash_email'=> $provider->gravatarHash($user->getEmail())
         ]);
     }
 
@@ -114,13 +129,42 @@ class UserController extends AbstractController
         return $this->json(['result'=>true]);
     }
 
+    #[Route('/api/user/is_superadmin', name: 'api_user_is_super_admin')]
+    public function api_user_is_super_admin(#[CurrentUser] ?User $user,EntityManagerInterface $entityManager,Request $request): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        return $this->json(['result'=>1]);
+    }
+
+    #[Route('/api/user/change/password', name: 'api_user_change_password')]
+    public function api_user_change_password(#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if($params['pass'] == $params['repass']){
+            $user->setPassword(
+                $userPasswordHasher->hashPassword(
+                    $user,
+                    $params['pass']
+                )
+            );
+            $entityManager->persist($user);
+            $entityManager->flush();
+            return $this->json(['result'=>true]);
+        }
+        return $this->json(['result'=>false]);
+    }
 
     #[Route('/api/user/register', name: 'api_user_register')]
     public function api_user_register(Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
         $user = new User();
-        $user->setEmail('alizadeh.babak@gmail.com');
-        $user->setRoles([]);
+        $user->setEmail('alizadeh.babak@gmail.com1');
+        $user->setRoles(['ROLE_ADMIN']);
+        $user->setFullName('babak');
+        $user->setDateRegister(time());
         $user->setPassword(
             $userPasswordHasher->hashPassword(
                 $user,

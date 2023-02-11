@@ -35,7 +35,7 @@ security:
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/api/acc/*, roles: ROLE_USER }
-
+        - { path: ^/api/app/*, roles: ROLE_USER }
 when@test:
     security:
         password_hashers:
