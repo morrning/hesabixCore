@@ -19,8 +19,13 @@ class Provider
             $page = $params['page'];
         $response['page'] = $page;
 
+        $cat = '';
+        if(array_key_exists('cat',$params))
+            $cat = $params['cat'];
+        $response['cat'] = $cat;
+
         //set max Count of content want to search
-        $count = 30;
+        $count = 15;
         if(array_key_exists('count',$params))
             $count = $params['count'];
         $response['count'] = $count;
@@ -32,6 +37,11 @@ class Provider
         $response['key'] = $search;
 
         return $response;
+    }
+
+    public function maxPages($params,$rowsAllCount){
+        $res =  $rowsAllCount / $params['count'];
+        return is_float($res) ? (int)$res+1:$res;
     }
     public function gravatarHash($email){
         return md5( strtolower( trim( $email) ) );

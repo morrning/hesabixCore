@@ -140,7 +140,14 @@ class StackController extends AbstractController
             }
             $response[] = $temp;
         }
-        return $this->json($response);
+        // calc has next page
+        $nextPage = true;
+        if((int)$provider->maxPages($params,$entityManager->getRepository(StackContent::class)->getAllContentCount()) == $params['page'])
+            $nextPage = false;
+        return $this->json([
+            'data'=>$response,
+            'nextPage'=>$nextPage
+        ]);
     }
 
     #[Route('/api/stack/replays/search/{url}', name: 'app_stack_replays_get')]
@@ -293,6 +300,32 @@ class StackController extends AbstractController
             $stack->setBody($params['body']);
             $stack->setCat($cat);
             $stack->setTitle($params['title']);
+            $entityManager->persist($stack);
+            $entityManager->flush();
+            return $this->json([
+                'error'=> 0,
+                'message'=> 'ok',
+                'url'=>$stack->getUrl()
+            ]);
+        }
+        return $this->json([
+            'error'=> 999,
+            'message'=> 'تمام موارد لازم را وارد کنید.'
+        ]);
+    }
+
+    #[Route('/api/stack/replayedit/{id}', name: 'app_stack_replay_edit')]
+    public function app_stack_replay_edit($id,Request $request,SerializerInterface $serializer, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if( array_key_exists('body',$params  )){
+            $stack = $entityManager->getRepository(StackContent::class)->find($id);
+            if(! $stack)
+                throw $this->createNotFoundException();
+            $stack->setBody($params['body']);
             $entityManager->persist($stack);
             $entityManager->flush();
             return $this->json([

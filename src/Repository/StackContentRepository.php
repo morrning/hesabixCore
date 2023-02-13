@@ -99,6 +99,19 @@ class StackContentRepository extends ServiceEntityRepository
      * @throws \Doctrine\ORM\NonUniqueResultException
      * @throws \Doctrine\ORM\NoResultException
      */
+    public function getAllContentCount(): int{
+        return $this->createQueryBuilder('s')
+            ->select('count(s.id)')
+            ->andWhere('s.upper IS NULL')
+            ->getQuery()
+            ->getSingleScalarResult()
+            ;
+    }
+
+    /**
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Doctrine\ORM\NoResultException
+     */
     public function getReplaysOfQuestion(StackContent $upper): array{
         return $this->createQueryBuilder('s')
             ->select('s')
