@@ -47,12 +47,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: StackContent::class, orphanRemoval: true)]
     private Collection $stackContents;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: BlogPost::class, orphanRemoval: true)]
+    private Collection $blogPosts;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
         $this->businesses = new ArrayCollection();
         $this->guideContents = new ArrayCollection();
         $this->stackContents = new ArrayCollection();
+        $this->blogPosts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -263,6 +267,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($stackContent->getSubmitter() === $this) {
                 $stackContent->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, BlogPost>
+     */
+    public function getBlogPosts(): Collection
+    {
+        return $this->blogPosts;
+    }
+
+    public function addBlogPost(BlogPost $blogPost): self
+    {
+        if (!$this->blogPosts->contains($blogPost)) {
+            $this->blogPosts->add($blogPost);
+            $blogPost->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBlogPost(BlogPost $blogPost): self
+    {
+        if ($this->blogPosts->removeElement($blogPost)) {
+            // set the owning side to null (unless already changed)
+            if ($blogPost->getSubmitter() === $this) {
+                $blogPost->setSubmitter(null);
             }
         }
 

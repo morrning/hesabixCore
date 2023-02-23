@@ -17,6 +17,12 @@ class Business
     #[ORM\JoinColumn(nullable: false)]
     private ?User $owner = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $legalName = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -30,6 +36,30 @@ class Business
     public function setOwner(?User $owner): self
     {
         $this->owner = $owner;
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): self
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getLegalName(): ?string
+    {
+        return $this->legalName;
+    }
+
+    public function setLegalName(string $legalName): self
+    {
+        $this->legalName = $legalName;
 
         return $this;
     }

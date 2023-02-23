@@ -44,16 +44,20 @@ class StackContentRepository extends ServiceEntityRepository
      */
     public function search($params): array
     {
-        return $this->createQueryBuilder('s')
+        $result =  $this->createQueryBuilder('s')
             ->setMaxResults($params['count'])
             ->setFirstResult(($params['page'] -1) * $params['count'])
             ->orWhere('s.body LIKE :key')
-            ->andWhere('s.upper is NULL')
-            ->orderBy('s.id', 'DESC')
-            ->setParameter('key','%' . $params['key'] . '%')
-            ->getQuery()
-            ->getResult()
-        ;
+            ->andWhere('s.upper is NULL');
+            if (array_key_exists('cat',$params)){
+                if($params['cat'] != 'non')
+                $result->andWhere('s.cat = :cat')
+                    ->setParameter('cat',$params['cat']);
+            }
+        $result->orderBy('s.id', 'DESC')
+            ->setParameter('key','%' . $params['key'] . '%');
+
+            return $result->getQuery()->getResult();
    }
 
     /**
