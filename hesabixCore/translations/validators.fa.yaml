@@ -1,0 +1,12 @@
+not_blank: .این فیلد الزامی است
+min_is_{{ limit }}_chars: حداقل {{ limit }} کاراکتر را وارد کنید
+max_is_{{ limit }}_chars: حداکثر می‌توانید {{ limit }} کاراکتر را وارد کنید
+Please enter a number : لطفا یک مقدار عددی را وارد کنید.
+There is already an account with this email : این ایمیل قبلا ثبت شده است.
+Error : خطا
+Captcha: تشخیص ربات
+Bad code value: کد وارد شده با تصویر مطابق نیست
+blog.img.notvalid: نوع فایل ارسال شده صحیح نیست.
+Your password should be at least {{ limit }} characters : کلمه عبور باید حداقل {{ limit }} کاراکتر باشد.
+You should agree to our terms.: قبول قوانین جهت ارائه خدمات و استفاده از نرم افزار الزامی است.
+Code does not match : کد وارد شده با تصویر مطابقت ندارد.

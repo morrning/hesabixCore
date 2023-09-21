@@ -1,0 +1,37 @@
+//
+/* Cards */
+/* -------------------------------------------------- */
+
+.card {
+  &.card-borderless {
+    box-shadow: 0 1px 3px rgba(darken($body-bg-dark, 2.5%), .5), 0 1px 2px rgba(darken($body-bg-dark, 2.5%), .5);
+  }
+
+  &.card-square {
+    border-radius: 0;
+
+    > .list-group:first-child,
+    > .list-group:last-child,
+    > .card-header:first-child,
+    > .card-footer:last-child,
+    .card-img-overlay,
+    .card-img,
+    .card-img-top,
+    .card-img,
+    .card-img-bottom {
+      border-radius: 0;
+    }
+  }
+
+  &.card-borderless {
+    border: 0;
+
+    > .card-header {
+      border-bottom: 0;
+    }
+    
+    > .card-footer {
+      border-top: 0;
+    }
+  }
+}

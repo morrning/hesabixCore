@@ -1,0 +1,79 @@
+//
+// FullCalendar
+//
+// Overwrite/Extend styles
+// --------------------------------------------------
+
+.fc-theme-standard {
+  a {
+    color: $body-color;
+  }
+
+  .fc-button-primary {
+    color: $body-color;
+    background-color: $body-bg-dark;
+    border-color: $body-bg-dark;
+
+    &:not(:disabled):hover {
+      color: $body-color;
+      background-color: $body-bg;
+      border-color: $body-bg;
+    }
+
+    &:not(:disabled).fc-button-active,
+    &:not(:disabled):active {
+      color: $body-color;
+      background-color: $body-bg-light;
+      border-color: $body-bg-light;
+    }
+
+    &:focus,
+    &:not(:disabled).fc-button-active:focus,
+    &:not(:disabled):active:focus {
+      box-shadow: 0 0 0 .2rem rgba($primary, .4)
+    }
+  }
+
+  th,
+  td,
+  .fc-scrollgrid,
+  .fc-list {
+    border-color: $body-bg-dark;
+  }
+
+  .fc-h-event {
+    background-color: $primary;
+    border: $primary;
+  }
+
+  .fc-col-header-cell {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    text-transform: uppercase;
+    background-color: $body-bg-light;
+  }
+
+  .fc-list-day-cushion {
+    background-color: $body-bg-light;
+  }
+
+  @include media-breakpoint-down(xl) {
+    .fc-toolbar.fc-header-toolbar {
+      display: block;
+
+      .fc-toolbar-chunk {
+        > div,
+        > .btn {
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        &:not(:first-child) {
+          margin-top: 1rem;
+        }
+      }
+    }
+  }
+}

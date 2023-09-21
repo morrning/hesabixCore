@@ -1,0 +1,82 @@
+//
+/* Form Check */
+/* -------------------------------------------------- */
+
+/* Form Switch */
+.form-switch {
+  min-height: 2em;
+  line-height: 2em;
+
+  .form-check-input {
+    height: 1.5em;
+  }
+}
+
+/* Form Block */
+.form-block {
+  position: relative;
+  padding: 0;
+  z-index: 1;
+  
+  .form-check-input {
+    position: absolute;
+    right: 0;
+    z-index: -1;
+    opacity: 0;
+  }
+
+  .form-check-label {
+    width: 100%;
+    padding: .75rem;
+    border: 2px solid $body-bg-dark;
+    border-radius: $border-radius-sm;
+    cursor: pointer;
+
+    &:hover {
+      border-color: darken($body-bg-dark, 5%);
+    }
+
+    &::before {
+      position: absolute;
+      top: 0rem;
+      left: 0rem;
+      width: 1.5rem;
+      height: 1.5rem;
+      display: none;
+      line-height: 1.5rem;
+      color: $white;
+      font-size: .625rem;
+      text-align: center;
+      background-color: $primary;
+      border-bottom-right-radius: .25rem;
+      font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Pro';
+      font-weight: 900;
+      content: '\f00c';
+      z-index: 1;
+    }
+  }
+
+  .form-check-input:checked ~ .form-check-label {
+    border-color: $primary;
+  }
+
+  .form-check-input:focus ~ .form-check-label {
+    border-color: $primary;
+    box-shadow: 0 0 0 0.25rem rgba($primary, .25);
+  }
+
+  .form-check-input:checked ~ .form-check-label::before {
+    display: block;
+  }
+
+  .form-check-input:disabled + .form-check-label,
+  .form-check-input[readonly] + .form-check-label {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  .form-check-input:disabled:not([checked]) + .form-check-label:hover,
+  .form-check-input[readonly]:not([checked]) + .form-check-label:hover { 
+    border-color: $body-bg-dark;
+  }
+}

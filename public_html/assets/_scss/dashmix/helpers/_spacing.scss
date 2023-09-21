@@ -1,0 +1,16 @@
+//
+/* Spacing */
+/* -------------------------------------------------- */
+
+@each $name, $value in $spacers {
+  .space-x-#{$name} > * + * {
+    margin-right: $value;
+  }
+}
+
+@each $name, $value in $spacers {
+  .space-y-#{$name} > * + * {
+    margin-top: $value;
+  }
+}
+

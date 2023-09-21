@@ -1,0 +1,25 @@
+{% extends "pdf/base.html.twig" %}
+{% block body %}
+<table style="border-color: black; float: right;" border="1"><caption>&nbsp;</caption>
+    <tbody>
+    <tr style="text-align: center; background-color: grey; color: white">
+        <td style="width: 35px;">ردیف</td>
+        <td>نام و نام خانوادگی</td>
+        <td>نام مستعار</td>
+        <td>آدرس</td>
+        <td>تلفن</td>
+        <td>موبایل</td>
+    </tr>
+    {% for person in persons %}
+    <tr style="text-align: center">
+        <td>{{ loop.index }}</td>
+        <td>{{ person.name }}</td>
+        <td>{{ person.nikeName }}</td>
+        <td>{{ person.address }}</td>
+        <td>{{ person.tel }}</td>
+        <td>{{ person.mobile }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

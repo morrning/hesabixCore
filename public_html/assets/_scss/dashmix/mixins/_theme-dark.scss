@@ -1,0 +1,1168 @@
+//
+/* Dark Mode Theme */
+/* -------------------------------------------------- */
+
+@mixin color-theme-dark(
+  $primary,
+  $primary-light,
+  $primary-lighter,
+  $primary-dark,
+  $primary-darker,
+  $body-bg,
+  $body-bg-dark,
+  $body-bg-light,
+  $body-color,
+  $body-color-dark,
+  $body-color-light,
+  $link-color,
+  $link-hover-color
+) {
+  .dark-mode {
+    /* Main Structure */
+    &,
+    #side-overlay,
+    #page-loader {
+      background-color: darken($primary-darker, 3%);
+      color: lighten($primary-dark, 45%);
+    }
+
+    /* Typography */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    .h1,
+    .h2,
+    .h3,
+    .h4,
+    .h5,
+    .h6 {
+      color: $body-bg-dark;
+    }
+
+    .content-heading {
+      border-bottom-color: lighten($primary-darker, 6%);
+    }
+
+    hr {
+      border-top-color: lighten($primary-darker, 6%);
+    }
+
+    code {
+      color: $pink-300;
+    }
+
+    .story p,
+    p.story {
+      color: lighten($primary-dark, 35%);
+    }
+
+    /* Links */
+    a:not(.mini-nav-item):not(.badge):not(.btn):not(.btn-block-option):not(.block):not(.dropdown-item):not(.nav-link):not(.page-link):not(.alert-link):not(.nav-main-link):not(.list-group-item-action):not(.close):not(.fc-event):not(.text-success-light):not(.text-danger-light):not(.text-warning-light):not(.text-info-light) {
+      color: lighten($primary, 10%);
+
+      &.link-fx::before {
+        background-color: lighten($primary, 10%);
+      }
+
+      &:hover {
+        color: $primary;
+      }
+    }
+
+    /* Contextual background colors */
+    @include bg-variant(".bg-body", darken($primary-darker, 3%));
+    @include bg-variant(".bg-body-light", lighten($primary-darker, 3%));
+    @include bg-variant(".bg-body-dark", darken($primary-darker, 4.5%));
+    @include bg-variant(".bg-body-extra-light", $primary-darker);
+    @include bg-variant(".bg-muted", darken($body-bg-light, 30%));
+
+    /* Contextual text colors */
+    @include text-emphasis-variant(".text-primary", lighten($primary, 5%));
+
+    @include text-emphasis-variant(".text-success", lighten($success, 5%));
+    @include text-emphasis-variant(".text-warning", lighten($warning, 5%));
+    @include text-emphasis-variant(".text-info", lighten($info, 5%));
+    @include text-emphasis-variant(".text-danger", lighten($danger, 5%));
+
+    @include text-emphasis-variant(".text-body-bg", darken($primary-darker, 3%));
+    @include text-emphasis-variant(".text-body-bg-dark", darken($primary-darker, 6%));
+    @include text-emphasis-variant(".text-body-bg-light", lighten($primary-darker, 3%));
+    @include text-emphasis-variant(".text-body-color", lighten($primary-dark, 45%));
+    @include text-emphasis-variant(".text-body-color-dark", lighten($primary-dark, 30%));
+    @include text-emphasis-variant(".text-body-color-light", lighten($primary-dark, 60%));
+
+    @include text-emphasis-variant(".text-dark", darken($body-bg-dark, 20%));
+
+    @include text-emphasis-variant(".text-muted", lighten($primary-dark, 30%));
+    
+    /* Buttons */
+    .btn-secondary,
+    .btn-alt-secondary {
+      @include button-variant(lighten($primary-darker, 5%), lighten($primary-darker, 5%), $white, darken($primary-darker, 5%), darken($primary-darker, 5%), $white);
+    }
+
+    /* Nav links */
+    .nav-link {
+      color: darken($body-bg-dark, 10%);
+
+      &:hover,
+      &:focus {
+        color: $primary;
+      }
+    }
+
+    /* Nav Pills */
+    .nav-pills {
+      .nav-link {
+        color: darken($body-bg-dark, 30%);
+
+        &:hover,
+        &:focus {
+          background-color: lighten($primary-darker, 8%);
+        }
+      }
+
+      .nav-link.active,
+      .show > .nav-link {
+        color: $white;
+        background-color: $primary;
+      }
+    }
+
+    /* Nav Tabs */
+    .nav-tabs {
+      border-bottom-color: lighten($primary-darker, 6%);
+
+      .nav-link {
+        &:hover,
+        &:focus {
+          border-color: lighten($primary-darker, 6%) lighten($primary-darker, 6%) lighten($primary-darker, 6%);
+        }
+      }
+
+      .nav-link.active,
+      .nav-item.show .nav-link {
+        color: darken($body-bg-dark, 10%);
+        background-color: transparent;
+        border-color: lighten($primary-darker, 6%) lighten($primary-darker, 6%) $primary-darker;
+      }
+    }
+
+    /* Tabs block variation */
+    .nav-tabs-block {
+      background-color: lighten($primary-darker, 6%);
+
+      .nav-link {
+        border-color: transparent;
+        color: darken($body-bg-dark, 10%);
+
+        &:hover,
+        &:focus {
+          color: $primary;
+          background-color: lighten($primary-darker, 3%);
+          border-color: transparent;
+        }
+      }
+
+      .nav-link.active,
+      .nav-item.show .nav-link {
+        color: darken($body-bg-dark, 10%);
+        background-color: $primary-darker;
+        border-color: transparent;
+      }
+    }
+
+    /* Tabs block alternative variation */
+    .nav-tabs-alt {
+      border-bottom-color: lighten($primary-darker, 3%);
+
+      .nav-link {
+        color: darken($body-bg-dark, 10%);
+        background-color: transparent;
+        border-color: transparent;
+
+        &:hover,
+        &:focus {
+          color: $primary;
+          background-color: transparent;
+          border-color: transparent;
+          box-shadow: inset 0 -3px $primary;
+        }
+      }
+
+      .nav-link.active,
+      .nav-item.show .nav-link {
+        color: darken($body-bg-dark, 10%);
+        background-color: transparent;
+        border-color: transparent;
+        box-shadow: inset 0 -3px $primary;
+      }
+    }
+
+    /* Various Items Navigation */
+    .nav-items {
+      a {
+        &:hover {
+          background-color: lighten($primary-darker, 8%);
+        }
+    
+        &:active {
+          background-color: transparent;
+        }
+      }
+    
+      > li:not(:last-child) > a {
+        border-bottom-color: lighten($primary-darker, 6%);
+      }
+    }
+
+    /* Cards */
+    .card {
+      background-color: $primary-darker;
+
+      &.card-borderless {
+        box-shadow: 0 1px 2px rgba(darken($primary-darker, 4%), .5), 0 1px 2px rgba(darken($primary-darker, 4%), .5);
+      }
+  
+      > .card-header:not(.bg-transparent),
+      > .card-footer:not(.bg-transparent) {
+        background-color: lighten($primary-darker, 6%);
+      }
+  
+      > .card-header:not(.border-bottom-0),
+      > .card-footer:not(.border-top-0) {
+        border-color: lighten($primary-darker, 6%);
+      }
+  
+      &:not(.card-borderless) {
+        &,
+        > .card-header {
+          border-color: lighten($primary-darker, 6%);
+        }
+      }
+
+      > .card-header .block-title small {
+        color: darken($body-bg-light, 30%);
+      }
+    }
+
+    /* Pagination */
+    .page-link {
+      color: darken($body-bg-dark, 30%);
+      background-color: darken($primary-darker, 3%);
+      border-color: darken($primary-darker, 3%);
+
+      &:hover {
+        color: darken($body-bg-dark, 30%);
+        background-color: darken($primary-darker, 6%);
+        border-color: darken($primary-darker, 6%);
+      }
+
+      &:focus {
+        background-color: darken($primary-darker, 6%);
+        border-color: darken($primary-darker, 6%);
+      }
+    }
+
+    .page-item.active .page-link {
+      background-color: $primary;
+      border-color: $primary;
+    }
+  
+    .page-item.disabled .page-link {
+      color: darken($body-bg-dark, 50%);
+      background-color: transparent;
+      border-color: transparent;
+    }
+
+    /* List Group */
+    .list-group-item-action {
+      color: darken($body-bg-dark, 10%);
+
+      &:hover,
+      &:focus {
+        color: darken($body-bg-dark, 10%);
+        background-color: lighten($primary-darker, 4.5%);
+      }
+
+      &:active {
+        color: darken($body-bg-dark, 10%);
+        background-color: darken($primary-darker, 3%);
+      }
+
+      &.disabled {
+        color: darken($body-bg-dark, 40%);
+      }
+    }
+
+    .list-group-item {
+      color: darken($body-bg-dark, 10%);
+      background-color: lighten($primary-darker, 3%);
+      border-color: darken($primary-darker, 4.5%);
+
+      &.active {
+        color: $white;
+        background-color: $primary;
+        border-color: $primary;
+      }
+    }
+
+    /* Popovers */
+    .popover {
+      border-color: darken($primary-darker, 4.5%);
+      background-color: lighten($primary-darker, 3%);
+    }
+
+    .bs-popover-top {
+      .popover-arrow::before {
+        border-top-color: fade-in(darken($primary-darker, 4.5%), 0.05);
+      }
+
+      .popover-arrow::after {
+        border-top-color: lighten($primary-darker, 3%);
+      }
+    }
+
+    .bs-popover-end {
+      .popover-arrow::before {
+        border-left-color: fade-in(darken($primary-darker, 4.5%), 0.05);
+      }
+
+      .popover-arrow::after {
+        border-left-color: lighten($primary-darker, 3%);
+      }
+    }
+
+    .bs-popover-bottom {
+      .popover-arrow::before {
+        border-bottom-color: fade-in(darken($primary-darker, 4.5%), 0.05);
+      }
+
+      .popover-arrow::after {
+        border-bottom-color: lighten($primary-darker, 3%);
+      }
+    }
+
+    .bs-popover-start {
+      .popover-arrow::before {
+        border-right-color: fade-in(darken($primary-darker, 4.5%), 0.05);
+      }
+
+      .popover-arrow::after {
+        border-right-color: lighten($primary-darker, 3%);
+      }
+    }
+
+    .bs-popover-auto {
+      &[x-placement^="top"] {
+        @extend .bs-popover-top;
+      }
+      &[x-placement^="right"] {
+        @extend .bs-popover-end;
+      }
+      &[x-placement^="bottom"] {
+        @extend .bs-popover-bottom;
+      }
+      &[x-placement^="left"] {
+        @extend .bs-popover-start;
+      }
+    }
+
+    .popover-header {
+      color: $body-bg-dark;
+      background-color: lighten($primary-darker, 3%);
+      border-bottom-color: darken($primary-darker, 4.5%);
+    }
+
+    .popover-body {
+      color: darken($body-bg-dark, 10%);
+      background-color: lighten($primary-darker, 3%);
+    }
+
+    /* Dropdowns */
+    .dropdown-menu {
+      color: darken($body-bg-dark, 10%);
+      background-color: lighten($primary-darker, 3%);
+      border-color: lighten($primary-darker, 3%);
+      box-shadow: 0 .25rem 2rem rgba($black, .25);
+
+      .dropdown-item {
+        color: darken($body-bg-dark, 15%);
+
+        &:hover,
+        &:focus {
+          color: darken($body-bg-dark, 10%);
+          background-color: lighten($primary-darker, 8%);
+        }
+
+        &.active,
+        &:active {
+          color: darken($body-bg-dark, 5%);
+          background-color: lighten($primary-darker, 12%);
+        }
+
+        &.disabled,
+        &:disabled {
+          color: darken($body-bg-dark, 50%);
+        }
+      }
+
+      .dropdown-divider {
+        border-color: lighten($primary-darker, 10%);
+      }
+
+      .dropdown-item-text {
+        color: darken($body-bg-dark, 10%);
+      }
+
+      .dropdown-header {
+        color: darken($body-bg-dark, 25%) !important;
+      }
+    }
+
+    /* Tables */
+    .table {
+      --#{$variable-prefix}table-striped-color: #{$body-bg-light};
+      --#{$variable-prefix}table-striped-bg: #{darken($primary-darker, 1.5%)};
+      --#{$variable-prefix}table-active-color: #{$body-bg-light};
+      --#{$variable-prefix}table-active-bg: #{lighten($primary-darker, 6%)};
+      --#{$variable-prefix}table-hover-color: #{$body-bg-light};
+      --#{$variable-prefix}table-hover-bg: #{darken($primary-darker, 2.5%)};
+      
+      color: $body-bg-light;
+      border-color: darken($primary-darker, 6%);
+    }
+
+    .table > :not(:last-child) > :last-child > * {
+      border-bottom-color: darken($primary-darker, 6%);
+    }
+
+    @include table-variant("dark", rgba(darken($primary-darker, 4.5%), .75));
+    @include table-variant("primary", rgba(shade-color($primary, 20%), .75));
+    @include table-variant("info", rgba(#1E3A8A, .75));
+    @include table-variant("success", rgba(#14532D, .75));
+    @include table-variant("danger", rgba(#7F1D1D, .75));
+    @include table-variant("warning", rgba(#713F12, .75));
+
+    /* Forms */
+    .form-text {
+      color: lighten($primary-dark, 30%);
+    }
+
+    .form-control::placeholder {
+      color: lighten($primary-dark, 30%);
+    }
+
+    .form-floating > .form-control::placeholder {
+      color: transparent;
+    }
+    
+    .form-control,
+    .form-select {
+      color: darken($body-bg-dark, 10%);
+      background-color: darken($primary-darker, 4.5%);
+      border-color: lighten($primary-darker, 8%);
+
+      &:focus {
+        color: $white;
+        background-color: darken($primary-darker, 4.5%);
+        border-color: $primary;
+      }
+
+      &:disabled {
+        background-color: lighten($primary-darker, 2%);
+        border-color: lighten($primary-darker, 2%);
+      }
+    }
+
+    .form-select {
+      &:focus::-ms-value {
+        color: darken($body-bg-dark, 10%);
+        background-color: darken($primary-darker, 4.5%);
+      }
+    }
+
+    .form-control-plaintext {
+      color: darken($body-bg-dark, 10%);
+    }
+
+    @include form-validation-state("valid", lighten($success, 10%), $form-feedback-icon-valid);
+    @include form-validation-state("invalid", lighten($danger, 15%), $form-feedback-icon-invalid);
+
+    .form-control.form-control-alt {
+      color: darken($body-bg-dark, 10%);
+      border-color: darken($primary-darker, 3%);
+      background-color: darken($primary-darker, 3%);
+
+      &:focus {
+        color: $white;
+        border-color: darken($primary-darker, 4.5%);
+        background-color: darken($primary-darker, 4.5%);
+        box-shadow: none;
+      }
+
+      &.is-valid {
+        &::placeholder {
+          color: lighten($primary-dark, 30%);
+        }
+
+        border-color: rgba(#14532D, .85);
+        background-color: rgba(#14532D, .85);
+  
+        &:focus {
+          border-color: rgba(#14532D, 1);
+          background-color: rgba(#14532D, 1);
+        }
+      }
+  
+      &.is-invalid {
+        &::placeholder {
+          color: lighten($primary-dark, 30%);
+        }
+
+        border-color: rgba(#7F1D1D, .85);
+        background-color: rgba(#7F1D1D, .85);
+  
+        &:focus {
+          border-color: rgba(#7F1D1D, 1);
+          background-color: rgba(#7F1D1D, 1);
+        }
+      }
+    }
+
+    .input-group-text {
+      color: darken($body-bg-dark, 10%);
+      background-color: darken($primary-darker, 3%);
+      border-color: lighten($primary-darker, 8%);
+    }
+
+    .input-group-text.input-group-text-alt {
+      background-color: darken($primary-darker, 4.5%);
+      border-color: darken($primary-darker, 4.5%);
+    }
+
+    .is-valid ~ .valid-feedback,
+    .is-valid ~ .valid-tooltip,
+    .was-validated :valid ~ .valid-feedback,
+    .was-validated :valid ~ .valid-tooltip,
+    .is-invalid ~ .invalid-feedback,
+    .is-invalid ~ .invalid-tooltip,
+    .was-validated :invalid ~ .invalid-feedback,
+    .was-validated :invalid~.invalid-tooltip {
+      display: block;
+    }
+
+    .form-check-input {
+      background-color: darken($primary-darker, 3%);
+      border-color: lighten($primary-darker, 8%);
+  
+      &:focus {
+        border-color: $primary;
+      }
+  
+      &:checked {
+        background-color: $primary;
+        border-color: $primary;
+      }
+    }
+
+    .form-block {
+      .form-check-label {
+        border-color: lighten($primary-darker, 8%);
+    
+        &:hover {
+          border-color: lighten(lighten($primary-darker, 4.5%), 5%);
+        }
+    
+        &::before {
+          background-color: $primary;
+        }
+      }
+    
+      .form-check-input:checked ~ .form-check-label {
+        border-color: $primary;
+      }
+    
+      .form-check-input:focus ~ .form-check-label {
+        border-color: $primary;
+        box-shadow: 0 0 0 0.25rem rgba($primary, .25);
+      }
+    
+      .form-check-input:disabled:not([checked]) + .form-check-label:hover,
+      .form-check-input[readonly]:not([checked]) + .form-check-label:hover { 
+        border-color: darken($primary-darker, 4.5%);
+      }
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-item + .breadcrumb-item::before {
+      color: rgba($white, .15);
+    }
+
+    .breadcrumb.breadcrumb-alt {
+      .breadcrumb-item + .breadcrumb-item::before {
+        color: rgba($white, .15);
+      }
+    }
+
+    /* Alerts */
+    .alert-primary {
+      @include alert-variant($primary, $primary, $white);
+    }
+
+    .alert-secondary {
+      @include alert-variant(lighten($primary-darker, 6%), lighten($primary-darker, 6%), $white);
+    }
+
+    .alert-success {
+      @include alert-variant(shade-color($success, 25%), shade-color($success, 25%), $white);
+    }
+
+    .alert-info {
+      @include alert-variant(shade-color($info, 25%), shade-color($info, 25%), $white);
+    }
+
+    .alert-warning {
+      @include alert-variant(shade-color($warning, 25%), shade-color($warning, 25%), $white);
+    }
+
+    .alert-danger {
+      @include alert-variant(shade-color($danger, 25%), shade-color($danger, 25%), $white);
+    }
+
+    .alert-dark {
+      @include alert-variant(darken($primary-darker, 6%), darken($primary-darker, 6%), $white);
+    }
+
+    .alert-light {
+      @include alert-variant(lighten($primary-darker, 12%), lighten($primary-darker, 12%), $white);
+    }
+
+    .btn-close {
+      filter: $btn-close-white-filter;
+    }
+
+    /* Progress Bars */
+    .progress {
+      background-color: darken($primary-darker, 4.5%);
+    }
+
+    /* Lists */
+    .list-activity > li:not(:last-child) {
+      border-bottom-color: darken($primary-darker, 4.5%);
+    }
+
+    /* Modals */
+    .modal-header {
+      border-bottom-color: lighten($primary-darker, 6%);
+    }
+
+    .modal-content {
+      background: $primary-darker;
+    }
+
+    .modal-footer {
+      border-top-color: lighten($primary-darker, 6%);
+    }
+
+    /* Toasts */
+    .toast {
+      background-color: $primary-darker;
+    }
+
+    .toast-header {
+      color: darken($body-bg-dark, 10%);
+      background-color: lighten($primary-darker, 6%);
+    }
+
+    /* Borders */
+    .border {
+      border-color: lighten($primary-darker, 6%) !important;
+    }
+
+    .border-top {
+      border-top-color: lighten($primary-darker, 6%) !important;
+    }
+
+    .border-end {
+      border-left-color: lighten($primary-darker, 6%) !important;
+    }
+
+    .border-bottom {
+      border-bottom-color: lighten($primary-darker, 6%) !important;
+    }
+
+    .border-start {
+      border-right-color: lighten($primary-darker, 6%) !important;
+    }
+
+    .border-primary {
+      border-color: $primary !important;
+    }
+    .border-white {
+      border-color: $white !important;
+    }
+    .border-white-op {
+      border-color: rgba($white, 0.1) !important;
+    }
+    .border-black-op {
+      border-color: rgba($black, 0.1) !important;
+    }
+
+    /* Blocks */
+    .block {
+      background-color: $primary-darker;
+      box-shadow: 0 1px 2px rgba(darken($primary-darker, 4%), .5), 0 1px 2px rgba(darken($primary-darker, 4%), .5);
+
+      &.block-bordered {
+        border: 1px solid lighten($primary-darker, 6%);
+        box-shadow: none;
+      }
+    
+      .block-header-default {
+        background-color: lighten($primary-darker, 6%) !important;
+      }
+
+      .block-title {
+        small {
+          color: darken($body-bg-light, 30%);
+        }
+      }
+
+      &.block-mode-loading::before {
+        background-color: rgba(lighten($primary-darker, 6%), .85);
+      }
+
+      &.block-mode-loading::after {
+        color: $white;
+      }
+
+      &.block-transparent {
+        background-color: transparent;
+        box-shadow: none;
+      }
+
+      &.block-mode-fullscreen {
+        &.block-transparent {
+          background-color: $primary-darker;
+        }
+      }
+    }
+
+    .block .block,
+    .content-side .block {
+      box-shadow: none;
+    }
+
+    a.block {
+      color: darken($body-bg-dark, 10%);
+    
+      &.block-link-pop {
+        &:hover {
+          box-shadow: 0 0.5rem 2.5rem darken($primary-darker, 8%);
+        }
+    
+        &:active {
+          box-shadow: 0 0.375rem 0.55rem darken($primary-darker, 1%);
+        }
+      }
+    
+      &.block-link-shadow {
+        &:hover {
+          box-shadow: 0 0 1.5rem darken($primary-darker, 8%);
+        }
+    
+        &:active {
+          box-shadow: 0 0 0.75rem darken($primary-darker, 5%);
+        }
+      }
+    }
+
+    .btn-block-option {
+      color: darken($body-bg-light, 30%);
+    
+      .block-header-default & {
+        color: darken($body-bg-light, 35%);
+      }
+    
+      &:hover,
+      &:focus {
+        color: darken($body-bg-light, 40%);
+      }
+    
+      &:active {
+        color: darken($body-bg-light, 30%);
+      }
+    }
+
+    a.btn-block-option:focus,
+    .active > a.btn-block-option,
+    .show > button.btn-block-option {
+      color: darken($body-bg-light, 40%);
+    }
+    
+    .block.block-themed {
+      .btn-block-option,
+      .btn-block-option:hover,
+      .btn-block-option:focus,
+      .btn-block-option:active,
+      a.btn-block-option:focus,
+      .active > a.btn-block-option,
+      .show > button.btn-block-option {
+        color: $white;
+      }
+    }
+
+    /* Timeline */
+    .timeline::before {
+      background-color: lighten($primary-darker, 6%);
+    }
+
+    .timeline-event-icon {
+      border-color: lighten($primary-darker, 6%);
+      box-shadow: 0 0.375rem 1.5rem $primary-darker;
+
+      &::before {
+        border-right-color: lighten($primary-darker, 6%);
+      }
+    }
+
+    @include media-breakpoint-up(xl) {
+      .timeline-centered {
+        .timeline-event-time {
+          background-color: lighten($primary-darker, 6%);
+        }
+
+        .timeline-event-icon::before {
+          border-left-color: lighten($primary-darker, 6%);
+        }
+
+        &.timeline-alt .timeline-event:nth-child(even),
+        .timeline-event.timeline-event-alt {
+          .timeline-event-icon::before {
+            border-right-color: lighten($primary-darker, 6%);
+          }
+        }
+      } 
+    }
+
+    /* Images */
+    .img-thumb {
+      background-color: darken($primary-darker, 6%);
+    }
+
+    /* SweetAlert2 */
+    .swal2-popup {
+      background-color: $primary-darker;
+    }
+
+    .swal2-html-container {
+      color: darken($body-bg-dark, 10%);
+    }
+
+    /* jVectorMap */
+    .jvectormap-container {
+      background-color: $primary-darker !important;
+    }
+
+    /* CKEditor 5 */
+    .ck.ck-editor {
+      color: $body-color;
+    }
+
+    /* DropzoneJS */
+    .dropzone {
+      background-color: lighten($primary-darker, 3%);
+      border-color: lighten($primary-darker, 6%);
+
+      .dz-message {
+        color: darken($body-bg-dark, 10%);
+      }
+
+      &:hover {
+        background-color: lighten($primary-darker, 6%);
+        border-color: $primary;
+
+        .dz-message {
+          color: $primary;
+        }
+      }
+      
+      .dz-preview.dz-image-preview {
+        background-color: transparent;
+      }
+    }
+
+    /* FullCalendar */
+    .fc-theme-standard {
+      a {
+        color: darken($body-bg-dark, 15%);
+      }
+
+      .fc-button-primary {
+        color: darken($body-bg-dark, 15%);
+        background-color: darken($primary-darker, 4.5%);
+        border-color: darken($primary-darker, 4.5%);
+
+        &:not(:disabled):hover {
+          color: darken($body-bg-dark, 10%);
+          background-color: lighten($primary-darker, 3%);
+          border-color: lighten($primary-darker, 3%);
+        }
+
+        &:not(:disabled).fc-button-active,
+        &:not(:disabled):active {
+          color: darken($body-bg-dark, 10%);
+          background-color: lighten($primary-darker, 3%);
+          border-color: lighten($primary-darker, 3%);
+        }
+
+        &:focus,
+        &:not(:disabled).fc-button-active:focus,
+        &:not(:disabled):active:focus {
+          box-shadow: 0 0 0 .2rem rgba($primary, .4)
+        }
+      }
+
+      .fc-list, .fc-scrollgrid,
+      th,
+      td {
+        border-color: darken($primary-darker, 6%);
+      }
+
+      .fc-list-day-cushion,
+      .fc-col-header-cell {
+        background-color: lighten($primary-darker, 3%);
+      }
+
+      .fc-list-event:hover td {
+        background-color: darken($primary-darker, 2.5%);
+      }
+    }
+
+    /* Ion Range Slider */
+    .irs,
+    .irs--round .irs-grid-text {
+      color: darken($body-bg-dark, 10%);
+    }
+
+    .irs.irs--round {
+      .irs-min,
+      .irs-max,
+      .irs-line,
+      .irs-grid-pol,
+      .irs-handle {
+        color: darken($body-bg-dark, 10%);
+        background: darken($primary-darker, 3%);
+      }
+    }
+
+    /* Select2 */
+    .select2-container--default {
+      .select2-selection--single .select2-selection__placeholder {
+        color: lighten($primary-dark, 30%);
+      }
+
+      .select2-selection--single,
+      .select2-selection--multiple {
+        background-color: darken($primary-darker, 4.5%);
+        border-color: lighten($primary-darker, 8%);
+      }
+
+      &.select2-container--focus .select2-selection--multiple,
+      &.select2-container--focus .select2-selection--single,
+      &.select2-container--open .select2-selection--multiple,
+      &.select2-container--open .select2-selection--single {
+        border-color: $primary;
+      }
+
+      .select2-selection--single .select2-selection__rendered {
+        color: darken($body-bg-dark, 10%);
+      }
+
+      .select2-search--dropdown .select2-search__field {
+        border-color: lighten($primary-darker, 8%);
+      }
+
+      .select2-dropdown .select2-search__field:focus {
+        border-color: $primary;
+      }
+
+      .select2-dropdown {
+        background-color: darken($primary-darker, 4.5%);
+        border-color: lighten($primary-darker, 8%);
+      }
+
+      .select2-search--dropdown .select2-search__field {
+        color: darken($body-bg-dark, 10%);
+        background-color: darken($primary-darker, 4.5%);
+        border-color: lighten($primary-darker, 8%);
+      }
+
+      .select2-results__option[aria-selected=true] {
+        color: $white;
+        background-color: $primary;
+      }
+
+      .select2-search__field::placeholder {
+        color: lighten($primary-dark, 30%);
+      }
+    }
+
+    .is-valid + .select2-container--default,
+    .is-valid + .select2-container--default.select2-container--focus {
+      .select2-selection--single,
+      .select2-selection--multiple {
+        border-color: lighten($success, 10%);
+      }
+    }
+
+    .is-valid + .select2-container--default.select2-container--focus,
+    .is-valid + .select2-container--default.select2-container--open {
+      .select2-selection--single,
+      .select2-selection--multiple {
+        box-shadow: 0 0 0 $input-focus-width rgba(lighten($success, 10%), 0.25);
+      }
+    }
+
+    .is-invalid + .select2-container--default,
+    .is-invalid + .select2-container--default.select2-container--focus {
+      .select2-selection--single,
+      .select2-selection--multiple {
+        border-color: lighten($danger, 10%);
+      }
+    }
+
+    .is-invalid + .select2-container--default.select2-container--focus,
+    .is-invalid + .select2-container--default.select2-container--open {
+      .select2-selection--single,
+      .select2-selection--multiple {
+        box-shadow: 0 0 0 $input-focus-width rgba(lighten($danger, 10%), 0.25);
+      }
+    }
+
+    /* Bootstrap Datepicker */
+    .datepicker .datepicker-switch:hover,
+    .datepicker .next:hover,
+    .datepicker .prev:hover,
+    .datepicker tfoot tr th:hover,
+    .datepicker table tr td.day:hover,
+    .datepicker table tr td.focused {
+      background-color: darken($primary-darker, 4.5%);
+    }
+
+    .datepicker table tr td.selected,
+    .datepicker table tr td.selected.highlighted {
+      color: $white;
+      background-color: darken($primary-darker, 4.5%);
+      border-color: darken($primary-darker, 4.5%);
+    }
+
+    .datepicker table tr td.range {
+      color: darken($body-bg-dark, 10%);
+      background-color: darken($primary-darker, 4.5%);
+      border-color: darken($primary-darker, 4.5%);
+    }
+
+    .datepicker table tr td.active:hover,
+    .datepicker table tr td.active:hover:hover,
+    .datepicker table tr td.active.disabled:hover,
+    .datepicker table tr td.active.disabled:hover:hover,
+    .datepicker table tr td.active:focus,
+    .datepicker table tr td.active:hover:focus,
+    .datepicker table tr td.active.disabled:focus,
+    .datepicker table tr td.active.disabled:hover:focus,
+    .datepicker table tr td.active:active,
+    .datepicker table tr td.active:hover:active,
+    .datepicker table tr td.active.disabled:active,
+    .datepicker table tr td.active.disabled:hover:active,
+    .datepicker table tr td.active.active,
+    .datepicker table tr td.active:hover.active,
+    .datepicker table tr td.active.disabled.active,
+    .datepicker table tr td.active.disabled:hover.active,
+    .open .dropdown-toggle.datepicker table tr td.active,
+    .open .dropdown-toggle.datepicker table tr td.active:hover,
+    .open .dropdown-toggle.datepicker table tr td.active.disabled,
+    .open .dropdown-toggle.datepicker table tr td.active.disabled:hover,
+    .datepicker table tr td span.active:hover,
+    .datepicker table tr td span.active:hover:hover,
+    .datepicker table tr td span.active.disabled:hover,
+    .datepicker table tr td span.active.disabled:hover:hover,
+    .datepicker table tr td span.active:focus,
+    .datepicker table tr td span.active:hover:focus,
+    .datepicker table tr td span.active.disabled:focus,
+    .datepicker table tr td span.active.disabled:hover:focus,
+    .datepicker table tr td span.active:active,
+    .datepicker table tr td span.active:hover:active,
+    .datepicker table tr td span.active.disabled:active,
+    .datepicker table tr td span.active.disabled:hover:active,
+    .datepicker table tr td span.active.active,
+    .datepicker table tr td span.active:hover.active,
+    .datepicker table tr td span.active.disabled.active,
+    .datepicker table tr td span.active.disabled:hover.active,
+    .open .dropdown-toggle.datepicker table tr td span.active,
+    .open .dropdown-toggle.datepicker table tr td span.active:hover,
+    .open .dropdown-toggle.datepicker table tr td span.active.disabled,
+    .open .dropdown-toggle.datepicker table tr td span.active.disabled:hover {
+      background-color: $primary;
+      border-color: $primary;
+    }
+
+    /* Flatpickr */
+    .flatpickr-input.form-control:disabled,
+    .flatpickr-input.form-control[readonly],
+    .input.form-control:disabled,
+    .input.form-control[readonly] {
+      color: darken($body-bg-dark, 10%);
+      background-color: darken($primary-darker, 4.5%);
+      border-color: lighten($primary-darker, 8%);
+    }
+
+    .flatpickr-day.selected,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange,
+    .flatpickr-day.selected.inRange,
+    .flatpickr-day.startRange.inRange,
+    .flatpickr-day.endRange.inRange,
+    .flatpickr-day.selected:focus,
+    .flatpickr-day.startRange:focus,
+    .flatpickr-day.endRange:focus,
+    .flatpickr-day.selected:hover,
+    .flatpickr-day.startRange:hover,
+    .flatpickr-day.endRange:hover,
+    .flatpickr-day.selected.prevMonthDay,
+    .flatpickr-day.startRange.prevMonthDay,
+    .flatpickr-day.endRange.prevMonthDay,
+    .flatpickr-day.selected.nextMonthDay,
+    .flatpickr-day.startRange.nextMonthDay,
+    .flatpickr-day.endRange.nextMonthDay {
+      border-color: $primary;
+      background: $primary;
+    }
+
+    .flatpickr-months .flatpickr-prev-month:hover svg,
+    .flatpickr-months .flatpickr-next-month:hover svg {
+      fill: $primary;
+    }
+
+    /* Nestable2 */
+    .dd-handle {
+      color: darken($body-bg-dark, 10%);
+      background: lighten($primary-darker, 3%);
+      border-color: darken($primary-darker, 4.5%);
+
+      &:hover {
+        color: darken($body-bg-dark, 20%);
+      }
+    }
+
+    .dd-empty,
+    .dd-placeholder {
+      border-color: $primary-lighter;
+      background: $primary-darker;
+    }
+  }
+}

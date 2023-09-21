@@ -1,0 +1,25 @@
+//
+/* Transitions */
+/* -------------------------------------------------- */
+
+.fade {
+  @include transition($transition-fade);
+
+  &.fade-up,
+  &.fade-right,
+  &.fade-left {
+    @include transition(opacity .25s ease-out, transform .25s ease-out);
+  }
+
+  &.fade-up:not(.show) {
+    transform: translateY(50px);
+  }
+
+  &.fade-right:not(.show) {
+    transform: translateX(50px);
+  }
+
+  &.fade-left:not(.show) {
+    transform: translateX(-50px);
+  }
+}

@@ -1,0 +1,10 @@
+{% block captcha_widget %}
+        <div class="row my-2">
+                <div class="col-sm-12 col-md-6 mb-2">
+                        {{ form_widget(form) }}
+                </div>
+                <div class="col-sm-12 col-md-6">
+                        <img class="mb-1 img-thumbnail" src="{{ captcha_code }}" width="{{ captcha_width }}" height="{{ captcha_height }}" />
+                </div>
+        </div>
+{% endblock %}

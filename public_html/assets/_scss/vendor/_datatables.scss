@@ -1,0 +1,75 @@
+//
+// DataTables
+//
+// Overwrite/Extend styles
+// --------------------------------------------------
+
+table.dataTable {
+  td,
+  th {
+    box-sizing: border-box;
+  }
+
+  thead > tr {
+    > th.sorting_asc,
+    > th.sorting_desc,
+    > th.sorting,
+    > td.sorting_asc,
+    > td.sorting_desc,
+    > td.sorting {
+      padding-right: 1.25rem;
+    }
+
+    > th.sorting:before,
+    > th.sorting_asc:before,
+    > th.sorting_desc:before,
+    > th.sorting_asc_disabled:before,
+    > th.sorting_desc_disabled:before,
+    > td.sorting:before,
+    > td.sorting_asc:before,
+    > td.sorting_desc:before,
+    > td.sorting_asc_disabled:before,
+    > td.sorting_desc_disabled:before {
+      display: none;
+    }
+    
+    > th.sorting:after,
+    > th.sorting_asc:after,
+    > th.sorting_desc:after,
+    > th.sorting_asc_disabled:after,
+    > th.sorting_desc_disabled:after,
+    > td.sorting:after, 
+    > td.sorting_asc:after,
+    > td.sorting_desc:after,
+    > td.sorting_asc_disabled:after,
+    > td.sorting_desc_disabled:after {
+      right: .375rem;
+      margin-top: -0.25rem;
+      font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro";
+      font-weight: $font-weight-semibold;
+      opacity: .4;
+    }
+
+    > th.sorting:after {
+      content: "\f0dc";
+    }
+
+    > th.sorting_asc:after {
+      content: "\f106";
+    }
+
+    > th.sorting_desc:after {
+      content: "\f107";
+    }
+  }
+}
+
+div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+  margin-top: .75rem;
+  justify-content: center;
+
+  @include media-breakpoint-up(md) {
+    margin-top: .125rem;
+    justify-content: flex-end;
+  }
+}

@@ -1,0 +1,43 @@
+//
+/* Tables */
+/* -------------------------------------------------- */
+
+.table:not(.table-borderless) {
+  /* Highlight border color between thead, tbody and tfoot. */
+  > :not(:last-child) > :last-child > * {
+    border-bottom-width: 2px;
+  }
+}
+
+.table-vcenter {
+  th,
+  td {
+    vertical-align: middle;
+  }
+}
+
+/* Table tools */
+.js-table-checkable tbody tr,
+.js-table-sections-header > tr {
+  cursor: pointer;
+}
+
+.js-table-sections-header {
+  > tr > td:first-child > i {
+    transition: transform .15s ease-out;
+  }
+
+  + tbody {
+    display: none;
+  }
+
+  &.show {
+    > tr > td:first-child > i {
+      transform: rotate(-90deg);
+    }
+
+    + tbody {
+      display: table-row-group;
+    }
+  }
+}

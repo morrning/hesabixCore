@@ -1,0 +1,43 @@
+{% extends "base.html.twig" %}
+{% block body %}
+<div class="content">
+    <div class="row">
+        <div class="col-xl-8">
+            {% block content %}{% endblock %}
+        </div>
+        <div class="col-xl-4">
+            <!-- Recent Comments -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">نظرات اخیر</h3>
+                </div>
+                <div class="block-content">
+                    {% set comments = Blog.getLastComments() %}
+                    {% for comment in comments %}
+                        <div class="push">
+                            <b class="fw-semibold text-primary">{{ comment.submitter.fullname }}</b> در <a href="{{ path('general_blog_post',{'url':comment.post.url}) }}">{{ comment.post.title }}</a>
+                            <p class="mt-1"> {{ comment.body }} </p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- END Recent Comments -->
+            <!-- Recent Cat -->
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">دسته‌بندی‌ها</h3>
+                </div>
+                <div class="block-content">
+                    {% set cats = Blog.getCats() %}
+                  <ul>
+                      {% for cat in cats %}
+                          <li><a href="#">{{ cat.label }}</a></li>
+                      {% endfor %}
+                  </ul>
+                </div>
+            </div>
+            <!-- END Cat -->
+        </div>
+    </div>
+</div>
+{% endblock %}

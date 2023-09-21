@@ -1,0 +1,91 @@
+//
+/* Buttons */
+/* -------------------------------------------------- */
+
+/* Fix simple icon position */
+.btn .si {
+  position: relative;
+  top: 1px;
+}
+
+/* Variant buttons */
+.btn-secondary {
+  @include button-variant($gray-700, $gray-700);
+}
+
+/* Alternate variant buttons */
+.btn-alt-primary {
+  @include button-variant(tint-color($primary, 75%), tint-color($primary, 75%), shade-color($primary, 40%), tint-color($primary, 50%), tint-color($primary, 50%), shade-color($primary, 60%));
+}
+
+.btn-alt-secondary {
+  @include button-variant($body-bg, $body-bg, $body-color-dark, shade-color($body-bg, 10%), shade-color($body-bg, 10%), shade-color($body-color-dark, 15%));
+}
+
+.btn-alt-success {
+  @include button-variant(tint-color($success, 75%), tint-color($success, 75%), shade-color($success, 40%), tint-color($success, 50%), tint-color($success, 50%), shade-color($success, 60%));
+}
+
+.btn-alt-info {
+  @include button-variant(tint-color($info, 75%), tint-color($info, 75%), shade-color($info, 40%), tint-color($info, 50%), tint-color($info, 50%), shade-color($info, 60%));
+}
+
+.btn-alt-warning {
+  @include button-variant(tint-color($warning, 75%), tint-color($warning, 75%), shade-color($warning, 40%), tint-color($warning, 50%), tint-color($warning, 50%), shade-color($warning, 60%));
+}
+
+.btn-alt-danger {
+  @include button-variant(tint-color($danger, 75%), tint-color($danger, 75%), shade-color($danger, 40%), tint-color($danger, 50%), tint-color($danger, 50%), shade-color($danger, 60%));
+}
+
+/* Hero variant buttons */
+.btn-hero {
+  &.btn-primary {
+    @include button-hero-variant($primary);
+  }
+  
+  &.btn-secondary {
+    @include button-hero-variant($secondary);
+  }
+  
+  &.btn-success {
+    @include button-hero-variant($success);
+  }
+  
+  &.btn-info {
+    @include button-hero-variant($info);
+  }
+  
+  &.btn-warning {
+    @include button-hero-variant($warning);
+  }
+  
+  &.btn-danger {
+    @include button-hero-variant($danger);
+  }
+  
+  &.btn-dark {
+    @include button-hero-variant($dark);
+  }
+  
+  &.btn-light {
+    @include button-hero-variant($light);
+  }
+
+  /* Hero size variant buttons */
+  &.btn-lg {
+    @include button-size($btn-hero-padding-y-lg, $btn-hero-padding-x-lg, $font-size-sm, $btn-hero-border-radius);
+  }
+
+  &.btn-sm {
+    @include button-size($btn-hero-padding-y-sm, $btn-hero-padding-x-sm, $font-size-sm, $btn-hero-border-radius);
+  }
+}
+
+/* Alternate secondary adapts on dark header/sidebar */
+.page-header-dark #page-header .btn-alt-secondary,
+.sidebar-dark #sidebar .btn-alt-secondary,
+#sidebar .bg-header-dark .content-header .btn-alt-secondary,
+.page-header-dark.page-header-glass:not(.page-header-scroll) #page-header .btn-alt-secondary {
+  @include button-variant(tint-color($header-dark-bg, 15%), tint-color($header-dark-bg, 15%), $white, tint-color($header-dark-bg, 25%), tint-color($header-dark-bg, 25%), $white);
+}

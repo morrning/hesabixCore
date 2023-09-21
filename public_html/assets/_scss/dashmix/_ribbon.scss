@@ -1,0 +1,147 @@
+//
+/* Ribbon */
+/* -------------------------------------------------- */
+
+.ribbon {
+  position: relative;
+  min-height: 3.25rem;
+}
+
+.ribbon-box {
+  position: absolute;
+  top: .75rem;
+  left: 0;
+  padding: 0 .75rem;
+  height: 2rem;
+  line-height: 2rem;
+  z-index: 5;
+  font-weight: $font-weight-bold;
+  border-top-right-radius: $border-radius;
+  border-bottom-right-radius: $border-radius;
+
+  &::before {
+    position: absolute;
+    display: block;
+    width: 0;
+    height: 0;
+    content: '';
+  }
+}
+
+/* Bookmark variation */
+.ribbon-bookmark {
+  .ribbon-box {
+    padding-right: .625rem;
+    border-radius: 0 !important;
+  }
+
+  .ribbon-box::before {
+    top: 0;
+    left: 100%;
+    height: 2rem;
+    border: 1rem solid;
+    border-right-width: .625rem;
+    border-left-width: 0;
+  }
+}
+
+/* Modern variation */
+.ribbon-modern {
+  .ribbon-box {
+    top: .75rem;
+    left: -.5rem;
+    padding-right: .75rem;
+    padding-left: .75rem;
+    border-radius: $border-radius !important;
+  }
+
+  .ribbon-box::before {
+    display: none;
+  }
+}
+
+/* Position variations */
+.ribbon-left {
+  .ribbon-box {
+    left: auto;
+    right: 0;
+    border-radius: 0;
+    border-top-left-radius: $border-radius;
+    border-bottom-left-radius: $border-radius;
+  }
+
+  &.ribbon-bookmark {
+    .ribbon-box {
+      padding-right: .75rem;
+      padding-left: .625rem;
+    }
+
+    .ribbon-box::before {
+      left: auto;
+      right: 100%;
+      border-right-width: 0;
+      border-left-width: .625rem;
+    }
+  }
+
+  &.ribbon-modern {
+    .ribbon-box {
+      right: -.5rem;
+    }
+  }
+}
+
+.ribbon-bottom {
+  .ribbon-box {
+    top: auto;
+    bottom: .75rem;
+  }
+}
+
+/* Color variation */
+.ribbon-light {
+  @include ribbon-variation($body-bg-dark, $body-color);
+}
+
+.ribbon-dark {
+  @include ribbon-variation($dark, $white);
+}
+
+.ribbon-primary {
+  @include ribbon-variation($primary, $white);
+}
+
+.ribbon-success {
+  @include ribbon-variation($success, $white);
+}
+
+.ribbon-info {
+  @include ribbon-variation($info, $white);
+}
+
+.ribbon-warning {
+  @include ribbon-variation($warning, $white);
+}
+
+.ribbon-danger {
+  @include ribbon-variation($danger, $white);
+}
+
+.ribbon-glass {
+  .ribbon-box {
+    color: $white;
+    background-color: rgba(255,255,255,.4);
+  }
+
+  &.ribbon-bookmark {
+    .ribbon-box::before {
+      border-color: rgba(255,255,255,.4);
+      border-right-color: transparent;
+    }
+
+    &.ribbon-left .ribbon-box::before {
+      border-color: rgba(255,255,255,.4);
+      border-left-color: transparent;
+    }
+  }
+}

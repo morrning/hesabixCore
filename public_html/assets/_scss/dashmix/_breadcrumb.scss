@@ -1,0 +1,19 @@
+//
+/* Breadcrumb */
+/* -------------------------------------------------- */
+
+.breadcrumb-item {
+  font-weight: $font-weight-medium;
+}
+
+.breadcrumb.breadcrumb-alt {
+  .breadcrumb-item + .breadcrumb-item::before {
+    position: relative;
+    top: 1px;
+    width: 1rem;
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro";
+    font-weight: 900;
+    color: $gray-400;
+    content: "\f105";
+  }
+}

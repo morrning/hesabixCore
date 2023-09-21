@@ -1,0 +1,33 @@
+//
+/* Grid */
+/* -------------------------------------------------- */
+
+/* Tiny grid gutters */
+.row.g-sm {
+  --bs-gutter-x: #{$space-row-gutter-tiny};
+
+  > .col,
+  > [class*="col-"] {
+    padding-right: $space-row-gutter-tiny * .5;
+    padding-left: $space-row-gutter-tiny  * .5;
+  }
+
+  .push,
+  .block,
+  &.items-push > div {
+    margin-bottom: $space-row-gutter-tiny;
+  }
+}
+
+/* Responsive grid gutters */
+@include media-breakpoint-down(md) {
+  .row:not(.g-sm):not(.g-0) {
+    --bs-gutter-x: #{$space-mobile};
+
+    > .col,
+    > [class*="col-"] {
+      padding-right: $space-mobile * .5;
+      padding-left: $space-mobile * .5;
+    }
+  }
+}

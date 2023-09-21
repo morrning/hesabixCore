@@ -1,0 +1,50 @@
+/* Utilities */
+
+$font-sizes: map-merge(
+  $font-sizes,
+  (
+    'base': $font-size-base,
+    'xs': $font-size-xs,
+    'sm': $font-size-sm,
+    'lg': $font-size-lg
+  )
+);
+
+/* Override utilities map to add new classes */
+$utilities: map-merge(
+  $utilities,
+  (
+    "font-weight": (
+      property: font-weight,
+      class: fw,
+      values: (
+        light: $font-weight-light,
+        lighter: $font-weight-lighter,
+        normal: $font-weight-normal,
+        medium: $font-weight-medium,
+        semibold: $font-weight-semibold,
+        bold: $font-weight-bold,
+        bolder: $font-weight-bolder
+      )
+    ),
+    "font-size": (
+      rfs: true,
+      property: font-size,
+      class: fs,
+      values: $font-sizes
+    ),
+    "letter-spacing": (
+      property: letter-spacing,
+      class: tracking,
+      values: (
+        tighter: -0.05em,
+        tight: -0.025em,
+        normal: 0,
+        wide: 0.025em,
+        wider: 0.05em,
+        widest: 0.1em
+      )
+    ),
+  )
+);
+

@@ -1,0 +1,90 @@
+{% extends "blog/base.html.twig" %}
+{% block title %}{{ item.title }}{% endblock %}
+{% block content %}
+    <main id="main-container">
+        <!-- Hero -->
+        <div class="bg-image" style="background-image: url('/blog/media/{{ item.img }}');">
+            <div class="bg-black-75">
+                <div class="content content-top content-full text-center">
+                    <h1 class="fw-bold text-white mt-5 mb-3"> {{ item.title }} </h1>
+                    <h2 class="h3 fw-normal text-white-75 mb-5">{{ item.intero }}</h2>
+                    <p>
+                <span class="badge rounded-pill bg-primary fs-base px-3 py-2 me-2 m-1">
+                  <i class="fa fa-user-circle me-1"></i> {{ item.submitter.fullname}} </span>
+                        <span class="badge rounded-pill bg-primary fs-base px-3 py-2 m-1">
+                  <i class="fa fa-clock me-1"></i> {{ Jdate.jdate('Y/n/d',item.dateSubmit)}} </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- END Hero -->
+
+        <!-- Page Content -->
+        <div class="content content-full bg-white">
+            <div class="row justify-content-center">
+                <div class="col-12 py-3">
+                    <!-- Story -->
+                    <!-- Magnific Popup (.js-gallery class is initialized in Helpers.jqMagnific()) -->
+                    <!-- For more info and examples you can check out http://dimsemenov.com/plugins/magnific-popup/ -->
+                    <article class="js-gallery story js-gallery-enabled container-fluid">
+                        <p>{{ item.body | raw }}</p>
+                    </article>
+                    <!-- END Story -->
+
+                    <!-- Actions -->
+                    <div class="mt-5 d-flex justify-content-between push">
+                        <div class="btn-group" role="group">
+                            <button aria-expanded="false" aria-haspopup="true" class="btn btn-alt-secondary dropdown-toggle" data-bs-toggle="dropdown" id="dropdown-blog-story" type="button">
+                                <i class="fa fa-share-alt opacity-50 me-1"></i> اشتراک گذاری </button>
+                            <div aria-labelledby="dropdown-blog-story" class="dropdown-menu dropdown-menu-end fs-sm">
+                                <a class="dropdown-item" href="javascript:void(0)">
+                                    <i class="fab fa-fw fa-facebook me-1"></i> فیس بوک </a>
+                                <a class="dropdown-item" href="javascript:void(0)">
+                                    <i class="fab fa-fw fa-twitter me-1"></i> توییتر </a>
+                                <a class="dropdown-item" href="javascript:void(0)">
+                                    <i class="fab fa-fw fa-linkedin me-1"></i> لینکدین </a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- END Actions -->
+                    <div class="px-4 pt-4 rounded bg-body-extra-light">
+                        {% if not app.user %}
+                            <div class="alert alert-info">
+                                برای ارسال دیدگاه به حساب خود وارد شوید.
+                                <br>
+                                <a href="/login">ورود</a>  |  <a href="https://app.hesabix.ir/register">عضویت</a>
+                            </div>
+                        {% else %}
+                            <div class="rounded bg-light px-2 pt-2 pb-1">
+                                <h5>ارسال دیدگاه</h5>
+                                {{ form_start(form) }}
+                                {{ form_errors(form) }}
+                                {{ form_end(form) }}
+                            </div>
+                        {% endif %}
+                        <div class="pt-3 fs-sm">
+                            <h3>دیدگاه‌ها</h3>
+                            {% for comment in comments %}
+                            <div class="d-flex">
+                                <span class="flex-shrink-0 img-link me-2">
+                                    <img alt="" class="img-avatar img-avatar32 img-avatar-thumb" src="{{ asset('https://www.gravatar.com/avatar/' ~ twigFunctions.gravatarHash(comment.submitter.email)) }}">
+                                </span>
+                                <div class="flex-grow-1">
+                                    <p class="mb-1">
+                                        <a class="fw-semibold" href="javascript:void(0)">{{ comment.submitter.fullname }}</a>
+                                        {{ comment.body }}
+                                    </p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% if comments | length  == 0 %}
+                                <h5 class="text-info">هنوز دیدگاهی ارسال نشده است.</h5>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END Page Content -->
+    </main>
+{% endblock %}

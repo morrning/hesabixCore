@@ -1,0 +1,6 @@
+framework:
+    mailer:
+        dsn: '%env(MAILER_DSN)%'
+        message_bus: false
+        headers:
+            From: 'Hesabix.ir <noreplay@hesabix.ir>'

@@ -1,0 +1,55 @@
+{% extends "blog/base.html.twig" %}
+{% block title %}وبلاگ{% endblock %}
+{% block content %}
+    {% for item in items %}
+        <div class="block block-rounded">
+            <div class="block-content p-0 overflow-hidden">
+                <div class="row g-0">
+                    <div class="col-md-4 col-lg-5 overflow-hidden d-flex align-items-center">
+                        <a href="{{ path('general_blog_post',{'url':item.url}) }}">
+                            <img alt="" class="img-fluid img-link" src="/blog/media/{{ item.img }}">
+                        </a>
+                    </div>
+                    <div class="col-md-8 col-lg-7 d-flex align-items-center">
+                        <div class="px-4 py-3">
+                            <h4 class="mb-1">
+                                <a class="text-primary" href="{{ path('general_blog_post',{'url':item.url}) }}"> {{ item.title}} </a>
+                            </h4>
+                            <div class="fs-sm mb-2">
+                                <b class="">{{ item.submitter.fullname }}</b> در   {{ Jdate.jdate('Y/n/d',item.dateSubmit)}}
+                            </div>
+                            <p class="mb-0"> {{ item.intero}} <a href="{{ path('general_blog_post',{'url':item.url}) }}">ادامه مطلب</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    <!-- Pagination -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination push">
+            <li class="page-item">
+                {% if page != 1 %}
+                    <a aria-label="Next" class="page-link" href="{{ path('general_blog_home',{'page':page - 1}) }}">
+                         <span aria-hidden="true">
+                            <i class="fa fa-angle-right"></i>
+                        </span>
+                        <span class="">صفحه قبل</span>
+                    </a>
+                {% endif%}
+            </li>
+            <li class="page-item">
+                {% if nextPage == true %}
+                    <a aria-label="Next" class="page-link" href="{{ path('general_blog_home',{'page':page +1}) }}">
+                        <span class="">صفحه بعد</span>
+                        <span aria-hidden="true">
+                            <i class="fa fa-angle-left"></i>
+                        </span>
+                    </a>
+                {% endif%}
+            </li>
+        </ul>
+    </nav>
+    <!-- END Pagination -->
+{% endblock %}

@@ -1,0 +1,338 @@
+//
+/* Bootstrap variables (overrides) */
+/* -------------------------------------------------- */
+
+
+//
+/* Color system */
+//
+
+$white:    #fff !default;
+$gray-100: #f8f9fa !default;
+$gray-200: #e9ecef !default;
+$gray-300: #dee2e6 !default;
+$gray-400: #ced4da !default;
+$gray-500: #adb5bd !default;
+$gray-600: #6c757d !default;
+$gray-700: #495057 !default;
+$gray-800: #343a40 !default;
+$gray-900: #212529 !default;
+$black:    #000 !default;
+
+$primary:       #0665d0 !default;
+$secondary:     $gray-600 !default;
+$success:       #6f9c40 !default;
+$info:          #3c90df !default;
+$warning:       #e69f17 !default;
+$danger:        #e04f1a !default;
+$light:         darken(#f4f6fa, 1%) !default;
+$dark:          $gray-800 !default;
+
+$theme-colors: (
+  "primary":    $primary,
+  "secondary":  $secondary,
+  "success":    $success,
+  "info":       $info,
+  "warning":    $warning,
+  "danger":     $danger,
+  "light":      $light,
+  "dark":       $dark
+) !default;
+
+
+/* The contrast ratio to reach against white, to determine if color changes from "light" to "dark". Acceptable values for WCAG 2.0 are 3, 4.5 and 7. */
+/* See https://www.w3.org/TR/WCAG20/#visual-audio-contrast-contrast */
+$min-contrast-ratio: 3 !default;
+
+
+/* Options */
+//
+/* Quickly modify global styling by enabling or disabling optional features. */
+
+$enable-validation-icons: false !default;
+
+
+/* Spacing */
+//
+/* Control the default styling of most Bootstrap elements by modifying these */
+/* variables. Mostly focused on spacing. */
+/* You can add more entries to the $spacers map, should you need more variation. */
+
+$spacer: 1rem !default;
+$spacers: (
+  0: 0,
+  1: $spacer * .25,
+  2: $spacer * .5,
+  3: $spacer,
+  4: $spacer * 1.5,
+  5: $spacer * 3,
+  6: ($spacer * 4.5),
+  7: ($spacer * 6),
+  8: ($spacer * 9),
+  9: ($spacer * 12),
+  10: ($spacer * 18),
+) !default;
+
+
+/* Body */
+//
+/* Settings for the `<body>` element. */
+
+$body-bg:                   #edf0f7 !default;
+$body-color:                $gray-800 !default;
+
+
+/* Links */
+//
+/* Style anchor elements. */
+
+$link-color:                $primary !default;
+$link-decoration:           none !default;
+$link-hover-color:          darken($link-color, 20%) !default;
+$link-hover-decoration:     none !default;
+
+
+/* Paragraphs */
+//
+/* Style p element. */
+
+$paragraph-margin-bottom:   1.75rem !default;
+
+
+/* Grid columns */
+//
+/* Set the number of columns and specify the width of the gutters. */
+
+$grid-gutter-width:           1.75rem !default;
+
+
+/* Components */
+//
+/* Define common padding and border radius sizes and more. */
+
+$border-color:                darken($body-bg, 4%) !default;
+
+$transition-fade:             opacity .15s ease-out !default;
+
+
+/* Fonts */
+//
+/* Font, line-height, and color for body text, headings, and more. */
+
+$font-family-sans-serif:      "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !default;
+$font-family-monospace:       SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !default;
+$font-family-base:            $font-family-sans-serif !default;
+
+$font-size-root:              16px !default;
+$font-size-base:              1rem !default; /* Assumes the browser default, typically `16px` */
+$font-size-xs:                $font-size-base * .75 !default;
+$font-size-sm:                $font-size-base * .875 !default;
+$font-size-lg:                $font-size-base * 1.25 !default;
+
+$font-weight-medium:          500 !default;
+$font-weight-semibold:        600 !default;
+
+$h1-font-size:                $font-size-base * 2.25 !default;
+$h2-font-size:                $font-size-base * 1.875 !default;
+$h3-font-size:                $font-size-base * 1.5 !default;
+$h4-font-size:                $font-size-base * 1.25 !default;
+$h5-font-size:                $font-size-base * 1.125 !default;
+$h6-font-size:                $font-size-base !default;
+
+$headings-margin-bottom:      ($spacer * 1.375) !default;
+$headings-font-family:        null !default;
+$headings-font-weight:        600 !default;
+$headings-line-height:        1.25 !default;
+
+$text-muted:                  $gray-600 !default;
+
+$hr-opacity:                  .1 !default;
+
+
+/* Tables */
+//
+/* Customizes the `.table` component with basic values, each used across all table variations. */
+
+$table-cell-padding-y:        .75rem !default;
+$table-cell-padding-x:        .75rem !default;
+$table-cell-padding-y-sm:     .25rem !default;
+$table-cell-padding-x-sm:     .25rem !default;
+
+$table-color:                 $body-color !default;
+
+$table-th-font-weight:        $font-weight-semibold !default;
+
+$table-striped-bg:            lighten($body-bg, 1.5%) !default;
+
+$table-active-bg:             $body-bg !default;
+
+$table-hover-bg:              darken($body-bg, 1.5%) !default;
+
+$table-border-color:          $border-color !default;
+
+$table-group-separator-color: $border-color !default;
+
+
+/* Buttons + Forms */
+//
+/* Shared variables that are reassigned to `$input-` and `$btn-` specific variables. */
+
+$input-btn-font-size-lg:      $font-size-base !default;
+
+
+/* Buttons */
+//
+/* For each of Bootstrap's buttons, define text, background and border color. */
+
+$btn-font-weight:             $font-weight-semibold !default;
+
+$btn-hover-bg-shade-amount:       20% !default;
+$btn-hover-bg-tint-amount:        20% !default;
+$btn-hover-border-shade-amount:   25% !default;
+$btn-hover-border-tint-amount:    15% !default;
+
+
+/* Forms */
+
+$form-text-margin-top:              .375rem !default;
+
+$form-label-margin-bottom:          .375rem !default;
+$form-label-font-weight:            $font-weight-medium !default;
+
+$input-bg:                          $white !default;
+
+$input-color:                       $body-color !default;
+$input-border-color:                darken($body-bg, 8%) !default;
+
+$input-group-addon-color:           $input-color !default;
+$input-group-addon-bg:              $body-bg !default;
+$input-group-addon-border-color:    $input-border-color !default;
+
+$form-feedback-font-size:           $font-size-sm !default;
+
+$form-check-input-border:           1px solid darken($body-bg, 10%) !default;
+
+$form-switch-color:                 darken($body-bg, 10%) !default;
+$form-switch-width:                 2.5em !default;
+
+/* Navs */
+
+$nav-link-font-weight:              $font-weight-semibold !default;
+
+$nav-tabs-border-color:             $border-color !default;
+$nav-tabs-link-hover-border-color:  $border-color $border-color $border-color !default;
+$nav-tabs-link-active-color:        $body-color !default;
+$nav-tabs-link-active-bg:           $white !default;
+$nav-tabs-link-active-border-color: $border-color $border-color $border-color !default;
+
+
+/* Dropdowns */
+//
+/* Dropdown menu container and contents. */
+
+$dropdown-min-width:                12rem !default;
+$dropdown-border-color:             $border-color !default;
+$dropdown-border-width:             0 !default;
+$dropdown-divider-bg:               $border-color !default;
+$dropdown-box-shadow:               0 .25rem 2rem rgba($black, .08) !default;
+
+$dropdown-link-color:               $body-color !default;
+$dropdown-link-hover-color:         $body-color !default;
+$dropdown-link-hover-bg:            $body-bg !default;
+
+$dropdown-item-padding-y:           .375rem !default;
+$dropdown-item-padding-x:           .75rem !default;
+
+
+/* Cards */
+
+$card-spacer-y:                     1.25rem !default;
+$card-spacer-x:                     1.25rem !default;
+$card-title-spacer-y:               $card-spacer-y * .5 !default;
+$card-border-color:                 darken($body-bg, 4%) !default;
+$card-border-radius:                .25rem !default;
+$card-cap-padding-y:                .75rem !default;
+$card-cap-padding-x:                $card-spacer-x !default;
+$card-cap-bg:                       lighten($body-bg, 3%) !default;
+$card-img-overlay-padding:          $card-spacer-y !default;
+$card-group-margin:                 $card-spacer-y !default;
+
+
+/* Pagination */
+
+$pagination-color:                  $body-color !default;
+$pagination-bg:                     $body-bg !default;
+$pagination-border-color:           $body-bg !default;
+
+$pagination-focus-box-shadow:       none !default;
+
+$pagination-hover-color:            $body-color !default;
+$pagination-hover-bg:               darken($body-bg, 10%) !default;
+$pagination-hover-border-color:     darken($body-bg, 10%) !default;
+
+$pagination-disabled-color:         $gray-500 !default;
+$pagination-disabled-bg:            $white !default;
+$pagination-disabled-border-color:  $white !default;
+
+
+/* Popovers */
+
+$popover-border-color:              $border-color !default;
+$popover-box-shadow:                0 1rem 1.5rem rgba($black,.05) !default;
+
+$popover-header-bg:                 $white !default;
+$popover-header-padding-y:          .75rem !default;
+$popover-header-padding-x:          .625rem !default;
+
+$popover-body-padding-y:            .625rem !default;
+$popover-body-padding-x:            .625rem !default;
+
+
+/* Badges */
+
+$badge-font-weight:                 $font-weight-semibold !default;
+
+
+/* Modals */
+
+$modal-content-box-shadow-xs:       none !default;
+$modal-content-box-shadow-sm-up:    none !default;
+
+$modal-backdrop-opacity:            .8 !default;
+$modal-header-border-color:         $border-color !default;
+$modal-footer-border-color:         $border-color !default;
+
+
+/* Alerts */
+//
+/* Define alert colors, border radius, and padding. */
+
+$alert-border-width:                0 !default;
+
+
+/* Progress bars */
+
+$progress-height:                   1.25rem !default;
+$progress-font-size:                1rem !default;
+
+
+/* List group */
+
+$list-group-border-color:           $border-color !default;
+
+$list-group-item-padding-y:         .75rem !default;
+$list-group-item-padding-x:         1.25rem !default;
+
+$list-group-hover-bg:               lighten($body-bg, 1.5%) !default;
+
+$list-group-action-color:           $body-color !default;
+$list-group-action-hover-color:     $body-color !default;
+
+$list-group-action-active-color:    $body-color !default;
+$list-group-action-active-bg:       $border-color !default;
+
+
+/* Breadcrumbs */
+
+$breadcrumb-font-size:              $font-size-sm !default;
+$breadcrumb-margin-bottom:          0 !default;

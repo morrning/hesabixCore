@@ -1,0 +1,87 @@
+//
+// Custom Main
+//
+// Add your own styles or override existing ones
+//
+// This file is included last, so you have access
+// to all Bootstrap and Dashmix functions/mixins/styles etc
+// --------------------------------------------------
+
+// If you have many custom styles, you can create and import additional files
+// For example you can create _component1.scss and include it as follows:
+// @import 'component1';
+
+[dir='rtl'] .slick-next {
+    left: auto !important;
+    right: 0 !important;
+}
+
+[dir='rtl'] .slick-prev {
+    left: 0 !important;
+    right: auto !important;
+}
+
+/* highlight js */
+
+pre,
+button.btn.push~p.mb-5,
+td>code  {
+
+    direction: ltr !important;
+    text-align: left !important;
+}
+code {
+    direction: ltr;
+    display: flex;
+    justify-content: flex-start;
+}
+
+/* bootstrap notify js fix times icon */
+a[data-notify='dismiss'] {
+    right: auto !important;
+    left: 10px !important;
+}
+
+/* input ltr direction */
+
+[type="password"] ,[type="email"] {
+    direction: rtl;
+}
+
+.#{$fa-css-prefix}-ul {
+    list-style-type: none;
+    margin-right: var(--#{$fa-css-prefix}-li-margin, #{$fa-li-margin});
+    padding-right: 0;
+
+    >li {
+        position: relative;
+    }
+}
+
+.#{$fa-css-prefix}-li {
+    right: calc(var(--#{$fa-css-prefix}-li-width, #{$fa-li-width}) * -1);
+    position: absolute;
+    text-align: center;
+    width: var(--#{$fa-css-prefix}-li-width, #{$fa-li-width});
+    line-height: inherit;
+}
+
+.js-rangeslider{
+    direction: ltr;
+}
+
+
+span.irs{
+    direction: ltr;
+}
+
+
+.datepicker-rtl table tr td span {
+    float: right !important;
+    width: 30% !important;
+}
+
+// add font to sparkline chart
+.jqstooltip .jqsfield {
+    font-family: 'vazir';
+}

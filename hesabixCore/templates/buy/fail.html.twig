@@ -1,0 +1,21 @@
+{% extends 'blank.html.twig' %}
+
+{% block title %}خطا در پرداخت{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="album p-5 m-5 bg-light col-sm-12 col-md-7">
+                <h2 class="text-danger">خطا در پرداخت</h2>
+                <h3 class="mx-5">
+                    متاسفانه پرداخت ناموفق بود!
+                </h3>
+                <a class="btn btn-lg btn-success mt-4" href="https://app.hesabix.ir/profile/dashboard">
+                    <i class="bi bi-buy"></i>
+                    بازگشت به پروفایل کاربری
+                </a>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

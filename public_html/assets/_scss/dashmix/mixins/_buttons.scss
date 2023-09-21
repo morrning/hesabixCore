@@ -1,0 +1,45 @@
+//
+/* Buttons */
+/* -------------------------------------------------- */
+
+/* Hero variant */
+@mixin button-hero-variant($background, $hover-background: lighten($background, 10%), $active-background: darken($background, 15%)) {
+  $btn-hero-box-shadow: 0 .125rem .75rem rgba($active-background, .25);
+  $btn-hero-box-shadow-hover: 0 .375rem .75rem rgba($active-background, .4);
+
+  text-transform: uppercase;
+  letter-spacing: .0625rem;
+  font-weight: 700;
+  @include button-size($btn-hero-padding-y, $btn-hero-padding-x, $font-size-sm, $btn-hero-border-radius);
+  box-shadow: $btn-hero-box-shadow;
+  transition: $btn-transition, transform .12s ease-out;
+
+  &:hover {
+    box-shadow: $btn-hero-box-shadow-hover;
+    transform: translateY(-1px);
+  }
+
+  .btn-check:focus + &,
+  &:focus {
+    box-shadow: $btn-hero-box-shadow;
+  }
+
+  .btn-check:checked + &,
+  .btn-check:active + &,
+  &:active,
+  &.active,
+  .show > &.dropdown-toggle {
+    box-shadow: $btn-hero-box-shadow;
+    transform: translateY(0);
+
+    &:focus {
+      box-shadow: $btn-hero-box-shadow;
+    }
+  }
+  
+  &.disabled,
+  &:disabled {
+    box-shadow: $btn-hero-box-shadow;
+    transform: translateY(0);
+  }
+}

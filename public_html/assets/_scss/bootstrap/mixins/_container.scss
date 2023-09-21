@@ -1,0 +1,11 @@
+/* Container mixins */
+
+@mixin make-container($gutter: $container-padding-x) {
+  --#{$prefix}gutter-x: #{$gutter};
+  --#{$prefix}gutter-y: 0;
+  width: 100%;
+  padding-left: calc(var(--#{$prefix}gutter-x) * .5); /* stylelint-disable-line function-disallowed-list */
+  padding-right: calc(var(--#{$prefix}gutter-x) * .5); /* stylelint-disable-line function-disallowed-list */
+  margin-left: auto;
+  margin-right: auto;
+}

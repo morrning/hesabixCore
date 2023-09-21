@@ -1,0 +1,20 @@
+//
+/* Dark Mode */
+/* -------------------------------------------------- */
+
+/* Default Dark mode */
+@include color-theme-dark(
+  $primary,
+  $primary-light,
+  $primary-lighter,
+  $sidebar-dark-bg,
+  darken($sidebar-dark-bg, 5%),
+  $body-bg,
+  $body-bg-dark,
+  $body-bg-light,
+  $body-color,
+  $body-color-dark,
+  $body-color-light,
+  $link-color,
+  $link-hover-color,
+);

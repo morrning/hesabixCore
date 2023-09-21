@@ -1,0 +1,60 @@
+{% extends "app/base.html.twig" %}
+{% block title %}دیدگاه‌های وبلاگ{% endblock %}
+{% block body %}
+    <div class="block block-rounded">
+        <div class="block-header block-header-default">
+            <h3 class="block-title">
+                <i class="fa fa-list"></i>
+                {{ block('title') }}
+            </h3>
+            <div class="block-options">
+                <div class="block-options-item">
+                    <a href="/app/blog/posts/list" class="btn btn-secondary">لیست پست‌ها</a>
+                </div>
+            </div>
+        </div>
+        <div class="block-content">
+            <table class="table table-hover table-vcenter">
+                <thead>
+                <tr>
+                    <th class="text-center" style="width: 50px;">#</th>
+                    <th>متن</th>
+                    <th>نویسنده</th>
+                    <th>محتوا</th>
+                    <th>وضعیت</th>
+                    <th class="text-center" style="width: 100px;">عملیات</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for index,item in items %}
+                    <tr>
+                        <th class="text-center" scope="row">{{ index + 1}}</th>
+                        <td class="fw-semibold">
+                            {{ item.body }}
+                        </td>
+                        <td class="fw-semibold">
+                            {{ item.submitter.fullname }}
+                        </td>
+                        <td class="fw-semibold">
+                            {{ item.post.title }}
+                        </td>
+                        <td class="fw-semibold">
+                            {% if item.publish %}منتشر شده{% else %}در انتظار تایید{% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{{ path('app_front_comment_delete',{'id':item.id}) }}" class="btn btn-sm btn-alt-secondary" aria-label=" حذف ">
+                                    <i class="fa fa-times"></i>
+                                </a>
+                                <a href="{{ path('app_front_comment_toggle',{'id':item.id}) }}" class="btn btn-sm btn-alt-secondary" aria-label=" حذف ">
+                                    <i class="fa fa-eye-low-vision"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

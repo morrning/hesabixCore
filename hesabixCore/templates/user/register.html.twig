@@ -1,0 +1,88 @@
+{% extends "blank.html.twig" %}
+{% block title %}عضویت در حسابیکس{% endblock %}
+{% block body %}
+    <div id="page-container">
+
+        <!-- Main Container -->
+        <main id="main-container">
+            <!-- Page Content -->
+            <div class="row g-0 justify-content-center bg-body-dark">
+                <div class="hero-static col-sm-10 col-md-8 col-xl-6 d-flex align-items-center p-2 px-sm-0">
+                    <!-- Sign Up Block -->
+                    <div class="block block-rounded block-transparent block-fx-pop w-100 mb-0 overflow-hidden bg-image" style="background-image: url('/assets/media/photos/photo21.jpg');">
+                        <div class="row g-0">
+                            <div class="col-md-6 order-md-1 bg-body-extra-light">
+                                <div class="block-content block-content-full px-md-2 py-md-5 py-lg-6">
+                                    <!-- Header -->
+                                    <div class="mb-2 text-center">
+                                        <a class="link-fx fw-bold fs-1" href="{{ path('general_home') }}">
+                                            <span class="text-dark">حساب</span><span class="text-primary">یکس</span>
+                                        </a>
+                                        <p class="text-uppercase fw-bold fs-sm text-muted">ایجاد حساب جدید</p>
+                                    </div>
+                                    <!-- END Header -->
+
+                                    <!-- Sign Up Form -->
+                                    {{ form_start(registrationForm) }}
+                                    {% for flashError in app.flashes('verify_email_error') %}
+                                        <div class="alert alert-danger" role="alert">{{ flashError }}</div>
+                                    {% endfor %}
+                                    {{ form_start(registrationForm,{'attr':{'class':'ajax-off'}}) }}
+                                    {{ form_row(registrationForm.fullName) }}
+                                    {{ form_row(registrationForm.email) }}
+                                    {{ form_row(registrationForm.password, {
+                                        label: 'Password'
+                                    }) }}
+                                    {{ form_row(registrationForm.captcha, {
+                                        label: 'تشخیص ربات'
+                                    }) }}
+                                    {{ form_row(registrationForm.agreeTerms) }}
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-alt-primary">
+                                            <i class="fa fa-plus-square"></i>
+                                            {% trans %}Register{% endtrans %}
+                                        </button>
+                                    </div>
+                                    {{ form_end(registrationForm) }}
+                                    <br>
+                                    <div class="justify-content-center text-center">
+                                        <a href="{{ path('general_home') }}" class="btn btn-sm btn-alt-secondary">
+                                            <i class="fa fa-home"></i>
+                                            صفحه نخست
+                                        </a>
+                                        <a href="{{ path('front_user_login') }}" class="btn btn-sm btn-alt-secondary">
+                                            <i class="fa fa-door-open"></i>
+                                            {% trans %}Login{% endtrans %}
+                                        </a>
+                                        <a href="{{ path('front_user_login') }}" class="btn btn-sm btn-alt-secondary">
+                                            <i class="fa fa-lock-open"></i>
+                                            {% trans %}Forget Password{% endtrans %}
+                                        </a>
+                                    </div>
+                                    <!-- END Sign Up Form -->
+                                </div>
+                            </div>
+                            <div class="col-md-6 order-md-0 bg-xwork-op d-flex align-items-center">
+                                <div class="block-content block-content-full px-lg-5 py-md-5 py-lg-6">
+                                    <div class="d-flex">
+                                        <a class="flex-shrink-0 img-link me-3" href="javascript:void(0)">
+                                            <img alt="" class="img-avatar img-avatar-thumb" src="/assets/media/avatars/avatar0.jpg">
+                                        </a>
+                                        <div class="flex-grow-1">
+                                            <p class="text-white fw-semibold mb-1 justify-content-between"> حسابیکس مجموعه کاملی از ابزارهای حسابداری ابری است که همیشه به صورت رایگان  در اختیار شما خواهد بود.ما اطلاعات مالی شما را به سازمان های مالیاتی و ... قرار نخواهیم داد مگر با دستور مقامات قضائی. </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- END Sign Up Block -->
+                </div>
+
+            </div>
+            <!-- END Page Content -->
+        </main>
+        <!-- END Main Container -->
+    </div>
+
+{% endblock %}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta lang="fa">
+    <meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+    <meta content="حسابیکس برترین نرم افزار حسابداری ابری و رایگان" name="description"/>
+    <meta content="Babak Alizadeh" name="author"/>
+    <title>حسابیکس - {% block title %}{% endblock %}</title>
+    {# Run `composer require symfony/webpack-encore-bundle` to start using Symfony UX #}
+    {% block stylesheets %}
+        {{ encore_entry_link_tags('app') }}
+    {% endblock %}
+
+    {% block javascripts %}
+        {{ encore_entry_script_tags('app') }}
+    {% endblock %}
+    <!-- Icons -->
+    <link rel="icon" href="{{ asset('/favicon.ico') }}">
+    <!-- END Icons -->
+    <!-- Stylesheets -->
+    <!-- Dashmix framework -->
+    <link href="{{ asset('/assets/css/dashmix.min.css') }}" id="css-main" rel="stylesheet"/>
+
+    <!-- You can include a specific file from css/themes/ folder to alter the default color theme of the template. eg: -->
+    <!-- <link rel="stylesheet" id="css-theme" href="assets/css/themes/xwork.min.css"> -->
+    <!-- END Stylesheets -->
+    <!--===== Custom Font css =====-->
+    <link href="{{ asset('/assets/css/custom-fonts.css') }}" rel="stylesheet"/>
+</head>
+<body>
+    <div id="page-container">{% block body %}{% endblock %}</div>
+    <script src="{{ asset("assets/js/dashmix.app.min.js") }}"></script>
+</body>
+</html>

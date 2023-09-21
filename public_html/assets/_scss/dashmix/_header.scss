@@ -1,0 +1,55 @@
+//
+/* Header */
+/* -------------------------------------------------- */
+
+#page-header {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  background-color: $header-bg;
+}
+
+/* Header overlay (used for various reasons eg: loading or search) */
+.overlay-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-color: $white;
+  opacity: 0;
+  transition: transform .2s ease-in-out, opacity .2s ease-in-out;
+  transform: translateY(-100%);
+  will-change: opacity, transform;
+  z-index: 1;
+
+  &.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Content header sections */
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 auto;
+  height: $header-height;
+
+  @at-root #page-header & {
+    padding-right: $space-mobile;
+    padding-left: $space-mobile;
+
+    @include media-breakpoint-up(md) {
+      padding-right: $space-base;
+      padding-left: $space-base;
+    }
+  }
+
+  @at-root #sidebar &,
+  #side-overlay & {
+    padding-right: $space-side;
+    padding-left: $space-side;
+  }
+}
