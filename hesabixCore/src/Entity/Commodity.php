@@ -35,10 +35,10 @@ class Commodity
     #[ORM\Column(type: 'bigint')]
     private $code;
 
-    #[ORM\Column(type: 'integer', nullable: true)]
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private $priceBuy;
 
-    #[ORM\Column(type: 'integer', nullable: true)]
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private $priceSell;
 
     #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: HesabdariRow::class)]

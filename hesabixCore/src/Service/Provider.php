@@ -7,8 +7,12 @@ use App\Entity\PlugNoghreOrder;
 use App\Entity\PrinterQueue;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
 use ReflectionFunction;
 use Symfony\Component\HttpFoundation\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Provider
 {
@@ -148,6 +152,22 @@ class Provider
         return $print->getPid();
     }
 
+    /**
+     * @throws Exception
+     */
+    public function createExcell(array $entities, array $headers = null){
+
+        $spreadsheet = new Spreadsheet();
+        $activeWorksheet = $spreadsheet->getActiveSheet();
+        $arrayEntity = $this->ArrayEntity2Array($entities,0);
+        $activeWorksheet->fromArray($arrayEntity,null,'A1');
+        $activeWorksheet->setRightToLeft(true);
+        $activeWorksheet->getHeaderFooter()->setOddHeader('&CHeader of the Document');
+        $writer = new Xlsx($spreadsheet);
+        $filePath = __DIR__ . '/../../var/'.$this->RandomString(12).'.xlsx';
+        $writer->save($filePath);
+        return $filePath;
+    }
     /**
      * function to generate random strings
      * @param 		int 	$length 	number of characters in the generated string

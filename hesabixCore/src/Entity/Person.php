@@ -70,6 +70,39 @@ class Person
     #[ORM\OneToMany(mappedBy: 'customer', targetEntity: PlugNoghreOrder::class)]
     private Collection $ordersFromCustomer;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $company = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $shenasemeli = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $codeeghtesadi = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sabt = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $keshvar = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $ostan = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $shahr = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $postalcode = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $email = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $website = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $fax = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -324,6 +357,138 @@ class Person
                 $ordersFromCustomer->setCustomer(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCompany(): ?string
+    {
+        return $this->company;
+    }
+
+    public function setCompany(?string $company): static
+    {
+        $this->company = $company;
+
+        return $this;
+    }
+
+    public function getShenasemeli(): ?string
+    {
+        return $this->shenasemeli;
+    }
+
+    public function setShenasemeli(?string $shenasemeli): static
+    {
+        $this->shenasemeli = $shenasemeli;
+
+        return $this;
+    }
+
+    public function getCodeeghtesadi(): ?string
+    {
+        return $this->codeeghtesadi;
+    }
+
+    public function setCodeeghtesadi(?string $codeeghtesadi): static
+    {
+        $this->codeeghtesadi = $codeeghtesadi;
+
+        return $this;
+    }
+
+    public function getSabt(): ?string
+    {
+        return $this->sabt;
+    }
+
+    public function setSabt(?string $sabt): static
+    {
+        $this->sabt = $sabt;
+
+        return $this;
+    }
+
+    public function getKeshvar(): ?string
+    {
+        return $this->keshvar;
+    }
+
+    public function setKeshvar(?string $keshvar): static
+    {
+        $this->keshvar = $keshvar;
+
+        return $this;
+    }
+
+    public function getOstan(): ?string
+    {
+        return $this->ostan;
+    }
+
+    public function setOstan(?string $ostan): static
+    {
+        $this->ostan = $ostan;
+
+        return $this;
+    }
+
+    public function getShahr(): ?string
+    {
+        return $this->shahr;
+    }
+
+    public function setShahr(?string $shahr): static
+    {
+        $this->shahr = $shahr;
+
+        return $this;
+    }
+
+    public function getPostalcode(): ?string
+    {
+        return $this->postalcode;
+    }
+
+    public function setPostalcode(?string $postalcode): static
+    {
+        $this->postalcode = $postalcode;
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(?string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function getWebsite(): ?string
+    {
+        return $this->website;
+    }
+
+    public function setWebsite(?string $website): static
+    {
+        $this->website = $website;
+
+        return $this;
+    }
+
+    public function getFax(): ?string
+    {
+        return $this->fax;
+    }
+
+    public function setFax(?string $fax): static
+    {
+        $this->fax = $fax;
 
         return $this;
     }

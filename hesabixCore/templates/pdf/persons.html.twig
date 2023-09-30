@@ -1,23 +1,45 @@
 {% extends "pdf/base.html.twig" %}
 {% block body %}
-<table style="border-color: black; float: right;" border="1"><caption>&nbsp;</caption>
+<table class="table mt-0 pt-0" style="border:2px solid black"><caption>&nbsp;</caption>
     <tbody>
     <tr style="text-align: center; background-color: grey; color: white">
         <td style="width: 35px;">ردیف</td>
-        <td>نام و نام خانوادگی</td>
-        <td>نام مستعار</td>
-        <td>آدرس</td>
-        <td>تلفن</td>
-        <td>موبایل</td>
+        <td style="border:1px solid black">نام و نام خانوادگی</td>
+        <td style="border:1px solid black">نام مستعار</td>
+        <td style="border:1px solid black">شرکت</td>
+        <td style="border:1px solid black">شناسه ملی</td>
+        <td style="border:1px solid black">شماره ثبت</td>
+        <td style="border:1px solid black">کد اقتصادی</td>
+        <td style="border:1px solid black">کشور</td>
+        <td style="border:1px solid black">استان</td>
+        <td style="border:1px solid black">شهر</td>
+        <td style="border:1px solid black">آدرس</td>
+        <td style="border:1px solid black">کد پستی</td>
+        <td style="border:1px solid black">تلفن</td>
+        <td style="border:1px solid black">موبایل</td>
+        <td style="border:1px solid black">فکس</td>
+        <td style="border:1px solid black">وب سایت</td>
+        <td style="border:1px solid black">پست الکترونیکی</td>
     </tr>
     {% for person in persons %}
-    <tr style="text-align: center">
-        <td>{{ loop.index }}</td>
-        <td>{{ person.name }}</td>
-        <td>{{ person.nikeName }}</td>
-        <td>{{ person.address }}</td>
-        <td>{{ person.tel }}</td>
-        <td>{{ person.mobile }}</td>
+    <tr style="border:1px solid black" {% if loop.index is even%}class="bg-dark text-light"{% endif%}>
+        <td style="border:1px solid black">{{ loop.index }}</td>
+        <td style="border:1px solid black">{{ person.name }}</td>
+        <td style="border:1px solid black">{{ person.nikeName }}</td>
+        <td style="border:1px solid black">{{ person.company }}</td>
+        <td style="border:1px solid black">{{ person.shenasemeli }}</td>
+        <td style="border:1px solid black">{{ person.sabt }}</td>
+        <td style="border:1px solid black">{{ person.codeeghtesadi }}</td>
+        <td style="border:1px solid black">{{ person.keshvar }}</td>
+        <td style="border:1px solid black">{{ person.ostan }}</td>
+        <td style="border:1px solid black">{{ person.shahr }}</td>
+        <td style="border:1px solid black">{{ person.address }}</td>
+        <td style="border:1px solid black">{{ person.postalcode }}</td>
+        <td style="border:1px solid black">{{ person.tel }}</td>
+        <td style="border:1px solid black">{{ person.mobile }}</td>
+        <td style="border:1px solid black">{{ person.fax }}</td>
+        <td style="border:1px solid black">{{ person.website }}</td>
+        <td style="border:1px solid black">{{ person.email }}</td>
     </tr>
     {% endfor %}
     </tbody>

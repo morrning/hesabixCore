@@ -29,7 +29,25 @@ class CommodityController extends AbstractController
         }
         return $this->json($items);
     }
-
+    #[Route('/api/commodity/list/print', name: 'app_commodity_list_print')]
+    public function app_commodity_list_print(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $items = $entityManager->getRepository(Commodity::class)->findBy([
+            'bid'=>$request->headers->get('activeBid')
+        ]);
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/commodity.html.twig',[
+                'page_title'=>'فهرست کالا و خدمات',
+                'bid'=>$acc['bid'],
+                'persons'=>$items
+            ]));
+        return $this->json(['id'=>$pid]);
+    }
     #[Route('/api/commodity/info/{code}', name: 'app_commodity_info')]
     public function app_commodity_info($code,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {

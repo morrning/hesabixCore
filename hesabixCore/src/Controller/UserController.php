@@ -307,6 +307,52 @@ class UserController extends AbstractController
         return $this->json($res);
     }
 
+    #[Route('/api/user/reset/password/send-to-sms/{id}', name: 'api_user_forget_reset_password')]
+    public function api_user_forget_reset_password(MailerInterface $mailer,SMS $SMS,String $id,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(array_key_exists('code',$params)){
+            $obj = $entityManager->getRepository(User::class)->find($id);
+            if($obj){
+                if($obj->getVerifyCodeTime() > time()){
+                    $obj = $entityManager->getRepository(User::class)->findOneBy(['id'=>$id,'verifyCode'=>$params['code']]);
+                    if($obj){
+                        //reset password
+                        $password = $this->RandomString(12,true);
+                        $obj->setPassword(
+                            $userPasswordHasher->hashPassword(
+                                $obj,
+                                $password
+                            )
+                        );
+                        $entityManager->persist($obj);
+                        $entityManager->flush();
+                        $SMS->send([$password],163543,$obj->getMobile());
+                        $email = (new Email())
+                            ->to($obj->getEmail())
+                            ->priority(Email::PRIORITY_HIGH)
+                            ->subject('تغییر کلمه عبور')
+                            ->html(
+                                $this->renderView('user/email/reset-password.html.twig',[
+                                    'code'=>$password
+                                ])
+                            );
+                        $mailer->send($email);
+                        return $this->json(['result'=>'ok']);
+                    }
+                    //code is incorrect
+                    return $this->json(['result'=>'false']);
+                }
+                else
+                    return $this->json(['result'=>'expired']);
+            }
+        }
+        throw $this->createAccessDeniedException();
+    }
+
     #[Route('/api/user/active/account/{id}', name: 'api_user_active_account')]
     public function api_user_active_account(MailerInterface $mailer,SMS $SMS,String $id,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
     {
@@ -332,7 +378,7 @@ class UserController extends AbstractController
         return $this->json(['result'=>'not correct','id'=>$user->getId(),'active'=>false]);
     }
     #[Route('/api/user/forget/password/send-code', name: 'api_user_forget_password_send_code')]
-    public function api_user_forget_password_send_code(#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    public function api_user_forget_password_send_code(#[CurrentUser] ?User $user,SMS $SMS,MailerInterface $mailer,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -341,11 +387,31 @@ class UserController extends AbstractController
         if(! array_key_exists('email',$params))
             throw $this->createAccessDeniedException('email not send');
         $user = $entityManager->getRepository(User::class)->findOneBy(['email'=>$params['email']]);
-        if(!$user)
-            throw $this->createNotFoundException('email not exist');
-        $user->setVerifyCode(1234);
+        if(!$user){
+            $user = $entityManager->getRepository(User::class)->findOneBy(['mobile'=>$params['email']]);
+            if(!$user)
+                throw $this->createNotFoundException('email not exist');
+        }
+        if($user->getVerifyCodeTime() > time())
+            return $this->json(['result'=>'send before']);
+        $user->setVerifyCode($this->RandomString(6,true));
+        $user->setVerifyCodeTime(time() + 300);
+        $entityManager->persist($user);
+        $entityManager->flush();
+        //send sms and email
+        $SMS->send([$user->getVerifyCode()],'160887',$user->getMobile());
+        $email = (new Email())
+            ->to($user->getEmail())
+            ->priority(Email::PRIORITY_HIGH)
+            ->subject('حسابیکس - فراموشی کلمه عبور')
+            ->html(
+                $this->renderView('user/email/confrim-forget-password.html.twig',[
+                    'code'=>$user->getVerifyCode()
+                ])
+            );
 
-        return $this->json(['result'=>false]);
+        $mailer->send($email);
+        return $this->json(['result'=>true,'id'=>$user->getId()]);
     }
     #[Route('/api/user/save/mobile-number', name: 'api_user_save_mobile_number')]
     public function api_user_save_mobile_number(MailerInterface $mailer,SMS $SMS,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response

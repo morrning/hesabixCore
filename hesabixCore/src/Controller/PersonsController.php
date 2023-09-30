@@ -9,8 +9,10 @@ use App\Service\Log;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -73,6 +75,28 @@ class PersonsController extends AbstractController
             $person->setDes($params['des']);
         if(array_key_exists('mobile',$params))
             $person->setMobile($params['mobile']);
+        if(array_key_exists('fax',$params))
+            $person->setFax($params['fax']);
+        if(array_key_exists('website',$params))
+            $person->setWebsite($params['website']);
+        if(array_key_exists('email',$params))
+            $person->setEmail($params['email']);
+        if(array_key_exists('postalcode',$params))
+            $person->setPostalcode($params['postalcode']);
+        if(array_key_exists('shahr',$params))
+            $person->setShahr($params['shahr']);
+        if(array_key_exists('ostan',$params))
+            $person->setOstan($params['ostan']);
+        if(array_key_exists('keshvar',$params))
+            $person->setKeshvar($params['keshvar']);
+        if(array_key_exists('sabt',$params))
+            $person->setSabt($params['sabt']);
+        if(array_key_exists('codeeghtesadi',$params))
+            $person->setCodeeghtesadi($params['codeeghtesadi']);
+        if(array_key_exists('shenasemeli',$params))
+            $person->setShenasemeli($params['shenasemeli']);
+        if(array_key_exists('company',$params))
+            $person->setCompany($params['company']);
         $entityManager->persist($person);
         $entityManager->flush();
         $log->insert('اشخاص','شخص با نام مستعار ' . $params['nikename'] . ' افزوده/ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));
@@ -96,10 +120,29 @@ class PersonsController extends AbstractController
         $acc = $access->hasRole('person');
         if(!$acc)
             throw $this->createAccessDeniedException();
-        
-        $persons = $entityManager->getRepository(Person::class)->findBy([
-           'bid'=>$acc['bid']
-        ]);
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(!array_key_exists('items',$params)){
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$acc['bid']
+            ]);
+        }
+        else{
+            $persons = [];
+            foreach ($params['items'] as $param){
+                $prs = $entityManager->getRepository(Person::class)->findOneBy([
+                    'id'=>$param['id'],
+                    'bid'=>$acc['bid']
+                ]);
+                if($prs)
+                    $persons[] = $prs;
+            }
+        }
+
+
+
         $pid = $provider->createPrint(
             $acc['bid'],
             $this->getUser(),
@@ -109,5 +152,34 @@ class PersonsController extends AbstractController
                 'persons'=>$persons
             ]));
         return $this->json(['id'=>$pid]);
+    }
+
+    #[Route('/api/person/list/excel', name: 'app_persons_list_excel')]
+    public function app_persons_list_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    {
+        $acc = $access->hasRole('person');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(!array_key_exists('items',$params)){
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$acc['bid']
+            ]);
+        }
+        else{
+            $persons = [];
+            foreach ($params['items'] as $param){
+                $prs = $entityManager->getRepository(Person::class)->findOneBy([
+                    'id'=>$param['id'],
+                    'bid'=>$acc['bid']
+                ]);
+                if($prs)
+                    $persons[] = $prs;
+            }
+        }
+        return new BinaryFileResponse($provider->createExcell($persons));
     }
 }

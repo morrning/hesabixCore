@@ -1,19 +1,12 @@
-<html>
+<html dir="rtl">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>چاپ</title>
 </head>
 <body>
-<h1 style="text-align: center; margin-top: 0px; padding-top: 0px;">{{bid.name}}</h1>
+<h3 style="text-align: center; margin-top: 0px; padding-top: 0px;">{{bid.name}}</h3>
 <p style="text-align: center;">{{ page_title }}</p>
 <div style="width: 100%">
     {% block body %}{% endblock %}
 </div>
-<br>
-<p style="text-align: center">امضا:</p>
-<p>
-    <span>نشانی: {{ bid.address }}</span>
-    <span>تلفن: {{ bid.tel }}</span>
-    <span style="float: left">ایمیل: <span style="direction: ltr">{{ bid.email }}</span> </span>
-</p>
 </body>

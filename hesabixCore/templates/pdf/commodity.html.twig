@@ -1,0 +1,23 @@
+{% extends "pdf/base.html.twig" %}
+{% block body %}
+    <table class="table mt-0 pt-0" style="border-color: black; float: right;" border="1"><caption>&nbsp;</caption>
+        <tbody>
+        <tr style="text-align: center; background-color: grey; color: white">
+            <td style="width: 35px;">ردیف</td>
+            <td>نام</td>
+            <td>واحد شمارش</td>
+            <td>قیمت فروش</td>
+            <td>قیمت خرید</td>
+        </tr>
+        {% for person in persons %}
+            <tr style="text-align: center">
+                <td>{{ loop.index }}</td>
+                <td>{{ person.name }}</td>
+                <td>{{ person.unit.name }}</td>
+                <td>{{ person.priceSell }}</td>
+                <td>{{ person.priceBuy }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -10,6 +10,7 @@ use App\Entity\HesabdariDoc;
 use App\Entity\PrinterQueue;
 use App\Entity\User;
 use App\Service\pdfMGR;
+use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -98,12 +99,9 @@ class UiGeneralController extends AbstractController
         ]);
     }
     #[Route('/test', name: 'general_test')]
-    public function general_test(pdfMGR $pdfMGR,EntityManagerInterface $entityManager): Response
+    public function general_test(Provider $provider,pdfMGR $pdfMGR,EntityManagerInterface $entityManager): Response
     {
-        $user = $entityManager->getRepository(PrinterQueue::class)->findOneBy([
-            'pid'=>'SKDUTJAEZXV37D6HBMQARZAZ9MGW6P79FWVXHTUC4J2FU48K2P4RNWYX3UY2Z5KMSJG746CLLXSRDLQNCG6BBS5TKRW8HDQMF3ENGHY5EQL2BP8VJ78A9CE9VNTY35F'
-        ]);
-        return $pdfMGR->streamTwig2PDF($user);
+        $provider->createExcell([[1,2],[3.4]]);
     }
 
 }
