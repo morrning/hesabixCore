@@ -77,6 +77,8 @@ class UserController extends AbstractController
     #[Route('/register', name: 'front_user_register')]
     public function front_user_register(Request $request,TranslatorInterface $translator, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
+        //redirect to hesabix app register page
+        return $this->redirect('https://app.hesabix.ir/user/register');
         $user = new User();
         $form = $this->createForm(UserRegisterType::class, $user);
         $form->handleRequest($request);

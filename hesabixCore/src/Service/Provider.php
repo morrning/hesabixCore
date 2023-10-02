@@ -155,11 +155,11 @@ class Provider
     /**
      * @throws Exception
      */
-    public function createExcell(array $entities, array $headers = null){
+    public function createExcell(array $entities, array $ignores = [],array $headers = null){
 
         $spreadsheet = new Spreadsheet();
         $activeWorksheet = $spreadsheet->getActiveSheet();
-        $arrayEntity = $this->ArrayEntity2Array($entities,0);
+        $arrayEntity = $this->ArrayEntity2Array($entities,0,$ignores);
         $activeWorksheet->fromArray($arrayEntity,null,'A1');
         $activeWorksheet->setRightToLeft(true);
         $activeWorksheet->getHeaderFooter()->setOddHeader('&CHeader of the Document');

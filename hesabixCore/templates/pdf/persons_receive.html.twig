@@ -1,0 +1,23 @@
+{% extends "pdf/base.html.twig" %}
+{% block body %}
+<table class="table mt-0 pt-0" style="border:2px solid black"><caption>&nbsp;</caption>
+    <tbody>
+    <tr style="text-align: center; background-color: grey; color: white">
+        <td style="width: 35px;">ردیف</td>
+        <td style="border:1px solid black">کد حسابداری</td>
+        <td style="border:1px solid black">تاریخ</td>
+        <td style="border:1px solid black">مبلغ</td>
+        <td style="border:1px solid black">شرح</td>
+    </tr>
+    {% for item in items %}
+    <tr style="border:1px solid black" {% if loop.index is even%}class="bg-dark text-light"{% endif%}>
+        <td style="border:1px solid black">{{ loop.index }}</td>
+        <td style="border:1px solid black">{{ item.code }}</td>
+        <td style="border:1px solid black">{{ item.date }}</td>
+        <td style="border:1px solid black">{{ item.amount | number_format }}</td>
+        <td style="border:1px solid black">{{ item.des }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

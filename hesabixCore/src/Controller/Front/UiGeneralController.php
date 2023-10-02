@@ -101,7 +101,9 @@ class UiGeneralController extends AbstractController
     #[Route('/test', name: 'general_test')]
     public function general_test(Provider $provider,pdfMGR $pdfMGR,EntityManagerInterface $entityManager): Response
     {
-        $provider->createExcell([[1,2],[3.4]]);
+        $test = $entityManager->getRepository(Business::class)->find(4);
+        var_dump((array) $test);
+        return  new Response(1);
     }
 
 }

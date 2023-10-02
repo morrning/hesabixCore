@@ -36,8 +36,8 @@ class BusinessController extends AbstractController
         foreach ($buss as $bus){
             $temp = [];
             $temp['id'] = $bus->getBid()->getId();
-            $temp['name'] = $bus->getBid()->getName();
             $temp['owner'] = $bus->getBid()->getOwner()->getFullName();
+            $temp['name'] = $bus->getBid()->getName();
             $temp['legal_name'] = $bus->getBid()->getLegalName();
             $response[] = $temp;
         }
@@ -70,7 +70,7 @@ class BusinessController extends AbstractController
         $response['maliyatafzode'] = $bus->getMaliyatafzode();
         $response['arzmain'] = $bus->getMoney()->getName();
         $response['type'] = $bus->getType();
-
+        $response['zarinpalCode'] = $bus->getZarinpalCode();
         return $this->json($response);
     }
 
@@ -141,6 +141,8 @@ class BusinessController extends AbstractController
                 $business->setShahrestan($params['shahrestan']);
             if($params['postalcode'])
                 $business->setPostalcode($params['postalcode']);
+            if(array_key_exists('zarinpalCode',$params))
+                $business->setZarinpalCode($params['zarinpalCode']);
             if($params['tel'])
                 $business->setTel($params['tel']);
             if($params['mobile'])

@@ -16,10 +16,6 @@ class Business
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'businesses')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $owner = null;
-
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
@@ -135,6 +131,13 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PlugNoghreOrder::class, orphanRemoval: true)]
     private Collection $plugNoghreOrders;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $zarinpalCode = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $owner = null;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -156,18 +159,6 @@ class Business
         return $this->id;
     }
 
-    public function getOwner(): ?User
-    {
-        return $this->owner;
-    }
-
-    public function setOwner(?User $owner): self
-    {
-        $this->owner = $owner;
-
-        return $this;
-    }
-
     public function getName(): ?string
     {
         return $this->name;
@@ -176,7 +167,6 @@ class Business
     public function setName(string $name): self
     {
         $this->name = $name;
-
         return $this;
     }
 
@@ -835,6 +825,30 @@ class Business
                 $plugNoghreOrder->setBid(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getZarinpalCode(): ?string
+    {
+        return $this->zarinpalCode;
+    }
+
+    public function setZarinpalCode(?string $zarinpalCode): static
+    {
+        $this->zarinpalCode = $zarinpalCode;
+
+        return $this;
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(?User $owner): static
+    {
+        $this->owner = $owner;
 
         return $this;
     }

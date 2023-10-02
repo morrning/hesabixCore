@@ -48,7 +48,7 @@ class Access
             'year'=>$year,
             'access'=>true
         ];
-        if($bid->getOwner()->getEmail() == $this->user->getUserIdentifier()){
+        if($bid->getOwner()->getEmail() === $this->user->getUserIdentifier()){
             //user is owner
             return $accessArray;
         }

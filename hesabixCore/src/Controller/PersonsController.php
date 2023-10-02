@@ -3,11 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Business;
+use App\Entity\HesabdariDoc;
 use App\Entity\Person;
 use App\Service\Access;
 use App\Service\Log;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -154,6 +156,9 @@ class PersonsController extends AbstractController
         return $this->json(['id'=>$pid]);
     }
 
+    /**
+     * @throws Exception
+     */
     #[Route('/api/person/list/excel', name: 'app_persons_list_excel')]
     public function app_persons_list_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
     {
@@ -182,4 +187,159 @@ class PersonsController extends AbstractController
         }
         return new BinaryFileResponse($provider->createExcell($persons));
     }
+
+    #[Route('/api/person/receive/list/print', name: 'app_persons_receive_list_print')]
+    public function app_persons_receive_list_print(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('person_receive');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(!array_key_exists('items',$params)){
+            $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid'=>$acc['bid'],
+                'type'=>'person_receive',
+                'year'=>$acc['year']
+            ]);
+        }
+        else{
+            $items = [];
+            foreach ($params['items'] as $param){
+                $prs = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                    'id'=>$param['id'],
+                    'bid'=>$acc['bid'],
+                    'type'=>'person_receive',
+                    'year'=>$acc['year']
+                ]);
+                if($prs)
+                    $items[] = $prs;
+            }
+        }
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/persons_receive.html.twig',[
+                'page_title'=>'لیست دریافت‌ها',
+                'bid'=>$acc['bid'],
+                'items'=>$items
+            ]));
+        return $this->json(['id'=>$pid]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/person/receive/list/excel', name: 'app_persons_receive_list_excel')]
+    public function app_persons_receive_list_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    {
+        $acc = $access->hasRole('person_receive');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(!array_key_exists('items',$params)){
+            $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid'=>$acc['bid'],
+                'type'=>'person_receive',
+                'year'=>$acc['year']
+            ]);
+        }
+        else{
+            $items = [];
+            foreach ($params['items'] as $param){
+                $prs = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                    'id'=>$param['id'],
+                    'bid'=>$acc['bid'],
+                    'type'=>'person_receive',
+                    'year'=>$acc['year']
+                ]);
+                if($prs)
+                    $items[] = $prs;
+            }
+        }
+        return new BinaryFileResponse($provider->createExcell($items,['type','dateSubmit']));
+    }
+
+    #[Route('/api/person/send/list/print', name: 'app_persons_send_list_print')]
+    public function app_persons_send_list_print(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('person_send');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(!array_key_exists('items',$params)){
+            $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid'=>$acc['bid'],
+                'type'=>'person_send',
+                'year'=>$acc['year']
+            ]);
+        }
+        else{
+            $items = [];
+            foreach ($params['items'] as $param){
+                $prs = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                    'id'=>$param['id'],
+                    'bid'=>$acc['bid'],
+                    'type'=>'person_send',
+                    'year'=>$acc['year']
+                ]);
+                if($prs)
+                    $items[] = $prs;
+            }
+        }
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/persons_receive.html.twig',[
+                'page_title'=>'لیست پرداخت‌ها',
+                'bid'=>$acc['bid'],
+                'items'=>$items
+            ]));
+        return $this->json(['id'=>$pid]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/person/send/list/excel', name: 'app_persons_send_list_excel')]
+    public function app_persons_send_list_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    {
+        $acc = $access->hasRole('person_send');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(!array_key_exists('items',$params)){
+            $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid'=>$acc['bid'],
+                'type'=>'person_send',
+                'year'=>$acc['year']
+            ]);
+        }
+        else{
+            $items = [];
+            foreach ($params['items'] as $param){
+                $prs = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                    'id'=>$param['id'],
+                    'bid'=>$acc['bid'],
+                    'type'=>'person_send',
+                    'year'=>$acc['year']
+                ]);
+                if($prs)
+                    $items[] = $prs;
+            }
+        }
+        return new BinaryFileResponse($provider->createExcell($items,['type','dateSubmit']));
+    }
+
 }
