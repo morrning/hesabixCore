@@ -45,6 +45,9 @@ class Commodity
     #[Ignore]
     private Collection $hesabdariRows;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $khadamat = null;
+
     public function __construct()
     {
         $this->setPriceBuy(0);
@@ -167,6 +170,18 @@ class Commodity
                 $hesabdariRow->setCommodity(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isKhadamat(): ?bool
+    {
+        return $this->khadamat;
+    }
+
+    public function setKhadamat(?bool $khadamat): static
+    {
+        $this->khadamat = $khadamat;
 
         return $this;
     }

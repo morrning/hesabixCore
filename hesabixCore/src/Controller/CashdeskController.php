@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Cashdesk;
+use App\Entity\HesabdariRow;
 use App\Service\Access;
 use App\Service\Log;
 use App\Service\Provider;
@@ -20,10 +21,22 @@ class CashdeskController extends AbstractController
     {
         if(!$access->hasRole('cashdesk'))
             throw $this->createAccessDeniedException();
-        $data = $entityManager->getRepository(Cashdesk::class)->findBy([
+        $datas = $entityManager->getRepository(Cashdesk::class)->findBy([
             'bid'=>$request->headers->get('activeBid')
         ]);
-        return $this->json($data);
+        foreach($datas as $data){
+            $bs = 0;
+            $bd = 0;
+            $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'cashdesk'=>$data
+            ]);
+            foreach ($items as $item){
+                $bs += $item->getBs();
+                $bd += $item->getBd();
+            }
+            $data->setBalance($bd - $bs);
+        }
+        return $this->json($datas);
     }
 
     #[Route('/api/cashdesk/info/{code}', name: 'app_cashdesk_info')]

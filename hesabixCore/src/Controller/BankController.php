@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\BankAccount;
+use App\Entity\HesabdariRow;
 use App\Service\Access;
 use App\Service\Log;
 use App\Service\Provider;
@@ -19,10 +20,22 @@ class BankController extends AbstractController
     {
         if(!$access->hasRole('banks'))
             throw $this->createAccessDeniedException();
-        $data = $entityManager->getRepository(BankAccount::class)->findBy([
+        $datas = $entityManager->getRepository(BankAccount::class)->findBy([
             'bid'=>$request->headers->get('activeBid')
         ]);
-        return $this->json($data);
+        foreach($datas as $data){
+            $bs = 0;
+            $bd = 0;
+            $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bank'=>$data
+            ]);
+            foreach ($items as $item){
+                $bs += $item->getBs();
+                $bd += $item->getBd();
+            }
+            $data->setBalance($bd - $bs);
+        }
+        return $this->json($datas);
     }
 
     #[Route('/api/bank/info/{code}', name: 'app_bank_info')]

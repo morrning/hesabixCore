@@ -55,6 +55,9 @@ class BankAccount
     #[Ignore]
     private Collection $hesabdariRows;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $balance = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -223,6 +226,18 @@ class BankAccount
                 $hesabdariRow->setBank(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getBalance(): ?string
+    {
+        return $this->balance;
+    }
+
+    public function setBalance(?string $balance): static
+    {
+        $this->balance = $balance;
 
         return $this;
     }

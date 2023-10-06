@@ -4,6 +4,7 @@
         <tbody>
         <tr style="text-align: center; background-color: grey; color: white">
             <td style="width: 35px;">ردیف</td>
+            <td>کالا / خدمات</td>
             <td>نام</td>
             <td>واحد شمارش</td>
             <td>قیمت فروش</td>
@@ -12,6 +13,7 @@
         {% for person in persons %}
             <tr style="text-align: center">
                 <td>{{ loop.index }}</td>
+                <td>{% if person.khadamat %}خدمات{% else %}کالا و اقلام فیزیکی{% endif %}</td>
                 <td>{{ person.name }}</td>
                 <td>{{ person.unit.name }}</td>
                 <td>{{ person.priceSell }}</td>

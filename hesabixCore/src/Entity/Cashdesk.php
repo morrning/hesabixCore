@@ -34,6 +34,9 @@ class Cashdesk
     #[Ignore]
     private Collection $hesabdariRows;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $balance = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -118,6 +121,18 @@ class Cashdesk
                 $hesabdariRow->setCashdesk(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getBalance(): ?string
+    {
+        return $this->balance;
+    }
+
+    public function setBalance(?string $balance): static
+    {
+        $this->balance = $balance;
 
         return $this;
     }

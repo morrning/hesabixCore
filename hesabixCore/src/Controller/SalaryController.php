@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\HesabdariRow;
 use App\Entity\Salary;
 use App\Service\Access;
 use App\Service\Log;
@@ -18,12 +19,25 @@ class SalaryController extends AbstractController
     #[Route('/api/salary/list', name: 'app_salary_list')]
     public function app_salary_list(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
+        //باگ دارد تمام سال مالی برگشت داده می شود
         if(!$access->hasRole('salary'))
             throw $this->createAccessDeniedException();
-        $data = $entityManager->getRepository(Salary::class)->findBy([
+        $datas = $entityManager->getRepository(Salary::class)->findBy([
             'bid'=>$request->headers->get('activeBid')
         ]);
-        return $this->json($data);
+        foreach($datas as $data){
+            $bs = 0;
+            $bd = 0;
+            $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'salary'=>$data
+            ]);
+            foreach ($items as $item){
+                $bs += $item->getBs();
+                $bd += $item->getBd();
+            }
+            $data->setBalance($bd - $bs);
+        }
+        return $this->json($datas);
     }
 
     #[Route('/api/salary/info/{code}', name: 'app_salary_info')]

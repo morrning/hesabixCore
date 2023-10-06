@@ -410,7 +410,20 @@ class HesabdariController extends AbstractController
                 'id'=>'DESC'
             ]);
         }
+        elseif($params['type'] == 'bank'){
+            $bank = $entityManager->getRepository(BankAccount::class)->findOneBy([
+                'bid'=>$acc['bid'],
+                'code'=>$params['id'],
+            ]);
+            if(!$bank)
+                throw $this->createNotFoundException();
 
+            $data = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bank'=> $bank,
+            ],[
+                'id'=>'DESC'
+            ]);
+        }
         $dataTemp =[];
         foreach ($data as $item){
             $temp = [

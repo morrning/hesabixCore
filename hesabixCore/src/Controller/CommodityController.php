@@ -100,6 +100,8 @@ class CommodityController extends AbstractController
         $data->setUnit($unit);
         $data->setBid($acc['bid']);
         $data->setname($params['name']);
+        if($params['khadamat'] == 'true') $data->setKhadamat(true);
+        else $data->setKhadamat(false);
         $data->setDes($params['des']);
         $data->setPriceSell($params['priceSell']);
         $data->setPriceBuy($params['priceBuy']);
