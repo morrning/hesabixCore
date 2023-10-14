@@ -424,6 +424,34 @@ class HesabdariController extends AbstractController
                 'id'=>'DESC'
             ]);
         }
+        elseif($params['type'] == 'cashdesk'){
+            $cashdesk = $entityManager->getRepository(Cashdesk::class)->findOneBy([
+                'bid'=>$acc['bid'],
+                'code'=>$params['id'],
+            ]);
+            if(!$cashdesk)
+                throw $this->createNotFoundException();
+
+            $data = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'cashdesk'=> $cashdesk,
+            ],[
+                'id'=>'DESC'
+            ]);
+        }
+        elseif($params['type'] == 'salary'){
+            $salary = $entityManager->getRepository(Salary::class)->findOneBy([
+                'bid'=>$acc['bid'],
+                'code'=>$params['id'],
+            ]);
+            if(!$salary)
+                throw $this->createNotFoundException();
+
+            $data = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'salary'=> $salary,
+            ],[
+                'id'=>'DESC'
+            ]);
+        }
         $dataTemp =[];
         foreach ($data as $item){
             $temp = [

@@ -138,6 +138,27 @@ class Business
     #[ORM\JoinColumn(nullable: false)]
     private ?User $owner = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $storeOnline = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $storeUsername = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $smsCharge = null;
+
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: SMSPays::class, orphanRemoval: true)]
+    private Collection $sMSPays;
+
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: SMSSettings::class, orphanRemoval: true)]
+    private Collection $sMSSettings;
+
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: CommodityDrop::class)]
+    private Collection $commodityDrops;
+
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Storeroom::class, orphanRemoval: true)]
+    private Collection $storerooms;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -152,6 +173,10 @@ class Business
         $this->notifications = new ArrayCollection();
         $this->plugins = new ArrayCollection();
         $this->plugNoghreOrders = new ArrayCollection();
+        $this->sMSPays = new ArrayCollection();
+        $this->sMSSettings = new ArrayCollection();
+        $this->commodityDrops = new ArrayCollection();
+        $this->storerooms = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -849,6 +874,163 @@ class Business
     public function setOwner(?User $owner): static
     {
         $this->owner = $owner;
+
+        return $this;
+    }
+
+    public function isStoreOnline(): ?bool
+    {
+        return $this->storeOnline;
+    }
+
+    public function setStoreOnline(?bool $storeOnline): static
+    {
+        $this->storeOnline = $storeOnline;
+
+        return $this;
+    }
+
+    public function getStoreUsername(): ?string
+    {
+        return $this->storeUsername;
+    }
+
+    public function setStoreUsername(?string $storeUsername): static
+    {
+        $this->storeUsername = $storeUsername;
+
+        return $this;
+    }
+
+    public function getSmsCharge(): ?string
+    {
+        if(!$this->smsCharge) return 0;
+        return $this->smsCharge;
+    }
+
+    public function setSmsCharge(?string $smsCharge): static
+    {
+        $this->smsCharge = $smsCharge;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, SMSPays>
+     */
+    public function getSMSPays(): Collection
+    {
+        return $this->sMSPays;
+    }
+
+    public function addSMSPay(SMSPays $sMSPay): static
+    {
+        if (!$this->sMSPays->contains($sMSPay)) {
+            $this->sMSPays->add($sMSPay);
+            $sMSPay->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSMSPay(SMSPays $sMSPay): static
+    {
+        if ($this->sMSPays->removeElement($sMSPay)) {
+            // set the owning side to null (unless already changed)
+            if ($sMSPay->getBid() === $this) {
+                $sMSPay->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, SMSSettings>
+     */
+    public function getSMSSettings(): Collection
+    {
+        return $this->sMSSettings;
+    }
+
+    public function addSMSSetting(SMSSettings $sMSSetting): static
+    {
+        if (!$this->sMSSettings->contains($sMSSetting)) {
+            $this->sMSSettings->add($sMSSetting);
+            $sMSSetting->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSMSSetting(SMSSettings $sMSSetting): static
+    {
+        if ($this->sMSSettings->removeElement($sMSSetting)) {
+            // set the owning side to null (unless already changed)
+            if ($sMSSetting->getBid() === $this) {
+                $sMSSetting->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CommodityDrop>
+     */
+    public function getCommodityDrops(): Collection
+    {
+        return $this->commodityDrops;
+    }
+
+    public function addCommodityDrop(CommodityDrop $commodityDrop): static
+    {
+        if (!$this->commodityDrops->contains($commodityDrop)) {
+            $this->commodityDrops->add($commodityDrop);
+            $commodityDrop->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCommodityDrop(CommodityDrop $commodityDrop): static
+    {
+        if ($this->commodityDrops->removeElement($commodityDrop)) {
+            // set the owning side to null (unless already changed)
+            if ($commodityDrop->getBid() === $this) {
+                $commodityDrop->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Storeroom>
+     */
+    public function getStorerooms(): Collection
+    {
+        return $this->storerooms;
+    }
+
+    public function addStoreroom(Storeroom $storeroom): static
+    {
+        if (!$this->storerooms->contains($storeroom)) {
+            $this->storerooms->add($storeroom);
+            $storeroom->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroom(Storeroom $storeroom): static
+    {
+        if ($this->storerooms->removeElement($storeroom)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroom->getBid() === $this) {
+                $storeroom->setBid(null);
+            }
+        }
 
         return $this;
     }

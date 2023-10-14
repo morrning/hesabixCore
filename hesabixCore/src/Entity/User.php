@@ -83,6 +83,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $verifyCodeTime = null;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: SMSPays::class, orphanRemoval: true)]
+    private Collection $sMSPays;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -97,6 +100,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->supports = new ArrayCollection();
         $this->notifications = new ArrayCollection();
         $this->emailHistories = new ArrayCollection();
+        $this->sMSPays = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -597,6 +601,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVerifyCodeTime(?string $verifyCodeTime): static
     {
         $this->verifyCodeTime = $verifyCodeTime;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, SMSPays>
+     */
+    public function getSMSPays(): Collection
+    {
+        return $this->sMSPays;
+    }
+
+    public function addSMSPay(SMSPays $sMSPay): static
+    {
+        if (!$this->sMSPays->contains($sMSPay)) {
+            $this->sMSPays->add($sMSPay);
+            $sMSPay->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSMSPay(SMSPays $sMSPay): static
+    {
+        if ($this->sMSPays->removeElement($sMSPay)) {
+            // set the owning side to null (unless already changed)
+            if ($sMSPay->getSubmitter() === $this) {
+                $sMSPay->setSubmitter(null);
+            }
+        }
 
         return $this;
     }

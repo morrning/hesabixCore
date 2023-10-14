@@ -39,7 +39,7 @@ class SupportController extends AbstractController
             $params = json_decode($content, true);
         }
         if($id == ''){
-            if(array_key_exists('title',$params) && array_key_exists('body',$params) && array_key_exists('bid',$params)){
+            if(array_key_exists('title',$params) && array_key_exists('body',$params)){
                 $item  = new Support();
                 $item->setBody($params['body']);
                 $item->setTitle($params['title']);

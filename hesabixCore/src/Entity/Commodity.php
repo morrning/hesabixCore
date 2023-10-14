@@ -48,11 +48,18 @@ class Commodity
     #[ORM\Column(nullable: true)]
     private ?bool $khadamat = null;
 
+    #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: CommodityDropLink::class, orphanRemoval: true)]
+    private Collection $commodityDropLinks;
+
+    #[ORM\ManyToOne(inversedBy: 'commodities')]
+    private ?CommodityCat $cat = null;
+
     public function __construct()
     {
         $this->setPriceBuy(0);
         $this->setPriceSell(0);
         $this->hesabdariRows = new ArrayCollection();
+        $this->commodityDropLinks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -182,6 +189,48 @@ class Commodity
     public function setKhadamat(?bool $khadamat): static
     {
         $this->khadamat = $khadamat;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CommodityDropLink>
+     */
+    public function getCommodityDropLinks(): Collection
+    {
+        return $this->commodityDropLinks;
+    }
+
+    public function addCommodityDropLink(CommodityDropLink $commodityDropLink): static
+    {
+        if (!$this->commodityDropLinks->contains($commodityDropLink)) {
+            $this->commodityDropLinks->add($commodityDropLink);
+            $commodityDropLink->setCommodity($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCommodityDropLink(CommodityDropLink $commodityDropLink): static
+    {
+        if ($this->commodityDropLinks->removeElement($commodityDropLink)) {
+            // set the owning side to null (unless already changed)
+            if ($commodityDropLink->getCommodity() === $this) {
+                $commodityDropLink->setCommodity(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getCat(): ?CommodityCat
+    {
+        return $this->cat;
+    }
+
+    public function setCat(?CommodityCat $cat): static
+    {
+        $this->cat = $cat;
 
         return $this;
     }

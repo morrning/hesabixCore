@@ -81,6 +81,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $plugCCAdmin = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $store = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -346,6 +349,18 @@ class Permission
     public function setPlugCCAdmin(?bool $plugCCAdmin): static
     {
         $this->plugCCAdmin = $plugCCAdmin;
+
+        return $this;
+    }
+
+    public function isStore(): ?bool
+    {
+        return $this->store;
+    }
+
+    public function setStore(?bool $store): static
+    {
+        $this->store = $store;
 
         return $this;
     }

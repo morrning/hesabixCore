@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa"><head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+
+    <title>{% block title %}{% endblock %}</title>
+
+    <meta content="حسابیکس فروشگاه آنلاین" name="description"/>
+    <meta content="Hesabix.ir" name="author"/>
+
+    <!-- Open Graph Meta -->
+    <meta content="Dashmix - Bootstrap 5 Admin Template & UI Framework" property="og:title"/>
+    <meta content="Hesabix" property="og:site_name"/>
+    <meta content="Dashmix - Bootstrap 5 Admin Template & UI Framework created by pixelcave and published on Themeforest" property="og:description"/>
+    <meta content="website" property="og:type"/>
+    <meta content="" property="og:url"/>
+    <meta content="" property="og:image"/>
+
+    <!-- Icons -->
+    <!-- The following icons can be replaced with your own, they are used by desktop and mobile browsers -->
+    <link href="/assets/media/favicons/favicon.png" rel="shortcut icon"/>
+    <link href="/assets/media/favicons/favicon-192x192.png" rel="icon" sizes="192x192" type="image/png"/>
+    <link href="/assets/media/favicons/apple-touch-icon-180x180.png" rel="apple-touch-icon" sizes="180x180"/>
+    <!-- END Icons -->
+
+    <!-- Stylesheets -->
+    <!-- Dashmix framework -->
+    <link href="/assets/css/dashmix.min.css" id="css-main" rel="stylesheet"/>
+
+    <!-- You can include a specific file from css/themes/ folder to alter the default color theme of the template. eg: -->
+    <!-- <link rel="stylesheet" id="css-theme" href="assets/css/themes/xwork.min.css"> -->
+    <!-- END Stylesheets -->
+    <!--===== Custom Font css =====-->
+    <link href="/assets/css/custom-fonts.css" rel="stylesheet"/>
+
+</head>
+<body>
+<!-- Page Container -->
+<!--
+  Available classes for #page-container:
+
+  GENERIC
+
+    'remember-theme'                            Remembers active color theme and dark mode between pages using localStorage when set through
+                                                - Theme helper buttons [data-toggle="theme"],
+                                                - Layout helper buttons [data-toggle="layout" data-action="dark_mode_[on/off/toggle]"]
+                                                - ..and/or Dashmix.layout('dark_mode_[on/off/toggle]')
+
+  SIDEBAR & SIDE OVERLAY
+
+    'sidebar-r'                                 Right Sidebar and left Side Overlay (default is left Sidebar and right Side Overlay)
+    'sidebar-mini'                              Mini hoverable Sidebar (screen width > 991px)
+    'sidebar-o'                                 Visible Sidebar by default (screen width > 991px)
+    'sidebar-o-xs'                              Visible Sidebar by default (screen width < 992px)
+    'sidebar-dark'                              Dark themed sidebar
+
+    'side-overlay-hover'                        Hoverable Side Overlay (screen width > 991px)
+    'side-overlay-o'                            Visible Side Overlay by default
+
+    'enable-page-overlay'                       Enables a visible clickable Page Overlay (closes Side Overlay on click) when Side Overlay opens
+
+    'side-scroll'                               Enables custom scrolling on Sidebar and Side Overlay instead of native scrolling (screen width > 991px)
+
+  HEADER
+
+    ''                                          Static Header if no class is added
+    'page-header-fixed'                         Fixed Header
+
+
+  FOOTER
+
+    ''                                          Static Footer if no class is added
+    'page-footer-fixed'                         Fixed Footer (please have in mind that the footer has a specific height when is fixed)
+
+  HEADER STYLE
+
+    ''                                          Classic Header style if no class is added
+    'page-header-dark'                          Dark themed Header
+    'page-header-glass'                         Light themed Header with transparency by default
+                                                (absolute position, perfect for light images underneath - solid light background on scroll if the Header is also set as fixed)
+    'page-header-glass page-header-dark'         Dark themed Header with transparency by default
+                                                (absolute position, perfect for dark images underneath - solid dark background on scroll if the Header is also set as fixed)
+
+  MAIN CONTENT LAYOUT
+
+    ''                                          Full width Main Content if no class is added
+    'main-content-boxed'                        Full width Main Content with a specific maximum width (screen width > 1200px)
+    'main-content-narrow'                       Full width Main Content with a percentage width (screen width > 1200px)
+
+  DARK MODE
+
+    'sidebar-dark page-header-dark dark-mode'   Enable dark mode (light sidebar/header is not supported with dark mode)
+-->
+<div class="rtl-support page-header-dark main-content-boxed" id="page-container">
+
+    <!-- Header -->
+    <header id="page-header">
+        <!-- Header Content -->
+        <div class="content-header">
+            <!-- Left Section -->
+            <div class="d-flex align-items-center">
+                <!-- Logo -->
+                <a class="fw-semibold text-dual tracking-wide" href="/s/{{ bid.storeUsername }}">
+                    فروشگاه
+                    {{ bid.name }}
+                </a>
+                <!-- END Logo -->
+            </div>
+            <!-- END Left Section -->
+
+            <!-- Right Section -->
+            <div>
+                <!-- Open Search Section -->
+                <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
+                <button class="btn btn-alt-secondary ms-2" data-action="header_search_on" data-toggle="layout" type="button">
+                    <i class="fa fa-search"></i>
+                </button>
+                <!-- END Open Search Section -->
+                <a class="btn btn-alt-secondary ms-2" href="/s/{{ bid.storeUsername }}/basket">
+                    <i class="fa fa-shopping-basket"></i>
+                </a>
+                <!-- Toggle Main Navigation -->
+                <button class="d-lg-none btn btn-alt-secondary ms-2" data-class="d-none" data-target="#main-navigation" data-toggle="class-toggle" type="button"><i class="fa fa-bars"></i></button>
+                <!-- END Toggle Main Navigation -->
+            </div>
+            <!-- END Right Section -->
+        </div>
+        <!-- END Header Content -->
+
+        <!-- Header Search -->
+        <div class="overlay-header bg-sidebar-dark" id="page-header-search">
+            <div class="content-header">
+                <form action="bd_search.html" class="w-100" method="POST">
+                    <div class="input-group">
+                        <input class="form-control" id="page-header-search-input" name="page-header-search-input" placeholder="محصول مورد نظر را جست و جو کنید" type="text"/>
+                        <!-- Layout API, functionality initialized in Template._uiApiLayout() -->
+                        <button class="btn btn-alt-danger" data-action="header_search_off" data-toggle="layout" type="button">
+                            <i class="fa fa-fw fa-times-circle"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- END Header Search -->
+
+        <!-- Header Loader -->
+        <!-- Please check out the Loaders page under Components category to see examples of showing/hiding it -->
+        <div class="overlay-header bg-sidebar-dark" id="page-header-loader">
+            <div class="content-header">
+                <div class="w-100 text-center">
+                    <i class="fa fa-fw fa-2x fa-spinner fa-spin text-primary"></i>
+                </div>
+            </div>
+        </div>
+        <!-- END Header Loader -->
+    </header>
+    <!-- END Header -->
+
+    <!-- Main Container -->
+    <main id="main-container">
+        <!-- Navigation -->
+        <div class="bg-sidebar-dark">
+            <div class="content">
+                <!-- Main Navigation -->
+                <div class="d-none d-lg-block push" id="main-navigation">
+                    <ul class="nav-main nav-main-horizontal nav-main-hover nav-main-dark">
+                        <li class="nav-main-item">
+                            <a class="nav-main-link" href="/s/{{ bid.storeUsername }}">
+                                <i class="nav-main-link-icon fa fa-compass"></i>
+                                <span class="nav-main-link-name"> صفحه نخست </span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- END Main Navigation -->
+            </div>
+        </div>
+        <!-- END Navigation -->
+        <!-- Page Content -->
+        <div class="content">
+            <!-- Hero -->
+            <div class="block block-rounded">
+                <div class="block-content">
+                    <div class="py-4 text-center">
+                        <h1 class="mb-2"> داشبورد </h1>
+                        <h2 class="h4 fw-normal text-muted">به برنامه خود خوش آمدید، همه چیز عالی به نظر می رسد!</h2>
+                    </div>
+                </div>
+            </div>
+            <!-- END Hero -->
+
+            <!-- Dummy content -->
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <p class="text-center py-6">...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <p class="text-center py-6">...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <p class="text-center py-6">...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <p class="text-center py-6">...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <p class="text-center py-6">...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <p class="text-center py-6">...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="block block-rounded">
+                        <div class="block-content">
+                            <p class="text-center py-6">...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END Dummy content -->
+        </div>
+        <!-- END Page Content -->
+    </main>
+    <!-- END Main Container -->
+
+    <!-- Footer -->
+    <footer class="footer-static bg-body-extra-light" id="page-footer">
+        <div class="content py-4">
+            <!-- Footer Navigation -->
+            <div class="row items-push fs-sm border-bottom pt-4">
+                <div class="col-sm-12 col-md-6">
+                    <h3 class="fw-light">تماس با فروشگاه</h3>
+                    <ul class="list list-simple-mini">
+                        {% if bid.tel != null or bid.tel != '' %}
+                            <li>
+                                <a class="fw-semibold" href="javascript:void(0)">
+                                    <i class="fa fa-fw fa-mobile text-primary-lighter me-1"></i>
+                                    تلفن: {{ bid.tel }}
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if bid.mobile != null or bid.mobile != '' %}
+                            <li>
+                                <a class="fw-semibold" href="javascript:void(0)">
+                                    <i class="fa fa-fw fa-mobile-android text-primary-lighter me-1"></i>
+                                    موبایل: {{ bid.mobile }}
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if bid.email != null or bid.email != '' %}
+                            <li>
+                                <a class="fw-semibold" href="javascript:void(0)">
+                                    <i class="fa fa-fw fa-message text-primary-lighter me-1"></i>
+                                    پست الکترونیکی: {{ bid.email }}
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if bid.postalCode != null or bid.postalCode != '' %}
+                            <li>
+                                <a class="fw-semibold" href="javascript:void(0)">
+                                    <i class="fa fa-fw fa-message text-primary-lighter me-1"></i>
+                                    کد پستی : {{ bid.postalCode }}
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if bid.address != null or bid.address != '' %}
+                            <li>
+                                <a class="fw-semibold" href="javascript:void(0)">
+                                    <i class="fa fa-fw fa-message text-primary-lighter me-1"></i>
+                                    آدرس :  استان {{ bid.ostan }} شهر {{ bid.shahrestan }} {{ bid.address }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <!-- END Footer Navigation -->
+
+            <!-- Footer Copyright -->
+            <div class="row fs-sm pt-4">
+                <div class="col-sm-6 order-sm-2 mb-1 mb-sm-0 text-center text-sm-end"> ساخته شده با <i class="fa fa-heart text-danger"></i> در <a class="fw-semibold" href="https://hesabix.ir" target="_blank">حسابیکس</a>
+                </div>
+                <div class="col-sm-6 order-sm-1 text-center text-sm-start">
+
+                </div>
+            </div>
+            <!-- END Footer Copyright -->
+        </div>
+    </footer>
+    <!-- END Footer -->
+</div>
+<!-- END Page Container -->
+
+<!--
+  Dashmix JS
+
+  Core libraries and functionality
+  webpack is putting everything together at assets/_js/main/app.js
+-->
+<script src="/assets/js/dashmix.app.min.js"></script>
+
+
+</body></html>

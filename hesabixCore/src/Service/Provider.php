@@ -100,32 +100,32 @@ class Provider
             if(str_starts_with($method, 'get')){
                 $getMethods[] = trim(trim($method));
             }
+            elseif(str_starts_with($method, 'is')){
+                $getMethods[] = trim(trim($method));
+            }
         }
         //var_dump($getMethods);
         foreach ($getMethods as $method){
-            if(!is_int(array_search(lcfirst(trim(str_replace('get', '', $method))), $ignores))){
-                if(method_exists($entity,$method) && $method != 'get'){
+            if(!is_int(array_search(lcfirst(trim(str_replace(['get','is'], '', $method))), $ignores))) {
+                if (method_exists($entity, $method)) {
                     $method = trim(trim($method));
                     $canProced = true;
                     $reflection = new \ReflectionMethod($entity, $method);
-                    if ($reflection->isPublic() && !str_starts_with('\\0',$method)) {
-                        $value = $entity->$method(); 
-                    }
-                    else
+                    if ($reflection->isPublic() && !str_starts_with('\\0', $method)) {
+                        $value = $entity->$method();
+                    } else
                         $canProced = false;
-                    if($canProced){
-                        if(!is_object($value)){
-                            $result[lcfirst(str_replace('get','',$method))] = $value;
-                        }
-                        else{
-                            if($deep != 0){
-                                $result[lcfirst(str_replace('get','',$method))] = $this->Entity2Array($value,$deep - 1);
+                    if ($canProced) {
+                        if (!is_object($value)) {
+                            $result[lcfirst(str_replace(['get','is'], '', $method))] = $value;
+                        } else {
+                            if ($deep != 0) {
+                                $result[lcfirst(str_replace(['get','is'], '', $method))] = $this->Entity2Array($value, $deep - 1);
                             }
-                        }  
+                        }
                     }
-                   
-                }
 
+                }
             }
         }
         return $result;

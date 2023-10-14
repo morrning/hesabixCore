@@ -71,6 +71,7 @@ class BusinessController extends AbstractController
         $response['arzmain'] = $bus->getMoney()->getName();
         $response['type'] = $bus->getType();
         $response['zarinpalCode'] = $bus->getZarinpalCode();
+        $response['smsCharge'] = $bus->getSmsCharge();
         return $this->json($response);
     }
 
@@ -184,6 +185,7 @@ class BusinessController extends AbstractController
                 $perms->setReport(true);
                 $perms->setAccounting(true);
                 $perms->setLog(true);
+                $perms->setStore(true);
                 $perms->setSalary(true);
                 $perms->setPermission(true);
                 $perms->setSalary(true);
@@ -335,6 +337,7 @@ class BusinessController extends AbstractController
                     'persons'=>true,
                     'commodity'=>true,
                     'getpay'=>true,
+                    'store'=>true,
                     'bank'=>true,
                     'bankTransfer'=>true,
                     'cost'=>true,
@@ -372,6 +375,7 @@ class BusinessController extends AbstractController
                     'accounting'=>$perm->isAccounting(),
                     'report'=>$perm->isReport(),
                     'log'=>$perm->isLog(),
+                    'store'=>$perm->isStore(),
                     'permission'=>$perm->isPermission(),
                     'salary'=>$perm->isSalary(),
                     'cashdesk'=>$perm->isCashdesk(),
@@ -424,6 +428,7 @@ class BusinessController extends AbstractController
                 $perm->setBankTransfer($params['bankTransfer']);
                 $perm->setbuy($params['buy']);
                 $perm->setSell($params['sell']);
+                $perm->setStore($params['store']);
                 $perm->setCost($params['cost']);
                 $perm->setIncome($params['income']);
                 $perm->setAccounting($params['accounting']);
@@ -487,7 +492,6 @@ class BusinessController extends AbstractController
                 'bid'=>$buss
             ]))
         ];
-
         return $this->json($response);
     }
 }

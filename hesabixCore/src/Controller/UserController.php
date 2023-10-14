@@ -231,6 +231,7 @@ class UserController extends AbstractController
             $user->setFullName($params['name']);
             $user->setMobile($params['mobile']);
             $user->setVerifyCodeTime(time() + 300);
+            $user->setVerifyCode($this->RandomString(6,true));
             $user->setDateRegister(time());
             $user->setPassword(
                 $userPasswordHasher->hashPassword(
@@ -241,6 +242,22 @@ class UserController extends AbstractController
             $user->setActive(false);
             $entityManager->persist($user);
             $entityManager->flush();
+            $SMS->send([$user->getVerifyCode()],'162246',$user->getMobile());
+            try {
+                $email = (new Email())
+                    ->to($user->getEmail())
+                    ->priority(Email::PRIORITY_HIGH)
+                    ->subject('تایید ایمیل در حسابیکس')
+                    ->html(
+                        $this->renderView('user/email/confrim-register.html.twig',[
+                            'code'=>$user->getVerifyCode()
+                        ])
+                    );
+
+                $mailer->send($email);
+            }catch (Exception $exception){
+
+            }
             return $this->json([
                 'error'=> 0,
                 'id'=>$user->getId(),
