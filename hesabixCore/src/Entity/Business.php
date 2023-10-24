@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: BusinessRepository::class)]
 class Business
@@ -136,6 +137,7 @@ class Business
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
+    #[Ignore]
     private ?User $owner = null;
 
     #[ORM\Column(nullable: true)]
@@ -159,6 +161,21 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Storeroom::class, orphanRemoval: true)]
     private Collection $storerooms;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $shortlinks = false;
+
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: WalletTransaction::class, orphanRemoval: true)]
+    #[Ignore]
+    private Collection $walletTransactions;
+
+    #[ORM\ManyToOne]
+    #[Ignore]
+    private ?BankAccount $WalletMatchBank = null;
+
+    #[ORM\Column(nullable: true)]
+    #[Ignore]
+    private ?bool $walletEnable = null;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -177,6 +194,7 @@ class Business
         $this->sMSSettings = new ArrayCollection();
         $this->commodityDrops = new ArrayCollection();
         $this->storerooms = new ArrayCollection();
+        $this->walletTransactions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1031,6 +1049,73 @@ class Business
                 $storeroom->setBid(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isShortlinks(): ?bool
+    {   
+        if($this->shortlinks == true) return true;
+        return false;
+    }
+
+    public function setShortlinks(?bool $shortlinks): static
+    {
+        $this->shortlinks = $shortlinks;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, WalletTransaction>
+     */
+    public function getWalletTransactions(): Collection
+    {
+        return $this->walletTransactions;
+    }
+
+    public function addWalletTransaction(WalletTransaction $walletTransaction): static
+    {
+        if (!$this->walletTransactions->contains($walletTransaction)) {
+            $this->walletTransactions->add($walletTransaction);
+            $walletTransaction->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeWalletTransaction(WalletTransaction $walletTransaction): static
+    {
+        if ($this->walletTransactions->removeElement($walletTransaction)) {
+            // set the owning side to null (unless already changed)
+            if ($walletTransaction->getBid() === $this) {
+                $walletTransaction->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getWalletMatchBank(): ?BankAccount
+    {
+        return $this->WalletMatchBank;
+    }
+
+    public function setWalletMatchBank(?BankAccount $WalletMatchBank): static
+    {
+        $this->WalletMatchBank = $WalletMatchBank;
+
+        return $this;
+    }
+
+    public function isWalletEnable(): ?bool
+    {
+        return $this->walletEnable;
+    }
+
+    public function setWalletEnable(?bool $walletEnable): static
+    {
+        $this->walletEnable = $walletEnable;
 
         return $this;
     }

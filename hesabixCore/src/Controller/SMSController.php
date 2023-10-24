@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Business;
+use App\Entity\HesabdariDoc;
+use App\Entity\Settings;
 use App\Entity\SMSPays;
 use App\Entity\SMSSettings;
 use App\Service\Access;
@@ -10,12 +12,14 @@ use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Notification;
 use App\Service\Provider;
+use App\Service\SMS;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class SMSController extends AbstractController
 {
@@ -110,9 +114,11 @@ class SMSController extends AbstractController
         if(!array_key_exists('price',$params))
             throw $this->createAccessDeniedException('price not set');
 
-        $data = array("merchant_id" => "a7804652-1fb9-4b43-911c-0a1046e61be1",
+        //get system settings
+        $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
+        $data = array("merchant_id" => $settings->getZarinpalMerchant(),
             "amount" => $params['price'],
-            "callback_url" => "http://hesabix.local/api/sms/buy/verify",
+            "callback_url" => $this->generateUrl('api_sms_buy_verify',[],UrlGeneratorInterface::ABSOLUTE_URL),
             "description" => 'افزایش اعتبار سرویس پیامک',
         );
         $jsonData = json_encode($data);
@@ -162,7 +168,9 @@ class SMSController extends AbstractController
         $Authority = $request->get('Authority');
         $status = $request->get('Status');
         $req = $entityManager->getRepository(SMSPays::class)->findOneBy(['verifyCode'=>$Authority]);
-        $data = array("merchant_id" => "a7804652-1fb9-4b43-911c-0a1046e61be1", "authority" => $Authority, "amount" => $req->getPrice());
+        //get system settings
+        $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
+        $data = array("merchant_id" => $settings->getZarinpalMerchant(), "authority" => $Authority, "amount" => $req->getPrice());
         $jsonData = json_encode($data);
         $ch = curl_init('https://api.zarinpal.com/pg/v4/payment/verify.json');
         curl_setopt($ch, CURLOPT_USERAGENT, 'ZarinPal Rest Api v4');
@@ -200,7 +208,6 @@ class SMSController extends AbstractController
                         $req->getSubmitter(),
                         $req->getBid()
                     );
-                    $log->insert('سرویس پیامک','پرداخت ناموفق شارژ سرویس پیامک' ,$this->getUser(),$req->getBid());
                     $notification->insert(' سرویس پیامک شارژ شد.','/acc/sms/panel',$req->getBid(),$req->getSubmitter());
                     return $this->render('buy/success.html.twig',['req'=>$req]);
                 }
@@ -209,5 +216,38 @@ class SMSController extends AbstractController
             $log->insert('سرویس پیامک','پرداخت ناموفق شارژ سرویس پیامک' ,$this->getUser(),$req->getBid());
             return $this->render('buy/fail.html.twig', ['results'=>$result]);
         }
+    }
+
+    /**
+     * @throws \ReflectionException
+     */
+    #[Route('/api/sms/send/sell-invoice/{id}/{num}', name: 'api_sms_send_invoice')]
+    public function api_sms_send_invoice(SMS $SMS,String $id,String $num,Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    {
+        $acc = $access->hasRole('sell');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+
+        $bid = $acc['bid'];
+        if($bid->getSmsCharge()<530)
+            return $this->json(['result'=>'2']);
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+            'id'=>$id,
+            'bid'=>$bid,
+            'type'=>'sell'
+        ]);
+        if(!$doc)
+            return $this->json(['result'=>3]);
+        $shortLink = $doc->getId();
+        if($doc->getShortlink())
+            $shortLink = $doc->getShortlink();
+
+        return $this->json(['result'=>
+            $SMS->sendByBalance(
+                [$bid->getName(),'sell/' . $bid->getId() . '/' . $shortLink],
+                168030,
+                $num,$bid,$this->getUser(),3
+            )]);
+
     }
 }

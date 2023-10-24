@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Business;
 use App\Entity\Plugin;
 use App\Entity\PluginProdect;
+use App\Entity\Settings;
 use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
@@ -13,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class PluginController extends AbstractController
 {
@@ -37,9 +39,11 @@ class PluginController extends AbstractController
         $pp = $entityManager->getRepository(PluginProdect::class)->find($id);
         if(!$pp)
             throw $this->createNotFoundException('plugin not found');
-        $data = array("merchant_id" => "a7804652-1fb9-4b43-911c-0a1046e61be1",
+        //get system settings
+        $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
+        $data = array("merchant_id" => $settings->getZarinpalMerchant(),
             "amount" => ($pp->getPrice() * 109)/10,
-            "callback_url" => "https://hesabix.ir/api/plugin/buy/verify",
+            "callback_url" => $this->generateUrl('api_plugin_buy_verify',[],UrlGeneratorInterface::ABSOLUTE_URL),
             "description" => $pp->getName(),
         );
         $jsonData = json_encode($data);
@@ -90,7 +94,9 @@ class PluginController extends AbstractController
         $Authority = $request->get('Authority');
         $status = $request->get('Status');
         $req = $entityManager->getRepository(Plugin::class)->findOneBy(['verifyCode'=>$Authority]);
-        $data = array("merchant_id" => "a7804652-1fb9-4b43-911c-0a1046e61be1", "authority" => $Authority, "amount" => $req->getPrice());
+        //get system settings
+        $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
+        $data = array("merchant_id" => $settings->getZarinpalMerchant(), "authority" => $Authority, "amount" => $req->getPrice());
         $jsonData = json_encode($data);
         $ch = curl_init('https://api.zarinpal.com/pg/v4/payment/verify.json');
         curl_setopt($ch, CURLOPT_USERAGENT, 'ZarinPal Rest Api v4');

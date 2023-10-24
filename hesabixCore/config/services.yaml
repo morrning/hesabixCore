@@ -39,6 +39,7 @@ services:
         arguments: [ "@doctrine.orm.entity_manager" ]
     twigFunctions:
         class: App\Service\twigFunctions
+        arguments: [ "@doctrine.orm.entity_manager" ]
     Access:
         class: App\Service\Access
         arguments: [ "@doctrine.orm.entity_manager","@Symfony.Component.Security.Core.Authentication.Token.Storage.TokenStorageInterface","@Symfony.Component.HttpFoundation.RequestStack" ]

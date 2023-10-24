@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class BankController extends AbstractController
 {
     #[Route('/api/bank/list', name: 'app_bank_list')]
-    public function app_bank_list(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_bank_list(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
         if(!$access->hasRole('banks'))
             throw $this->createAccessDeniedException();
@@ -35,7 +35,7 @@ class BankController extends AbstractController
             }
             $data->setBalance($bd - $bs);
         }
-        return $this->json($datas);
+        return $this->json($provider->ArrayEntity2Array($datas,0));
     }
 
     #[Route('/api/bank/info/{code}', name: 'app_bank_info')]
@@ -48,7 +48,7 @@ class BankController extends AbstractController
             'bid'=>$acc['bid'],
             'code'=>$code
         ]);
-        return $this->json($data);
+        return $this->json($provider->Entity2Array($data,0));
     }
 
     #[Route('/api/bank/mod/{code}', name: 'app_bank_mod')]

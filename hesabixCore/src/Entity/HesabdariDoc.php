@@ -71,10 +71,25 @@ class HesabdariDoc
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $refData = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $shortlink = null;
+
+    #[ORM\ManyToOne]
+    #[Ignore]
+    private ?WalletTransaction $walletTransaction = null;
+
+    #[ORM\ManyToMany(targetEntity: self::class)]
+    #[Ignore]
+    private Collection $relatedDocs;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $status = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
         $this->plugNoghreOrders = new ArrayCollection();
+        $this->relatedDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -294,6 +309,66 @@ class HesabdariDoc
     public function setRefData(?string $refData): static
     {
         $this->refData = $refData;
+
+        return $this;
+    }
+
+    public function getShortlink(): ?string
+    {
+        return $this->shortlink;
+    }
+
+    public function setShortlink(?string $shortlink): static
+    {
+        $this->shortlink = $shortlink;
+
+        return $this;
+    }
+
+    public function getWalletTransaction(): ?WalletTransaction
+    {
+        return $this->walletTransaction;
+    }
+
+    public function setWalletTransaction(?WalletTransaction $walletTransaction): static
+    {
+        $this->walletTransaction = $walletTransaction;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getRelatedDocs(): Collection
+    {
+        return $this->relatedDocs;
+    }
+
+    public function addRelatedDoc(self $relatedDoc): static
+    {
+        if (!$this->relatedDocs->contains($relatedDoc)) {
+            $this->relatedDocs->add($relatedDoc);
+        }
+
+        return $this;
+    }
+
+    public function removeRelatedDoc(self $relatedDoc): static
+    {
+        $this->relatedDocs->removeElement($relatedDoc);
+
+        return $this;
+    }
+
+    public function getStatus(): ?string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(?string $status): static
+    {
+        $this->status = $status;
 
         return $this;
     }

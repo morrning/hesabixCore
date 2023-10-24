@@ -41,6 +41,9 @@ class CommodityController extends AbstractController
             $temp['cat'] = null;
             if($item->getCat())
                 $temp['cat'] = $item->getCat()->getName();
+            $temp['khadamat'] = false;
+            if($item->isKhadamat())
+                $temp['khadamat'] = true;
             $res[] = $temp;
         }
         return $this->json($res);

@@ -30,7 +30,8 @@ class LogController extends AbstractController
         if(array_key_exists('type',$params)){
             if($params['type'] == 'sms')
                 $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy(['bid'=>$business,'part'=>'پیامک']);
-
+            elseif($params['type'] == 'wallet')
+                $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy(['bid'=>$business,'part'=>'کیف پول']);
         }
         else{
             $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy(['bid'=>$business]);
@@ -45,6 +46,7 @@ class LogController extends AbstractController
             $temp['des'] = $log->getDes();
             $temp['part'] = $log->getPart();
             $temp['date'] = $jdate->jdate('Y/n/d H:i',$log->getDateSubmit());
+            $temp['ipaddress'] = $log->getIpaddress();
             $temps[] = $temp;
         }
         return $this->json(array_reverse($temps));

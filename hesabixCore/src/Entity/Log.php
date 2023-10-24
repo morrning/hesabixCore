@@ -28,6 +28,9 @@ class Log
     #[ORM\Column(length: 255)]
     private ?string $des = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $ipaddress = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -89,6 +92,18 @@ class Log
     public function setDes(string $des): self
     {
         $this->des = $des;
+
+        return $this;
+    }
+
+    public function getIpaddress(): ?string
+    {
+        return $this->ipaddress;
+    }
+
+    public function setIpaddress(?string $ipaddress): static
+    {
+        $this->ipaddress = $ipaddress;
 
         return $this;
     }

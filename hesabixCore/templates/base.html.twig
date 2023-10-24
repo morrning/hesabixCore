@@ -10,11 +10,9 @@
         <title>حسابیکس - {% block title %}{% endblock %}</title>
         {# Run `composer require symfony/webpack-encore-bundle` to start using Symfony UX #}
         {% block stylesheets %}
-            {{ encore_entry_link_tags('app') }}
         {% endblock %}
 
         {% block javascripts %}
-            {{ encore_entry_script_tags('app') }}
         {% endblock %}
         <!-- Icons -->
         <link rel="icon" href="{{ asset('/favicon.ico') }}">
@@ -253,7 +251,7 @@
                                متن باز است.
                            </div>
                            <div class="col-sm-6 order-sm-1 text-center text-sm-start">
-                               <a class="fw-semibold" href="https://github.com/morrning/hesabixUI" target="_blank">Hesabix v 0.2.1</a> © <span>1402</span>
+                               <a class="fw-semibold" href="https://github.com/morrning/hesabixUI" target="_blank">حسابیکس :  {{ twigFunctions.getHesabixLastVersionNumber() }}</a>
                            </div>
                        </div>
                    </div>

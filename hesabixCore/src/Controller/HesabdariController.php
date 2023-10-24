@@ -71,6 +71,9 @@ class HesabdariController extends AbstractController
                     'mobile' => $item->getPerson()->getMobile(),
                     'address' => $item->getPerson()->getAddress(),
                     'des' => $item->getPerson()->getDes(),
+                    'shomaresabt' => $item->getperson()->getSabt(),
+                    'codeeghtesadi' =>$item->getPerson()->getCodeeghtesadi(),
+                    'postalcode' => $item->getPerson()->getPostalCode()
                 ];
             }
             elseif($item->getBank()){
@@ -97,11 +100,14 @@ class HesabdariController extends AbstractController
                 $temp['type'] = 'commodity';
                 $temp['ref'] = $item->getCommodity()->getName();
                 $temp['refCode'] = $item->getCommodity()->getCode();
+                $temp['count'] = $item->getCommdityCount();
+                $temp['unitPrice'] = $item->getBs()/$item->getCommdityCount();
                 $temp['commodity'] = [
                     'id' => $item->getCommodity()->getId(),
                     'name' => $item->getCommodity()->getName(),
                     'des' => $item->getCommodity()->getDes(),
                     'code' => $item->getCommodity()->getCode(),
+                    'unit' => $item->getCommodity()->getUnit()->getName(),
                 ];
             }
             elseif($item->getSalary()){
@@ -136,9 +142,21 @@ class HesabdariController extends AbstractController
             }
             $rows[] = $temp;
         }
+        //get related docs
+        $rds = [];
+        foreach ($doc->getRelatedDocs() as $relatedDoc){
+            $temp = [];
+            $temp['amount'] = $relatedDoc->getAmount();
+            $temp['des'] = $relatedDoc->getDes();
+            $temp['date'] = $relatedDoc->getDate();
+            $temp['type'] = $relatedDoc->getType();
+            $temp['code'] = $relatedDoc->getCode();
+            $rds[] = $temp;
+        }
         return $this->json([
             'doc'=>$doc,
-            'rows'=>$rows
+            'rows'=>$rows,
+            'relatedDocs'=>$rds
         ]);
     }
 
@@ -157,6 +175,7 @@ class HesabdariController extends AbstractController
         elseif($params['type'] == 'income') $roll='income';
         elseif($params['type'] == 'buy') $roll='buy';
         elseif($params['type'] == 'transfer') $roll='transfer';
+        elseif($params['type'] == 'sell') $roll='sell';
         elseif($params['type'] == 'all') $roll='accounting';
         else
             $this->createNotFoundException();
@@ -193,10 +212,21 @@ class HesabdariController extends AbstractController
                 'amount'=>$item->getAmount(),
                 'submitter'=> $item->getSubmitter()->getFullName(),
             ];
-            if($params['type'] == 'buy'){
+            if($params['type'] == 'buy' || $params['type'] == 'sell'){
                 $mainRow = $entityManager->getRepository(HesabdariRow::class)->getNotEqual($item,'person');
                 $temp['person'] = $mainRow->getPerson()->getNikename();
             }
+
+            //get status of doc
+            $temp['status'] = 'تسویه نشده';
+            $pays = 0;
+            foreach ($item->getRelatedDocs() as $relatedDoc){
+                $pays += $relatedDoc->getAmount();
+
+            }
+            if($item->getAmount() <= $pays)
+                $temp['status'] = 'تسویه شده';
+
             $dataTemp[] = $temp;
         }
         return $this->json($dataTemp);
@@ -266,6 +296,15 @@ class HesabdariController extends AbstractController
             $entityManager->flush();
         }
 
+        //add document to related docs
+        if(array_key_exists('related',$params)){
+            $relatedDoc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy(['code'=>$params['related'],'bid'=>$doc->getBid()]);
+            if($relatedDoc){
+                $relatedDoc->addRelatedDoc($doc);
+                $entityManager->persist($relatedDoc);
+                $entityManager->flush();
+            }
+        }
 
         $amount = 0;
         foreach ($params['rows'] as $row){

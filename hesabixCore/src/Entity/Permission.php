@@ -84,6 +84,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $store = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $wallet = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -361,6 +364,18 @@ class Permission
     public function setStore(?bool $store): static
     {
         $this->store = $store;
+
+        return $this;
+    }
+
+    public function isWallet(): ?bool
+    {
+        return $this->wallet;
+    }
+
+    public function setWallet(?bool $wallet): static
+    {
+        $this->wallet = $wallet;
 
         return $this;
     }

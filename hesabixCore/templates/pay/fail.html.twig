@@ -1,0 +1,36 @@
+{% extends 'blank.html.twig' %}
+
+{% block title %}خطا در پرداخت{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="album p-5 m-5 col-sm-12 col-md-7">
+                <div class="block">
+                    <div class="block-header block-header-default">
+                        <div class="block-title text-primary-dark text-start">
+                            <img src="{{ asset('/img/logo-blue.png') }}" class="img-avatar img-avatar32"  alt="حسابیکس"/>
+                            حسابیکس
+                        </div>
+                    </div>
+                    <div class="block-content p-3">
+                        <h2 class="text-danger">خطا در پردازش پرداخت</h2>
+                        <h5 class="mx-5">
+                             متاسفانه پردازش پرداخت ناموفق بود! به نظر می‌رسد خطای سیستمی رخ داده باشد.
+                        </h5>
+                        <a class="btn btn-lg btn-success mt-4" href="{{ path('shortlinks_show',{'type':type,'bid':doc.bid.id,'link':doc.id}) }}">
+                            <i class="bi bi-backward"></i>
+                            بازگشت به فاکتور
+                        </a>
+                        <a class="btn btn-lg btn-primary mt-4" href="/">
+                            <i class="bi bi-backward"></i>
+                            صفحه نخست
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+{% endblock %}

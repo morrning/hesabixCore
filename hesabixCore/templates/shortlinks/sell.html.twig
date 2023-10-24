@@ -1,0 +1,240 @@
+{% extends 'blank.html.twig' %}
+
+{% block title %}مشاهده فاکتور فروش
+{% endblock %}
+
+{% block body %}
+	<main
+		id="main-container">
+		<!-- Hero -->
+		<div class="bg-body-light d-print-none">
+			<div class="content content-full">
+				<div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+					<h2 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
+						مشاهده فاکتور
+					</h2>
+					<a class="btn btn-alt-primary my-2" href="https://hesabix.ir">
+						<i class="fa fa-fw fa-door-open me-1"></i>
+						ورود به حسابیکس
+					</a>
+				</div>
+			</div>
+		</div>
+		<!-- END Hero -->
+
+		<!-- Page Content -->
+		<div
+			class="content content-boxed">
+			<!-- Invoice -->
+			<div class="block block-rounded">
+				<div class="block-header block-header-default">
+					<h3 class="block-title">
+						شماره فاکتور:
+						<span class="text-primary">
+							{{doc.code}}
+						</span>
+					</h3>
+					<div class="block-options">
+						<!-- Print Page functionality is initialized dmPrint() -->
+						<button class="btn btn-sm btn-alt-secondary me-3" onclick="Dashmix.helpers('dm-print');" type="button">
+							<i class="si si-printer me-1"></i>
+							چاپ فاکتور
+						</button>
+						{% if (totalPays < doc.amount) and bid.walletEnable %}
+							<a href="{{ path('pay_sell',{'id':doc.id}) }}" class="btn btn-sm btn-success">
+								<i class="fa fa-credit-card"></i>
+								پرداخت آنلاین مبلغ
+								{{ (doc.amount - totalPays) | number_format }}
+								ریال
+							</a>
+						{% endif %}
+					</div>
+				</div>
+				<div class="block-content">
+					{% if msg == 'success' %}
+					<div class="alert alert-success alert-dismissible" role="alert">
+						<h3 class="alert-heading fs-4 my-2">
+							<i class="fa fa-check"></i>
+							نتیجه پرداخت آنلاین</h3>
+						<button aria-label="Close" class="btn-close" data-bs-dismiss="alert" type="button"></button>
+						<p class="mb-0">پرداخت فاکتور با موفقیت انجام شد. هم‌اکنون می‌توانید شماره پیگیری را از بخش پرداخت‌ها مشاهده نمایید</p>
+					</div>
+					{% elseif msg == 'fail' %}
+						<div class="alert alert-danger alert-dismissible" role="alert">
+							<h3 class="alert-heading fs-4 my-2">
+								<i class="fa fa-close"></i>
+								نتیجه پرداخت آنلاین</h3>
+							<button aria-label="Close" class="btn-close" data-bs-dismiss="alert" type="button"></button>
+							<p class="mb-0">پرداخت فاکتور ناموفق بود. برای پرداخت مجدد می‌توانید دوباره سعی نمایید.</p>
+						</div>
+					{% endif %}
+					<div class="p-sm-2 p-xl-1">
+						<!-- Invoice Info -->
+						<div
+							class="row mb-5">
+							<!-- Company Info -->
+							<div class="col-6">
+								<p class="h3">
+									{{bid.type}}
+									:
+									{{bid.name}}
+								</p>
+								<address>آدرس :
+																											استان
+									{{bid.ostan}}
+									شهرستان
+									{{bid.shahrestan}}
+									{{bid.address}}
+
+								</address>
+								<div>
+									کد پستی:
+									{{bid.postalcode}}
+								</div>
+								<div>
+									تلفن :
+									{{bid.tel}}
+								</div>
+								<div>
+									موبایل :
+									{{bid.mobile}}
+								</div>
+							</div>
+							<!-- END Company Info -->
+
+							<!-- Client Info -->
+							<div class="col-6 text-end">
+								<p class="h3">مشتری:
+									{{ person.nikename }}
+								</p>
+								<address>آدرس :
+									استان
+									{{person.ostan}}
+									شهرستان
+									{{person.shahr}}
+									{{person.address}}
+
+								</address>
+								<div>
+									کد پستی:
+									{{person.postalcode}}
+								</div>
+								<div>
+									تلفن :
+									{{person.tel}}
+								</div>
+								<div>
+									موبایل :
+									{{person.mobile}}
+								</div>
+							</div>
+							<!-- END Client Info -->
+						</div>
+						<!-- END Invoice Info -->
+
+						<!-- Table -->
+						<div class="table-responsive push text-center">
+							<table class="table table-bordered">
+								<thead class="bg-body">
+									<tr>
+										<th class="text-center" style="width: 60px;"></th>
+										<th>کالا/خدمات</th>
+										<th>شرح</th>
+										<th class="text-center" style="width: 90px;">واحد</th>
+										<th class="text-center" style="width: 120px;">تعداد</th>
+										<th class="text-center" style="width: 120px;">جمع</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for row in rows %}
+										<tr>
+											<td class="text-center">{{loop.index}}</td>
+											<td class="text-center">
+												<p class="fw-semibold">{{ row.commodity.name }}</p>
+											</td>
+											<td class="text-center">
+												<div class="">{{ row.des }}</div>
+											</td>
+											<td class="text-center">
+												{{row.commdityCount}}
+											</td>
+											<td class="text-center">{{(row.bs / row.commdityCount) | number_format}}</td>
+											<td class="text-center">{{row.bs | number_format}}</td>
+										</tr>
+									{% endfor %}
+
+									<tr>
+										<td class="fw-bold text-uppercase text-end bg-body-light" colspan="5">جمع کل</td>
+										<td class="fw-bold text-end bg-body-light">{{doc.amount | number_format}}</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!-- END Table -->
+						<div class="block block-rounded">
+							<div class="block-header block-header-default">
+								<h3 class="block-title">سوابق پرداخت‌ها</h3>
+								<div class="block-options">
+									<div class="block-options-item">
+										وضعیت پرداخت‌ها:
+										{% if totalPays < doc.amount %}
+											<b class="text-danger">تسویه نشده</b>
+										{% else %}
+											<b class="text-success">تسویه شده</b>
+										{% endif %}
+									</div>
+								</div>
+							</div>
+							<div class="block-content p-0">
+								<div class="table-responsive push text-center">
+									<table class="table table-bordered">
+										<thead class="bg-body">
+										<tr>
+											<th class="text-center" style="width: 60px;">ردیف</th>
+											<th>روش پرداخت</th>
+											<th>تاریخ</th>
+											<th class="text-center">مبلغ</th>
+											<th class="text-center">شماره پیگیری/سند</th>
+											<th class="text-center">توضیحات</th>
+										</tr>
+										</thead>
+										<tbody>
+										{% for item in doc.relatedDocs %}
+											<tr>
+												<td>{{ loop.index }}</td>
+												{% if item.type == 'walletPay' %}
+													<td class="text-success"><i class="fa fa-wallet"></i>پرداخت آنلاین</td>
+												{% else %}
+													<td class="text-primary"><i class="fa fa-file"></i>سند حسابداری</td>
+												{% endif %}
+												<td>{{ item.date}}</td>
+												<td>{{ item.amount | number_format }}</td>
+												<td>{{ item.code }}</td>
+												<td>{{ item.des }}</td>
+											</tr>
+										{% endfor %}
+										<tr class="">
+											<td class="fw-bold text-uppercase text-end bg-body-light" colspan="5">جمع کل</td>
+											<td class="fw-bold text-end bg-body-light">{{ totalPays | number_format }}
+											ریال
+											</td>
+										</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<!-- Footer -->
+						<a href="https://hesabix.ir" class="p-4 mb-3text-primary text-center my-5">
+							حسابیکس
+							<label class="text-muted">سامانه جامع مالی رایگان ، ابری و متن باز</label>
+						</a>
+						<!-- END Footer -->
+					</div>
+				</div>
+			</div>
+			<!-- END Invoice -->
+		</div>
+		<!-- END Page Content -->
+	</main>
+{% endblock %}

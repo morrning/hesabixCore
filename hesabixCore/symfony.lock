@@ -240,20 +240,6 @@
             "./config/packages/security.yaml"
         ]
     },
-    "symfony/stimulus-bundle": {
-        "version": "2.10",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "2.9",
-            "ref": "05c45071c7ecacc1e48f94bc43c1f8d4405fb2b2"
-        },
-        "files": [
-            "./assets/bootstrap.js",
-            "./assets/controllers.json",
-            "./assets/controllers/hello_controller.js"
-        ]
-    },
     "symfony/translation": {
         "version": "6.2",
         "recipe": {
@@ -280,18 +266,6 @@
             "./templates/base.html.twig"
         ]
     },
-    "symfony/ux-vue": {
-        "version": "2.10",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "2.9",
-            "ref": "7a6b5e211acc7b10b7190e704b40f6d2bca01adf"
-        },
-        "files": [
-            "./assets/vue/controllers/Hello.vue"
-        ]
-    },
     "symfony/validator": {
         "version": "6.2",
         "recipe": {
@@ -315,22 +289,6 @@
         "files": [
             "./config/packages/web_profiler.yaml",
             "./config/routes/web_profiler.yaml"
-        ]
-    },
-    "symfony/webpack-encore-bundle": {
-        "version": "2.0",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "2.0",
-            "ref": "082d754b3bd54b3fc669f278f1eea955cfd23cf5"
-        },
-        "files": [
-            "./assets/app.js",
-            "./assets/styles/app.css",
-            "./config/packages/webpack_encore.yaml",
-            "./package.json",
-            "./webpack.config.js"
         ]
     },
     "symfonycasts/verify-email-bundle": {

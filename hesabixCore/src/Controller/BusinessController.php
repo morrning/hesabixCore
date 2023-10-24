@@ -16,8 +16,10 @@ use App\Entity\Year;
 use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
+use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 
+use ReflectionException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -45,8 +47,11 @@ class BusinessController extends AbstractController
         return $this->json($response);
     }
 
+    /**
+     * @throws ReflectionException
+     */
     #[Route('/api/business/get/info/{bid}', name: 'api_business_get_info')]
-    public function api_business_get_info($bid,#[CurrentUser] ?User $user,EntityManagerInterface $entityManager): Response
+    public function api_business_get_info($bid,#[CurrentUser] ?User $user,Provider $provider,EntityManagerInterface $entityManager): Response
     {
         $bus = $entityManager->getRepository(Business::class)->findOneBy(['id'=>$bid]);
         $response = [];
@@ -72,6 +77,11 @@ class BusinessController extends AbstractController
         $response['type'] = $bus->getType();
         $response['zarinpalCode'] = $bus->getZarinpalCode();
         $response['smsCharge'] = $bus->getSmsCharge();
+        $response['shortlinks'] = $bus->isShortLinks();
+        $response['walletEnabled'] = $bus->isWalletEnable();
+        $response['walletMatchBank'] = null;
+        if($bus->isWalletEnable())
+            $response['walletMatchBank'] = $provider->Entity2Array($bus->getWalletMatchBank(),0);
         return $this->json($response);
     }
 
@@ -95,65 +105,85 @@ class BusinessController extends AbstractController
             trim($params['name']) != '' &&
             trim($params['legal_name']) != '' &&
             trim($params['maliyatafzode']) != ''
-        ){
+        ) {
             //submit business
             $isNew = false;
-            if(array_key_exists('bid',$params)){
+            if (array_key_exists('bid', $params)) {
                 $business = $entityManager->getRepository(Business::class)->find($params['bid']);
-                if(! $business) {
-                    return $this->json(['result'=>-1]);
+                if (!$business) {
+                    return $this->json(['result' => -1]);
                 }
-            }
-            else{
+            } else {
                 $business = new Business();
                 $business->setPersonCode(1000);
                 $business->setBankCode(1000);
                 $business->setReceiveCode(1000);
                 $isNew = true;
             }
-            if(!$isNew && !$access->hasRole('settings'))
+            if (!$isNew && !$access->hasRole('settings'))
                 throw $this->createAccessDeniedException();
             //check for that user register business before
-            $oldBid = $entityManager->getRepository(Business::class)->findOneBy(['owner'=>$this->getUser()],['id'=>'DESC']);
-            if($oldBid && !$business->getId()){
-                if($oldBid->getDateSubmit() > time()-86400){
-                    return $this->json(['result'=>3]);
+            $oldBid = $entityManager->getRepository(Business::class)->findOneBy(['owner' => $this->getUser()], ['id' => 'DESC']);
+            if ($oldBid && !$business->getId()) {
+                if ($oldBid->getDateSubmit() > time() - 86400) {
+                    return $this->json(['result' => 3]);
                 }
             }
             $business->setName($params['name']);
             $business->setOwner($this->getUser());
             $business->setLegalName($params['legal_name']);
             $business->setMaliyatafzode($params['maliyatafzode']);
-            if($params['field'])
+            if ($params['field'])
                 $business->setField($params['field']);
-            if($params['type'])
+            if ($params['type'])
                 $business->setType($params['type']);
-            if($params['shenasemeli'])
+            if ($params['shenasemeli'])
                 $business->setShenasemeli($params['shenasemeli']);
-            if($params['codeeqtesadi'])
+            if ($params['codeeqtesadi'])
                 $business->setCodeeghtesadi($params['codeeqtesadi']);
-            if($params['shomaresabt'])
+            if ($params['shomaresabt'])
                 $business->setShomaresabt($params['shomaresabt']);
-            if($params['country'])
+            if ($params['country'])
                 $business->setCountry($params['country']);
-            if($params['ostan'])
+            if ($params['ostan'])
                 $business->setOstan($params['ostan']);
-            if($params['shahrestan'])
+            if ($params['shahrestan'])
                 $business->setShahrestan($params['shahrestan']);
-            if($params['postalcode'])
+            if ($params['postalcode'])
                 $business->setPostalcode($params['postalcode']);
-            if(array_key_exists('zarinpalCode',$params))
+            if (array_key_exists('zarinpalCode', $params))
                 $business->setZarinpalCode($params['zarinpalCode']);
-            if($params['tel'])
+            if (array_key_exists('shortlinks', $params))
+                $business->setShortlinks($params['shortlinks']);
+            if ($params['tel'])
                 $business->setTel($params['tel']);
-            if($params['mobile'])
+            if ($params['mobile'])
                 $business->setMobile($params['mobile']);
-            if($params['address'])
+            if ($params['address'])
                 $business->setAddress($params['address']);
-            if($params['website'])
+            if ($params['website'])
                 $business->setWesite($params['website']);
-            if($params['email'])
+            if ($params['email'])
                 $business->setEmail($params['email']);
+
+            if (array_key_exists('walletEnabled', $params)){
+                if ($params['walletEnabled']) {
+                    if (array_key_exists('walletMatchBank', $params)) {
+                        $bank = $entityManager->getRepository(BankAccount::class)->findOneBy([
+                            'bid' => $business->getId(),
+                            'id' => $params['walletMatchBank']['id']
+                        ]);
+                        if ($bank) {
+                            $business->setWalletEnable($params['walletEnabled']);
+                            $business->setWalletMatchBank($bank);
+                        }
+                    }
+                }
+                else{
+                    $business->setWalletEnable(false);
+                }
+            }
+
            //get Money type
             if($params['arzmain']){
                 $Arzmain = $entityManager->getRepository(Money::class)->findOneBy(['name'=>$params['arzmain']]);
@@ -190,6 +220,7 @@ class BusinessController extends AbstractController
                 $perms->setPermission(true);
                 $perms->setSalary(true);
                 $perms->setCashdesk(true);
+                $perms->setWallet(true);
                 $entityManager->persist($perms);
                 $entityManager->flush();
                 //active Year
@@ -353,6 +384,7 @@ class BusinessController extends AbstractController
                     'plugNoghreAdmin'=>true,
                     'plugNoghreSell'=>true,
                     'plugCCAdmin'=>true,
+                    'wallet'=>true,
                     'owner'=> true,
                     'active'=> $perm->getUser()->isActive()
                 ];
@@ -382,6 +414,7 @@ class BusinessController extends AbstractController
                     'plugNoghreAdmin'=>$perm->isPlugNoghreAdmin(),
                     'plugNoghreSell'=>$perm->isPlugNoghreSell(),
                     'plugCCAdmin'=>$perm->isPlugCCAdmin(),
+                    'wallet'=>$perm->isWallet(),
                     'owner'=> false,
                     'active'=> $perm->getUser()->isActive()
                 ];
@@ -435,6 +468,7 @@ class BusinessController extends AbstractController
                 $perm->setReport($params['report']);
                 $perm->setPermission($params['permission']);
                 $perm->setSalary($params['salary']);
+                $perm->setWallet($params['wallet']);
                 $perm->setCashdesk($params['cashdesk']);
                 $perm->setPlugNoghreAdmin($params['plugNoghreAdmin']);
                 $perm->setPlugNoghreSell($params['plugNoghreSell']);

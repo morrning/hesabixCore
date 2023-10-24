@@ -4,8 +4,21 @@
 namespace App\Service;
 
 
+use App\Entity\ChangeReport;
+use Doctrine\ORM\EntityManagerInterface;
+
 class twigFunctions
 {
+    private EntityManagerInterface $em;
+
+    /**
+     * @param EntityManagerInterface $em
+     */
+    public function __construct(EntityManagerInterface $em)
+    {
+        $this->em = $em;
+    }
+
 
     public function md5($val){
         return md5($val);
@@ -62,6 +75,13 @@ class twigFunctions
             $numberOfUnits = floor($hash / $unit);
             return $numberOfUnits.' '.$text;
         }
+    }
+
+    public function getHesabixLastVersionNumber():string{
+        $last = $this->em->getRepository(ChangeReport::class)->findOneBy([],['id'=>'DESC']);
+        if($last)
+            return $last->getVersion();
+        return '0.0.1';
     }
 
 

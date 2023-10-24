@@ -86,6 +86,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: SMSPays::class, orphanRemoval: true)]
     private Collection $sMSPays;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: WalletTransaction::class)]
+    private Collection $walletTransactions;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -101,6 +104,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->notifications = new ArrayCollection();
         $this->emailHistories = new ArrayCollection();
         $this->sMSPays = new ArrayCollection();
+        $this->walletTransactions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -629,6 +633,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($sMSPay->getSubmitter() === $this) {
                 $sMSPay->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, WalletTransaction>
+     */
+    public function getWalletTransactions(): Collection
+    {
+        return $this->walletTransactions;
+    }
+
+    public function addWalletTransaction(WalletTransaction $walletTransaction): static
+    {
+        if (!$this->walletTransactions->contains($walletTransaction)) {
+            $this->walletTransactions->add($walletTransaction);
+            $walletTransaction->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeWalletTransaction(WalletTransaction $walletTransaction): static
+    {
+        if ($this->walletTransactions->removeElement($walletTransaction)) {
+            // set the owning side to null (unless already changed)
+            if ($walletTransaction->getSubmitter() === $this) {
+                $walletTransaction->setSubmitter(null);
             }
         }
 

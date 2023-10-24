@@ -22,6 +22,9 @@ class Settings
     #[ORM\Column(nullable: true)]
     private ?bool $activeSendSms = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $zarinpalMerchant = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -59,6 +62,18 @@ class Settings
     public function setActiveSendSms(?bool $activeSendSms): static
     {
         $this->activeSendSms = $activeSendSms;
+
+        return $this;
+    }
+
+    public function getZarinpalMerchant(): ?string
+    {
+        return $this->zarinpalMerchant;
+    }
+
+    public function setZarinpalMerchant(?string $zarinpalMerchant): static
+    {
+        $this->zarinpalMerchant = $zarinpalMerchant;
 
         return $this;
     }

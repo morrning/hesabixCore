@@ -16,10 +16,10 @@
                         <i class="fa fa-door-open"></i>
                         ورود | عضویت رایگان
                     </a>
-                    <a href="http://insider.hesabix.ir" class="btn btn-outline-warning btn-lg px-4 gap-3">
+                    <button href="http://insider.hesabix.ir" disabled="disabled" class="btn btn-outline-warning btn-lg px-4 gap-3">
                         <i class="fa fa-door-open"></i>
-                        دمو (نسخه در حال توسعه)
-                    </a>
+                        پیش‌نمایش (فعلا غیرفعال است)
+                    </button>
                     {% if is_granted('ROLE_ADMIN')%}
                         <a href="/app/dashboard" class="btn btn-alt-danger btn-lg px-4 gap-3">
                             <i class="fa fa-door-open"></i>
@@ -85,58 +85,70 @@
     </div>
     <div class="container">
         <div class="row">
-            <div class="col-sm-12 col-md-8">
-                <div class="block block-rounded row g-0 bg-info">
-                    <ul class="nav nav-tabs nav-tabs-block flex-md-column col-md-4" role="tablist">
-                        <li class="nav-item d-md-flex flex-md-column" role="presentation">
-                            <button aria-controls="btabs-vertical-home" aria-selected="false" class="nav-link text-md-start" data-bs-target="#btabs-vertical-home" data-bs-toggle="tab" id="btabs-vertical-home-tab" role="tab" tabindex="1">
-                                <i class="fa fa-fw fa-dot-circle opacity-50 me-1 d-none d-sm-inline-block"></i>حسابیکس چیست</button>
-                        </li>
-                        <li class="nav-item d-md-flex flex-md-column" role="presentation">
-                            <button aria-controls="btabs-vertical-profile" aria-selected="false" class="nav-link text-md-start" data-bs-target="#btabs-vertical-profile" data-bs-toggle="tab" id="btabs-vertical-profile-tab" role="tab" tabindex="2">
-                                <i class="fa fa-fw fa-dot-circle opacity-50 me-1 d-none d-sm-inline-block"></i>ساده و قدرتمند</button>
-                        </li>
-                        <li class="nav-item d-md-flex flex-md-column" role="presentation">
-                            <button aria-controls="btabs-vertical-settings" aria-selected="true" class="nav-link text-md-start active" data-bs-target="#btabs-vertical-settings" data-bs-toggle="tab" id="btabs-vertical-settings-tab" role="tab" tabindex="3">
-                                <i class="fa fa-fw fa-dot-circle opacity-50 me-1 d-none d-sm-inline-block"></i>سریع و بروز</button>
-                        </li>
-                    </ul>
-                    <div class="tab-content col-md-8">
-                        <div aria-labelledby="btabs-vertical-home-tab" class="block-content tab-pane" id="btabs-vertical-home" role="tabpanel" tabindex="1">
-                            <h4 class="fw-semibold text-light">حسابیکس چیست</h4>
-                            <p class="fs-sm"> حسابیکس اولین نرم افزار کامل حسابداری تحت وب است. این نرم افزار بر اساس فناوری رایانش ابری ساخته شده است. یعنی کلیه اطلاعات شما بر روی سرورهای حسابیکس قرار می گیرد. ما امنیت اطلاعات و حریم خصوصی کلیه کاربران را به طور کامل تضمین می کنیم.
-                                برای کار با حسابیکس فقط به یک دستگاه متصل به اینترنت نیاز دارید، فرقی نمی کند که این دستگاه تبلت یا موبایل باشد یا اینکه رایانه و لپ تاپ.
-                                نیاز نیست که هیچگونه نرم افزاری را نصب کنید. کافیست در سایت ثبت نام کرده و بلافاصله کسب و کار خود را مدیریت کنید. </p>
+            <div class="col-sm-12 col-md-6 mb-2">
+                <div class="col-12 mb-2">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary-dark">حسابیکس چیست؟</h5>
+                            <p class="card-text">
+                                حسابیکس اولین نرم افزار کامل حسابداری تحت وب است. این نرم افزار بر اساس فناوری رایانش ابری ساخته شده است. یعنی کلیه اطلاعات شما بر روی سرورهای حسابیکس قرار می گیرد. ما امنیت اطلاعات و حریم خصوصی کلیه کاربران را به طور کامل تضمین می کنیم. برای کار با حسابیکس فقط به یک دستگاه متصل به اینترنت نیاز دارید، فرقی نمی کند که این دستگاه تبلت یا موبایل باشد یا اینکه رایانه و لپ تاپ. نیاز نیست که هیچگونه نرم افزاری را نصب کنید. کافیست در سایت ثبت نام کرده و بلافاصله کسب و کار خود را مدیریت کنید.
+                            </p>
                         </div>
-                        <div aria-labelledby="btabs-vertical-profile-tab" class="block-content tab-pane" id="btabs-vertical-profile" role="tabpanel" tabindex="2">
-                            <h4 class="fw-semibold text-light">حسابیکس ساده و قدرتمند</h4>
-                            <p class="fs-sm">بدون نیاز به دانش حسابداری می توانید از حسابیکس استفاده کنید. سعی کرده ایم محیط نرم افزار را ساده و کاربرپسند طراحی کنیم. پیچیدگی های معمول نرم افزارهای حسابداری را حذف کرده ایم و تلاش کرده ایم که عملیات های پیچیده حسابداری را به صورت اتوماتیک توسط نرم افزار انجام دهیم.
-                                با این حال، بر روی قدرتمندی و امکانات نرم افزاری نیز تمرکز ویژه ای داشته ایم. ما به عنوان شرکت پیشرو در زمینه حسابداری ابری، امکانات و قابلیت های منحصر به فردی را به کاربران ارائه می دهیم.</p>
-                        </div>
-                        <div aria-labelledby="btabs-vertical-settings-tab" class="block-content tab-pane active show" id="btabs-vertical-settings" role="tabpanel" tabindex="3">
-                            <h4 class="fw-semibold text-light">حسابیکس سریع و بروز</h4>
-                            <p class="fs-sm">با وجود اینکه حسابیکس بر روی بستر اینترنت ارائه می شود، این نرم افزار بسیار سریع است. تجربه کاربری ارائه شده در حسابیکس نه تنها از لحاظ سرعت با نرم افزارهای تحت ویندوز رقابت می کند بلکه در بسیاری از موارد عملیات را سریعتر انجام می دهد.
-                                به علاوه حسابیکس همیشه بروز است. هر زمان که به سیستم وارد می شوید، آخرین نسخه از نرم افزار در دسترس شما قرار می گیرد.
-                                تیم فنی حسابیکس به طور مرتب در حال بروز رسانی و ایجاد امکانات و قابلیت های جدید در نرم افزار است. این امکانات به رایگان در اختیار کلیه کاربران قرار می گیرد.</p>
+                    </div>
+                </div>
+                <div class="col-12 mb-2">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary-dark">ساده و قدرتمند</h5>
+                            <p class="card-text">
+                                برای کار با حسابیکس فقط به یک دستگاه متصل به اینترنت نیاز دارید، مهم نیست که این دستگاه تبلت یا موبایل باشد یا اینکه رایانه و لپ تاپ.
+                                نیاز نیست که هیچگونه نرم افزاری را نصب کنید. کافیست در سایت ثبت نام کرده و بلافاصله کسب و کار خود را مدیریت کنید.
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-12 col-md-4 text-light px-0">
+            <div class="col-sm-12 col-md-6 mb-2">
+                <div class="row">
+                    <div class="col-12 mb-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary-dark">نقاط قوت و تمایز</h5>
+                                <p class="card-text">
+                                     در حسابیکس می توانید فاکتورهای مشتریان را به صورت آنلاین برای آنها ارسال کنید، مشتری نیز می تواند فاکتور یا حتی مانده بدهی خود را به صورت آنلاین پرداخت کند. کلیه اسناد مربوطه نیز توسط نرم افزار به صورت اتوماتیک صادر می شوند. از سوی دیگر ذینفعان کسب و کار شما، مانند مشتریان یا تامین کنندگان، می توانند به صورت آنلاین و بروز، کارت حساب خود را مشاهده کنند.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 mb-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary-dark">سریع و به روز</h5>
+                                <p class="card-text">
+                                    با وجود اینکه حسابیکس بر روی بستر اینترنت ارائه می شود، این نرم افزار بسیار سریع است. تجربه کاربری ارائه شده در حسابیکس نه تنها از لحاظ سرعت با نرم افزارهای تحت ویندوز رقابت می کند بلکه در بسیاری از موارد عملیات را سریعتر انجام می دهد. به علاوه حسابیکس همیشه بروز است. هر زمان که به سیستم وارد می شوید، آخرین نسخه از نرم افزار در دسترس شما قرار می گیرد. این امکانات به رایگان در اختیار کلیه کاربران قرار می گیرد. </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12 col-md-12">
                 <div class="block block-rounded block-transparent">
                     <div class="bg-image">
-                        <div class="block-content block-content-full bg-secondary rounded-2">
+                        <div class="block-content block-content-full bg-white rounded-2">
                             <div class="row px-0 justify-content-sm-between align-items-center">
                                 <div class="col-sm-12">
-                                    <h4 class="mb-2">
+                                    <h4 class="mb-2 text-primary-dark">
                                         <i class="fa fa-user-plus"></i>
                                         جدیدترین عضو حسابیکس...
                                     </h4>
                                     <p class=" mb-sm-0">
                                         به جدیدترین عضو حسابیکس
-                                        <span class="text-primary-lighter">{{ lastBusinessOwner }}</span>
+                                        <span class="text-primary">{{ lastBusinessOwner }}</span>
                                         که کسب‌و‌کار خود را با نام
-                                        <span class="text-primary-lighter">{{ lastBusinessName }}</span>
+                                        <span class="text-primary">{{ lastBusinessName }}</span>
                                         ایجاد کرده‌اند خوش‌آمد می‌گوییم.
                                     </p>
                                 </div>
@@ -147,8 +159,8 @@
             </div>
         </div>
     </div>
-    <div class="content content-boxed">
-        <h3>آخرین مطالب وبلاگ</h3>
+    <div class="content content-boxed mt-0 pt-0">
+        <h3>وبلاگ حسابیکس</h3>
         <div class="row items-push">
             {% for item in blogPosts %}
                 <div class="col-sm-12 col-md-4">
