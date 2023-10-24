@@ -91,6 +91,14 @@ class UiGeneralController extends AbstractController
         ]);
     }
 
+    #[Route('/front/sponsors', name: 'general_sponsors')]
+    public function general_sponsors(EntityManagerInterface $entityManager): Response
+    {
+        return $this->render('general/sponsors.html.twig',[
+
+        ]);
+    }
+
     #[Route('/sitemap.xml', name: 'general_sitemap')]
     public function general_sitemap(EntityManagerInterface $entityManager): Response
     {
