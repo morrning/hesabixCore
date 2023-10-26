@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Support;
 use App\Service\Jdate;
+use App\Service\Provider;
 use App\Service\SMS;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,6 +16,16 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class SupportController extends AbstractController
 {
+    #[Route('/api/admin/support/list', name: 'app_admin_support_list')]
+    public function app_admin_support_list(Provider $provider,Jdate $jdate,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $items = $entityManager->getRepository(Support::class)->findBy(['main' => 0],['id'=>'DESC']);
+        foreach ($items as $item){
+            $item->setDateSubmit($jdate->jdate('Y/n/d H:i',$item->getDateSubmit()));
+        }
+        return $this->json($provider->ArrayEntity2Array($items,1));
+    }
+
     #[Route('/api/support/list', name: 'app_support_list')]
     public function app_support_list(Jdate $jdate,EntityManagerInterface $entityManager): JsonResponse
     {

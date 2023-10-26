@@ -167,7 +167,19 @@ class PayController extends AbstractController
                     $doc->setDes($wt->getDes());
                     $doc->setAmount($wt->getAmount());
                     $doc->setCode($provider->getAccountingCode($wt->getBid(),'accounting'));
-                    $doc->setSubmitter($entityManager->getRepository(User::class)->findOneBy(['email'=>'wallet@hesabix.ir']));
+                    $walletUser = $entityManager->getRepository(User::class)->findOneBy(['email'=>'wallet@hesabix.ir']);
+                    if($walletUser)
+                        $doc->setSubmitter($walletUser);
+                    else{
+                        $wu = new User();
+                        $wu->setFullName('کیف پول حسابیکس');
+                        $wu->setEmail('wallet@hesabix.ir');
+                        $wu->setRoles([]);
+                        $wu->setActive(true);
+                        $entityManager->persist($wu);
+                        $entityManager->flush();
+                        $doc->setSubmitter($wu);
+                    }
                     $entityManager->persist($doc);
                     $entityManager->flush();
                     $originalDoc->addRelatedDoc($doc);
@@ -182,7 +194,7 @@ class PayController extends AbstractController
                     $row->setBank($doc->getBid()->getWalletMatchBank());
                     $row->setBd($doc->getAmount());
                     $row->setBs(0);
-                    $row->setDes('دریافت وجه فاکتور آنلاین شماره ' . $doc->getCode());
+                    $row->setDes('دریافت وجه فاکتور آنلاین شماره ' . $originalDoc->getCode());
                     //get table ref
                     $table = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code'=>5]);
                     $row->setRef($table);
@@ -196,8 +208,8 @@ class PayController extends AbstractController
                     $rows = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $originalDoc]);
                     $person = null;
                     foreach ($rows as $oldRow) {
-                        if ($row->getPerson())
-                            $person = $row->getPerson();
+                        if ($oldRow->getPerson())
+                            $person = $oldRow->getPerson();
                     }
                     $row = new HesabdariRow();
                     $row->setBid($originalDoc->getBid());
@@ -205,7 +217,7 @@ class PayController extends AbstractController
                     $row->setPerson($person);
                     $row->setBs($doc->getAmount());
                     $row->setBd(0);
-                    $row->setDes('پرداخت وجه فاکتور آنلاین شماره ' . $doc->getCode());
+                    $row->setDes('پرداخت وجه فاکتور آنلاین شماره ' . $originalDoc->getCode());
                     //get table ref
                     $table = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code'=>3]);
                     $row->setRef($table);

@@ -38,4 +38,21 @@ class AdminController extends AbstractController
             'message' => $content,
         ]);
     }
+
+    /**
+     * @throws \Exception
+     */
+    #[Route('/api/admin/has/role/{role}', name: 'app_admin_has_role')]
+    public function app_admin_has_role($role): JsonResponse
+    {
+        if(!is_bool(array_search($role,$this->getUser()->getRoles())))
+        {
+            return $this->json([
+                'result' => true,
+            ]);
+        }
+        return $this->json([
+            'result' => false,
+        ]);
+    }
 }

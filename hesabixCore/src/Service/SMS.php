@@ -37,7 +37,7 @@ class SMS
         }
     }
 
-    public function sendByBalance(array $params,$bodyID,$to,Business $business,User $user,$balance = 450): int
+    public function sendByBalance(array $params,$bodyID,$to,Business $business,User $user,$balance = 500): int
     {
        if($business->getSmsCharge() < ($balance * $this->smsPrice))
            return 2;

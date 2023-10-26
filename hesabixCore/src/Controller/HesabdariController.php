@@ -214,7 +214,9 @@ class HesabdariController extends AbstractController
             ];
             if($params['type'] == 'buy' || $params['type'] == 'sell'){
                 $mainRow = $entityManager->getRepository(HesabdariRow::class)->getNotEqual($item,'person');
-                $temp['person'] = $mainRow->getPerson()->getNikename();
+                $temp['person'] = '';
+                if($mainRow)
+                    $temp['person'] = $mainRow->getPerson()->getNikename();
             }
 
             //get status of doc
@@ -232,6 +234,9 @@ class HesabdariController extends AbstractController
         return $this->json($dataTemp);
     }
 
+    /**
+     * @throws \ReflectionException
+     */
     #[Route('/api/accounting/insert', name: 'app_accounting_insert')]
     public function app_accounting_insert(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
@@ -374,7 +379,10 @@ class HesabdariController extends AbstractController
         $entityManager->flush();
         $log->insert('حسابداری','سند حسابداری شماره ' . $doc->getCode() . ' ثبت / ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));
 
-        return $this->json(['result'=>1]);
+        return $this->json([
+            'result'=>1,
+            'doc'=>$provider->Entity2Array($doc,0)
+        ]);
     }
 
     #[Route('/api/accounting/remove', name: 'app_accounting_remove_doc')]
@@ -410,8 +418,17 @@ class HesabdariController extends AbstractController
         }
         foreach ($rows as $row)
             $entityManager->remove($row);
+        foreach ($doc->getRelatedDocs() as $relatedDoc){
+            if($relatedDoc->getType() != 'walletPay'){
+                $items = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc'=>$relatedDoc]);
+                foreach ($items as $item)
+                    $entityManager->remove($item);
+                $entityManager->remove($relatedDoc);
+                $log->insert('حسابداری','سند حسابداری شماره ' . $relatedDoc->getCode() . ' حذف شد.',$this->getUser(),$request->headers->get('activeBid'));
+            }
+        }
         $entityManager->remove($doc);
-
+        $entityManager->flush();
         $log->insert('حسابداری','سند حسابداری شماره ' . $doc->getCode() . ' حذف شد.',$this->getUser(),$request->headers->get('activeBid'));
 
         return $this->json(['result'=>1]);
