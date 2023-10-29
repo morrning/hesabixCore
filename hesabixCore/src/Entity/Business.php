@@ -176,6 +176,17 @@ class Business
     #[Ignore]
     private ?bool $walletEnable = null;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: StoreroomTicket::class, orphanRemoval: true)]
+    #[Ignore]
+    private Collection $storeroomTickets;
+
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: StoreroomItem::class, orphanRemoval: true)]
+    #[Ignore]
+    private Collection $storeroomItems;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $storeroomCode = '1000';
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -195,6 +206,8 @@ class Business
         $this->commodityDrops = new ArrayCollection();
         $this->storerooms = new ArrayCollection();
         $this->walletTransactions = new ArrayCollection();
+        $this->storeroomTickets = new ArrayCollection();
+        $this->storeroomItems = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1116,6 +1129,78 @@ class Business
     public function setWalletEnable(?bool $walletEnable): static
     {
         $this->walletEnable = $walletEnable;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomTicket>
+     */
+    public function getStoreroomTickets(): Collection
+    {
+        return $this->storeroomTickets;
+    }
+
+    public function addStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if (!$this->storeroomTickets->contains($storeroomTicket)) {
+            $this->storeroomTickets->add($storeroomTicket);
+            $storeroomTicket->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if ($this->storeroomTickets->removeElement($storeroomTicket)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomTicket->getBid() === $this) {
+                $storeroomTicket->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomItem>
+     */
+    public function getStoreroomItems(): Collection
+    {
+        return $this->storeroomItems;
+    }
+
+    public function addStoreroomItem(StoreroomItem $storeroomItem): static
+    {
+        if (!$this->storeroomItems->contains($storeroomItem)) {
+            $this->storeroomItems->add($storeroomItem);
+            $storeroomItem->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomItem(StoreroomItem $storeroomItem): static
+    {
+        if ($this->storeroomItems->removeElement($storeroomItem)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomItem->getBid() === $this) {
+                $storeroomItem->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getStoreroomCode(): ?string
+    {
+        return $this->storeroomCode;
+    }
+
+    public function setStoreroomCode(?string $storeroomCode): static
+    {
+        $this->storeroomCode = $storeroomCode;
 
         return $this;
     }

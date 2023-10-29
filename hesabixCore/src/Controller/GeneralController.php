@@ -55,6 +55,12 @@ class GeneralController extends AbstractController
     {
         return $this->json($entityManager->getRepository(Statment::class)->findBy([],['id'=>'DESC']));
     }
+
+    #[Route('/api/general/get/time', name: 'general_get_time')]
+    public function general_get_time(Jdate $jdate): JsonResponse
+    {
+        return $this->json(['timeNow'=>$jdate->jdate('Y/n/d',time())]);
+    }
     #[Route('/front/print/{id}', name: 'app_front_print')]
     public function app_front_print(Provider $provider,EntityManagerInterface $entityManager,pdfMGR $pdfMGR,String $id)
     {

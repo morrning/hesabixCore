@@ -54,12 +54,16 @@ class Commodity
     #[ORM\ManyToOne(inversedBy: 'commodities')]
     private ?CommodityCat $cat = null;
 
+    #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: StoreroomItem::class, orphanRemoval: true)]
+    private Collection $storeroomItems;
+
     public function __construct()
     {
         $this->setPriceBuy(0);
         $this->setPriceSell(0);
         $this->hesabdariRows = new ArrayCollection();
         $this->commodityDropLinks = new ArrayCollection();
+        $this->storeroomItems = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -231,6 +235,36 @@ class Commodity
     public function setCat(?CommodityCat $cat): static
     {
         $this->cat = $cat;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomItem>
+     */
+    public function getStoreroomItems(): Collection
+    {
+        return $this->storeroomItems;
+    }
+
+    public function addStoreroomItem(StoreroomItem $storeroomItem): static
+    {
+        if (!$this->storeroomItems->contains($storeroomItem)) {
+            $this->storeroomItems->add($storeroomItem);
+            $storeroomItem->setCommodity($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomItem(StoreroomItem $storeroomItem): static
+    {
+        if ($this->storeroomItems->removeElement($storeroomItem)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomItem->getCommodity() === $this) {
+                $storeroomItem->setCommodity(null);
+            }
+        }
 
         return $this;
     }

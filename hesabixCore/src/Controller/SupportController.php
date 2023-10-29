@@ -25,7 +25,62 @@ class SupportController extends AbstractController
         }
         return $this->json($provider->ArrayEntity2Array($items,1));
     }
+    #[Route('/api/admin/support/view/{id}', name: 'app_admin_support_view')]
+    public function app_admin_support_view(Jdate $jdate, EntityManagerInterface $entityManager,string $id = ''): JsonResponse
+    {
+        $item = $entityManager->getRepository(Support::class)->find($id);
+        if(!$item) throw $this->createNotFoundException();
+        $replays = $entityManager->getRepository(Support::class)->findBy(['main'=>$item->getId()]);
+        foreach ($replays as $replay){
+            $replay->setDateSubmit($jdate->jdate('Y/n/d H:i',$replay->getDateSubmit()));
+            $replay->setTitle($replay->getSubmitter()->getFullname());
+            if($replay->getSubmitter() == $this->getUser())
+                $replay->setState(1);
+            else
+                $replay->setState(0);
+        }
+        $item->setDateSubmit($jdate->jdate('Y/n/d H:i',$item->getDateSubmit()));
+        return $this->json([
+            'item'=> $item,
+            'replays'=> $replays
+        ]);
+    }
+    #[Route('/api/admin/support/mod/{id}', name: 'app_admin_support_mod')]
+    public function app_admin_support_mod(SMS $SMS,Request $request, EntityManagerInterface $entityManager,string $id = ''): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
 
+        $item = $entityManager->getRepository(Support::class)->find($id);
+        if(!$item) $this->createNotFoundException();
+        if(array_key_exists('body',$params)){
+            $support = new Support();
+            $support->setDateSubmit(time());
+            $support->setTitle('0');
+            $support->setBody($params['body']);
+            $support->setState('0');
+            $support->setMain($item->getId());
+            $support->setSubmitter($this->getUser());
+            $entityManager->persist($support);
+            $entityManager->flush();
+            $item->setState('پاسخ داده شده');
+            $entityManager->persist($support);
+            $entityManager->flush();
+            //send sms to customer
+            if($item->getSubmitter()->getMobile())
+                $SMS->send([$item->getId()],'162251',$item->getSubmitter()->getMobile());
+            return $this->json([
+                'error'=> 0,
+                'message'=> 'successful'
+            ]);
+        }
+        return $this->json([
+            'error'=> 999,
+            'message'=> 'تمام موارد لازم را وارد کنید.'
+        ]);
+    }
     #[Route('/api/support/list', name: 'app_support_list')]
     public function app_support_list(Jdate $jdate,EntityManagerInterface $entityManager): JsonResponse
     {

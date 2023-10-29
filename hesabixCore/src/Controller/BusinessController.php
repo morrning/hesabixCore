@@ -31,7 +31,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 class BusinessController extends AbstractController
 {
     #[Route('/api/business/list', name: 'api_bussiness_list')]
-    public function api_bussiness_list(#[CurrentUser] ?User $user,EntityManagerInterface $entityManager): Response
+    public function api_bussiness_list(#[CurrentUser] ?User $user,EntityManagerInterface $entityManager,Provider $provider): Response
     {
         $buss = $entityManager->getRepository(Permission::class)->findBy(['user'=>$user]);
         $response = [];
@@ -43,7 +43,6 @@ class BusinessController extends AbstractController
             $temp['legal_name'] = $bus->getBid()->getLegalName();
             $response[] = $temp;
         }
-
         return $this->json($response);
     }
 

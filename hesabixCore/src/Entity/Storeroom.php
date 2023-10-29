@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\StoreroomRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: StoreroomRepository::class)]
@@ -31,6 +33,18 @@ class Storeroom
 
     #[ORM\Column(nullable: true)]
     private ?bool $active = null;
+
+    #[ORM\OneToMany(mappedBy: 'Storeroom', targetEntity: StoreroomItem::class, orphanRemoval: true)]
+    private Collection $storeroomItems;
+
+    #[ORM\OneToMany(mappedBy: 'storeroom', targetEntity: StoreroomTicket::class, orphanRemoval: true)]
+    private Collection $storeroomTickets;
+
+    public function __construct()
+    {
+        $this->storeroomItems = new ArrayCollection();
+        $this->storeroomTickets = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -105,6 +119,66 @@ class Storeroom
     public function setActive(?bool $active): static
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomItem>
+     */
+    public function getStoreroomItems(): Collection
+    {
+        return $this->storeroomItems;
+    }
+
+    public function addStoreroomItem(StoreroomItem $storeroomItem): static
+    {
+        if (!$this->storeroomItems->contains($storeroomItem)) {
+            $this->storeroomItems->add($storeroomItem);
+            $storeroomItem->setStoreroom($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomItem(StoreroomItem $storeroomItem): static
+    {
+        if ($this->storeroomItems->removeElement($storeroomItem)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomItem->getStoreroom() === $this) {
+                $storeroomItem->setStoreroom(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomTicket>
+     */
+    public function getStoreroomTickets(): Collection
+    {
+        return $this->storeroomTickets;
+    }
+
+    public function addStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if (!$this->storeroomTickets->contains($storeroomTicket)) {
+            $this->storeroomTickets->add($storeroomTicket);
+            $storeroomTicket->setStoreroom($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if ($this->storeroomTickets->removeElement($storeroomTicket)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomTicket->getStoreroom() === $this) {
+                $storeroomTicket->setStoreroom(null);
+            }
+        }
 
         return $this;
     }

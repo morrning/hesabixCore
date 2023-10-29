@@ -85,11 +85,15 @@ class HesabdariDoc
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $status = null;
 
+    #[ORM\OneToMany(mappedBy: 'doc', targetEntity: StoreroomTicket::class)]
+    private Collection $storeroomTickets;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
         $this->plugNoghreOrders = new ArrayCollection();
         $this->relatedDocs = new ArrayCollection();
+        $this->storeroomTickets = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -369,6 +373,36 @@ class HesabdariDoc
     public function setStatus(?string $status): static
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomTicket>
+     */
+    public function getStoreroomTickets(): Collection
+    {
+        return $this->storeroomTickets;
+    }
+
+    public function addStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if (!$this->storeroomTickets->contains($storeroomTicket)) {
+            $this->storeroomTickets->add($storeroomTicket);
+            $storeroomTicket->setDoc($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if ($this->storeroomTickets->removeElement($storeroomTicket)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomTicket->getDoc() === $this) {
+                $storeroomTicket->setDoc(null);
+            }
+        }
 
         return $this;
     }

@@ -37,7 +37,7 @@ class BlogController extends AbstractController
     public function general_blog_post(Request $request,EntityManagerInterface $entityManager, String $url): Response
     {
         $item = $entityManager->getRepository(BlogPost::class)->findOneBy(['url'=>$url]);
-        if(!$item) $this->createNotFoundException();
+        if(!$item) throw $this->createNotFoundException();
 
         $comment = new BlogComment();
         $form = $this->createForm(CommentType::class,$comment);
@@ -127,7 +127,7 @@ class BlogController extends AbstractController
                 $item->setImg($newFilename);
             }
             $item->setDateSubmit(time());
-            $url = str_replace(' ','_',$item->getTitle());
+            $url = str_replace(' ','-',$item->getTitle());
             $check = $entityManager->getRepository(BlogPost::class)->findOneBy(['url'=>$url]);
             $item->setUrl($url);
             if($check){

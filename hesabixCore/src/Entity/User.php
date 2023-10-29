@@ -89,6 +89,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: WalletTransaction::class)]
     private Collection $walletTransactions;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: StoreroomTicket::class, orphanRemoval: true)]
+    private Collection $storeroomTickets;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -105,6 +108,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->emailHistories = new ArrayCollection();
         $this->sMSPays = new ArrayCollection();
         $this->walletTransactions = new ArrayCollection();
+        $this->storeroomTickets = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -663,6 +667,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($walletTransaction->getSubmitter() === $this) {
                 $walletTransaction->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomTicket>
+     */
+    public function getStoreroomTickets(): Collection
+    {
+        return $this->storeroomTickets;
+    }
+
+    public function addStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if (!$this->storeroomTickets->contains($storeroomTicket)) {
+            $this->storeroomTickets->add($storeroomTicket);
+            $storeroomTicket->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if ($this->storeroomTickets->removeElement($storeroomTicket)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomTicket->getSubmitter() === $this) {
+                $storeroomTicket->setSubmitter(null);
             }
         }
 

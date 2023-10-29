@@ -102,9 +102,12 @@ class UiGeneralController extends AbstractController
     #[Route('/sitemap.xml', name: 'general_sitemap')]
     public function general_sitemap(EntityManagerInterface $entityManager): Response
     {
+        $response = new Response('',200,['Content-Type'=>'text/xml']);
         return $this->render('general/sitemap.html.twig',[
-
-        ]);
+            'timeNow'=>$dateTime = date('c', time()),
+            'blogs'=>$entityManager->getRepository(BlogPost::class)->findAll(),
+            'docs'=>$entityManager->getRepository(APIDocument::class)->findAll()
+        ],$response);
     }
     #[Route('/test', name: 'general_test')]
     public function general_test(Provider $provider,pdfMGR $pdfMGR,EntityManagerInterface $entityManager): Response

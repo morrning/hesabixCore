@@ -103,11 +103,16 @@ class Person
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fax = null;
 
+    #[Ignore]
+    #[ORM\OneToMany(mappedBy: 'Person', targetEntity: StoreroomTicket::class)]
+    private Collection $storeroomTickets;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
         $this->plugNoghreOrders = new ArrayCollection();
         $this->ordersFromCustomer = new ArrayCollection();
+        $this->storeroomTickets = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -489,6 +494,36 @@ class Person
     public function setFax(?string $fax): static
     {
         $this->fax = $fax;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomTicket>
+     */
+    public function getStoreroomTickets(): Collection
+    {
+        return $this->storeroomTickets;
+    }
+
+    public function addStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if (!$this->storeroomTickets->contains($storeroomTicket)) {
+            $this->storeroomTickets->add($storeroomTicket);
+            $storeroomTicket->setPerson($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if ($this->storeroomTickets->removeElement($storeroomTicket)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomTicket->getPerson() === $this) {
+                $storeroomTicket->setPerson(null);
+            }
+        }
 
         return $this;
     }

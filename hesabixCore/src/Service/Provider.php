@@ -8,7 +8,10 @@ use App\Entity\PrinterQueue;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\Writer\Exception;
+use ReflectionClass;
+use ReflectionException;
 use ReflectionFunction;
+use ReflectionMethod;
 use Symfony\Component\HttpFoundation\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -88,7 +91,7 @@ class Provider
     }
 
     /**
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function Entity2Array($entity, int $deep = 1, array $ignores = []): null|array{
         if(is_null($entity)) return [];
@@ -104,14 +107,13 @@ class Provider
                 $getMethods[] = trim(trim($method));
             }
         }
-        //var_dump($getMethods);
         foreach ($getMethods as $method){
             if(!is_int(array_search(lcfirst(trim(str_replace(['get','is'], '', $method))), $ignores))) {
                 if (method_exists($entity, $method)) {
                     $method = trim(trim($method));
                     $canProced = true;
                     $reflection = new \ReflectionMethod($entity, $method);
-                    if ($reflection->isPublic() && !str_starts_with('\\0', $method)) {
+                    if ($reflection->isPublic() && $method != 'get' && !str_starts_with('\\0', $method)) {
                         $value = $entity->$method();
                     } else
                         $canProced = false;
@@ -120,7 +122,7 @@ class Provider
                             $result[lcfirst(str_replace(['get','is'], '', $method))] = $value;
                         } else {
                             if ($deep != 0) {
-                                $result[lcfirst(str_replace(['get','is'], '', $method))] = $this->Entity2Array($value, $deep - 1);
+                                $result[lcfirst(str_replace(['get','is'], '', $method))] = $this->Entity2Array($value, $deep - 1,$ignores);
                             }
                         }
                     }
@@ -175,5 +177,39 @@ class Provider
      */
     private function RandomString($length = 32) {
         return substr(str_shuffle(str_repeat($x='23456789ABCDEFGHJKLMNPQRSTUVWXYZ', ceil($length/strlen($x)) )),1,$length);
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function Entity2ArrayJustIncludes($entity, array $includes, int $deep = 1): null|array{
+        if(is_null($entity)) return [];
+        $result = [];
+        foreach ($includes as $method){
+            if (method_exists($entity, $method)) {
+                $method = trim(trim($method));
+                $value = $entity->$method();
+                if (!is_object($value)) {
+                    $result[lcfirst(str_replace(['get','is'], '', $method))] = $value;
+                } else {
+                    if ($deep != 0) {
+                        $result[lcfirst(str_replace(['get','is'], '', $method))] = $this->Entity2ArrayJustIncludes($value,$includes, $deep - 1);
+                    }
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function ArrayEntity2ArrayJustIncludes(array $entity, array $includes, int $deep = 1): null|array{
+        if(count($entity) == 0) return [];
+        $result = [];
+        foreach ($entity as $item){
+            $result[] = $this->Entity2ArrayJustIncludes($item,$includes,$deep);
+        }
+        return $result;
     }
 }

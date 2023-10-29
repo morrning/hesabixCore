@@ -20,6 +20,9 @@ class APIDocument
     #[ORM\Column(type: Types::TEXT)]
     private ?string $body = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $dateSubmit = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -45,6 +48,18 @@ class APIDocument
     public function setBody(string $body): self
     {
         $this->body = $body;
+
+        return $this;
+    }
+
+    public function getDateSubmit(): ?string
+    {
+        return $this->dateSubmit;
+    }
+
+    public function setDateSubmit(?string $dateSubmit): static
+    {
+        $this->dateSubmit = $dateSubmit;
 
         return $this;
     }

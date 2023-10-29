@@ -9,6 +9,7 @@ use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
 use App\Entity\HesabdariTable;
 use App\Entity\Money;
+use App\Entity\PayInfoTemp;
 use App\Entity\Person;
 use App\Entity\PlugNoghreOrder;
 use App\Entity\Salary;
@@ -386,7 +387,7 @@ class HesabdariController extends AbstractController
     }
 
     #[Route('/api/accounting/remove', name: 'app_accounting_remove_doc')]
-    public function app_accounting_remove_doc(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_accounting_remove_doc(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -395,7 +396,8 @@ class HesabdariController extends AbstractController
         if(! array_key_exists('code',$params))
             $this->createNotFoundException();
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-            'code'=>$params['code']
+            'code'=>$params['code'],
+            'bid'=>$request->headers->get('activeBid')
         ]);
         if(!$doc) throw $this->createNotFoundException();
         $roll = '';
@@ -416,6 +418,15 @@ class HesabdariController extends AbstractController
             if($order)
                 $entityManager->remove($order);
         }
+        //check wallet online transactions
+        $tempPays = $entityManager->getRepository(PayInfoTemp::class)->findOneBy(['doc'=>$doc]);
+        if($tempPays){
+            //doc has transaction
+            return $this->json([
+               'result'=>2,
+                'message'=>'سند به دلیل داشتن تراکنش پرداخت آنلاین قابل حذف نیست.'
+            ]);
+        }
         foreach ($rows as $row)
             $entityManager->remove($row);
         foreach ($doc->getRelatedDocs() as $relatedDoc){
@@ -430,7 +441,6 @@ class HesabdariController extends AbstractController
         $entityManager->remove($doc);
         $entityManager->flush();
         $log->insert('حسابداری','سند حسابداری شماره ' . $doc->getCode() . ' حذف شد.',$this->getUser(),$request->headers->get('activeBid'));
-
         return $this->json(['result'=>1]);
     }
 

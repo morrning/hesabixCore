@@ -44,10 +44,15 @@ class Year
     #[Ignore]
     private Collection $hesabdariRows;
 
+    #[ORM\OneToMany(mappedBy: 'year', targetEntity: StoreroomTicket::class, orphanRemoval: true)]
+    #[Ignore]
+    private Collection $storeroomTickets;
+
     public function __construct()
     {
         $this->hesabdariDocs = new ArrayCollection();
         $this->hesabdariRows = new ArrayCollection();
+        $this->storeroomTickets = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -181,6 +186,36 @@ class Year
             // set the owning side to null (unless already changed)
             if ($hesabdariRow->getYear() === $this) {
                 $hesabdariRow->setYear(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, StoreroomTicket>
+     */
+    public function getStoreroomTickets(): Collection
+    {
+        return $this->storeroomTickets;
+    }
+
+    public function addStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if (!$this->storeroomTickets->contains($storeroomTicket)) {
+            $this->storeroomTickets->add($storeroomTicket);
+            $storeroomTicket->setYear($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStoreroomTicket(StoreroomTicket $storeroomTicket): static
+    {
+        if ($this->storeroomTickets->removeElement($storeroomTicket)) {
+            // set the owning side to null (unless already changed)
+            if ($storeroomTicket->getYear() === $this) {
+                $storeroomTicket->setYear(null);
             }
         }
 
