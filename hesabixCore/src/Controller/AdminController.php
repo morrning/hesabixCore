@@ -2,6 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
+use App\Service\Provider;
+use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -13,7 +17,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class AdminController extends AbstractController
 {
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     #[Route('/api/admin/sync/database', name: 'app_admin_sync_database')]
     public function app_admin_sync_database(KernelInterface $kernel): JsonResponse
@@ -40,7 +44,7 @@ class AdminController extends AbstractController
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     #[Route('/api/admin/has/role/{role}', name: 'app_admin_has_role')]
     public function app_admin_has_role($role): JsonResponse
@@ -54,5 +58,17 @@ class AdminController extends AbstractController
         return $this->json([
             'result' => false,
         ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/admin/users/list', name: 'app_admin_users_list')]
+    public function app_admin_users_list(Provider $provider,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $users = $entityManager->getRepository(User::class)->findAll();
+        return $this->json($provider->ArrayEntity2ArrayJustIncludes($users,[
+            
+        ]));
     }
 }

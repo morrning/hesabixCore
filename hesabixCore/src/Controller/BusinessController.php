@@ -318,7 +318,8 @@ class BusinessController extends AbstractController
                 return $this->json(['result'=>-1]);
             }
             $perm = $entityManager->getRepository(Permission::class)->findOneBy([
-                'user'=>$user
+                'user'=>$user,
+                'bid'=>$business
             ]);
             if($perm && ! $perm->isOwner()){
                 $entityManager->remove($perm);

@@ -44,6 +44,11 @@ class CommodityController extends AbstractController
             $temp['khadamat'] = false;
             if($item->isKhadamat())
                 $temp['khadamat'] = true;
+
+            $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
+            $temp['minOrderCount'] = $item->getMinOrderCount();
+            $temp['dayLoading'] = $item->getDayLoading();
+            $temp['orderPoint'] = $item->getOrderPoint();
             $res[] = $temp;
         }
         return $this->json($res);
@@ -78,7 +83,9 @@ class CommodityController extends AbstractController
             'code'=>$code
         ]);
         $data->setUnit($data->getUnit()->getName());
-        return $this->json($provider->Entity2Array($data,0));
+        $res = $provider->Entity2ArrayJustIncludes($data,['isCommodityCountCheck','getName','getUnit','getPriceBuy','getPriceSell','getCat','getOrderPoint','getdes','getId','getDayLoading','isKhadamat','getCode','getMinOrderCount','getLabel'],1);
+        $res['cat'] = $data->getCat()->getId();
+        return $this->json($res);
     }
 
     #[Route('/api/commodity/mod/{code}', name: 'app_commodity_mod')]
@@ -124,6 +131,12 @@ class CommodityController extends AbstractController
         $data->setDes($params['des']);
         $data->setPriceSell($params['priceSell']);
         $data->setPriceBuy($params['priceBuy']);
+        if(array_key_exists('commodityCountCheck',$params)){
+            $data->setCommodityCountCheck($params['commodityCountCheck']);
+        }
+        $data->setMinOrderCount($params['minOrderCount']);
+        $data->setDayLoading($params['dayLoading']);
+        $data->setOrderPoint($params['orderPoint']);
         //set cat
         if(array_key_exists('cat',$params)){
             if($params['cat'] != null){

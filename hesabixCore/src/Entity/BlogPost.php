@@ -48,6 +48,9 @@ class BlogPost
     #[ORM\OneToMany(mappedBy: 'post', targetEntity: BlogComment::class, orphanRemoval: true)]
     private Collection $blogComments;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $keywords = null;
+
     public function __construct()
     {
         $this->blogComments = new ArrayCollection();
@@ -192,6 +195,18 @@ class BlogPost
                 $blogComment->setPost(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getKeywords(): ?string
+    {
+        return $this->keywords;
+    }
+
+    public function setKeywords(?string $keywords): static
+    {
+        $this->keywords = $keywords;
 
         return $this;
     }

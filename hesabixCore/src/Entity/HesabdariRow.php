@@ -79,6 +79,9 @@ class HesabdariRow
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $plugin = null;
 
+    #[ORM\Column(type: Types::ARRAY, nullable: true)]
+    private ?array $tempData = null;
+
 
     public function __construct()
     {
@@ -278,6 +281,18 @@ class HesabdariRow
     public function setPlugin(?string $plugin): static
     {
         $this->plugin = $plugin;
+
+        return $this;
+    }
+
+    public function getTempData(): ?array
+    {
+        return $this->tempData;
+    }
+
+    public function setTempData(?array $tempData): static
+    {
+        $this->tempData = $tempData;
 
         return $this;
     }

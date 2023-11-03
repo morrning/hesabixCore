@@ -86,7 +86,11 @@ class HesabdariDoc
     private ?string $status = null;
 
     #[ORM\OneToMany(mappedBy: 'doc', targetEntity: StoreroomTicket::class)]
+    #[Ignore]
     private Collection $storeroomTickets;
+
+    #[ORM\Column(type: Types::ARRAY, nullable: true)]
+    private ?array $tempStatus = null;
 
     public function __construct()
     {
@@ -403,6 +407,18 @@ class HesabdariDoc
                 $storeroomTicket->setDoc(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTempStatus(): ?array
+    {
+        return $this->tempStatus;
+    }
+
+    public function setTempStatus(?array $tempStatus): static
+    {
+        $this->tempStatus = $tempStatus;
 
         return $this;
     }

@@ -13,6 +13,7 @@ use App\Entity\PayInfoTemp;
 use App\Entity\Person;
 use App\Entity\PlugNoghreOrder;
 use App\Entity\Salary;
+use App\Entity\StoreroomTicket;
 use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
@@ -427,6 +428,10 @@ class HesabdariController extends AbstractController
                 'message'=>'سند به دلیل داشتن تراکنش پرداخت آنلاین قابل حذف نیست.'
             ]);
         }
+        //check storeroom tickets
+        $tickets = $entityManager->getRepository(StoreroomTicket::class)->findBy(['doc'=>$doc]);
+        foreach ($tickets as $ticket)
+            $entityManager->remove($ticket);
         foreach ($rows as $row)
             $entityManager->remove($row);
         foreach ($doc->getRelatedDocs() as $relatedDoc){

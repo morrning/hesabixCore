@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
 use App\Entity\Person;
@@ -22,15 +23,21 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class StoreroomController extends AbstractController
 {
-    #[Route('/api/storeroom/list', name: 'app_storeroom_list')]
-    public function app_storeroom_list(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/storeroom/list/{type}', name: 'app_storeroom_list')]
+    public function app_storeroom_list(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,String $type='active'): JsonResponse
     {
         $acc = $access->hasRole('store');
         if(!$acc)
             throw $this->createAccessDeniedException();
-        $items = $entityManager->getRepository(Storeroom::class)->findBy([
-            'bid'=>$acc['bid']
-        ]);
+        if($type == 'active')
+            $items = $entityManager->getRepository(Storeroom::class)->findBy([
+                'bid'=>$acc['bid'],
+                'active'=>true
+            ]);
+        else
+            $items = $entityManager->getRepository(Storeroom::class)->findBy([
+                'bid'=>$acc['bid'],
+            ]);
 
         return $this->json($provider->ArrayEntity2Array($items,0));
     }
@@ -98,6 +105,9 @@ class StoreroomController extends AbstractController
         return $this->json($provider->Entity2Array($data,0));
     }
 
+    /**
+     * @throws ReflectionException
+     */
     #[Route('/api/storeroom/docs/get', name: 'app_storeroom_get_docs')]
     public function app_storeroom_get_docs(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
@@ -108,20 +118,68 @@ class StoreroomController extends AbstractController
             'bid'=>$acc['bid'],
             'type'=>'buy'
         ]);
-        foreach ($buys as $buy)
-            $buy->setDes('فاکتور خرید شماره # ' . $buy->getCode());
+        $buysForExport =[];
+        foreach ($buys as $buy){
+            $temp = $provider->Entity2Array($buy,0);
+            $person = $this->getPerson($buy);
+            $temp['person'] = $provider->Entity2ArrayJustIncludes($person,['getCode','getNikename','getDes']);
+            $temp['person']['des'] =' # ' . $person->getCode() . ' ' . $person->getNikename();
+            $temp['commodities'] = $this->getCommodities($buy,$provider);
+            //check storeroom exist
+            $this->calcStoreRemaining($temp,$buy,$entityManager);
+            $temp['des'] = 'فاکتور خرید شماره # ' . $buy->getCode();
+            if(array_key_exists('storeroomComplete',$temp))
+                if(!$temp['storeroomComplete']){
+                    $buysForExport[] = $temp;
+                }
+        }
+
         $sells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid'=>$acc['bid'],
             'type'=>'sell'
         ]);
-        foreach ($sells as $sell)
-            $sell->setDes('فاکتور فروش شماره # ' . $sell->getCode());
+        $sellsForExport =[];
+        foreach ($sells as $sell){
+            $temp = $provider->Entity2Array($sell,0);
+            $person = $this->getPerson($sell);
+            $temp['person'] = $provider->Entity2ArrayJustIncludes($person,['getCode','getNikename','getDes']);
+            $temp['person']['des'] =' # ' . $person->getCode() . ' ' . $person->getNikename();
+            $temp['commodities'] = $this->getCommodities($sell,$provider);
+            //check storeroom exist
+            $this->calcStoreRemaining($temp,$sell,$entityManager);
+            $temp['des'] = 'فاکتور فروش شماره # ' . $sell->getCode();
+            if(array_key_exists('storeroomComplete',$temp))
+                if(!$temp['storeroomComplete']){
+                    $sellsForExport[] = $temp;
+                }
+        }
+
         return $this->json([
-            'buys'=> $provider->ArrayEntity2Array($buys,0),
-            'sells'=> $provider->ArrayEntity2Array($sells,0)
+            'buys'=> $buysForExport,
+            'sells'=> $sellsForExport
         ]);
     }
 
+    private function getPerson(HesabdariDoc $doc): Person | bool{
+        foreach ($doc->getHesabdariRows() as $row){
+            if($row->getPerson())
+                return $row->getPerson();
+        }
+        return false;
+    }
+
+    private function getCommodities(HesabdariDoc $doc,Provider $provider): array{
+        $res = [];
+        foreach ($doc->getHesabdariRows() as $row){
+            if($row->getCommodity()){
+                $arrayRow = $provider->Entity2ArrayJustIncludes($row->getCommodity(),['getCode','getName']);
+                $arrayRow['commdityCount'] = $row->getCommdityCount();
+                $res[] = $arrayRow;
+            }
+
+        }
+        return $res;
+    }
     /**
      * @throws ReflectionException
      */
@@ -165,9 +223,62 @@ class StoreroomController extends AbstractController
         $res['person'] = $provider->Entity2Array($person,0);
         $res['person']['des'] =' # ' . $person->getCode() . ' ' . $person->getNikename();
         $res['commodities'] = $provider->ArrayEntity2Array($commodities,1,['doc','bid','year']);
+        //calculate rows data
+        $this->calcStoreRemaining($res,$doc,$entityManager);
         return $this->json($res);
     }
 
+    private function calcStoreRemaining(array &$ref,HesabdariDoc $doc,EntityManagerInterface $entityManager){
+        $tickets = $entityManager->getRepository(StoreroomTicket::class)->findBy(['doc'=>$doc]);
+
+        if(count($tickets) == 0){
+            $ref['storeroomComplete'] = false;
+            foreach ($ref['commodities'] as $key => $commodity){
+                $ref['commodities'][$key]['countBefore'] = 0;
+                $ref['commodities'][$key]['hesabdariCount'] = $commodity['commdityCount'];
+                $ref['commodities'][$key]['remain'] = $ref['commodities'][$key]['hesabdariCount'];
+            }
+        }
+        else{
+            $ref['storeroomComplete'] = true;
+            foreach ($tickets as $ticket){
+                $rows = $entityManager->getRepository(StoreroomItem::class)->findBy(['ticket'=>$ticket]);
+                foreach ($rows as $key => $row){
+                    $comRows = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc'=>$doc]);
+                    foreach ($comRows as $comRow){
+                        if($comRow->getCommodity()){
+                            if($comRow->getCommodity() === $row->getCommodity()){
+                                if(array_key_exists('countBefore',$ref['commodities'][$key])){
+                                    $ref['commodities'][$key]['countBefore'] += $row->getCount();
+                                    $ref['commodities'][$key]['hesabdariCount'] = $comRow->getCommdityCount();
+                                }
+                                else{
+                                    $ref['commodities'][$key]['countBefore'] = $row->getCount();
+                                    $ref['commodities'][$key]['hesabdariCount'] = $comRow->getCommdityCount();
+                                }
+
+                            }
+                        }
+                    }
+                    $ref['commodities'][$key]['remain'] = $ref['commodities'][$key]['hesabdariCount'] - $ref['commodities'][$key]['countBefore'];
+                    $ref['commodities'][$key]['commodityComplete'] = true;
+                    if($ref['commodities'][$key]['remain'] != 0){
+                        $ref['commodities'][$key]['commodityComplete'] = false;
+                    }
+                }
+            }
+            foreach ($tickets as $ticket){
+                $rows = $entityManager->getRepository(StoreroomItem::class)->findBy(['ticket'=>$ticket]);
+                $ref['storeroomComplete'] = true;
+                foreach ($rows as $key => $row){
+                    if(!$ref['commodities'][$key]['commodityComplete']){
+                        $ref['storeroomComplete'] = false;
+                    }
+                }
+            }
+        }
+
+    }
     #[Route('/api/storeroom/transfertype/list', name: 'app_storeroom_get_transfertype_list')]
     public function app_storeroom_get_transfertype_list(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
@@ -298,6 +409,92 @@ class StoreroomController extends AbstractController
             'getNikename',
             'getDoc',
             'getTypeString'
-        ],1));
+        ]));
+    }
+
+    #[Route('/api/storeroom/tickets/info/{code}', name: 'app_storeroom_ticket_view')]
+    public function app_storeroom_ticket_view(String $code,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('store');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $ticket = $entityManager->getRepository(StoreroomTicket::class)->findOneBy([
+            'bid'=>$acc['bid'],
+            'code'=>$code
+        ]);
+        if(!$ticket)
+            throw $this->createNotFoundException('حواله یافت نشد.');
+        //get items
+        $items = $entityManager->getRepository(StoreroomItem::class)->findBy(['ticket'=>$ticket]);
+        $res = [];
+        $res['ticket']=$provider->Entity2ArrayJustIncludes($ticket,['getStoreroom','getManager','getDate','getSubmitDate','getDes','getReceiver','getTransfer','getCode','getType','getReferral','getTypeString'],2);
+        $res['transferType']=$provider->Entity2ArrayJustIncludes($ticket->getTransferType(),['getName'],0);
+        $res['person']=$provider->Entity2ArrayJustIncludes($ticket->getPerson(),['getKeshvar','getOstan','getShahr','getAddress','getNikename','getCodeeghtesadi','getPostalcode','getName','getTel','getSabt'],0);
+        //get rows
+        $rows = $entityManager->getRepository(StoreroomItem::class)->findBy(['ticket'=>$ticket]);
+        $res['commodities'] = $provider->ArrayEntity2ArrayJustIncludes($rows,['getId','getDes','getCode','getName','getCommodity','getUnit','getCount'],2);
+
+        //calculate rows data
+        $this->calcStoreRemaining($res,$ticket->getDoc(),$entityManager);
+        return $this->json($res);
+    }
+    #[Route('/api/storeroom/commodity/list/{sid}', name: 'app_storeroom_commodity_list')]
+    public function app_storeroom_commodity_list(String $sid,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('store');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $store = $entityManager->getRepository(Storeroom::class)->find($sid);
+        if(!$store)
+            throw $this->createNotFoundException('انبار یافت نشد');
+        if($store->getBid() != $acc['bid'])
+            throw $this->createAccessDeniedException('شما دسترسی به این انبار را ندارید.');
+
+        $rows = $entityManager->getRepository(StoreroomItem::class)->findBy([
+            'Storeroom'=>$store
+        ]);
+        $commodities = $entityManager->getRepository(Commodity::class)->findBy([
+            'bid'=>$acc['bid'],
+            'khadamat'=>false
+        ]);
+        $items = [];
+        foreach ($commodities as $commodity){
+            $temp =[];
+            $temp['commodity']=$provider->Entity2ArrayJustIncludes($commodity,['getUnit','getCode','getName','getCat','getOrderPoint']);
+            $temp['input'] = 0;
+            $temp['output'] = 0;
+            foreach ($rows as $row){
+                if($row->getCommodity()->getId() == $commodity->getId()){
+                    if($row->getType() == 'output')
+                        $temp['output'] += $row->getCount();
+                    elseif($row->getType() == 'input')
+                        $temp['input'] += $row->getCount();
+                }
+            }
+            $temp['existCount'] = $temp['input'] - $temp['output'];
+            $items[] = $temp;
+        }
+        return $this->json($items);
+    }
+
+    #[Route('/api/storeroom/ticket/remove/{id}', name: 'app_storeroom_ticket_remove')]
+    public function app_storeroom_ticket_remove(String $id,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('store');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $ticket = $entityManager->getRepository(StoreroomTicket::class)->findOneBy(['code'=>$id]);
+        if(!$ticket)
+            throw $this->createNotFoundException('حواله یافت نشد');
+        $items = $entityManager->getRepository(StoreroomItem::class)->findBy(['ticket'=>$ticket]);
+        foreach ($items as $item)
+            $entityManager->remove($item);
+        $entityManager->remove($ticket);
+        $entityManager->flush();
+        //save logs
+        $log->insert('انبارداری','حواله انبار با شماره '. $ticket->getCode() . ' حذف شد.',$this->getUser(),$acc['bid']);
+        return $this->json([
+            'result'=>0
+        ]);
     }
 }

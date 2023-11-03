@@ -47,15 +47,28 @@ class Commodity
 
     #[ORM\Column(nullable: true)]
     private ?bool $khadamat = null;
-
+    #[Ignore]
     #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: CommodityDropLink::class, orphanRemoval: true)]
     private Collection $commodityDropLinks;
-
+    #[Ignore]
     #[ORM\ManyToOne(inversedBy: 'commodities')]
     private ?CommodityCat $cat = null;
 
+    #[Ignore]
     #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: StoreroomItem::class, orphanRemoval: true)]
     private Collection $storeroomItems;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $orderPoint = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $commodityCountCheck = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $minOrderCount = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $dayLoading = null;
 
     public function __construct()
     {
@@ -265,6 +278,54 @@ class Commodity
                 $storeroomItem->setCommodity(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getOrderPoint(): ?string
+    {
+        return $this->orderPoint;
+    }
+
+    public function setOrderPoint(?string $orderPoint): static
+    {
+        $this->orderPoint = $orderPoint;
+
+        return $this;
+    }
+
+    public function isCommodityCountCheck(): ?bool
+    {
+        return $this->commodityCountCheck;
+    }
+
+    public function setCommodityCountCheck(?bool $commodityCountCheck): static
+    {
+        $this->commodityCountCheck = $commodityCountCheck;
+
+        return $this;
+    }
+
+    public function getMinOrderCount(): ?string
+    {
+        return $this->minOrderCount;
+    }
+
+    public function setMinOrderCount(?string $minOrderCount): static
+    {
+        $this->minOrderCount = $minOrderCount;
+
+        return $this;
+    }
+
+    public function getDayLoading(): ?string
+    {
+        return $this->dayLoading;
+    }
+
+    public function setDayLoading(?string $dayLoading): static
+    {
+        $this->dayLoading = $dayLoading;
 
         return $this;
     }
