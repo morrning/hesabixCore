@@ -56,16 +56,16 @@ class UserController extends AbstractController
                 'message' => 'missing credentials',
             ], Response::HTTP_UNAUTHORIZED);
         }
-
-        $tokenString = $this->RandomString(254); // somehow create an API token for $user
         $token = new UserToken();
         $token->setUser($user);
-        $token->setToken($tokenString);
+        $token->setToken($this->RandomString(254));
+        $token->setTokenID($this->RandomString(254));
         $entityManager->persist($token);
         $entityManager->flush();
         return $this->json([
             'user'  => $user->getUserIdentifier(),
-            'token' => $tokenString,
+            'token' => $token->getToken(),
+            'tokenID'=> $token->getTokenID()
         ]);
     }
 

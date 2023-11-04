@@ -14,6 +14,7 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
         main:
+            stateless: true
             lazy: true
             provider: app_user_provider
             json_login:
@@ -31,7 +32,6 @@ security:
             # switch_user: true
             logout:
                 path: front_user_logout
-
                 # where to redirect after logout
                 target: general_home
             form_login:
@@ -39,6 +39,11 @@ security:
                 login_path: front_user_login
                 check_path: front_user_login
                 enable_csrf: true
+            custom_authenticator: App\Security\BackAuthAuthenticator
+            remember_me:
+                secret: '%kernel.secret%' # required
+                lifetime: 116121600 # 4 years in seconds
+                always_remember_me: true
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used

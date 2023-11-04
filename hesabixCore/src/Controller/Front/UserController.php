@@ -5,7 +5,9 @@ use App\Controller\CustomUserMessageAuthenticationException;
 use App\Entity\Business;
 use App\Entity\Permission;
 use App\Form\UserRegisterType;
+use App\Security\BackAuthAuthenticator;
 use App\Service\Provider;
+use App\Service\twigFunctions;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\UserToken;
 use Exception;
@@ -23,6 +25,7 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher,
@@ -75,10 +78,10 @@ class UserController extends AbstractController
     }
 
     #[Route('/register', name: 'front_user_register')]
-    public function front_user_register(Request $request,TranslatorInterface $translator, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
+    public function front_user_register(twigFunctions $functions,Request $request,TranslatorInterface $translator, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
         //redirect to hesabix app register page
-        return $this->redirect('https://app.hesabix.ir/user/register');
+        return $this->redirect($functions->systemSettings()->getAppSite() . '/user/register');
         $user = new User();
         $form = $this->createForm(UserRegisterType::class, $user);
         $form->handleRequest($request);
@@ -148,27 +151,33 @@ class UserController extends AbstractController
         return $this->redirectToRoute('app_register');
     }
 
-    #[Route('/login/by/token', name: 'app_login_by_token')]
-    public function app_login_by_token(Request $request): Response
+    #[Route('/login/by/token{route}', name: 'app_login_by_token' , requirements: ['route' => '.+'])]
+    public function app_login_by_token(string $route,AuthenticationUtils $authenticationUtils,twigFunctions $functions,Request $request, UserPasswordHasherInterface $userPasswordHasher, UserAuthenticatorInterface $userAuthenticator, BackAuthAuthenticator $authenticator, EntityManagerInterface $entityManager): Response
     {
-        
-        // log the user in on the current firewall
-        $security->login($user);
+        $token = $entityManager->getRepository(UserToken::class)->findOneBy(['tokenID'=>$request->get('tokenID')]);
+        if(!$token){
+            $token = $entityManager->getRepository(UserToken::class)->findOneBy(['token'=>$request->get('tokenID')]);
+            if(!$token)
+                throw $this->createNotFoundException('توکن معتبر نیست');
+        }
 
-        // if the firewall has more than one authenticator, you must pass it explicitly
-        // by using the name of built-in authenticators...
-        $security->login($user, 'form_login');
-        // ...or the service id of custom authenticators
-        $security->login($user, ExampleAuthenticator::class);
+        $userAuthenticator->authenticateUser(
+            $token->getUser(),
+            $authenticator,
+            $request
+        );
+        return $this->redirect($functions->systemSettings()->getAppSite() . $route);
+    }
 
-        // you can also log in on a different firewall
-        $security->login($user, 'form_login', 'other_firewall');
-
-        // use the redirection logic applied to regular login
-        $redirectResponse = $security->login($user);
-        return $redirectResponse;
-
-        // or use a custom redirection logic (e.g. redirect users to their account page)
-        // return new RedirectResponse('...');
+    /**
+     * @throws Exception
+     */
+    #[Route('/logout/by/token{route}', name: 'app_logout_by_token' , requirements: ['route' => '.+'])]
+    public function app_logout_by_token(string $route,twigFunctions $functions,Request $request,Security $security, EntityManagerInterface $entityManager): Response
+    {
+        try {
+            $security->logout(false);
+        } catch (Exception $e){}
+       return $this->redirect($functions->systemSettings()->getAppSite() . $route);
     }
 }

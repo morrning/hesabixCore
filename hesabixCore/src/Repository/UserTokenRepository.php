@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\UserToken;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -40,7 +41,7 @@ class UserTokenRepository extends ServiceEntityRepository
     }
 
     /**
-     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws NonUniqueResultException
      */
     public function findByApiToken($value): UserToken | null
     {
@@ -54,6 +55,18 @@ class UserTokenRepository extends ServiceEntityRepository
             ;
     }
 
+    /**
+     * @throws NonUniqueResultException
+     */
+    public function findByApiTokenID($value): UserToken | null
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.tokenID = :val')
+            ->setParameter('val', $value)
+            ->orderBy('u.id', 'ASC')
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 //    public function findOneBySomeField($value): ?UserToken
 //    {
 //        return $this->createQueryBuilder('u')

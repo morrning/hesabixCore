@@ -25,6 +25,9 @@ class Settings
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $zarinpalMerchant = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $appSite = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -74,6 +77,18 @@ class Settings
     public function setZarinpalMerchant(?string $zarinpalMerchant): static
     {
         $this->zarinpalMerchant = $zarinpalMerchant;
+
+        return $this;
+    }
+
+    public function getAppSite(): ?string
+    {
+        return $this->appSite;
+    }
+
+    public function setAppSite(?string $appSite): static
+    {
+        $this->appSite = $appSite;
 
         return $this;
     }

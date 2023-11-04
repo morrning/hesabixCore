@@ -5,6 +5,7 @@ namespace App\Service;
 
 
 use App\Entity\ChangeReport;
+use App\Entity\Settings;
 use Doctrine\ORM\EntityManagerInterface;
 
 class twigFunctions
@@ -84,5 +85,8 @@ class twigFunctions
         return '0.0.1';
     }
 
+    public function systemSettings(){
+        return $this->em->getRepository(Settings::class)->findAll()[0];
+    }
 
 }
