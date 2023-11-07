@@ -109,12 +109,14 @@ class UiGeneralController extends AbstractController
             'docs'=>$entityManager->getRepository(APIDocument::class)->findAll()
         ],$response);
     }
-    #[Route('/test', name: 'general_test')]
-    public function general_test(Provider $provider,pdfMGR $pdfMGR,EntityManagerInterface $entityManager): Response
+    #[Route('/front/features/{id}', name: 'general_features')]
+    public function general_features(string $id,EntityManagerInterface $entityManager): Response
     {
-        $test = $entityManager->getRepository(Business::class)->find(4);
-        var_dump((array) $test);
-        return  new Response(1);
+        if($id == 'setup')
+            return $this->render('/general/features/setup.html.twig');
+        elseif($id == 'user_management')
+            return $this->render('/general/features/setup.html.twig');
+        throw $this->createNotFoundException();
     }
 
 }

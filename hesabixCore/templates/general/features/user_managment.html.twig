@@ -1,0 +1,65 @@
+{% extends "base.html.twig" %}
+{% block title %}ویژگی‌ها: مدیریت کاربران {% endblock %}
+{% block body %}
+    <div class="container bg-white rounded-3">
+        <div class="row py-3">
+            <div class="col-md-5 d-md-flex align-items-md-center">
+                <div>
+                    <h4 class="mb-2"> دعوت کاربران به کسب و کار </h4>
+                    <p class="mb-0 text-muted"> در حسابداری آنلاین حسابفا می‌توانید کاربران مختلفی را به کسب و کار خود دعوت کنید. همچنین هر کاربر می‌تواند همزمان در چندین کسب و کار مختلف مشارکت داشته باشد و در هر زمان نیز کسب و کار را ترک کند. </p>
+                </div>
+            </div>
+            <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                <div class="block block-rounded block-fx-pop row g-sm w-100 py-4 my-3">
+                    <div class="col-12">
+                        <img class="img-fluid" src="{{ asset('/img/features/users_list.png') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row py-3">
+            <div class="col-md-5 d-md-flex align-items-md-center">
+                <div>
+                    <h4 class="mb-2"> بدون نیاز به نگهداری </h4>
+                    <p class="mb-0 text-muted"> حسابیکس ویروسی نمی شود و از روی سیستم شما پاک نخواهد شد. حسابیکس بهم نمی‌ریزد و خراب شدنی نیست. حسابیکس نیاز به آپدیت و بروز رسانی ندارد و هربار که به حسابیکس وارد می‌شوید، آخرین نسخه موجود، تمیز و تازه، در دسترس شما قرار می‌گیرد. </p>
+                </div>
+            </div>
+            <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                <div class="block block-rounded block-fx-pop row g-sm w-100 py-4 my-3">
+                    <div class="col-6">
+                        <div class="item item-2x item-rounded ms-auto bg-xinspire-lighter">
+                            <i class="fa fa-2x fa-server text-xinspire-dark"></i>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="item item-2x item-rounded me-auto bg-xinspire-lighter">
+                            <i class="fa fa-2x fa-cogs fa-spin text-xinspire-dark"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row py-3">
+            <div class="col-md-5 d-md-flex align-items-md-center">
+                <div>
+                    <h4 class="mb-2"> بدون نیاز به تهیه نسخه پشتیبان </h4>
+                    <p class="mb-0 text-muted"> در حسابداری ابری حسابیکس لازم نیست که از اطلاعات خود پشتیبانی تهیه کنید (هرچند امکان پذیر است)، حسابیکس به طور خودکار هر شب از اطلاعات شما پشتیبانی تهیه کرده و آن را به مدت ۳۰ روز نگهداری می‌کند. </p>
+                </div>
+            </div>
+            <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                <div class="block block-rounded block-fx-pop row g-sm w-100 py-4 my-3">
+                    <div class="col-6">
+                        <div class="item item-2x item-rounded ms-auto bg-xinspire-lighter">
+                            <i class="fa fa-2x fa-folder text-xinspire-dark"></i>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="item item-2x item-rounded me-auto bg-xinspire-lighter">
+                            <i class="fa fa-2x fa-undo fa-spin text-xinspire-dark"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
