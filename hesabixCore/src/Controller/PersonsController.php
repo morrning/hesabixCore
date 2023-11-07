@@ -83,6 +83,8 @@ class PersonsController extends AbstractController
         $person->setNikename($params['nikename']);
         if(array_key_exists('name',$params))
             $person->setName($params['name']);
+        if(array_key_exists('birthday',$params))
+            $person->setBirthday($params['birthday']);
         if(array_key_exists('tel',$params))
             $person->setTel($params['tel']);
         if(array_key_exists('address',$params))

@@ -107,6 +107,9 @@ class Person
     #[ORM\OneToMany(mappedBy: 'Person', targetEntity: StoreroomTicket::class)]
     private Collection $storeroomTickets;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $birthday = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -524,6 +527,18 @@ class Person
                 $storeroomTicket->setPerson(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getBirthday(): ?string
+    {
+        return $this->birthday;
+    }
+
+    public function setBirthday(?string $birthday): static
+    {
+        $this->birthday = $birthday;
 
         return $this;
     }

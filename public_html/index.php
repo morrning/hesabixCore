@@ -1,10 +1,16 @@
 <?php
-$http_origin = $_SERVER['HTTP_ORIGIN'];
-
-if ($http_origin == "https://app.hesabix.ir" || $http_origin == "http://insider.hesabix.ir")
-{
-    header("Access-Control-Allow-Origin: $http_origin");
+$http_origin = false;
+if(isset($_SERVER['HTTP_ORIGIN']))
+    $http_origin = $_SERVER['HTTP_ORIGIN'];
+elseif(isset($_SERVER['HTTP_ORIGIN']))
+    $http_origin = $_SERVER['HTTP_REFERER'];
+if($http_origin){
+    if ($http_origin == "https://app.hesabix.ir" || $http_origin == "http://insider.hesabix.ir" || $http_origin == "http://localhost")
+    {
+        header("Access-Control-Allow-Origin: $http_origin");
+    }
 }
+
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: *");
 header("Allow: GET, POST, OPTIONS, PUT, DELETE");
