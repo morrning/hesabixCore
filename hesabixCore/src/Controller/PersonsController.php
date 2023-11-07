@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Business;
 use App\Entity\HesabdariDoc;
+use App\Entity\HesabdariRow;
 use App\Entity\Person;
 use App\Service\Access;
 use App\Service\Log;
@@ -30,7 +31,20 @@ class PersonsController extends AbstractController
             'bid'=>$acc['bid'],
             'code'=>$code
         ]);
-        return $this->json($person);
+        $response = $provider->ArrayEntity2Array($person,0);
+        $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+            'person'=>$person
+        ]);
+        $bs = 0;
+        $bd = 0;
+        foreach ($rows as $row){
+            $bs += $row->getBs();
+            $bd += $row->getBd();
+        }
+        $response['bs'] = $bs;
+        $response['bd'] = $bd;
+        $response['balance'] = $bs - $bd;
+        return $this->json($response);
     }
     #[Route('/api/person/mod/{code}', name: 'app_persons_mod')]
     public function app_persons_mod(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
@@ -113,7 +127,22 @@ class PersonsController extends AbstractController
         $persons = $entityManager->getRepository(Person::class)->findBy([
            'bid'=>$request->headers->get('activeBid')
         ]);
-        return $this->json($persons);
+        $response = $provider->ArrayEntity2Array($persons,0);
+        foreach ($persons as $key =>$person){
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'person'=>$person
+            ]);
+            $bs = 0;
+            $bd = 0;
+            foreach ($rows as $row){
+                $bs += $row->getBs();
+                $bd += $row->getBd();
+            }
+            $response[$key]['bs'] = $bs;
+            $response[$key]['bd'] = $bd;
+            $response[$key]['balance'] = $bs - $bd;
+        }
+        return $this->json($response);
     }
 
     #[Route('/api/person/list/print', name: 'app_persons_list_print')]
