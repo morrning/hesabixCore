@@ -31,68 +31,6 @@ class AppController extends AbstractController
     {
         return $this->render('/app/dashboard.html.twig');
     }
-    /**
-     * @Route("/app/changes/list", name="app_front_changes_list")
-     */
-    public function app_front_changes_list(EntityManagerInterface $entityManager): Response
-    {
-        return $this->render('/app/changes/list.html.twig',[
-            'items'=>$entityManager->getRepository(ChangeReport::class)->findAll()
-        ]);
-    }
-    /**
-     * @Route("/app/changes/delete/{id}", name="app_front_changes_delete")
-     */
-    public function app_front_changes_delete(String $id,EntityManagerInterface $entityManager): Response
-    {
-        $item = $entityManager->getRepository(ChangeReport::class)->find($id);
-        if($item){
-            $entityManager->remove($item);
-            $entityManager->flush();
-        }
-        return $this->redirectToRoute('app_front_changes_list');
-    }
-    /**
-     * @Route("/app/changes/new", name="app_front_changes_new")
-     */
-    public function app_front_changes_new(Request $request,EntityManagerInterface $entityManager): Response
-    {
-        $change = new ChangeReport();
-        $change->setDateSubmit(time());
-        $form = $this->createForm(UpdateListType::class,$change,[]);
-
-        $form->handleRequest($request);
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($change);
-            $entityManager->flush();
-            return $this->redirectToRoute('app_front_changes_list');
-        }
-        return $this->render('/app/changes/new.html.twig',[
-            'form'=>$form->createView()
-        ]);
-    }
-
-    /**
-     * @Route("/app/changes/edit/{id}", name="app_front_changes_edit")
-     */
-    public function app_front_changes_edit(string $id, Request $request,EntityManagerInterface $entityManager): Response
-    {
-        $change = $entityManager->getRepository(ChangeReport::class)->find($id);
-        if(!$change)
-            throw $this->createNotFoundException();
-        $change->setDateSubmit(time());
-        $form = $this->createForm(UpdateListType::class,$change,[]);
-
-        $form->handleRequest($request);
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($change);
-            $entityManager->flush();
-            return $this->redirectToRoute('app_front_changes_list');
-        }
-        return $this->render('/app/changes/new.html.twig',[
-            'form'=>$form->createView()
-        ]);
-    }
 
     /**
      * @Route("/app/api/list", name="app_front_api_list")

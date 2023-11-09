@@ -13,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -77,7 +78,7 @@ class AdminController extends AbstractController
     #[Route('/api/admin/reportchange/lists', name: 'app_admin_reportchange_list')]
     public function app_admin_reportchange_list(Jdate $jdate,Provider $provider,EntityManagerInterface $entityManager): JsonResponse
     {
-        $rows = $entityManager->getRepository(ChangeReport::class)->findAll();
+        $rows = $entityManager->getRepository(ChangeReport::class)->findBy([],['id'=>'DESC']);
         foreach ($rows as $row){
             $row->setDateSubmit($jdate->jdate('Y/n/d',$row->getDateSubmit()));
         }
@@ -92,6 +93,44 @@ class AdminController extends AbstractController
             $entityManager->remove($item);
             $entityManager->flush();
         }
+        return $this->json(['result'=>1]);
+    }
+
+    #[Route('/api/admin/reportchange/get/{id}', name: 'app_admin_reportchange_get')]
+    public function app_admin_reportchange_get(string $id,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $item = $entityManager->getRepository(ChangeReport::class)->find($id);
+        if(!$item)
+            throw $this->createNotFoundException();
+        return $this->json($item);
+    }
+
+    #[Route('/api/admin/reportchange/mod/{id}', name: 'app_admin_reportchange_mod')]
+    public function app_admin_reportchange_mod(Request $request,EntityManagerInterface $entityManager, int $id = 0): JsonResponse
+    {
+        $item = new ChangeReport();
+        $item->setDateSubmit(time());
+
+        if($id != 0){
+            $item = $entityManager->getRepository(ChangeReport::class)->find($id);
+            if(!$item)
+                throw $this->createNotFoundException();
+            else
+                $item->setDateSubmit(time());
+
+        }
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(array_key_exists('version',$params) && array_key_exists('body',$params)){
+            $item->setBody($params['body']);
+            $item->setVersion($params['version']);
+        }
+        else
+            throw $this->createNotFoundException();
+        $entityManager->persist($item);
+        $entityManager->flush();
         return $this->json(['result'=>1]);
     }
 }
