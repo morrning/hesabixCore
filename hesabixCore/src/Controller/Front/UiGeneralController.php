@@ -115,7 +115,7 @@ class UiGeneralController extends AbstractController
         if($id == 'setup')
             return $this->render('/general/features/setup.html.twig');
         elseif($id == 'user_management')
-            return $this->render('/general/features/setup.html.twig');
+            return $this->render('/general/features/user_managment.html.twig');
         throw $this->createNotFoundException();
     }
 
