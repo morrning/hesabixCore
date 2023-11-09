@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\ChangeReport;
 use App\Entity\User;
+use App\Service\Jdate;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
@@ -70,5 +72,26 @@ class AdminController extends AbstractController
         return $this->json($provider->ArrayEntity2ArrayJustIncludes($users,[
             
         ]));
+    }
+
+    #[Route('/api/admin/reportchange/lists', name: 'app_admin_reportchange_list')]
+    public function app_admin_reportchange_list(Jdate $jdate,Provider $provider,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $rows = $entityManager->getRepository(ChangeReport::class)->findAll();
+        foreach ($rows as $row){
+            $row->setDateSubmit($jdate->jdate('Y/n/d',$row->getDateSubmit()));
+        }
+        return $this->json($provider->ArrayEntity2ArrayJustIncludes($rows,['getDateSubmit','getVersion','getId']));
+    }
+
+    #[Route('/api/admin/reportchange/delete/{id}', name: 'app_admin_reportchange_delete')]
+    public function app_admin_reportchange_delete(string $id,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $item = $entityManager->getRepository(ChangeReport::class)->find($id);
+        if($item){
+            $entityManager->remove($item);
+            $entityManager->flush();
+        }
+        return $this->json(['result'=>1]);
     }
 }
