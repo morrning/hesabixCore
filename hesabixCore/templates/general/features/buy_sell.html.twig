@@ -1,0 +1,83 @@
+{% extends "base.html.twig" %}
+{% block title %}ویژگی‌ها: خرید و فروش {% endblock %}
+{% block body %}
+    <div class="container bg-white rounded-3">
+        <div class="row py-3">
+            <div class="col-md-12 align-items-md-center">
+                <div class="alert bg-warning m-auto" role="alert">
+                    <div class="row align-items-center">
+                        <div class="col-sm-12 col-md-8">
+                            <h3 class="alert-heading fs-1 my-2">خرید و فروش</h3>
+                            <p class="">
+                                در حسابداری ابری حسابیکس، به راحتی فاکتورهای خرید و فروش را ثبت، مبلغ فاکتور را دریافت و پرداخت و رسید و حواله انبار را با چند کلیک صادر کنید.
+                            </p>
+                        </div>
+                        <div class="col-sm-12 col-md-4">
+                            <img class="img-fluid" src="{{ asset('/img/features/buy_sell.png') }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row py-3">
+            <div class="col-md-5 d-md-flex align-items-md-center">
+                <div>
+                    <h4 class="mb-2"> صدور فاکتور </h4>
+                    <p class="mb-0 text-muted">در نرم‌افزار حسابداری حسابیکس، به راحتی و سهولت می توانید کالاها را به فاکتور اضافه کنید، همچنین امکان استفاده از بارکدخوان یا اسکن لیبل بارکد از طریق موبایل برای شما فراهم است. صدور فاکتور به سایر ارزها، محاسبه خودکار تخفیف و مالیات به صورت درصد و مبلغی، هزینه حمل و تعیین بازاریاب به ازای هر فاکتور از دیگر امکانات این بخش است.</p>
+                </div>
+            </div>
+            <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                <div class="block block-rounded block-fx-pop row g-sm w-100 py-4 my-3">
+                    <div class="col-12">
+                        <img class="img-fluid" src="{{ asset('/img/features/faktors_sell.png') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row py-3">
+            <div class="col-md-5 d-md-flex align-items-md-center">
+                <div>
+                    <h4 class="mb-2">محاسبه پورسانت بازاریاب </h4>
+                    <p class="mb-0 text-muted"> در صورت تعیین فروشنده فاکتور، پورسانت فروشنده محاسبه شده و سند هزینه بازاریابی به طور اتوماتیک در سیستم ثبت خواهد شد. همچنین امکان محاسبه و مشاهده گزارش پورسانت فروشندگان در مقاطع زمانی مختلف وجود دارد. </p>
+                </div>
+            </div>
+            <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                <div class="block block-rounded block-fx-pop row g-sm w-100 py-4 my-3">
+                    <div class="col-12">
+                        <img class="img-fluid" src="{{ asset('/img/features/persons.png') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row py-3">
+            <div class="col-md-5 d-md-flex align-items-md-center">
+                <div>
+                    <h4 class="mb-2"> دریافت و پرداخت ذیل فاکتور </h4>
+                    <p class="mb-0 text-muted"> بلافاصله پس از ثبت فاکتور می‌توانید مبلغ آن‌را در قالب قبض دریافت و پرداخت ثبت کنید. امکان دریافت و پرداخت در بانک، صندوق، چک یا خرج چک، همچنین به صورت اعتباری فراهم شده است. </p>
+                </div>
+            </div>
+            <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                <div class="block block-rounded block-fx-pop row g-sm w-100 py-4 my-3">
+                    <div class="col-12">
+                        <img class="img-fluid" src="{{ asset('/img/features/recive.png') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row py-3">
+            <div class="col-md-5 d-md-flex align-items-md-center">
+                <div>
+                    <h4 class="mb-2"> رسید و حواله انبار </h4>
+                    <p class="mb-0 text-muted"> بلافاصله پس از ثبت فاکتور، حواله انبار را به صورت سریع می‌توانید صادر کنید، کافی‌است که انبار مربوطه را به صورت کلی یا به ازای هر ردیف کالا انتخاب کنید. حواله به صورت خودکار صادر خواهد شد. </p>
+                </div>
+            </div>
+            <div class="col-md-6 offset-md-1 d-md-flex align-items-md-center">
+                <div class="block block-rounded block-fx-pop row g-sm w-100 py-4 my-3">
+                    <div class="col-12">
+                        <img class="img-fluid" src="{{ asset('/img/features/storeroom_invoice.png') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
