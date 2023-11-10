@@ -386,6 +386,9 @@ class BusinessController extends AbstractController
                     'plugCCAdmin'=>true,
                     'wallet'=>true,
                     'owner'=> true,
+                    'archiveUpload'=>true,
+                    'archiveMod'=>true,
+                    'archiveDelete'=>true,
                     'active'=> $perm->getUser()->isActive()
                 ];
             }
@@ -416,6 +419,9 @@ class BusinessController extends AbstractController
                     'plugCCAdmin'=>$perm->isPlugCCAdmin(),
                     'wallet'=>$perm->isWallet(),
                     'owner'=> false,
+                    'archiveUpload'=>$perm->isArchiveUpload(),
+                    'archiveMod'=>$perm->isArchiveMod(),
+                    'archiveDelete'=>$perm->isArchiveDelete(),
                     'active'=> $perm->getUser()->isActive()
                 ];
             }
@@ -474,6 +480,9 @@ class BusinessController extends AbstractController
                 $perm->setPlugNoghreSell($params['plugNoghreSell']);
                 $perm->setPlugCCAdmin($params['plugCCAdmin']);
                 $perm->setLog($params['log']);
+                $perm->setArchiveMod($params['archiveMod']);
+                $perm->setArchiveDelete($params['archiveDelete']);
+                $perm->setArchiveUpload($params['archiveUpload']);
                 $entityManager->persist($perm);
                 $entityManager->flush();
                 $log->insert('تنظیمات پایه','ویرایش دسترسی‌های کاربر با پست الکترونیکی ' . $user->getEmail() ,$this->getUser(),$business);

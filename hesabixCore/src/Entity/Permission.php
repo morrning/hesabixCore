@@ -87,6 +87,15 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $wallet = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $archiveUpload = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $archiveMod = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $archiveDelete = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -376,6 +385,42 @@ class Permission
     public function setWallet(?bool $wallet): static
     {
         $this->wallet = $wallet;
+
+        return $this;
+    }
+
+    public function isArchiveUpload(): ?bool
+    {
+        return $this->archiveUpload;
+    }
+
+    public function setArchiveUpload(?bool $archiveUpload): static
+    {
+        $this->archiveUpload = $archiveUpload;
+
+        return $this;
+    }
+
+    public function isArchiveMod(): ?bool
+    {
+        return $this->archiveMod;
+    }
+
+    public function setArchiveMod(?bool $archiveMod): static
+    {
+        $this->archiveMod = $archiveMod;
+
+        return $this;
+    }
+
+    public function isArchiveDelete(): ?bool
+    {
+        return $this->archiveDelete;
+    }
+
+    public function setArchiveDelete(?bool $archiveDelete): static
+    {
+        $this->archiveDelete = $archiveDelete;
 
         return $this;
     }

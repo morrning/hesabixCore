@@ -187,6 +187,12 @@ class Business
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $storeroomCode = '1000';
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $archiveSize = null;
+
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: ArchiveFile::class, orphanRemoval: true)]
+    private Collection $archiveFiles;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -208,6 +214,7 @@ class Business
         $this->walletTransactions = new ArrayCollection();
         $this->storeroomTickets = new ArrayCollection();
         $this->storeroomItems = new ArrayCollection();
+        $this->archiveFiles = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1201,6 +1208,48 @@ class Business
     public function setStoreroomCode(?string $storeroomCode): static
     {
         $this->storeroomCode = $storeroomCode;
+
+        return $this;
+    }
+
+    public function getArchiveSize(): ?string
+    {
+        return $this->archiveSize;
+    }
+
+    public function setArchiveSize(?string $archiveSize): static
+    {
+        $this->archiveSize = $archiveSize;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ArchiveFile>
+     */
+    public function getArchiveFiles(): Collection
+    {
+        return $this->archiveFiles;
+    }
+
+    public function addArchiveFile(ArchiveFile $archiveFile): static
+    {
+        if (!$this->archiveFiles->contains($archiveFile)) {
+            $this->archiveFiles->add($archiveFile);
+            $archiveFile->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeArchiveFile(ArchiveFile $archiveFile): static
+    {
+        if ($this->archiveFiles->removeElement($archiveFile)) {
+            // set the owning side to null (unless already changed)
+            if ($archiveFile->getBid() === $this) {
+                $archiveFile->setBid(null);
+            }
+        }
 
         return $this;
     }
