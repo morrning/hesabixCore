@@ -21,6 +21,9 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class PersonsController extends AbstractController
 {
+    /**
+     * @throws \ReflectionException
+     */
     #[Route('/api/person/info/{code}', name: 'app_persons_info')]
     public function app_persons_info($code,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
@@ -31,7 +34,7 @@ class PersonsController extends AbstractController
             'bid'=>$acc['bid'],
             'code'=>$code
         ]);
-        $response = $provider->ArrayEntity2Array($person,0);
+        $response = $provider->Entity2Array($person,0);
         $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
             'person'=>$person
         ]);
