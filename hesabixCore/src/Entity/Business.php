@@ -193,6 +193,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: ArchiveFile::class, orphanRemoval: true)]
     private Collection $archiveFiles;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: ArchiveOrders::class, orphanRemoval: true)]
+    private Collection $archiveOrders;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -215,6 +218,7 @@ class Business
         $this->storeroomTickets = new ArrayCollection();
         $this->storeroomItems = new ArrayCollection();
         $this->archiveFiles = new ArrayCollection();
+        $this->archiveOrders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1248,6 +1252,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($archiveFile->getBid() === $this) {
                 $archiveFile->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ArchiveOrders>
+     */
+    public function getArchiveOrders(): Collection
+    {
+        return $this->archiveOrders;
+    }
+
+    public function addArchiveOrder(ArchiveOrders $archiveOrder): static
+    {
+        if (!$this->archiveOrders->contains($archiveOrder)) {
+            $this->archiveOrders->add($archiveOrder);
+            $archiveOrder->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeArchiveOrder(ArchiveOrders $archiveOrder): static
+    {
+        if ($this->archiveOrders->removeElement($archiveOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($archiveOrder->getBid() === $this) {
+                $archiveOrder->setBid(null);
             }
         }
 

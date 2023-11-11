@@ -48,6 +48,9 @@ class ArchiveFile
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $relatedDocCode = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $fileSize = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -181,6 +184,18 @@ class ArchiveFile
     public function setRelatedDocCode(?string $relatedDocCode): static
     {
         $this->relatedDocCode = $relatedDocCode;
+
+        return $this;
+    }
+
+    public function getFileSize(): ?string
+    {
+        return $this->fileSize;
+    }
+
+    public function setFileSize(?string $fileSize): static
+    {
+        $this->fileSize = $fileSize;
 
         return $this;
     }

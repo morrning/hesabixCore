@@ -95,6 +95,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'Submitter', targetEntity: ArchiveFile::class, orphanRemoval: true)]
     private Collection $archiveFiles;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: ArchiveOrders::class, orphanRemoval: true)]
+    private Collection $archiveOrders;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -113,6 +116,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->walletTransactions = new ArrayCollection();
         $this->storeroomTickets = new ArrayCollection();
         $this->archiveFiles = new ArrayCollection();
+        $this->archiveOrders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -731,6 +735,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($archiveFile->getSubmitter() === $this) {
                 $archiveFile->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ArchiveOrders>
+     */
+    public function getArchiveOrders(): Collection
+    {
+        return $this->archiveOrders;
+    }
+
+    public function addArchiveOrder(ArchiveOrders $archiveOrder): static
+    {
+        if (!$this->archiveOrders->contains($archiveOrder)) {
+            $this->archiveOrders->add($archiveOrder);
+            $archiveOrder->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeArchiveOrder(ArchiveOrders $archiveOrder): static
+    {
+        if ($this->archiveOrders->removeElement($archiveOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($archiveOrder->getSubmitter() === $this) {
+                $archiveOrder->setSubmitter(null);
             }
         }
 
