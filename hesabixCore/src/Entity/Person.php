@@ -110,12 +110,16 @@ class Person
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $birthday = null;
 
+    #[ORM\OneToMany(mappedBy: 'person', targetEntity: Shareholder::class, orphanRemoval: true)]
+    private Collection $shareholders;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
         $this->plugNoghreOrders = new ArrayCollection();
         $this->ordersFromCustomer = new ArrayCollection();
         $this->storeroomTickets = new ArrayCollection();
+        $this->shareholders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -539,6 +543,36 @@ class Person
     public function setBirthday(?string $birthday): static
     {
         $this->birthday = $birthday;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Shareholder>
+     */
+    public function getShareholders(): Collection
+    {
+        return $this->shareholders;
+    }
+
+    public function addShareholder(Shareholder $shareholder): static
+    {
+        if (!$this->shareholders->contains($shareholder)) {
+            $this->shareholders->add($shareholder);
+            $shareholder->setPerson($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShareholder(Shareholder $shareholder): static
+    {
+        if ($this->shareholders->removeElement($shareholder)) {
+            // set the owning side to null (unless already changed)
+            if ($shareholder->getPerson() === $this) {
+                $shareholder->setPerson(null);
+            }
+        }
 
         return $this;
     }

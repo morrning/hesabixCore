@@ -196,6 +196,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: ArchiveOrders::class, orphanRemoval: true)]
     private Collection $archiveOrders;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Shareholder::class, orphanRemoval: true)]
+    private Collection $shareholders;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -219,6 +222,7 @@ class Business
         $this->storeroomItems = new ArrayCollection();
         $this->archiveFiles = new ArrayCollection();
         $this->archiveOrders = new ArrayCollection();
+        $this->shareholders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1282,6 +1286,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($archiveOrder->getBid() === $this) {
                 $archiveOrder->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Shareholder>
+     */
+    public function getShareholders(): Collection
+    {
+        return $this->shareholders;
+    }
+
+    public function addShareholder(Shareholder $shareholder): static
+    {
+        if (!$this->shareholders->contains($shareholder)) {
+            $this->shareholders->add($shareholder);
+            $shareholder->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeShareholder(Shareholder $shareholder): static
+    {
+        if ($this->shareholders->removeElement($shareholder)) {
+            // set the owning side to null (unless already changed)
+            if ($shareholder->getBid() === $this) {
+                $shareholder->setBid(null);
             }
         }
 

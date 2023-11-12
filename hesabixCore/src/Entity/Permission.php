@@ -96,6 +96,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $archiveDelete = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $shareholder = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -421,6 +424,18 @@ class Permission
     public function setArchiveDelete(?bool $archiveDelete): static
     {
         $this->archiveDelete = $archiveDelete;
+
+        return $this;
+    }
+
+    public function isShareholder(): ?bool
+    {
+        return $this->shareholder;
+    }
+
+    public function setShareholder(?bool $shareholder): static
+    {
+        $this->shareholder = $shareholder;
 
         return $this;
     }

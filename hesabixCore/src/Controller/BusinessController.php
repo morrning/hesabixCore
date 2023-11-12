@@ -389,7 +389,8 @@ class BusinessController extends AbstractController
                     'archiveUpload'=>true,
                     'archiveMod'=>true,
                     'archiveDelete'=>true,
-                    'active'=> $perm->getUser()->isActive()
+                    'active'=> $perm->getUser()->isActive(),
+                    'shareholder'=>true,
                 ];
             }
             elseif($perm){
@@ -422,7 +423,8 @@ class BusinessController extends AbstractController
                     'archiveUpload'=>$perm->isArchiveUpload(),
                     'archiveMod'=>$perm->isArchiveMod(),
                     'archiveDelete'=>$perm->isArchiveDelete(),
-                    'active'=> $perm->getUser()->isActive()
+                    'active'=> $perm->getUser()->isActive(),
+                    'shareholder'=> $perm->isShareholder(),
                 ];
             }
             return $this->json($result);
@@ -483,6 +485,7 @@ class BusinessController extends AbstractController
                 $perm->setArchiveMod($params['archiveMod']);
                 $perm->setArchiveDelete($params['archiveDelete']);
                 $perm->setArchiveUpload($params['archiveUpload']);
+                $perm->setShareholder($params['shareholder']);
                 $entityManager->persist($perm);
                 $entityManager->flush();
                 $log->insert('تنظیمات پایه','ویرایش دسترسی‌های کاربر با پست الکترونیکی ' . $user->getEmail() ,$this->getUser(),$business);

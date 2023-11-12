@@ -48,6 +48,12 @@ class ArchiveOrders
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $ExpireDate = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $des = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $month = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -181,6 +187,30 @@ class ArchiveOrders
     public function setExpireDate(?string $ExpireDate): static
     {
         $this->ExpireDate = $ExpireDate;
+
+        return $this;
+    }
+
+    public function getDes(): ?string
+    {
+        return $this->des;
+    }
+
+    public function setDes(?string $des): static
+    {
+        $this->des = $des;
+
+        return $this;
+    }
+
+    public function getMonth(): ?string
+    {
+        return $this->month;
+    }
+
+    public function setMonth(string $month): static
+    {
+        $this->month = $month;
 
         return $this;
     }

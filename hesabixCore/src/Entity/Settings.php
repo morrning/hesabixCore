@@ -28,6 +28,9 @@ class Settings
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $appSite = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $storagePrice = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -89,6 +92,18 @@ class Settings
     public function setAppSite(?string $appSite): static
     {
         $this->appSite = $appSite;
+
+        return $this;
+    }
+
+    public function getStoragePrice(): ?string
+    {
+        return $this->storagePrice;
+    }
+
+    public function setStoragePrice(?string $storagePrice): static
+    {
+        $this->storagePrice = $storagePrice;
 
         return $this;
     }
