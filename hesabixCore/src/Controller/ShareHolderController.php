@@ -14,17 +14,21 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ShareHolderController extends AbstractController
 {
-    #[Route('/api/shareholder/list', name: 'app_shareholder_list')]
-    public function app_shareholder_list(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/shareholders/list', name: 'app_shareholders_list')]
+    public function app_shareholders_list(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
         if(!$access->hasRole('shareholder'))
             throw $this->createAccessDeniedException();
         $datas = $entityManager->getRepository(Shareholder::class)->findBy([
             'bid'=>$request->headers->get('activeBid')
         ]);
+        $resp = [];
         foreach($datas as $data){
-
+            $temp = [];
+            $temp['person'] = ['id'=>$data->getPerson()->getId(),'nikename'=>$data->getPerson()->getNikename()];
+            $temp['percent'] = $data->getPercent();
+            $resp[] = $temp;
         }
-        return $this->json($datas);
+        return $this->json($resp);
     }
 }
