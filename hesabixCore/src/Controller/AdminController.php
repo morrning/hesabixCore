@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Business;
 use App\Entity\ChangeReport;
 use App\Entity\User;
 use App\Service\Jdate;
@@ -14,8 +15,11 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class AdminController extends AbstractController
 {
@@ -63,16 +67,23 @@ class AdminController extends AbstractController
         ]);
     }
 
-    /**
-     * @throws Exception
-     */
-    #[Route('/api/admin/users/list', name: 'app_admin_users_list')]
-    public function app_admin_users_list(Provider $provider,EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/admin/users/list', name: 'admin_users_list')]
+    public function admin_users_list(Jdate $jdate,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
     {
-        $users = $entityManager->getRepository(User::class)->findAll();
-        return $this->json($provider->ArrayEntity2ArrayJustIncludes($users,[
-            
-        ]));
+        $users = $entityManager->getRepository(User::class)->findBy([],['id'=>'DESC']);
+        $resp = [];
+        foreach ($users as $user) {
+            $temp =[];
+            $temp['id'] = $user->getId();
+            $temp['email'] = $user->getEmail();
+            $temp['mobile'] = $user->getMobile();
+            $temp['fullname'] = $user->getFullName();
+            $temp['status'] = $user->isActive();
+            $temp['dateRegister'] = $jdate->jdate('Y/n/d',$user->getDateRegister());
+            $temp['bidCount'] = count($entityManager->getRepository(Business::class)->findBy(['owner'=>$user]));
+            $resp[] = $temp;
+        }
+        return $this->json($resp);
     }
 
     #[Route('/api/admin/reportchange/lists', name: 'app_admin_reportchange_list')]
