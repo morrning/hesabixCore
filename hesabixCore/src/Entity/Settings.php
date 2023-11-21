@@ -31,6 +31,9 @@ class Settings
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $storagePrice = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $melipayamakToken = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -104,6 +107,18 @@ class Settings
     public function setStoragePrice(?string $storagePrice): static
     {
         $this->storagePrice = $storagePrice;
+
+        return $this;
+    }
+
+    public function getMelipayamakToken(): ?string
+    {
+        return $this->melipayamakToken;
+    }
+
+    public function setMelipayamakToken(?string $melipayamakToken): static
+    {
+        $this->melipayamakToken = $melipayamakToken;
 
         return $this;
     }

@@ -38,7 +38,9 @@ class BlogController extends AbstractController
     {
         $item = $entityManager->getRepository(BlogPost::class)->findOneBy(['url'=>$url]);
         if(!$item) throw $this->createNotFoundException();
-
+        $item->setViews($item->getViews() + 1);
+        $entityManager->persist($item);
+        $entityManager->flush();
         $comment = new BlogComment();
         $form = $this->createForm(CommentType::class,$comment);
         $form->handleRequest($request);

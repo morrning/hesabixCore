@@ -20,14 +20,13 @@ class WalletController extends AbstractController
         if(!$acc)
             throw $this->createAccessDeniedException();
         $items = $entityManager->getRepository(WalletTransaction::class)->findBy([
-            'bid' => $acc['bid'],
-            'status'=>100
+            'bid' => $acc['bid']
         ]);
         $pays = 0;
         $gets = 0;
         foreach ($items as $item){
             if($item->getType() == 'pay') $pays += $item->getAmount();
-            elseif ($item->getType() == 'get' || $item->getType() == 'sell') $gets += $item->getAmount();
+            elseif (($item->getType() == 'get' || $item->getType() == 'sell') && $item->getStatus() == 100 ) $gets += $item->getAmount();
         }
         return $this->json([
             'deposit' => $gets - $pays,
@@ -35,15 +34,26 @@ class WalletController extends AbstractController
             'turnover'=>$pays + $gets,
         ]);
     }
-    #[Route('/api/wallet/transactions', name: 'api_wallet_transactions')]
-    public function api_wallet_transactions(Jdate $jdate,EntityManagerInterface $entityManager,Access $access,Provider $provider): JsonResponse
+    #[Route('/api/wallet/transactions/{type}', name: 'api_wallet_transactions')]
+    public function api_wallet_transactions(Jdate $jdate,EntityManagerInterface $entityManager,Access $access,Provider $provider, string $type = 'all'): JsonResponse
     {
         $acc = $access->hasRole('wallet');
         if(!$acc)
             throw $this->createAccessDeniedException();
-        $items = $entityManager->getRepository(WalletTransaction::class)->findBy([
-            'bid' => $acc['bid']
-        ],['id'=>'DESC']);
+        if($type == 'all'){
+            $items = $entityManager->getRepository(WalletTransaction::class)->findBy([
+                'bid' => $acc['bid']
+            ],['id'=>'DESC']);
+        }
+        elseif($type == 'pay'){
+            $items = $entityManager->getRepository(WalletTransaction::class)->findBy([
+                'bid' => $acc['bid'],
+                'type' => 'pay'
+            ],['id'=>'DESC']);
+        }
+        elseif($type == 'income'){
+            $items = $entityManager->getRepository(WalletTransaction::class)->findAllIncome($acc['bid']);
+        }
         foreach ($items as $item){
             $item->setDateSubmit($jdate->jdate('Y/n/d H:i',$item->getDateSubmit()));
         }

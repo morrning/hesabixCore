@@ -33,33 +33,32 @@
     <body>
        <div id="page-container">
            <!-- Header -->
-           <header id="page-header" class="app-header" style="background-color: #f3f9ff">
+           <header id="page-header" class="app-header bg-sidebar-dark border-bottom border-light" >
                <!-- Header Content -->
-               <div class="content-header">
+               <div class="content-header text-light">
                    <!-- Left Section -->
                    <div class="d-flex align-items-center">
                        <!-- Logo -->
-                       <img class="" src="{{ asset('/img/logo-blue.png') }}" alt="" width="32" height="32">
+                       <img class="me-2" src="{{ asset('/img/logo-light.png') }}" alt="" width="48" height="48">
 
-                       <a class="fw-semibold text-dual tracking-wide" href="{{ path('general_home') }}"><span class="opacity-75">حسابیکس</span>
-                           <small class="fw-lighter d-none d-sm-block"> حسابداری ابری و رایگان</small>
+                       <a class="text-light fw-semibold tracking-wide" href="{{ path('general_home') }}"><span class="opacity-75">حسابیکس</span>
+                           <small class="fw-lighter d-none d-sm-block">نرم‌افزار حسابداری ابری و کاملا رایگان</small>
                        </a>
                        <!-- END Logo -->
                    </div>
                    <!-- END Left Section -->
 
                    <!-- Right Section -->
-                       <div>
-                           <a href="{{ twigFunctions.systemSettings().appSite }}/user/login" class="btn btn-sm btn-primary me-1">ورود</a>
-                           <a href="{{ twigFunctions.systemSettings().appSite }}/user/register" class="btn btn-sm btn-success">عضویت</a>
-                       </div>
+
 
                    <!-- END Right Section -->
                    <!-- Toggle Main Navigation -->
-                   <div class="d-lg-none push mx-0 px-0">
-                       <!-- Class Toggle, functionality initialized in Helpers.dmToggleClass() -->
-                       <button class="btn btn-primary d-flex justify-content-between align-items-center" data-class="d-none" data-target="#main-navigation" data-toggle="class-toggle" type="button"> <i class="fa fa-bars"></i>
-                       </button>
+                   <div class="push mx-0 px-0">
+                       <div class="btn-group" role="group" aria-label="Basic example">
+                           <a href="{{ twigFunctions.systemSettings().appSite }}/user/login" class="btn btn-primary">ورود</a>
+                           <a href="{{ twigFunctions.systemSettings().appSite }}/user/register" class="btn btn-success">عضویت</a>
+                           <button class="d-lg-none btn btn-secondary" data-class="d-none" data-target="#main-navigation" data-toggle="class-toggle" type="button"> <i class="fa fa-bars"></i></button>
+                       </div>
                    </div>
                    <!-- END Toggle Main Navigation -->
                </div>
@@ -77,7 +76,7 @@
            </header>
 
            <!-- Main Container -->
-           <main id="main-container bg-light">
+           <main id="main-container bg-light p-0 m-0">
                <!-- Navigation -->
                <div class="bg-sidebar-dark">
                    <div class="content py-1">
@@ -154,7 +153,7 @@
                </div>
                <!-- END Navigation -->
                <!-- Page Content -->
-               <div class="m-sm-3 m-0 p-0">
+               <div class="m-0 p-0 bg-white">
                    {% block body %}{% endblock %}
                </div>
                <!-- Footer -->

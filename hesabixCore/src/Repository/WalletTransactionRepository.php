@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Business;
 use App\Entity\WalletTransaction;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -24,17 +25,17 @@ class WalletTransactionRepository extends ServiceEntityRepository
 //    /**
 //     * @return WalletTransaction[] Returns an array of WalletTransaction objects
 //     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('w')
-//            ->andWhere('w.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('w.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function findAllIncome(Business $business): array
+    {
+        return $this->createQueryBuilder('w')
+            ->andWhere('w.bid = :val')
+            ->andWhere("w.type != 'pay'")
+            ->setParameter('val', $business)
+            ->orderBy('w.id', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
 //    public function findOneBySomeField($value): ?WalletTransaction
 //    {

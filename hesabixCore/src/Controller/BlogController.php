@@ -227,7 +227,6 @@ class BlogController extends AbstractController
     #[Route('/api/admin/blog/posts', name: 'app_admin_posts_get')]
     public function app_admin_posts_get(Jdate $jdate, Provider $provider,Request $request,SerializerInterface $serializer, EntityManagerInterface $entityManager): JsonResponse
     {
-
         $items = array_reverse($entityManager->getRepository(BlogPost::class)->findAll());
         $response = [];
         foreach ($items as $item){
@@ -239,7 +238,6 @@ class BlogController extends AbstractController
             $temp['url'] = $item->getUrl();
             $temp['cat'] = $item->getCat()->getLabel();
             $temp['dateSubmit'] = $jdate->jdate('Y/n/d H:i',$item->getDateSubmit());
-            $temp['submitter'] = $item->getSubmitter()->getFullName();
             $response[] = $temp;
         }
         return $this->json($response);

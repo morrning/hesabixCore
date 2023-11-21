@@ -13,20 +13,18 @@ use App\Service\Provider;
 use App\Service\twigFunctions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 class ArchiveController extends AbstractController
 {
-    #[Route('/api/archive/info', name: 'app_archive_info')]
-    public function app_archive_info(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
-    {
-        $acc = $access->hasRole('archiveInfo');
-        if(!$acc)
-            throw $this->createAccessDeniedException();
+    private function getArchiveInfo(EntityManagerInterface $entityManager,array $acc){
         $orders = $entityManager->getRepository(ArchiveOrders::class)->findBy([
             'bid'=>$acc['bid'],
             'status'=>100
@@ -40,10 +38,19 @@ class ArchiveController extends AbstractController
         $files = $entityManager->getRepository(ArchiveFile::class)->findBy(['bid'=>$acc['bid']]);
         foreach ($files as $file)
             $usedSize += $file->getFileSize();
-        return $this->json([
-           'size' => $totalSize * 1024,
+        return [
+            'size' => $totalSize * 1024,
             'remain'=>$usedSize
-        ]);
+        ];
+    }
+    #[Route('/api/archive/info', name: 'app_archive_info')]
+    public function app_archive_info(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('archiveInfo');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $resp = $this->getArchiveInfo($entityManager,$acc);
+        return $this->json($resp);
     }
 
     #[Route('/api/archive/order/settings', name: 'app_archive_order_settings')]
@@ -222,5 +229,39 @@ class ArchiveController extends AbstractController
             $item['dateSubmit'] = $jdate->jdate('Y/n/d H:i',$item['dateSubmit']);
         }
         return $this->json($resp);
+    }
+
+    #[Route('/api/archive/file/upload', name: 'app_archive_file_upload')]
+    public function app_archive_file_upload(Jdate $jdate, Provider $provider,SluggerInterface $slugger,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): Response
+    {
+        $acc = $access->hasRole('archiveUpload');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $info = $this->getArchiveInfo($entityManager,$acc);
+        if($info['remain'] > 0){
+            $uploadedFile = $request->files->get('image');
+            if ($uploadedFile) {
+                $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+                // this is needed to safely include the file name as part of the URL
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedFile->guessExtension();
+
+                // Move the file to the directory where brochures are stored
+
+                    $uploadedFile->move(
+                        $this->getParameter('archiveTempMediaDir'),
+                        $newFilename
+                    );
+                    try {} catch (FileException $e) {
+                    // ... handle exception if something happens during file upload
+                }
+
+                // updates the 'brochureFilename' property to store the PDF file name
+                // instead of its contents
+                //$product->setBrochureFilename($newFilename);
+                return new Response('ali.jpg');
+            }
+        }
+
     }
 }

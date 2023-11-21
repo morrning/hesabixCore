@@ -1,7 +1,7 @@
 {% extends "base.html.twig" %}
 {% block title %}نرم افزار حسابداری آنلاین ، متن باز و کاملا رایگان{% endblock %}
 {% block body %}
-    <div class="px-4 py-3 text-center rounded-4 bg-warning">
+    <div class="px-4 py-3 text-center" style="background-color: #c8d7ff">
         <div class="row">
             <div class="col-sm-12 col-md-6">
                 <h1 class="fw-bold text-primary-darker">
@@ -16,10 +16,6 @@
                         <i class="fa fa-door-open"></i>
                         ورود | عضویت رایگان
                     </a>
-                    <button href="http://insider.hesabix.ir" disabled="disabled" class="btn btn-outline-dark btn-lg px-4 gap-3">
-                        <i class="fa fa-door-open"></i>
-                        پیش‌نمایش (فعلا غیرفعال است)
-                    </button>
                     {% if is_granted('ROLE_ADMIN')%}
                         <a href="/app/dashboard" class="btn btn-alt-danger btn-lg px-4 gap-3">
                             <i class="fa fa-door-open"></i>
