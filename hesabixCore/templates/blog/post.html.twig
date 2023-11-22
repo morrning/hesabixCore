@@ -59,6 +59,22 @@
                                 <h5>ارسال دیدگاه</h5>
                                 {{ form_start(form) }}
                                 {{ form_errors(form) }}
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-sm-12 col-md-12">
+                                            {{ form_row(form.name) }}
+                                        </div>
+                                        <div class="col-sm-12 col-md-6">
+                                            {{ form_row(form.email) }}
+                                        </div>
+                                        <div class="col-sm-12 col-md-6">
+                                            {{ form_row(form.website) }}
+                                        </div>
+                                        <div class="col-sm-12 col-md-12">
+                                            {{ form_row(form.body) }}
+                                        </div>
+                                    </div>
+                                </div>
                                 {{ form_end(form) }}
                             </div>
                         {% endif %}

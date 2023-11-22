@@ -31,6 +31,15 @@ class BlogComment
     #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
     private ?bool $publish = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $email = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $website = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -92,6 +101,42 @@ class BlogComment
     public function setPublish(bool $publish): self
     {
         $this->publish = $publish;
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getEmail(): ?string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): static
+    {
+        $this->email = $email;
+
+        return $this;
+    }
+
+    public function getWebsite(): ?string
+    {
+        return $this->website;
+    }
+
+    public function setWebsite(?string $website): static
+    {
+        $this->website = $website;
 
         return $this;
     }
