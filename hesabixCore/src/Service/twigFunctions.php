@@ -7,17 +7,24 @@ namespace App\Service;
 use App\Entity\ChangeReport;
 use App\Entity\Settings;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 class twigFunctions
 {
     private EntityManagerInterface $em;
 
-    /**
-     * @param EntityManagerInterface $em
-     */
-    public function __construct(EntityManagerInterface $em)
+    protected Request $request;
+    protected RequestStack $requestStack;
+
+    function __construct(
+        EntityManagerInterface  $entityManager,
+        RequestStack $request
+    )
     {
-        $this->em = $em;
+        $this->request = $request->getCurrentRequest();
+        $this->em = $entityManager;
     }
 
 
@@ -87,6 +94,10 @@ class twigFunctions
 
     public function systemSettings(){
         return $this->em->getRepository(Settings::class)->findAll()[0];
+    }
+
+    public function getCurrentUrl(){
+        return $this->request->getUri();
     }
 
 }

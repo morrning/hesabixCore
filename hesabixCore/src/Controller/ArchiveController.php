@@ -232,7 +232,7 @@ class ArchiveController extends AbstractController
     }
 
     #[Route('/api/archive/file/upload', name: 'app_archive_file_upload')]
-    public function app_archive_file_upload(Jdate $jdate, Provider $provider,SluggerInterface $slugger,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): Response
+    public function app_archive_file_upload(Jdate $jdate, Provider $provider,SluggerInterface $slugger,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
     {
         $acc = $access->hasRole('archiveUpload');
         if (!$acc)
@@ -247,21 +247,30 @@ class ArchiveController extends AbstractController
                 $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedFile->guessExtension();
 
                 // Move the file to the directory where brochures are stored
-
+                try {
                     $uploadedFile->move(
                         $this->getParameter('archiveTempMediaDir'),
                         $newFilename
-                    );
-                    try {} catch (FileException $e) {
+                    );} catch (FileException $e) {
                     // ... handle exception if something happens during file upload
                 }
 
                 // updates the 'brochureFilename' property to store the PDF file name
                 // instead of its contents
                 //$product->setBrochureFilename($newFilename);
-                return new Response('ali.jpg');
+                return $this->json(['name'=>$newFilename]);
             }
         }
+    }
+    #[Route('/api/archive/file/save', name: 'app_archive_file_save')]
+    public function app_archive_file_save(Jdate $jdate, Provider $provider,SluggerInterface $slugger,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('archiveUpload');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        return $this->json([
+            'ok'=>$request->get('doctype')
+        ]);
 
     }
 }

@@ -21,7 +21,7 @@ class CommentType extends AbstractType
             ->add('email',EmailType::class)
             ->add('website',UrlType::class)
             ->add('body',TextareaType::class,['attr'=>['autocomplete'=>'off','rows'=>5]])
-            ->add('submit',SubmitType::class)
+            ->add('submit',SubmitType::class,['label'=>'SubmitComment'])
         ;
     }
 

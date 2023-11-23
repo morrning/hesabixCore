@@ -1,5 +1,7 @@
 {% extends "blog/base.html.twig" %}
 {% block title %}{{ item.title }}{% endblock %}
+{% block description %}{{ item.title }}{% endblock %}
+{% block keywords %}{{ item.keywords }}{% endblock %}
 {% block content %}
     <main id="main-container">
         <!-- Hero -->
@@ -48,46 +50,38 @@
                     </div>
                     <!-- END Actions -->
                     <div class="px-4 pt-4 rounded bg-body-extra-light">
-                        {% if not app.user %}
-                            <div class="alert alert-info">
-                                برای ارسال دیدگاه به حساب خود وارد شوید.
-                                <br>
-                                <a href="/login">ورود</a>  |  <a href="{{ twigFunctions.systemSettings().appSite }}/register">عضویت</a>
-                            </div>
-                        {% else %}
-                            <div class="rounded bg-light px-2 pt-2 pb-1">
-                                <h5>ارسال دیدگاه</h5>
-                                {{ form_start(form) }}
-                                {{ form_errors(form) }}
-                                <div class="container">
-                                    <div class="row">
-                                        <div class="col-sm-12 col-md-12">
-                                            {{ form_row(form.name) }}
-                                        </div>
-                                        <div class="col-sm-12 col-md-6">
-                                            {{ form_row(form.email) }}
-                                        </div>
-                                        <div class="col-sm-12 col-md-6">
-                                            {{ form_row(form.website) }}
-                                        </div>
-                                        <div class="col-sm-12 col-md-12">
-                                            {{ form_row(form.body) }}
-                                        </div>
+                        <div class="rounded bg-light px-2 pt-2 pb-1">
+                            <h5>ارسال دیدگاه</h5>
+                            {{ form_start(form) }}
+                            {{ form_errors(form) }}
+                            <div class="container">
+                                <div class="row">
+                                    <div class="col-sm-12 col-md-12">
+                                        {{ form_row(form.name,{'attr':{'class':'required'}}) }}
+                                    </div>
+                                    <div class="col-sm-12 col-md-6">
+                                        {{ form_row(form.email) }}
+                                    </div>
+                                    <div class="col-sm-12 col-md-6">
+                                        {{ form_row(form.website) }}
+                                    </div>
+                                    <div class="col-sm-12 col-md-12">
+                                        {{ form_row(form.body) }}
                                     </div>
                                 </div>
-                                {{ form_end(form) }}
                             </div>
-                        {% endif %}
+                            {{ form_end(form) }}
+                        </div>
                         <div class="pt-3 fs-sm">
                             <h3>دیدگاه‌ها</h3>
                             {% for comment in comments %}
                             <div class="d-flex">
                                 <span class="flex-shrink-0 img-link me-2">
-                                    <img alt="" class="img-avatar img-avatar32 img-avatar-thumb" src="{{ asset('https://www.gravatar.com/avatar/' ~ twigFunctions.gravatarHash(comment.submitter.email)) }}">
+                                    <img alt="" class="img-avatar img-avatar32 img-avatar-thumb" src="{{ asset('https://www.gravatar.com/avatar/' ~ twigFunctions.gravatarHash(comment.email)) }}">
                                 </span>
                                 <div class="flex-grow-1">
                                     <p class="mb-1">
-                                        <a class="fw-semibold" href="javascript:void(0)">{{ comment.submitter.fullname }}</a>
+                                        <a class="fw-semibold" href="javascript:void(0)">{{ comment.name }}</a>
                                         {{ comment.body }}
                                     </p>
                                 </div>

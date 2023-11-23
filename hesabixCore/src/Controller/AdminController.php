@@ -176,6 +176,35 @@ class AdminController extends AbstractController
         }
         throw $this->createNotFoundException();
     }
+
+    #[Route('/api/admin/settings/system/info', name: 'admin_settings_system_info')]
+    public function admin_settings_system_info(Jdate $jdate,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    {
+        $item = $entityManager->getRepository(Settings::class)->findAll()[0];
+        $resp = [];
+        $resp['keywords'] = $item->getSiteKeywords();
+        $resp['description'] = $item->getDiscription();
+        return $this->json($resp);
+    }
+
+    #[Route('/api/admin/settings/system/info/save', name: 'admin_settings_system_info_save')]
+    public function admin_settings_system_info_save(EntityManagerInterface $entityManager,Request $request): Response
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(array_key_exists('keywords',$params) && array_key_exists('description',$params)){
+            $item = $entityManager->getRepository(Settings::class)->findAll()[0];
+            $item->setSiteKeywords($params['keywords']);
+            $item->setDiscription($params['description']);
+            $entityManager->persist($item);
+            $entityManager->flush();
+            return $this->json(['result' => 1]);
+        }
+        throw $this->createNotFoundException();
+    }
+
     #[Route('/api/admin/reportchange/lists', name: 'app_admin_reportchange_list')]
     public function app_admin_reportchange_list(Jdate $jdate,Provider $provider,EntityManagerInterface $entityManager): JsonResponse
     {

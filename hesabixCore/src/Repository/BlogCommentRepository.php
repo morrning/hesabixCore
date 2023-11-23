@@ -45,6 +45,7 @@ class BlogCommentRepository extends ServiceEntityRepository
     public function findLastComments(): array
     {
         return $this->createQueryBuilder('b')
+            ->where('b.publish = true')
             ->orderBy('b.id', 'DESC')
             ->setMaxResults(10)
             ->getQuery()

@@ -15,7 +15,7 @@
                     {% set comments = Blog.getLastComments() %}
                     {% for comment in comments %}
                         <div class="push">
-                            <b class="fw-semibold text-primary">{{ comment.submitter.fullname }}</b> در <a href="{{ path('general_blog_post',{'url':comment.post.url}) }}">{{ comment.post.title }}</a>
+                            <b class="fw-semibold text-primary">{{ comment.name }}</b> در <a href="{{ path('general_blog_post',{'url':comment.post.url}) }}">{{ comment.post.title }}</a>
                             <p class="mt-1"> {{ comment.body }} </p>
                         </div>
                     {% endfor %}

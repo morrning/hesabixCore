@@ -14,10 +14,6 @@ class BlogComment
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'blogComments')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $submitter = null;
-
     #[ORM\Column(length: 255)]
     private ?string $dateSubmit = null;
 
@@ -43,18 +39,6 @@ class BlogComment
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getSubmitter(): ?User
-    {
-        return $this->submitter;
-    }
-
-    public function setSubmitter(?User $submitter): self
-    {
-        $this->submitter = $submitter;
-
-        return $this;
     }
 
     public function getDateSubmit(): ?string

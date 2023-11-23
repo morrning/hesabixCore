@@ -44,14 +44,14 @@ class BlogController extends AbstractController
         $comment = new BlogComment();
         $form = $this->createForm(CommentType::class,$comment);
         $form->handleRequest($request);
-        if($form->isSubmitted() && $form->isValid() && $this->getUser()){
+        if($form->isSubmitted() && $form->isValid()){
+            echo 11;
             $oldComments = $entityManager->getRepository(BlogComment::class)->findBy([
-                'submitter'=>$this->getUser()
+                'email'=>$comment->getEmail()
             ],['id'=>'DESC']);
             if(count($oldComments) == 0){
                 $comment->setDateSubmit(time());
                 $comment->setPost($item);
-                $comment->setSubmitter($this->getUser());
                 $entityManager->persist($comment);
                 $entityManager->flush();
                 $comment->setBody('');

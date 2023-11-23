@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\SettingsRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SettingsRepository::class)]
@@ -33,6 +34,12 @@ class Settings
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $melipayamakToken = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $siteKeywords = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $discription = null;
 
     public function getId(): ?int
     {
@@ -119,6 +126,30 @@ class Settings
     public function setMelipayamakToken(?string $melipayamakToken): static
     {
         $this->melipayamakToken = $melipayamakToken;
+
+        return $this;
+    }
+
+    public function getSiteKeywords(): ?string
+    {
+        return $this->siteKeywords;
+    }
+
+    public function setSiteKeywords(?string $siteKeywords): static
+    {
+        $this->siteKeywords = $siteKeywords;
+
+        return $this;
+    }
+
+    public function getDiscription(): ?string
+    {
+        return $this->discription;
+    }
+
+    public function setDiscription(?string $discription): static
+    {
+        $this->discription = $discription;
 
         return $this;
     }
