@@ -18,7 +18,7 @@ class CommentType extends AbstractType
     {
         $builder
             ->add('name',TextType::class)
-            ->add('email',EmailType::class)
+            ->add('email',EmailType::class,['label'=>'پست الکترونیکی(منتشر نخواهد شد)'])
             ->add('website',UrlType::class)
             ->add('body',TextareaType::class,['attr'=>['autocomplete'=>'off','rows'=>5]])
             ->add('submit',SubmitType::class,['label'=>'SubmitComment'])
