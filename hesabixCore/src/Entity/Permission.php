@@ -99,6 +99,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $shareholder = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $archiveView = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -436,6 +439,18 @@ class Permission
     public function setShareholder(?bool $shareholder): static
     {
         $this->shareholder = $shareholder;
+
+        return $this;
+    }
+
+    public function isArchiveView(): ?bool
+    {
+        return $this->archiveView;
+    }
+
+    public function setArchiveView(?bool $archiveView): static
+    {
+        $this->archiveView = $archiveView;
 
         return $this;
     }

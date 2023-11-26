@@ -389,6 +389,7 @@ class BusinessController extends AbstractController
                     'archiveUpload'=>true,
                     'archiveMod'=>true,
                     'archiveDelete'=>true,
+                    'archiveView'=>true,
                     'active'=> $perm->getUser()->isActive(),
                     'shareholder'=>true,
                 ];
@@ -423,6 +424,7 @@ class BusinessController extends AbstractController
                     'archiveUpload'=>$perm->isArchiveUpload(),
                     'archiveMod'=>$perm->isArchiveMod(),
                     'archiveDelete'=>$perm->isArchiveDelete(),
+                    'archiveView'=>$perm->isArchiveView(),
                     'active'=> $perm->getUser()->isActive(),
                     'shareholder'=> $perm->isShareholder(),
                 ];
@@ -485,6 +487,7 @@ class BusinessController extends AbstractController
                 $perm->setArchiveMod($params['archiveMod']);
                 $perm->setArchiveDelete($params['archiveDelete']);
                 $perm->setArchiveUpload($params['archiveUpload']);
+                $perm->setArchiveView($params['archiveView']);
                 $perm->setShareholder($params['shareholder']);
                 $entityManager->persist($perm);
                 $entityManager->flush();

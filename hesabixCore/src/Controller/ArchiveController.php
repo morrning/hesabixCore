@@ -14,6 +14,7 @@ use App\Service\twigFunctions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,7 +41,8 @@ class ArchiveController extends AbstractController
             $usedSize += $file->getFileSize();
         return [
             'size' => $totalSize * 1024,
-            'remain'=>$usedSize
+            'remain'=>($totalSize * 1024) - $usedSize,
+            'used'=>$usedSize
         ];
     }
     #[Route('/api/archive/info', name: 'app_archive_info')]
@@ -268,9 +270,99 @@ class ArchiveController extends AbstractController
         $acc = $access->hasRole('archiveUpload');
         if (!$acc)
             throw $this->createAccessDeniedException();
+        foreach ($request->get('added_media') as $item){
+            if (file_exists(__DIR__ . '/../../../hesabixArchive/temp/'.$item) ){
+                $file = new ArchiveFile();
+                $file->setBid($acc['bid']);
+                $file->setDateSubmit(time());
+                $file->setSubmitter($this->getUser());
+                $file->setPublic(false);
+                $file->setFilename($item);
+                $file->setDes($request->get('des'));
+                $file->setCat($request->get('cat'));
+                //set file type
+                $mimFile = mime_content_type(__DIR__ . '/../../../hesabixArchive/temp/'.$item);
+                $file->setFileType($mimFile);
+                $file->setFileSize(ceil(filesize(__DIR__ . '/../../../hesabixArchive/temp/'.$item)/(1024*1024)));
+                rename(__DIR__ . '/../../../hesabixArchive/temp/'.$item,__DIR__ . '/../../../hesabixArchive/'.$item);
+                $file->setRelatedDocType($request->get('doctype'));
+                $file->setRelatedDocCode($request->get('docid'));
+
+                $entityManager->persist($file);
+                $entityManager->flush();
+            }
+
+        }
         return $this->json([
-            'ok'=>$request->get('doctype')
+            'ok'=>'ok'
         ]);
 
+    }
+
+    #[Route('/api/archive/files/list', name: 'app_archive_file_list')]
+    public function app_archive_file_list(Jdate $jdate,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('archiveView');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        $files = $entityManager->getRepository(ArchiveFile::class)->findBy([
+            'bid'=>$acc['bid'],
+            'relatedDocType'=>$params['type'],
+            'relatedDocCode'=>$params['id']
+        ]);
+        echo $request->get('type');
+        $resp = [];
+        foreach ($files as $file){
+            $temp = [];
+            $temp['id']=$file->getId();
+            $temp['filename']=$file->getFilename();
+            $temp['fileType']=$file->getFileType();
+            $temp['submitter']=$file->getSubmitter()->getFullName();
+            $temp['dateSubmit']=$jdate->jdate('Y/n/d H:i',$file->getDateSubmit());
+            $temp['filePublicls']=$file->isPublic();
+            $temp['cat']=$file->getCat();
+            $temp['filesize']=$file->getFileSize();
+            $resp[] = $temp;
+        }
+        return $this->json($resp);
+    }
+
+    #[Route('/api/archive/file/get/{id}', name: 'app_archive_file_get')]
+    public function app_archive_file_get(string $id,Jdate $jdate,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): BinaryFileResponse
+    {
+        $acc = $access->hasRole('archiveView');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $file = $entityManager->getRepository(ArchiveFile::class)->find($id);
+        if(! $file)
+            throw $this->createNotFoundException();
+        if($acc['bid']->getId() != $file->getBid()->getId())
+            throw $this->createAccessDeniedException();
+        $fileAdr = __DIR__ . '/../../../hesabixArchive/'. $file->getFilename();
+        $response = new BinaryFileResponse($fileAdr);
+        return $response;
+
+    }
+    #[Route('/api/archive/file/remove/{id}', name: 'app_archive_file_remove')]
+    public function app_archive_file_remove(string $id,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('archiveDelete');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $file = $entityManager->getRepository(ArchiveFile::class)->find($id);
+        if(! $file)
+            throw $this->createNotFoundException();
+        if($acc['bid']->getId() != $file->getBid()->getId())
+            throw $this->createAccessDeniedException();
+        $fileAdr = __DIR__ . '/../../../hesabixArchive/'. $file->getFilename();
+        unlink($fileAdr);
+        $entityManager->remove($file);
+        $entityManager->flush();
+        $log->insert('آرشیو','فایل با نام ' . $file->getFilename() . ' حذف شد.',$this->getUser(),$acc['bid']);
+        return $this->json(['result'=>1]);
     }
 }

@@ -51,7 +51,8 @@
     "symfonycasts/verify-email-bundle": "^1.13",
     "tecnickcom/tcpdf": "^6.6",
     "twig/extra-bundle": "^2.12|^3.0",
-    "twig/twig": "^2.12|^3.0"
+    "twig/twig": "^2.12|^3.0",
+    "ext-fileinfo": "*"
   },
   "config": {
     "allow-plugins": {
