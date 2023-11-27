@@ -113,6 +113,9 @@ class Person
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: Shareholder::class, orphanRemoval: true)]
     private Collection $shareholders;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $speedAccess = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -573,6 +576,18 @@ class Person
                 $shareholder->setPerson(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isSpeedAccess(): ?bool
+    {
+        return $this->speedAccess;
+    }
+
+    public function setSpeedAccess(?bool $speedAccess): static
+    {
+        $this->speedAccess = $speedAccess;
 
         return $this;
     }

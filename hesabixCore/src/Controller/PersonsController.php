@@ -90,6 +90,8 @@ class PersonsController extends AbstractController
             $person->setBirthday($params['birthday']);
         if(array_key_exists('tel',$params))
             $person->setTel($params['tel']);
+        if(array_key_exists('speedAccess',$params))
+            $person->setSpeedAccess($params['speedAccess']);
         if(array_key_exists('address',$params))
             $person->setAddress($params['address']);
         if(array_key_exists('des',$params))

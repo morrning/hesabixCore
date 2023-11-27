@@ -15,7 +15,7 @@ class twigFunctions
 {
     private EntityManagerInterface $em;
 
-    protected Request $request;
+    protected $request;
     protected RequestStack $requestStack;
 
     function __construct(

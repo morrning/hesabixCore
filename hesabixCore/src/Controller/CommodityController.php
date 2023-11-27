@@ -25,9 +25,21 @@ class CommodityController extends AbstractController
     {
         if(!$access->hasRole('commodity'))
             throw $this->createAccessDeniedException();
-        $items = $entityManager->getRepository(Commodity::class)->findBy([
-            'bid'=>$request->headers->get('activeBid')
-        ]);
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(array_key_exists('speedAccess',$params)){
+            $items = $entityManager->getRepository(Commodity::class)->findBy([
+                'bid'=>$request->headers->get('activeBid'),
+                'speedAccess'=>true
+            ]);
+        }
+        else{
+            $items = $entityManager->getRepository(Commodity::class)->findBy([
+                'bid'=>$request->headers->get('activeBid')
+            ]);
+        }
         $res = [];
         foreach ($items as $item){
             $temp = [];
@@ -36,6 +48,7 @@ class CommodityController extends AbstractController
             $temp['unit'] = $item->getUnit()->getName();
             $temp['des'] = $item->getDes();
             $temp['priceBuy'] = $item->getPriceBuy();
+            $temp['speedAccess'] = $item->isSpeedAccess();
             $temp['priceSell'] = $item->getPriceSell();
             $temp['code'] = $item->getCode();
             $temp['cat'] = null;
@@ -83,7 +96,7 @@ class CommodityController extends AbstractController
             'code'=>$code
         ]);
         $data->setUnit($data->getUnit()->getName());
-        $res = $provider->Entity2ArrayJustIncludes($data,['isCommodityCountCheck','getName','getUnit','getPriceBuy','getPriceSell','getCat','getOrderPoint','getdes','getId','getDayLoading','isKhadamat','getCode','getMinOrderCount','getLabel'],1);
+        $res = $provider->Entity2ArrayJustIncludes($data,['isSpeedAccess','isCommodityCountCheck','getName','getUnit','getPriceBuy','getPriceSell','getCat','getOrderPoint','getdes','getId','getDayLoading','isKhadamat','getCode','getMinOrderCount','getLabel'],1);
         $res['cat'] = $data->getCat()->getId();
         return $this->json($res);
     }
@@ -135,6 +148,7 @@ class CommodityController extends AbstractController
             $data->setCommodityCountCheck($params['commodityCountCheck']);
         }
         $data->setMinOrderCount($params['minOrderCount']);
+        $data->setSpeedAccess($params['speedAccess']);
         $data->setDayLoading($params['dayLoading']);
         $data->setOrderPoint($params['orderPoint']);
         //set cat

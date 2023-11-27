@@ -204,6 +204,7 @@ class ArchiveController extends AbstractController
         $resp = [];
         foreach ($files as $file){
             $temp = [];
+            $temp['id']=$file->getId();
             $temp['filename']=$file->getFilename();
             $temp['fileType']=$file->getFileType();
             $temp['submitter']=$file->getSubmitter()->getFullName();
@@ -240,28 +241,26 @@ class ArchiveController extends AbstractController
         if (!$acc)
             throw $this->createAccessDeniedException();
         $info = $this->getArchiveInfo($entityManager,$acc);
-        if($info['remain'] > 0){
-            $uploadedFile = $request->files->get('image');
-            if ($uploadedFile) {
-                $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
-                // this is needed to safely include the file name as part of the URL
-                $safeFilename = $slugger->slug($originalFilename);
-                $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedFile->guessExtension();
+        $uploadedFile = $request->files->get('image');
+        if ($uploadedFile) {
+            $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+            // this is needed to safely include the file name as part of the URL
+            $safeFilename = $slugger->slug($originalFilename);
+            $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedFile->guessExtension();
 
-                // Move the file to the directory where brochures are stored
-                try {
-                    $uploadedFile->move(
-                        $this->getParameter('archiveTempMediaDir'),
-                        $newFilename
-                    );} catch (FileException $e) {
-                    // ... handle exception if something happens during file upload
-                }
-
-                // updates the 'brochureFilename' property to store the PDF file name
-                // instead of its contents
-                //$product->setBrochureFilename($newFilename);
-                return $this->json(['name'=>$newFilename]);
+            // Move the file to the directory where brochures are stored
+            try {
+                $uploadedFile->move(
+                    $this->getParameter('archiveTempMediaDir'),
+                    $newFilename
+                );} catch (FileException $e) {
+                // ... handle exception if something happens during file upload
             }
+
+            // updates the 'brochureFilename' property to store the PDF file name
+            // instead of its contents
+            //$product->setBrochureFilename($newFilename);
+            return $this->json(['name'=>$newFilename]);
         }
     }
     #[Route('/api/archive/file/save', name: 'app_archive_file_save')]
@@ -272,6 +271,10 @@ class ArchiveController extends AbstractController
             throw $this->createAccessDeniedException();
         foreach ($request->get('added_media') as $item){
             if (file_exists(__DIR__ . '/../../../hesabixArchive/temp/'.$item) ){
+                $size = ceil(filesize(__DIR__ . '/../../../hesabixArchive/temp/'.$item)/(1024*1024));
+                $info = $this->getArchiveInfo($entityManager,$acc);
+                if($info['size'] < ($info['used'] + $size))
+                    return $this->json(['result'=>'nem']);
                 $file = new ArchiveFile();
                 $file->setBid($acc['bid']);
                 $file->setDateSubmit(time());
@@ -287,9 +290,10 @@ class ArchiveController extends AbstractController
                 rename(__DIR__ . '/../../../hesabixArchive/temp/'.$item,__DIR__ . '/../../../hesabixArchive/'.$item);
                 $file->setRelatedDocType($request->get('doctype'));
                 $file->setRelatedDocCode($request->get('docid'));
-
                 $entityManager->persist($file);
                 $entityManager->flush();
+                $log->insert('آرشیو','فایل با نام ' . $file->getFilename() . ' افزوده شد.',$this->getUser(),$acc['bid']);
+
             }
 
         }

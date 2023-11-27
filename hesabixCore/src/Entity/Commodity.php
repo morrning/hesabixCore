@@ -70,6 +70,9 @@ class Commodity
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $dayLoading = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $speedAccess = null;
+
     public function __construct()
     {
         $this->setPriceBuy(0);
@@ -326,6 +329,18 @@ class Commodity
     public function setDayLoading(?string $dayLoading): static
     {
         $this->dayLoading = $dayLoading;
+
+        return $this;
+    }
+
+    public function isSpeedAccess(): ?bool
+    {
+        return $this->speedAccess;
+    }
+
+    public function setSpeedAccess(?bool $speedAccess): static
+    {
+        $this->speedAccess = $speedAccess;
 
         return $this;
     }
