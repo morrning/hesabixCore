@@ -131,9 +131,22 @@ class PersonsController extends AbstractController
     {
         if(!$access->hasRole('person'))
             throw $this->createAccessDeniedException();
-        $persons = $entityManager->getRepository(Person::class)->findBy([
-           'bid'=>$request->headers->get('activeBid')
-        ]);
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(array_key_exists('speedAccess',$params)){
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$request->headers->get('activeBid'),
+                'speedAccess'=>true
+            ]);
+        }
+        else{
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$request->headers->get('activeBid')
+            ]);
+        }
+
         $response = $provider->ArrayEntity2Array($persons,0);
         foreach ($persons as $key =>$person){
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
