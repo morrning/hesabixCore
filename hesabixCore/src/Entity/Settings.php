@@ -41,6 +41,9 @@ class Settings
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $discription = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $scripts = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -150,6 +153,18 @@ class Settings
     public function setDiscription(?string $discription): static
     {
         $this->discription = $discription;
+
+        return $this;
+    }
+
+    public function getScripts(): ?string
+    {
+        return $this->scripts;
+    }
+
+    public function setScripts(?string $scripts): static
+    {
+        $this->scripts = $scripts;
 
         return $this;
     }

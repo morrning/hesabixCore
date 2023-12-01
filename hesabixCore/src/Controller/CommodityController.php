@@ -153,7 +153,7 @@ class CommodityController extends AbstractController
         $data->setOrderPoint($params['orderPoint']);
         //set cat
         if(array_key_exists('cat',$params)){
-            if($params['cat'] != null){
+            if($params['cat'] != ''){
                 $cat = $entityManager->getRepository(CommodityCat::class)->find($params['cat']);
                 if($cat){
                     if($cat->getBid() == $acc['bid']){

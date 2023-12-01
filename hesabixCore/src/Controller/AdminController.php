@@ -184,6 +184,7 @@ class AdminController extends AbstractController
         $resp = [];
         $resp['keywords'] = $item->getSiteKeywords();
         $resp['description'] = $item->getDiscription();
+        $resp['scripts'] = $item->getScripts();
         return $this->json($resp);
     }
 
@@ -198,6 +199,7 @@ class AdminController extends AbstractController
             $item = $entityManager->getRepository(Settings::class)->findAll()[0];
             $item->setSiteKeywords($params['keywords']);
             $item->setDiscription($params['description']);
+            $item->setScripts($params['scripts']);
             $entityManager->persist($item);
             $entityManager->flush();
             return $this->json(['result' => 1]);
