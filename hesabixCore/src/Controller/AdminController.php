@@ -185,6 +185,7 @@ class AdminController extends AbstractController
         $resp['keywords'] = $item->getSiteKeywords();
         $resp['description'] = $item->getDiscription();
         $resp['scripts'] = $item->getScripts();
+        $resp['zarinpal'] = $item->getZarinpalMerchant();
         return $this->json($resp);
     }
 
@@ -200,6 +201,7 @@ class AdminController extends AbstractController
             $item->setSiteKeywords($params['keywords']);
             $item->setDiscription($params['description']);
             $item->setScripts($params['scripts']);
+            $item->setZarinpalMerchant($params['zarinpal']);
             $entityManager->persist($item);
             $entityManager->flush();
             return $this->json(['result' => 1]);

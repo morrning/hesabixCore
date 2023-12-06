@@ -97,7 +97,9 @@ class CommodityController extends AbstractController
         ]);
         $data->setUnit($data->getUnit()->getName());
         $res = $provider->Entity2ArrayJustIncludes($data,['isSpeedAccess','isCommodityCountCheck','getName','getUnit','getPriceBuy','getPriceSell','getCat','getOrderPoint','getdes','getId','getDayLoading','isKhadamat','getCode','getMinOrderCount','getLabel'],1);
-        $res['cat'] = $data->getCat()->getId();
+        $res['cat'] = '';
+        if($data->getCat())
+            $res['cat'] = $data->getCat()->getId();
         return $this->json($res);
     }
 
@@ -154,7 +156,10 @@ class CommodityController extends AbstractController
         //set cat
         if(array_key_exists('cat',$params)){
             if($params['cat'] != ''){
-                $cat = $entityManager->getRepository(CommodityCat::class)->find($params['cat']);
+                if(is_int($params['cat']))
+                    $cat = $entityManager->getRepository(CommodityCat::class)->find($params['cat']);
+                else
+                    $cat = $entityManager->getRepository(CommodityCat::class)->find($params['cat']['id']);
                 if($cat){
                     if($cat->getBid() == $acc['bid']){
                         $data->setCat($cat);
@@ -247,6 +252,21 @@ class CommodityController extends AbstractController
             'id'=>$code
         ]);
         return $this->json($provider->Entity2Array($data,0));
+    }
+    #[Route('/api/commodity/cat/get/line', name: 'app_commodity_cat_get_line')]
+    public function app_commodity_cat_get_line(Jdate $jdate,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+
+        $acc = $access->hasRole('commodity');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $temp =[];
+        $nodes = $entityManager->getRepository(CommodityCat::class)->findBy([
+            'bid'=>$acc['bid'],
+        ]);
+        if(count($nodes) == 0)
+            $nodes = $this->createDefaultCat($acc['bid'],$entityManager);
+        return $this->json($provider->ArrayEntity2Array($nodes,0));
     }
 
     #[Route('/api/commodity/cat/get', name: 'app_commodity_cat_get')]
