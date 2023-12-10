@@ -356,4 +356,31 @@ class AdminController extends AbstractController
         }
         throw $this->createNotFoundException();
     }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/test', name: 'app_admin_database_backup_create')]
+    public function app_admin_database_backup_create(KernelInterface $kernel):JsonResponse
+    {
+        $application = new Application($kernel);
+        $application->setAutoExit(false);
+
+        $input = new ArrayInput([
+            'command' => 'doctrine:schema:create',
+            // (optional) define the value of command arguments
+            '--dump-sql' => true,
+            '../../hesabixBackup/databaseFiles/file.sql'=>true,
+
+        ]);
+
+        // You can use NullOutput() if you don't need the output
+        $output = new BufferedOutput();
+        $application->run($input, $output);
+        // return the output, don't use if you used NullOutput()
+        $content = $output->fetch();
+        return $this->json([
+            'message' => $content,
+        ]);
+    }
 }

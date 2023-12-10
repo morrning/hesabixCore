@@ -1,5 +1,6 @@
 {% extends "base.html.twig" %}
-{% block title %}راهنما{% endblock %}
+{% block title %}راهنمای بخش {% if items | length != 0 %}{{ items.0.cat }}{% endif %}{% endblock %}
+{% block description %}{{ block('title') }}{% endblock %}
 {% block body %}
     <div class="container">
         <div class="row">
