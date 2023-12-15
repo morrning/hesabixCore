@@ -163,7 +163,7 @@
                </div>
                <!-- END Navigation -->
                <!-- Page Content -->
-               <div class="m-0 p-0 bg-white">
+               <div class="m-0 p-0 bg-white pb-3">
                    {% block body %}{% endblock %}
                </div>
                <!-- Footer -->
@@ -250,18 +250,14 @@
                            </div>
                        </div>
                        <div class="col-sm-12 col-md-4 text-center mt-2">
-                           <div class="row">
-                               <div class="col">
+                           <div class="row mb-3 justify-content-center">
+                               <div class="col-3">
                                    <script src="https://www.zarinpal.com/webservice/TrustCode" type="text/javascript"></script>
                                </div>
-                               <div class="col">
+                               <div class="col-3">
                                    <a href="https://aparat.com/hesabix.ir" target="_blank">
-                                       <img src="{{ asset("/img/share/aparat.png") }}" class="img-fluid" alt="کانال آپارات حسابیکس">
+                                       <img style="max-width: 6rem;" src="{{ asset("/img/share/aparat.png") }}" class="img-fluid" alt="کانال آپارات حسابیکس">
                                    </a>
-                               </div>
-                               <div class="col">
-                                   <!-- Place this tag where you want the button to render. -->
-                                   <a class="github-button" href="https://github.com/morrning/hesabixUi" data-size="large" aria-label="Star morrning/hesabixUi on GitHub">مخزن کد‌های حسابیکس</a>
                                </div>
                            </div>
                        </div>
@@ -269,13 +265,19 @@
                </div>
                <footer class="bg-body-light" id="page-footer">
                    <div class="content py-0">
-                       <div class="row fs-sm">
+                       <div class="row fs-sm align-items-center">
                            <div class="col-sm-6 order-sm-2 mb-1 mb-sm-0 text-center text-sm-end">
-                               حسابیکس با <i class="fa fa-heart text-danger"></i>
+                               <a class="fw-semibold" href="https://github.com/morrning/hesabixUI" target="_blank">حسابیکس</a>
+                               با <i class="fa fa-heart text-danger"></i>
                                متن باز است.
                            </div>
                            <div class="col-sm-6 order-sm-1 text-center text-sm-start">
-                               <a class="fw-semibold" href="https://github.com/morrning/hesabixUI" target="_blank">حسابیکس :  {{ twigFunctions.getHesabixLastVersionNumber() }}</a>
+                               <a class="'btn btn-link" href="https://parspack.com" target="_blank">
+                                   <img style="max-width: 7rem" src="{{ asset('/img/parspack-logo.svg') }}" class="img-fluid" alt="parspack">
+                                   <span class="text-danger ms-2">
+                                       با خاطری آسوده، استوار بر روی راهکارهای ابری پارس‌پک
+                                   </span>
+                               </a>
                            </div>
                        </div>
                    </div>
