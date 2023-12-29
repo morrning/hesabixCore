@@ -70,6 +70,8 @@ class BusinessRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult()
         ;
-        return $res[count($res) -1];
+        if(count($res) > 0)
+            return $res[count($res) -1];
+        return null;
     }
 }

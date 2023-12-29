@@ -154,6 +154,7 @@
         </div>
     </div>
     <div class="content content-boxed mt-0 pt-0">
+        {% if blogPosts | length > 0 %}
         <h3>وبلاگ حسابیکس</h3>
         <div class="row items-push">
             {% for item in blogPosts %}
@@ -178,5 +179,6 @@
                 </div>
             {% endfor %}
         </div>
+        {% endif %}
     </div>
 {% endblock %}
