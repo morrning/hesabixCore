@@ -41,11 +41,10 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
     public function authenticate(Request $request): Passport
     {
         $apiToken = $request->headers->get('X-AUTH-TOKEN');
-
         if (null == $apiToken) {
             // The token header was empty, authentication fails with HTTP Status
             // Code 401 "Unauthorized"
-            //throw new CustomUserMessageAuthenticationException('No API token provided');
+            throw new CustomUserMessageAuthenticationException('No API token provided');
         }
 
 
@@ -68,6 +67,8 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
+        echo 55;
+        die();
         $data = [
             // you may want to customize or obfuscate the message first
             'message' => strtr($exception->getMessageKey(), $exception->getMessageData())
