@@ -391,4 +391,73 @@ class PersonsController extends AbstractController
         return new BinaryFileResponse($provider->createExcell($items,['type','dateSubmit']));
     }
 
+    #[Route('/api/person/import/excel', name: 'app_persons_import_excel')]
+    public function app_persons_import_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('person');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $file = $request->files->get('file');
+        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+        $reader->setReadDataOnly(true);
+        $spreadsheet = $reader->load($file);
+        $sheet = $spreadsheet->getSheet($spreadsheet->getFirstSheetIndex());
+        $data = $sheet->toArray();
+        unset($data[0]);
+        foreach($data as $item){
+            $person = $entityManager->getRepository(Person::class)->findOneBy([
+                'nikename'=>$item[0],
+                'bid' =>$acc['bid']
+            ]);
+            //check exist before
+            if(!$person){
+                 $person = new Person();
+                $person->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'person'));
+                $person->setNikename($item[0]);
+                $person->setBid($acc['bid']);
+    
+                if(array_key_exists(1,$item))
+                    $person->setName($item[1]);
+                if(array_key_exists(4,$item))
+                    $person->setBirthday($item[4]);
+                if(array_key_exists(10,$item))
+                    $person->setTel($item[10]);
+                if(array_key_exists(2,$item))
+                    $person->setSpeedAccess($item[2]);
+                if(array_key_exists(18,$item))
+                    $person->setAddress($item[18]);
+                if(array_key_exists(5,$item))
+                    $person->setDes($item[5]);
+                if(array_key_exists(9,$item))
+                    $person->setMobile($item[9]);
+                if(array_key_exists(11,$item))
+                    $person->setFax($item[11]);
+                if(array_key_exists(13,$item))
+                    $person->setWebsite($item[13]);
+                if(array_key_exists(12,$item))
+                    $person->setEmail($item[12]);
+                if(array_key_exists(17,$item))
+                    $person->setPostalcode($item[17]);
+                if(array_key_exists(16,$item))
+                    $person->setShahr($item[16]);
+                if(array_key_exists(15,$item))
+                    $person->setOstan($item[15]);
+                if(array_key_exists(14,$item))
+                    $person->setKeshvar($item[14]);
+                if(array_key_exists(7,$item))
+                    $person->setSabt($item[7]);
+                if(array_key_exists(8,$item))
+                    $person->setCodeeghtesadi($item[8]);
+                if(array_key_exists(6,$item))
+                    $person->setShenasemeli($item[6]);
+                if(array_key_exists(3,$item))
+                    $person->setCompany($item[3]);
+                $entityManager->persist($person);
+            }
+           $entityManager->flush();
+        }
+        $log->insert('اشخاص','تعداد '. count($data) . ' شخص به صورت گروهی وارد شد.',$this->getUser(),$request->headers->get('activeBid'));
+        return $this->json(['result' => 1]);
+    }
+
 }
