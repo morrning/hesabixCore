@@ -426,5 +426,66 @@ class CommodityController extends AbstractController
         $en->flush();
         return [$item,$child];
     }
+
+    #[Route('/api/commodity/import/excel', name: 'app_commodity_import_excel')]
+    public function app_commodity_import_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $file = $request->files->get('file');
+        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+        $reader->setReadDataOnly(true);
+        $spreadsheet = $reader->load($file);
+        $sheet = $spreadsheet->getSheet($spreadsheet->getFirstSheetIndex());
+        $data = $sheet->toArray();
+        unset($data[0]);
+        foreach($data as $item){
+            //load cat
+            $unit = $entityManager->getRepository(commodity::class)->findOneBy([
+                'name'=>$item[7],
+            ]);
+            if(!$unit){
+                $unit = $entityManager->getRepository(CommodityUnit::class)->findAll()[0];
+            }
+
+            $commodity = $entityManager->getRepository(commodity::class)->findOneBy([
+                'name'=>$item[2],
+                'bid' =>$acc['bid']
+            ]);
+            //check exist before
+            if(!$commodity){
+                $commodity = new commodity();
+                $commodity->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'commodity'));
+                $commodity->setName($item[2]);
+                $commodity->setBid($acc['bid']);
+                $commodity->setUnit($unit);
+                $commodity->setOrderPoint(0);
+                $commodity->setDayLoading(0);
+                if(array_key_exists(1,$item))
+                    $commodity->setName($item[1]);
+                if(array_key_exists(3,$item))
+                    $commodity->setPriceSell($item[3]);
+                if(array_key_exists(4,$item))
+                    $commodity->setPriceBuy($item[4]);
+                if(array_key_exists(1,$item))
+                    $commodity->setSpeedAccess($item[1]);
+                if(array_key_exists(5,$item))
+                    $commodity->setMinOrderCount($item[5]);
+                if(array_key_exists(6,$item))
+                    $commodity->setDes($item[6]);
+                if(array_key_exists(0,$item)){
+                    $commodity->setKhadamat(true);
+                    if($item[0] == '1'){
+                        $commodity->setKhadamat(false);
+                    }
+                }
+                $entityManager->persist($commodity);
+            }
+           $entityManager->flush();
+        }
+        $log->insert('کالا/خدمات','تعداد '. count($data) . ' کالا یا خدمات به صورت گروهی وارد شد.',$this->getUser(),$request->headers->get('activeBid'));
+        return $this->json(['result' => 1]);
+    }
 }
 

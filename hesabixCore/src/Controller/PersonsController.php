@@ -411,7 +411,7 @@ class PersonsController extends AbstractController
             ]);
             //check exist before
             if(!$person){
-                 $person = new Person();
+                $person = new Person();
                 $person->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'person'));
                 $person->setNikename($item[0]);
                 $person->setBid($acc['bid']);
