@@ -186,8 +186,12 @@ class AdminController extends AbstractController
         $resp['description'] = $item->getDiscription();
         $resp['scripts'] = $item->getScripts();
         $resp['zarinpal'] = $item->getZarinpalMerchant();
+        $resp['footerScripts'] = $item->getFooterScripts();
+        $resp['appSite'] = $item->getAppSite();
+        $resp['footer'] = $item->getFooter();
         return $this->json($resp);
     }
+
 
     #[Route('/api/admin/settings/system/info/save', name: 'admin_settings_system_info_save')]
     public function admin_settings_system_info_save(EntityManagerInterface $entityManager,Request $request): Response
@@ -202,6 +206,9 @@ class AdminController extends AbstractController
             $item->setDiscription($params['description']);
             $item->setScripts($params['scripts']);
             $item->setZarinpalMerchant($params['zarinpal']);
+            $item->setFooterScripts($params['footerScripts']);
+            $item->setAppSite($params['appSite']);
+            $item->setFooter($params['footer']);
             $entityManager->persist($item);
             $entityManager->flush();
             return $this->json(['result' => 1]);
@@ -364,7 +371,7 @@ class AdminController extends AbstractController
     /**
      * @throws Exception
      */
-    #[Route('/test', name: 'app_admin_database_backup_create')]
+    #[Route('/api/admin/database/backup/create', name: 'app_admin_database_backup_create')]
     public function app_admin_database_backup_create(KernelInterface $kernel):JsonResponse
     {
         $application = new Application($kernel);
@@ -374,8 +381,6 @@ class AdminController extends AbstractController
             'command' => 'doctrine:schema:create',
             // (optional) define the value of command arguments
             '--dump-sql' => true,
-            '../../hesabixBackup/databaseFiles/file.sql'=>true,
-
         ]);
 
         // You can use NullOutput() if you don't need the output
@@ -383,8 +388,13 @@ class AdminController extends AbstractController
         $application->run($input, $output);
         // return the output, don't use if you used NullOutput()
         $content = $output->fetch();
+        $time = time();
+        $file = fopen(dirname(__DIR__, 3) . '/hesabixBackup/versions/Hesabix-'. $time . '.sql' ,'w');
+        fwrite($file,$content);
+        fclose($file);
         return $this->json([
-            'message' => $content,
+            'result' => 0,
+            'filename'=>'Hesabix-' . $time . '.sql',
         ]);
     }
 }

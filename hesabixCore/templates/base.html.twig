@@ -244,25 +244,7 @@
                        </div>
                    </div>
                </div>
-               <footer class="bg-body-light" id="page-footer">
-                   <div class="content py-0">
-                       <div class="row fs-sm align-items-center">
-                           <div class="col-sm-6 order-sm-2 mb-1 mb-sm-0 text-center text-sm-end">
-                               <a class="fw-semibold" href="https://github.com/morrning/hesabixUI" target="_blank">حسابیکس</a>
-                               با <i class="fa fa-heart text-danger"></i>
-                               متن باز است.
-                           </div>
-                           <div class="col-sm-6 order-sm-1 text-center text-sm-start">
-                               <a class="'btn btn-link" href="https://parspack.com" target="_blank">
-                                   <img style="max-width: 7rem" src="{{ asset('/img/parspack-logo.svg') }}" class="img-fluid" alt="parspack">
-                                   <span class="text-danger ms-2">
-                                       با خاطری آسوده، استوار بر روی راهکارهای ابری پارس‌پک
-                                   </span>
-                               </a>
-                           </div>
-                       </div>
-                   </div>
-               </footer>
+               {{settings.footer | raw}}
                <!-- END Footer -->
                <!-- END Page Content -->
            </main>
