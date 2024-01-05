@@ -1,9 +1,9 @@
 {% extends "base.html.twig" %}
 {% block title %}نرم افزار حسابداری آنلاین ، متن باز و کاملا رایگان{% endblock %}
 {% block body %}
-    <div class="px-4 py-3 text-center" style="background-color: #c8d7ff">
+    <div class="px-4 py-3 text-center">
         <div class="row">
-            <div class="col-sm-12 col-md-6">
+            <div class="col-sm-12 col-md-6 mb-2 pt-4">
                 <h1 class="fw-bold text-primary-darker">
                     <img class="" src="/img/logo-blue.png" alt="حسابیکس لوگو" width="72" height="72">
                     حسابداری آنلاین حسابیکس</h1>
@@ -12,7 +12,7 @@
                     نیاز نیست که هیچگونه نرم افزاری را نصب کنید. کافیست در سایت ثبت نام کرده و بلافاصله کسب و کار خود را مدیریت کنید.
                 </p>
                 <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                    <a href="{{ twigFunctions.systemSettings().appSite }}/user/login" class="btn btn-primary btn-lg px-4 gap-3">
+                    <a href="{{ twigFunctions.systemSettings().appSite }}/user/login" class="btn btn-success btn-lg px-4 gap-3">
                         <i class="fa fa-door-open"></i>
                         ورود | عضویت رایگان
                     </a>
@@ -24,7 +24,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="col-sm-12 col-md-6">
+            <div class="col-sm-12 col-md-6 mb-2">
                 <img alt="پیش نمایش حسابیکس" class="img-fluid rounded-3" src="/img/cover.jpg" />
             </div>
         </div>

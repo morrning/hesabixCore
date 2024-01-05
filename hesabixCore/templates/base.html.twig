@@ -25,7 +25,7 @@
         <link href="{{ asset('/assets/css/dashmix.min.css') }}" id="css-main" rel="stylesheet"/>
 
         <!-- You can include a specific file from css/themes/ folder to alter the default color theme of the template. eg: -->
-        <link rel="stylesheet" id="css-theme" href="/assets/css/themes/xpro.min.css">
+        <link rel="stylesheet" id="css-theme" href="/assets/css/themes/xmodern.min.css">
         <!-- END Stylesheets -->
         <!--===== Custom Font css =====-->
         <link href="{{ asset('/assets/css/custom-fonts.css') }}" rel="stylesheet"/>
@@ -43,15 +43,15 @@
     <body>
        <div id="page-container">
            <!-- Header -->
-           <header id="page-header" class="app-header bg-sidebar-dark border-bottom border-light" >
+           <header id="page-header" class="app-header bg-body-light border-bottom border-light" >
                <!-- Header Content -->
-               <div class="content-header text-light">
+               <div class="content-header text-dark">
                    <!-- Left Section -->
                    <div class="d-flex align-items-center">
                        <!-- Logo -->
-                       <img class="me-2" src="{{ asset('/img/logo-light.png') }}" alt="" width="48" height="48">
+                       <img class="me-2" src="{{ asset('/img/logo-blue.png') }}" alt="" width="48" height="48">
 
-                       <a class="text-light fw-semibold tracking-wide" href="{{ path('general_home') }}"><span class="opacity-75">حسابیکس</span>
+                       <a class="text-dark fw-semibold tracking-wide" href="{{ path('general_home') }}"><span class="opacity-75">حسابیکس</span>
                            <small class="fw-lighter d-none d-sm-block">نرم‌افزار حسابداری ابری و کاملا رایگان</small>
                        </a>
                        <!-- END Logo -->
@@ -73,26 +73,16 @@
                    <!-- END Toggle Main Navigation -->
                </div>
                <!-- END Header Content -->
-               <!-- Header Loader -->
-               <!-- Please check out the Loaders page under Components category to see examples of showing/hiding it -->
-               <div class="overlay-header bg-sidebar-dark" id="page-header-loader">
-                   <div class="content-header">
-                       <div class="w-100 text-center">
-                           <i class="fa fa-fw fa-2x fa-spinner fa-spin text-primary"></i>
-                       </div>
-                   </div>
-               </div>
-               <!-- END Header Loader -->
            </header>
 
            <!-- Main Container -->
            <main id="main-container bg-light p-0 m-0">
                <!-- Navigation -->
-               <div class="bg-sidebar-dark">
+               <div class="bg-sidebar-info border">
                    <div class="content py-1">
                        <!-- Main Navigation -->
                        <div class="d-none d-lg-block push my-1" id="main-navigation">
-                           <ul class="nav-main nav-main-horizontal nav-main-hover nav-main-dark">
+                           <ul class="nav-main nav-main-horizontal nav-main-hover nav-main-info">
                                <li class="nav-main-item">
                                    <a class="nav-main-link" href="{{ path('general_home') }}">
                                        <i class="nav-main-link-icon fa fa-home"></i>
