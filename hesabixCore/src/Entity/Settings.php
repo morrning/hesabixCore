@@ -44,6 +44,9 @@ class Settings
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $scripts = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $footerScripts = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -165,6 +168,18 @@ class Settings
     public function setScripts(?string $scripts): static
     {
         $this->scripts = $scripts;
+
+        return $this;
+    }
+
+    public function getFooterScripts(): ?string
+    {
+        return $this->footerScripts;
+    }
+
+    public function setFooterScripts(?string $footerScripts): static
+    {
+        $this->footerScripts = $footerScripts;
 
         return $this;
     }
