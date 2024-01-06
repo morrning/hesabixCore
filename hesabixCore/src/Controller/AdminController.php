@@ -96,6 +96,21 @@ class AdminController extends AbstractController
         return $this->json($resp);
     }
 
+    #[Route('/api/admin/user/info/{id}', name: 'admin_user_info')]
+    public function admin_user_info(string $id, Jdate $jdate,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    {
+        $user = $entityManager->getRepository(User::class)->find($id);
+        $temp =[];
+        $temp['id'] = $user->getId();
+        $temp['email'] = $user->getEmail();
+        $temp['mobile'] = $user->getMobile();
+        $temp['fullname'] = $user->getFullName();
+        $temp['status'] = $user->isActive();
+        $temp['dateRegister'] = $jdate->jdate('Y/n/d',$user->getDateRegister());
+        $temp['bidCount'] = count($entityManager->getRepository(Business::class)->findBy(['owner'=>$user]));
+        return $this->json($temp);
+    }
+
     #[Route('/api/admin/business/info/{id}', name: 'admin_business_info')]
     public function admin_business_info(string $id,Jdate $jdate,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
     {
