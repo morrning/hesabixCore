@@ -98,6 +98,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: ArchiveOrders::class, orphanRemoval: true)]
     private Collection $archiveOrders;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: Hook::class, orphanRemoval: true)]
+    private Collection $hooks;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -117,6 +120,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->storeroomTickets = new ArrayCollection();
         $this->archiveFiles = new ArrayCollection();
         $this->archiveOrders = new ArrayCollection();
+        $this->hooks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -765,6 +769,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($archiveOrder->getSubmitter() === $this) {
                 $archiveOrder->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Hook>
+     */
+    public function getHooks(): Collection
+    {
+        return $this->hooks;
+    }
+
+    public function addHook(Hook $hook): static
+    {
+        if (!$this->hooks->contains($hook)) {
+            $this->hooks->add($hook);
+            $hook->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHook(Hook $hook): static
+    {
+        if ($this->hooks->removeElement($hook)) {
+            // set the owning side to null (unless already changed)
+            if ($hook->getSubmitter() === $this) {
+                $hook->setSubmitter(null);
             }
         }
 

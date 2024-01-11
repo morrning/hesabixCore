@@ -199,6 +199,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Shareholder::class, orphanRemoval: true)]
     private Collection $shareholders;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Hook::class, orphanRemoval: true)]
+    private Collection $hooks;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -223,6 +226,7 @@ class Business
         $this->archiveFiles = new ArrayCollection();
         $this->archiveOrders = new ArrayCollection();
         $this->shareholders = new ArrayCollection();
+        $this->hooks = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1316,6 +1320,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($shareholder->getBid() === $this) {
                 $shareholder->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Hook>
+     */
+    public function getHooks(): Collection
+    {
+        return $this->hooks;
+    }
+
+    public function addHook(Hook $hook): static
+    {
+        if (!$this->hooks->contains($hook)) {
+            $this->hooks->add($hook);
+            $hook->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHook(Hook $hook): static
+    {
+        if ($this->hooks->removeElement($hook)) {
+            // set the owning side to null (unless already changed)
+            if ($hook->getBid() === $this) {
+                $hook->setBid(null);
             }
         }
 

@@ -543,4 +543,12 @@ class BusinessController extends AbstractController
         ];
         return $this->json($response);
     }
+
+    #[Route('v2/api/settings/chack-api', name: 'api_business_check_api')]
+    public function api_business_check_api(Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    {
+        return $this->json([
+            'Success'=>true
+        ]);
+    }
 }
