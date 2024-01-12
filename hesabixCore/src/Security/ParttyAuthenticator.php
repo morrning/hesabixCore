@@ -1,32 +1,33 @@
 <?php
 
-declare(strict_types=1);
-
+// src/Security/ParttyAuthenticator.php
 namespace App\Security;
 
-use App\Repository\UserTokenRepository;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
-use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 
-class ApiKeyAuthenticator extends AbstractAuthenticator
+use App\Repository\APITokenRepository;
+
+class ParttyAuthenticator extends AbstractAuthenticator
 {
-    /**
-     * @var UserTokenRepository
-     */
-    private UserTokenRepository $userTokenRepository;
 
-    public function __construct(UserTokenRepository $userRepository)
+    /**
+     * @var APITokenRepository
+     */
+    private APITokenRepository $APITokenRepository;
+
+    public function __construct(APITokenRepository $APITokenRepository)
     {
-        $this->userTokenRepository = $userRepository;
+        $this->APITokenRepository = $APITokenRepository;
     }
     /**
      * Called on every request to decide if this authenticator should be
@@ -35,26 +36,25 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
      */
     public function supports(Request $request): ?bool
     {
-        return $request->headers->has('X-AUTH-TOKEN');
+        return $request->headers->has('api-key');
     }
 
     public function authenticate(Request $request): Passport
     {
-        $apiToken = $request->headers->get('X-AUTH-TOKEN');
-        if (null == $apiToken) {
+        $apiToken = $request->headers->get('api-key');
+        if (null === $apiToken) {
             // The token header was empty, authentication fails with HTTP Status
             // Code 401 "Unauthorized"
             throw new CustomUserMessageAuthenticationException('No API token provided');
         }
 
-
         return new SelfValidatingPassport(
             new UserBadge($apiToken, function($apiToken) {
-                $tk = $this->userTokenRepository->findByApiToken($apiToken);
+                $tk = $this->APITokenRepository->findByApiToken($apiToken);
                 if (! $tk) {
                     throw new UserNotFoundException();
                 }
-                return $tk->getUser();
+                return $tk->getSubmitter();
             })
         );
     }

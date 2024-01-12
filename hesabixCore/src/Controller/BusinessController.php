@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\APIToken;
 use App\Entity\BankAccount;
 use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
@@ -12,6 +13,7 @@ use App\Entity\Person;
 use App\Entity\Plugin;
 use App\Entity\User;
 use App\Entity\Business;
+use App\Entity\Hook;
 use App\Entity\Year;
 use App\Service\Access;
 use App\Service\Jdate;
@@ -544,11 +546,40 @@ class BusinessController extends AbstractController
         return $this->json($response);
     }
 
-    #[Route('v2/api/settings/chack-api', name: 'api_business_check_api')]
-    public function api_business_check_api(Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    #[Route('hooks/setting/SetChangeHook', name: 'api_business_SetChangeHook')]
+    public function api_business_SetChangeHook(Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
     {
+        
+        $api = $entityManager->getRepository(APIToken::class)->findOneBy([
+            'token' => $request->headers->get('api-key'),
+        ]);
+       
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        $hook = $entityManager->getRepository(Hook::class)->findOneBy([
+            'url'=> $params['url'],
+            'password'=> $params['hookPassword'],
+            'bid' => $api->getBid(),
+            'submitter'=>$this->getUser()
+        ]);
+        if(!$hook){
+            $hook = new Hook();
+            $hook->setBid($api->getBid());
+            $hook->setSubmitter($this->getUser());
+            $hook->setPassword($params['hookPassword']);
+            $hook->setUrl($params['url']);
+            $entityManager->persist($hook);
+            $entityManager->flush();
+        }
+        
+        $year = $entityManager->getRepository(Year::class)->findOneBy(['bid'=>$api->getBid(),'head'=>true])->getId();
         return $this->json([
-            'Success'=>true
+            'Success'=>true,
+            'bid' => $api->getBid()->getId(),
+            'year' => $year,
+            'money' => $api->getBid()->getMoney()->getId()
         ]);
     }
 }

@@ -25,6 +25,7 @@ security:
 
             custom_authenticators:
                 - App\Security\ApiKeyAuthenticator
+                - App\Security\ParttyAuthenticator
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
 
@@ -50,6 +51,7 @@ security:
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/api/acc/*, roles: ROLE_USER }
+        - { path: ^/hooks/*, roles: ROLE_USER }
         - { path: ^/api/app/*, roles: ROLE_USER }
         - { path: ^/api/admin/*, roles: ROLE_ADMIN }
         - { path: ^/app/*, roles: ROLE_ADMIN }

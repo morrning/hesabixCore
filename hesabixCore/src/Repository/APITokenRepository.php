@@ -45,4 +45,19 @@ class APITokenRepository extends ServiceEntityRepository
 //            ->getOneOrNullResult()
 //        ;
 //    }
+
+    /**
+     * @throws NonUniqueResultException
+     */
+    public function findByApiToken($value): APIToken | null
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.token = :val')
+            ->setParameter('val', $value)
+            ->orderBy('u.id', 'ASC')
+            ->setMaxResults(10)
+            ->getQuery()
+            ->getOneOrNullResult()
+            ;
+    }
 }
