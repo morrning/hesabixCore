@@ -130,4 +130,10 @@ class UiGeneralController extends AbstractController
         throw $this->createNotFoundException();
     }
 
+    #[Route('/front/apps/woocommerce', name: 'general_apps_woocommerce')]
+    public function general_apps_woocommerce(EntityManagerInterface $entityManager): Response
+    {
+        return $this->render('general/woocommerce.html.twig',);
+    }
+
 }
