@@ -27,4 +27,17 @@ class Notification
         $this->em->flush();
         return true;
     }
+    public function insert(string $message,string $url,User $user): bool
+    {
+        $item = new \App\Entity\Notification();
+        $item->setBid(null);
+        $item->setDateSubmit(time());
+        $item->setViewed(false);
+        $item->setUser($user);
+        $item->setMessage($message);
+        $item->setUrl($url);
+        $this->em->persist($item);
+        $this->em->flush();
+        return true;
+    }
 }
