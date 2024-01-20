@@ -19,7 +19,7 @@ class Notification
     private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'notifications')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?Business $bid = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]

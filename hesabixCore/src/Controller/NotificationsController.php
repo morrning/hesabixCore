@@ -32,14 +32,23 @@ class NotificationsController extends AbstractController
             $items = $entityManager->getRepository(\App\Entity\Notification::class)->findBy([
                 'bid'=>$business,
                 'user'=>$this->getUser()
-            ]);
+            ],['id'=>'DESC']);
+            $userItems = $entityManager->getRepository(\App\Entity\Notification::class)->findBy([
+                'user'=>$this->getUser()
+            ],['id'=>'DESC']);
+            $items = array_merge($items,$userItems);
         }
         elseif ($type = 'new'){
             $items = $entityManager->getRepository(\App\Entity\Notification::class)->findBy([
                 'bid'=>$business,
                 'user'=>$this->getUser(),
                 'viewed' => false
-            ]);
+            ],['id'=>'DESC']);
+            $userItems = $entityManager->getRepository(\App\Entity\Notification::class)->findBy([
+                'user'=>$this->getUser(),
+                'viewed' => false
+            ],['id'=>'DESC']);
+            $items = array_merge($items,$userItems);
         }
 
         $temps = [];

@@ -14,7 +14,7 @@ class Notification
     {
         $this->em = $entityManager;
     }
-    public function insert(string $message,string $url,Business $business,User $user): bool
+    public function insert(string $message,string $url,Business | null $business,User $user): bool
     {
         $item = new \App\Entity\Notification();
         $item->setBid($business);

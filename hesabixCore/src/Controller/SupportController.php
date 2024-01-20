@@ -2,8 +2,11 @@
 
 namespace App\Controller;
 
+use App\Entity\Settings;
 use App\Entity\Support;
+use App\Entity\User;
 use App\Service\Jdate;
+use App\Service\Notification;
 use App\Service\Provider;
 use App\Service\SMS;
 use Doctrine\ORM\EntityManagerInterface;
@@ -46,7 +49,7 @@ class SupportController extends AbstractController
         ]);
     }
     #[Route('/api/admin/support/mod/{id}', name: 'app_admin_support_mod')]
-    public function app_admin_support_mod(SMS $SMS,Request $request, EntityManagerInterface $entityManager,string $id = ''): JsonResponse
+    public function app_admin_support_mod(SMS $SMS,Request $request, EntityManagerInterface $entityManager,string $id = '',Notification $notifi): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -71,6 +74,10 @@ class SupportController extends AbstractController
             //send sms to customer
             if($item->getSubmitter()->getMobile())
                 $SMS->send([$item->getId()],'162251',$item->getSubmitter()->getMobile());
+            //send notification to user
+            $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
+            $url = $settings->getAppSite() . '/profile/support-view/' . $item->getId();
+            $notifi->insert("به درخواست پشتیبانی پاسخ داده شد",$url,null,$item->getSubmitter());
             return $this->json([
                 'error'=> 0,
                 'message'=> 'successful'
@@ -141,7 +148,9 @@ class SupportController extends AbstractController
                 $entityManager->persist($upper);
                 $entityManager->flush();
                 //send sms to manager
-                $SMS->send([$item->getId()],'162214','09183282405');
+                $admins = $entityManager->getRepository(User::class)->findByRole('ROLE_ADMIN');
+                foreach($admins as $admin)
+                    $SMS->send([$item->getId()],'162214',$admin->getMobile());
                 return $this->json([
                     'error'=> 0,
                     'message'=> 'ok',
