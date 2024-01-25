@@ -334,9 +334,22 @@ class BusinessController extends AbstractController
         return $this->json(['result'=>-1]);
     }
 
-    #[Route('/api/business/get/user/permissions', name: 'api_business_get_user_permission')]
-    public function api_business_get_user_permission(Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    #[Route('/api/business/my/permission/state', name: 'api_business_my_permission_state')]
+    public function api_business_my_permission_state(Request $request,Access $access): Response
     {
+        $reqdata = json_decode($request->getContent(), true);
+        if(!array_key_exists('permission',$reqdata)){
+            throw $this->createNotFoundException();
+        }
+        $acc = $access->hasRole($reqdata['permission']);
+        if($acc)
+            return $this->json(['state'=>true]);
+        return $this->json(['state'=>false]);
+    }
+    #[Route('/api/business/get/user/permissions', name: 'api_business_get_user_permission')]
+    public function api_business_get_user_permission(Request $request,EntityManagerInterface $entityManager): Response
+    {
+
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
