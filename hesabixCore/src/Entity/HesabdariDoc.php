@@ -92,12 +92,16 @@ class HesabdariDoc
     #[ORM\Column(type: Types::ARRAY, nullable: true)]
     private ?array $tempStatus = null;
 
+    #[ORM\OneToMany(mappedBy: 'doc', targetEntity: Log::class)]
+    private Collection $logs;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
         $this->plugNoghreOrders = new ArrayCollection();
         $this->relatedDocs = new ArrayCollection();
         $this->storeroomTickets = new ArrayCollection();
+        $this->logs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -419,6 +423,36 @@ class HesabdariDoc
     public function setTempStatus(?array $tempStatus): static
     {
         $this->tempStatus = $tempStatus;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Log>
+     */
+    public function getLogs(): Collection
+    {
+        return $this->logs;
+    }
+
+    public function addLog(Log $log): static
+    {
+        if (!$this->logs->contains($log)) {
+            $this->logs->add($log);
+            $log->setDoc($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLog(Log $log): static
+    {
+        if ($this->logs->removeElement($log)) {
+            // set the owning side to null (unless already changed)
+            if ($log->getDoc() === $this) {
+                $log->setDoc(null);
+            }
+        }
 
         return $this;
     }

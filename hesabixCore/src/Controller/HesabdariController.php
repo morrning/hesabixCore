@@ -16,6 +16,7 @@ use App\Entity\Salary;
 use App\Entity\StoreroomTicket;
 use App\Service\Access;
 use App\Service\Jdate;
+use App\Service\JsonResp;
 use App\Service\Log;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -156,7 +157,7 @@ class HesabdariController extends AbstractController
             $rds[] = $temp;
         }
         return $this->json([
-            'doc'=>$doc,
+            'doc'=>JsonResp::SerializeHesabdariDoc($doc),
             'rows'=>$rows,
             'relatedDocs'=>$rds
         ]);
@@ -379,7 +380,12 @@ class HesabdariController extends AbstractController
         $doc->setAmount($amount);
         $entityManager->persist($doc);
         $entityManager->flush();
-        $log->insert('حسابداری','سند حسابداری شماره ' . $doc->getCode() . ' ثبت / ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));
+        $log->insert(
+            'حسابداری','سند حسابداری شماره ' . $doc->getCode() . ' ثبت / ویرایش شد.',
+            $this->getUser(),
+            $request->headers->get('activeBid'),
+            $doc
+        );
 
         return $this->json([
             'result'=>1,

@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Business;
+use App\Entity\HesabdariDoc;
+use App\Entity\Log as EntityLog;
 use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
@@ -50,5 +52,34 @@ class LogController extends AbstractController
             $temps[] = $temp;
         }
         return $this->json(array_reverse($temps));
+    }
+
+    #[Route('/api/business/logs/doc/{id}', name: 'api_business_doc_logs')]
+    public function api_business_doc_logs(Access $access,String $id, Jdate $jdate, EntityManagerInterface $entityManager,Log $log): JsonResponse
+    {
+        $acc = $access->hasRole('log');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy(['bid'=>$acc['bid'], 'code'=>$id]);
+        if(!$doc)
+            throw $this->createNotFoundException();
+        if($doc->getBid()->getId() != $acc['bid']->getId())
+            throw $this->createAccessDeniedException();
+        
+        $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy(['bid'=>$acc['bid'],'doc'=>$doc],['id'=>'DESC']);
+
+        $temps = [];
+        foreach ($logs as $log){
+            $temp = [];
+            if($log->getUser())
+                $temp['user'] = $log->getUser()->getFullName();
+            else
+                $temp['user'] = '';
+            $temp['des'] = $log->getDes();
+            $temp['part'] = $log->getPart();
+            $temp['date'] = $jdate->jdate('Y/n/d H:i',$log->getDateSubmit());
+            $temps[] = $temp;
+        }
+        return $this->json($temps);
     }
 }

@@ -31,6 +31,9 @@ class Log
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $ipaddress = null;
 
+    #[ORM\ManyToOne(inversedBy: 'logs')]
+    private ?HesabdariDoc $doc = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -104,6 +107,18 @@ class Log
     public function setIpaddress(?string $ipaddress): static
     {
         $this->ipaddress = $ipaddress;
+
+        return $this;
+    }
+
+    public function getDoc(): ?HesabdariDoc
+    {
+        return $this->doc;
+    }
+
+    public function setDoc(?HesabdariDoc $doc): static
+    {
+        $this->doc = $doc;
 
         return $this;
     }
