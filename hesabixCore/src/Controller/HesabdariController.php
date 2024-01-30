@@ -8,6 +8,7 @@ use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
 use App\Entity\HesabdariTable;
+use App\Entity\Log as EntityLog;
 use App\Entity\Money;
 use App\Entity\PayInfoTemp;
 use App\Entity\Person;
@@ -448,6 +449,14 @@ class HesabdariController extends AbstractController
                 $entityManager->remove($relatedDoc);
                 $log->insert('حسابداری','سند حسابداری شماره ' . $relatedDoc->getCode() . ' حذف شد.',$this->getUser(),$request->headers->get('activeBid'));
             }
+        }
+
+        //delete logs from documents
+        $logs = $entityManager->getRepository(EntityLog::class)->findBy(['doc'=>$doc]);
+        foreach($logs as $item){
+            $item->setDoc(null);
+            $entityManager->persist($item);
+            $entityManager->flush();
         }
         $entityManager->remove($doc);
         $entityManager->flush();
