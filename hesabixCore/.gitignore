@@ -4,6 +4,7 @@
 /.env.*.local
 /config/secrets/prod/prod.decrypt.private.php
 /../public_html/bundles/
+/../public_html/cdn/
 /var/
 /vendor/
 /../hesabixArchive/
