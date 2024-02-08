@@ -7,6 +7,9 @@ use App\Entity\Commodity;
 use App\Entity\CommodityCat;
 use App\Entity\CommodityDrop;
 use App\Entity\CommodityUnit;
+use App\Entity\HesabdariRow;
+use App\Entity\Storeroom;
+use App\Entity\StoreroomItem;
 use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
@@ -428,7 +431,7 @@ class CommodityController extends AbstractController
     }
 
     #[Route('/api/commodity/import/excel', name: 'app_commodity_import_excel')]
-    public function app_commodity_import_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    public function app_commodity_import_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
         if(!$acc)
@@ -485,6 +488,31 @@ class CommodityController extends AbstractController
            $entityManager->flush();
         }
         $log->insert('کالا/خدمات','تعداد '. count($data) . ' کالا یا خدمات به صورت گروهی وارد شد.',$this->getUser(),$request->headers->get('activeBid'));
+        return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/commodity/delete/{code}', name: 'app_commodity_delete')]
+    public function app_commodity_delete(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+
+        $commodity = $entityManager->getRepository(Commodity::class)->findOneBy(['bid'=>$acc['bid'],'code'=>$code]);
+        if(!$commodity)
+            throw $this->createNotFoundException();
+        //check accounting docs
+        $docs = $entityManager->getRepository(HesabdariRow::class)->findby(['bid'=>$acc['bid'], 'commodity'=>$commodity]);
+        if(count($docs) > 0)
+            return $this->json(['result' => 2]);
+        //check for storeroom docs
+        $storeDocs = $entityManager->getRepository(StoreroomItem::class)->findby(['bid'=>$acc['bid'], 'commodity'=>$commodity]);
+        if(count($storeDocs) > 0)
+            return $this->json(['result' => 2]);
+
+        $comName = $commodity->getName();
+        $entityManager->remove($commodity);
+        $log->insert('کالا/خدمات',' کالا / خدمات با نام '. $comName . ' حذف شد. ',$this->getUser(),$acc['bid']->getId());
         return $this->json(['result' => 1]);
     }
 }
