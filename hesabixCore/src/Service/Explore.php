@@ -16,6 +16,22 @@ use App\Entity\Salary;
 
 class Explore{
 
+    public static function ExploreSellDoc(HesabdariDoc $hesabdariDoc){
+        $result = self::ExploreHesabdariDoc($hesabdariDoc);
+        $person = [];
+        $commodities = [];
+        foreach($hesabdariDoc->getHesabdariRows() as $item){
+            if($item->getPerson()){
+                $person = self::ExplorePerson($item->getPerson());
+            }
+            elseif($item->getCommodity()){
+                $commodities[] = Explore::ExploreCommodity($item->getCommodity(),$item->getCommdityCount());
+            }
+        }
+        $result['person'] = $person;
+        return $result;
+    }
+
     public static function ExploreBuyDoc(HesabdariDoc $hesabdariDoc){
         $result = self::ExploreHesabdariDoc($hesabdariDoc);
         $person = [];
