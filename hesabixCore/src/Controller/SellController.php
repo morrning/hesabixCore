@@ -20,7 +20,7 @@ class SellController extends AbstractController
     public function app_buy_can_edit(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager, string $code): JsonResponse
     {
         $canEdit = true;
-        $acc = $access->hasRole('buy');
+        $acc = $access->hasRole('sell');
         if(!$acc)
             throw $this->createAccessDeniedException();
 
@@ -44,7 +44,7 @@ class SellController extends AbstractController
     #[Route('/api/sell/get/info/{code}', name: 'app_buy_get_info')]
     public function app_buy_get_info(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager, string $code): JsonResponse
     {
-        $acc = $access->hasRole('buy');
+        $acc = $access->hasRole('sell');
         if(!$acc)
             throw $this->createAccessDeniedException();
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
