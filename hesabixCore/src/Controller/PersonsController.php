@@ -2,25 +2,37 @@
 
 namespace App\Controller;
 
-use App\Entity\Business;
-use App\Entity\HesabdariDoc;
-use App\Entity\HesabdariRow;
+use App\Service\Log;
 use App\Entity\Person;
 use App\Service\Access;
-use App\Service\Log;
+use App\Entity\Business;
 use App\Service\Provider;
+use App\Entity\HesabdariDoc;
+use App\Entity\HesabdariRow;
 use Doctrine\ORM\EntityManagerInterface;
-use PhpOffice\PhpSpreadsheet\Writer\Exception;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class PersonsController extends AbstractController
 {
+
+    /**
+     * function to generate random strings
+     * @param 		int 	$length 	number of characters in the generated string
+     * @return 		string	a new string is created with random characters of the desired length
+     */
+    private function RandomString($length = 32) {
+        return substr(str_shuffle(str_repeat($x='23456789ABCDEFGHJKLMNPQRSTUVWXYZ', ceil($length/strlen($x)) )),1,$length);
+    }
+
     /**
      * @throws \ReflectionException
      */
@@ -191,9 +203,6 @@ class PersonsController extends AbstractController
                     $persons[] = $prs;
             }
         }
-
-
-
         $pid = $provider->createPrint(
             $acc['bid'],
             $this->getUser(),
@@ -235,6 +244,119 @@ class PersonsController extends AbstractController
             }
         }
         return new BinaryFileResponse($provider->createExcell($persons));
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/person/card/list/excel', name: 'app_persons_card_list_excel')]
+    public function app_persons_card_list_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    {
+        $acc = $access->hasRole('person');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(!array_key_exists('code',$params))
+            throw $this->createNotFoundException();
+        $person = $entityManager->getRepository(Person::class)->findOneBy(['bid'=>$acc['bid'],'code'=>$params['code']]);
+        if(!$person)
+            throw $this->createNotFoundException();
+        if(!array_key_exists('items',$params)){
+            $transactions = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bid'=>$acc['bid'],
+                'person'=>$person
+            ]);
+        }
+        else{
+            $transactions = [];
+            foreach ($params['items'] as $param){
+                $prs = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
+                    'id'=>$param['id'],
+                    'bid'=>$acc['bid'],
+                    'person'=>$person
+                ]);
+                if($prs){
+                    $transactions[] = $prs;
+                }     
+            }
+        }
+        $spreadsheet = new Spreadsheet();
+        $activeWorksheet = $spreadsheet->getActiveSheet();
+        $arrayEntity = [[
+            'شماره تراکنش',
+            'تاریخ',
+            'توضیحات',
+            'تفضیل',
+            'بستانکار',
+            'بدهکار',
+            'سال مالی',
+        ]];
+        foreach($transactions as $transaction){
+            $arrayEntity[] =[
+                $transaction->getId(),
+                $transaction->getDoc()->getDate(),
+                $transaction->getDes(),
+                $transaction->getRef()->getName(),
+                $transaction->getBs(),
+                $transaction->getBd(),
+                $transaction->getYear()->getlabel()
+            ];
+        }
+        $activeWorksheet->fromArray($arrayEntity,null,'A1');
+        $activeWorksheet->setRightToLeft(true);
+        $writer = new Xlsx($spreadsheet);
+        $filePath = __DIR__ . '/../../var/'.$this->RandomString(12).'.xlsx';
+        $writer->save($filePath);  
+        return new BinaryFileResponse($filePath);
+    }
+
+    #[Route('/api/person/card/list/print', name: 'app_persons_card_list_print')]
+    public function app_persons_card_list_print(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('person_receive');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(!array_key_exists('code',$params))
+            throw $this->createNotFoundException();
+        $person = $entityManager->getRepository(Person::class)->findOneBy(['bid'=>$acc['bid'],'code'=>$params['code']]);
+        if(!$person)
+            throw $this->createNotFoundException();
+
+        if(!array_key_exists('items',$params)){
+            $transactions = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bid'=>$acc['bid'],
+                'person'=>$person
+            ]);
+        }
+        else{
+            $transactions = [];
+            foreach ($params['items'] as $param){
+                $prs = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
+                    'id'=>$param['id'],
+                    'bid'=>$acc['bid'],
+                    'person'=>$person
+                ]);
+                if($prs){
+                    $transactions[] = $prs;
+                }     
+            }
+        }
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/person_card.html.twig',[
+                'page_title'=>'کارت حساب'  . ' ' . $person->getNikename(),
+                'bid'=>$acc['bid'],
+                'items'=>$transactions
+            ]));
+        return $this->json(['id'=>$pid]);
     }
 
     #[Route('/api/person/receive/list/print', name: 'app_persons_receive_list_print')]
