@@ -213,6 +213,7 @@ class BusinessController extends AbstractController
                 $perms->setSell(true);
                 $perms->setCost(true);
                 $perms->setIncome(true);
+                $perms->setCheque(true);
                 $perms->setReport(true);
                 $perms->setAccounting(true);
                 $perms->setLog(true);
@@ -382,6 +383,7 @@ class BusinessController extends AbstractController
                     'settings'=>true,
                     'persons'=>true,
                     'commodity'=>true,
+                    'cheque'=>true,
                     'getpay'=>true,
                     'store'=>true,
                     'bank'=>true,
@@ -423,6 +425,7 @@ class BusinessController extends AbstractController
                     'cost'=>$perm->isCost(),
                     'income'=>$perm->isIncome(),
                     'buy'=>$perm->isBuy(),
+                    'cheque'=>$perm->isCheque(),
                     'sell'=>$perm->isSell(),
                     'accounting'=>$perm->isAccounting(),
                     'report'=>$perm->isReport(),
@@ -489,6 +492,7 @@ class BusinessController extends AbstractController
                 $perm->setStore($params['store']);
                 $perm->setCost($params['cost']);
                 $perm->setIncome($params['income']);
+                $perm->setCheque($params['cheque']);
                 $perm->setAccounting($params['accounting']);
                 $perm->setReport($params['report']);
                 $perm->setPermission($params['permission']);

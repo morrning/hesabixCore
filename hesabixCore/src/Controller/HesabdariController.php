@@ -178,8 +178,10 @@ class HesabdariController extends AbstractController
         elseif($params['type'] == 'cost') $roll='cost';
         elseif($params['type'] == 'income') $roll='income';
         elseif($params['type'] == 'buy') $roll='buy';
+        elseif($params['type'] == 'buy_rfb') $roll='buy';
         elseif($params['type'] == 'transfer') $roll='transfer';
         elseif($params['type'] == 'sell') $roll='sell';
+        elseif($params['type'] == 'sell_rbs') $roll='buy';
         elseif($params['type'] == 'all') $roll='accounting';
         else
             $this->createNotFoundException();
@@ -216,7 +218,7 @@ class HesabdariController extends AbstractController
                 'amount'=>$item->getAmount(),
                 'submitter'=> $item->getSubmitter()->getFullName(),
             ];
-            if($params['type'] == 'buy' || $params['type'] == 'sell'){
+            if($params['type'] == 'sell_rbs' || $params['type'] == 'buy_rfb' || $params['type'] == 'buy' || $params['type'] == 'sell'){
                 $mainRow = $entityManager->getRepository(HesabdariRow::class)->getNotEqual($item,'person');
                 $temp['person'] = '';
                 if($mainRow)

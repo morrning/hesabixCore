@@ -193,4 +193,16 @@ class Explore{
         ];
     }
 
+    public static function ExploreBuyDocsList(array $items){
+        $result = [];
+        foreach($items as $item){
+            $result[] = [
+                'id'=>$item->getId(),
+                'date'=>$item->getDate(),
+                'des'=>$item->getDes(),
+            ];
+        }
+       return $result;
+    }
+
 }

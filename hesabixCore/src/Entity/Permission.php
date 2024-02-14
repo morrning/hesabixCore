@@ -102,6 +102,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $archiveView = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $cheque = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -451,6 +454,18 @@ class Permission
     public function setArchiveView(?bool $archiveView): static
     {
         $this->archiveView = $archiveView;
+
+        return $this;
+    }
+
+    public function isCheque(): ?bool
+    {
+        return $this->cheque;
+    }
+
+    public function setCheque(?bool $cheque): static
+    {
+        $this->cheque = $cheque;
 
         return $this;
     }

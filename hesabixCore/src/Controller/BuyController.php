@@ -58,4 +58,18 @@ class BuyController extends AbstractController
         
         return $this->json(ServiceExplore::ExploreBuyDoc($doc));
     }
+
+    #[Route('/api/buy/get/invoices/list', name: 'app_buy_get_invoices_list')]
+    public function app_buy_get_invoices_list(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager, string $code): JsonResponse
+    {
+        $acc = $access->hasRole('buy');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $invoices = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+            'bid'=>$acc['bid'],
+            'year'=>$acc['year'],
+            'type'=>'buy'
+        ]);
+        return $this->json(ServiceExplore::ExploreBuyDocsList($invoices));
+    }
 }
