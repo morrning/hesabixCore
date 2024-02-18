@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\BankAccount;
 use App\Entity\Cashdesk;
+use App\Entity\Cheque;
 use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
@@ -20,6 +21,7 @@ use App\Service\Jdate;
 use App\Service\JsonResp;
 use App\Service\Log;
 use App\Service\Provider;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -244,7 +246,7 @@ class HesabdariController extends AbstractController
      * @throws \ReflectionException
      */
     #[Route('/api/accounting/insert', name: 'app_accounting_insert')]
-    public function app_accounting_insert(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_accounting_insert(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,Jdate $jdate): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -328,6 +330,13 @@ class HesabdariController extends AbstractController
             $hesabdariRow->setDoc($doc);
             $hesabdariRow->setBs($row['bs']);
             $hesabdariRow->setBd($row['bd']);
+            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
+                'code'=>$row['table']
+            ]);
+            $hesabdariRow->setRef($ref);
+
+            $entityManager->persist($hesabdariRow);
+
             if(array_key_exists('referral',$row))
                 $hesabdariRow->setReferral($row['referral']);
             $amount += $row['bs'];
@@ -337,6 +346,37 @@ class HesabdariController extends AbstractController
                 if(!$person) throw $this->createNotFoundException('person not found');
                 elseif ($person->getBid()->getId() != $acc['bid']->getId()) throw $this->createAccessDeniedException('person is not in this business');
                 $hesabdariRow->setPerson($person);
+            }
+            if($row['type'] == 'cheque'){
+                $person = $entityManager->getRepository(Person::class)->findOneBy([
+                    'bid'=> $acc['bid'],
+                    'id'=>$row['person']
+                ]);
+                $cheque = new Cheque();
+                $cheque->setBid($acc['bid']);
+                $cheque->setSubmitter($this->getUser());
+                $cheque->setPayDate($row['chequeDate']);
+                $cheque->setBankOncheque($row['chequeBank']);
+                $cheque->setRef($hesabdariRow->getRef());
+                $cheque->setNumber($row['chequeNum']);
+                $cheque->setSayadNum($row['chequeSayadNum']);
+                $cheque->setDateSubmit(time());
+                $cheque->setDes($row['des']);
+                $dateArray = explode('-',$row['chequeDate']);
+                $dateGre = strtotime($jdate->jalali_to_gregorian($dateArray['0'],$dateArray['1'],$dateArray['2'],'/'));
+                $cheque->setDateStamp($dateGre);
+                $cheque->setPerson($person);
+                $cheque->setRef($entityManager->getRepository(HesabdariTable::class)->findOneBy(['code'=>$row['table']]));
+                $cheque->setType($row['chequeType']);
+                if($cheque->getType() == 'input')
+                    $cheque->setAmount($hesabdariRow->getBd());
+                else
+                    $cheque->setAmount($hesabdariRow->getBs());
+                $cheque->setLocked(false);
+                $cheque->setStatus('پاس نشده');
+                $entityManager->persist($cheque);
+                $entityManager->flush();
+                $hesabdariRow->setCheque($cheque);
             }
             elseif ($row['type'] == 'bank'){
                 $bank = $entityManager->getRepository(BankAccount::class)->find($row['id']);
@@ -364,16 +404,13 @@ class HesabdariController extends AbstractController
                 $hesabdariRow->setCommodity($commodity);
                 $hesabdariRow->setCommdityCount($row['count']);
             }
-            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code'=>$row['table']
-            ]);
-
+            
             if(array_key_exists('plugin',$row))
                 $hesabdariRow->setPlugin($row['plugin']);
             if(array_key_exists('refData',$row))
                 $hesabdariRow->setRefData($row['refData']);
 
-            $hesabdariRow->setRef($ref);
+            
             $hesabdariRow->setDes($row['des']);
             $entityManager->persist($hesabdariRow);
             $entityManager->flush();
@@ -441,8 +478,22 @@ class HesabdariController extends AbstractController
         $tickets = $entityManager->getRepository(StoreroomTicket::class)->findBy(['doc'=>$doc]);
         foreach ($tickets as $ticket)
             $entityManager->remove($ticket);
-        foreach ($rows as $row)
+        //remove rows and check sub systems
+        foreach ($rows as $row){
+            if($row->getCheque()){
+                if($row->getCheque()->isLocked()){
+                    //doc has transaction
+                    return $this->json([
+                        'result'=>2,
+                        'message'=>'سند به دلیل داشتن تراکنش مرتبط با چک بانکی قابل حذف نیست.'
+                    ]);
+                }
+                $log->insert('بانکداری','چک  شماره  شماره ' . $row->getCheque()->getNumber() . ' حذف شد.',$this->getUser(),$request->headers->get('activeBid'));
+                $entityManager->remove($row->getCheque());
+            }
             $entityManager->remove($row);
+        }
+            
         foreach ($doc->getRelatedDocs() as $relatedDoc){
             if($relatedDoc->getType() != 'walletPay'){
                 $items = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc'=>$relatedDoc]);

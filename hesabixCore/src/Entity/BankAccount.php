@@ -58,9 +58,13 @@ class BankAccount
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $balance = null;
 
+    #[ORM\OneToMany(mappedBy: 'bank', targetEntity: Cheque::class)]
+    private Collection $cheques;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
+        $this->cheques = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -238,6 +242,36 @@ class BankAccount
     public function setBalance(?string $balance): static
     {
         $this->balance = $balance;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Cheque>
+     */
+    public function getCheques(): Collection
+    {
+        return $this->cheques;
+    }
+
+    public function addCheque(Cheque $cheque): static
+    {
+        if (!$this->cheques->contains($cheque)) {
+            $this->cheques->add($cheque);
+            $cheque->setBank($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCheque(Cheque $cheque): static
+    {
+        if ($this->cheques->removeElement($cheque)) {
+            // set the owning side to null (unless already changed)
+            if ($cheque->getBank() === $this) {
+                $cheque->setBank(null);
+            }
+        }
 
         return $this;
     }

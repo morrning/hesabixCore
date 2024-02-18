@@ -82,10 +82,15 @@ class HesabdariRow
     #[ORM\Column(type: Types::ARRAY, nullable: true)]
     private ?array $tempData = null;
 
+    #[ORM\ManyToOne(inversedBy: 'hesabdariRows')]
+    private ?Cheque $cheque = null;
+
+
+
 
     public function __construct()
     {
-        
+
     }
 
     public function getId(): ?int
@@ -293,6 +298,18 @@ class HesabdariRow
     public function setTempData(?array $tempData): static
     {
         $this->tempData = $tempData;
+
+        return $this;
+    }
+
+    public function getCheque(): ?Cheque
+    {
+        return $this->cheque;
+    }
+
+    public function setCheque(?Cheque $cheque): static
+    {
+        $this->cheque = $cheque;
 
         return $this;
     }

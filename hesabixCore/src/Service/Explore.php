@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Entity\Year;
 use App\Entity\Business;
 use App\Entity\Cashdesk;
+use App\Entity\Cheque;
 use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
@@ -203,6 +204,35 @@ class Explore{
             ];
         }
        return $result;
+    }
+
+    public static function SerializeCheque(Cheque | null $cheque){
+        if(!$cheque)
+            return null;
+        $jdate = new Jdate;
+        return [
+            'id'  => $cheque->getId(),
+            'number'=> $cheque->getNumber(),
+            'sayadNum'=>$cheque->getSayadNum(),
+            'chequeBank'=>$cheque->getBankOncheque(),
+            'person'=>self::ExplorePerson($cheque->getPerson()),
+            'bank'=>self::ExploreBank($cheque->getBank()),
+            'des'=>$cheque->getDes(),
+            'datePay'=>$cheque->getPayDate(),
+            'type'=>$cheque->getType(),
+            'amount'=>$cheque->getAmount(),
+            'status'=>$cheque->getStatus(),
+            'date'=>$cheque->getDate(),
+            'locked'=>$cheque->isLocked()
+
+        ];
+    }
+
+    public static function SerializeCheques(array $cheques){
+        $result = [];
+        foreach($cheques as $cheque)
+            $result[] = self::SerializeCheque($cheque);
+        return $result;
     }
 
 }

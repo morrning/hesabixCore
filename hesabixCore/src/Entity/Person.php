@@ -116,6 +116,9 @@ class Person
     #[ORM\Column(nullable: true)]
     private ?bool $speedAccess = null;
 
+    #[ORM\OneToMany(mappedBy: 'person', targetEntity: Cheque::class)]
+    private Collection $cheques;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -123,6 +126,7 @@ class Person
         $this->ordersFromCustomer = new ArrayCollection();
         $this->storeroomTickets = new ArrayCollection();
         $this->shareholders = new ArrayCollection();
+        $this->cheques = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -588,6 +592,36 @@ class Person
     public function setSpeedAccess(?bool $speedAccess): static
     {
         $this->speedAccess = $speedAccess;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Cheque>
+     */
+    public function getCheques(): Collection
+    {
+        return $this->cheques;
+    }
+
+    public function addCheque(Cheque $cheque): static
+    {
+        if (!$this->cheques->contains($cheque)) {
+            $this->cheques->add($cheque);
+            $cheque->setPerson($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCheque(Cheque $cheque): static
+    {
+        if ($this->cheques->removeElement($cheque)) {
+            // set the owning side to null (unless already changed)
+            if ($cheque->getPerson() === $this) {
+                $cheque->setPerson(null);
+            }
+        }
 
         return $this;
     }
