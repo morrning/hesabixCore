@@ -223,8 +223,8 @@ class Explore{
             'amount'=>$cheque->getAmount(),
             'status'=>$cheque->getStatus(),
             'date'=>$cheque->getDate(),
-            'locked'=>$cheque->isLocked()
-
+            'locked'=>$cheque->isLocked(),
+            'rejected'=>$cheque->isRejected()
         ];
     }
 

@@ -49,7 +49,7 @@ class SupportController extends AbstractController
         ]);
     }
     #[Route('/api/admin/support/mod/{id}', name: 'app_admin_support_mod')]
-    public function app_admin_support_mod(SMS $SMS,Request $request, EntityManagerInterface $entityManager,string $id = '',Notification $notifi): JsonResponse
+    public function app_admin_support_mod(SMS $SMS,Request $request, EntityManagerInterface $entityManager,Notification $notifi,string $id = ''): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {

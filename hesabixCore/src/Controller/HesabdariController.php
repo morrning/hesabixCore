@@ -347,10 +347,10 @@ class HesabdariController extends AbstractController
                 elseif ($person->getBid()->getId() != $acc['bid']->getId()) throw $this->createAccessDeniedException('person is not in this business');
                 $hesabdariRow->setPerson($person);
             }
-            if($row['type'] == 'cheque'){
+            elseif($row['type'] == 'cheque'){
                 $person = $entityManager->getRepository(Person::class)->findOneBy([
                     'bid'=> $acc['bid'],
-                    'id'=>$row['person']
+                    'id'=>$row['chequeOwner']
                 ]);
                 $cheque = new Cheque();
                 $cheque->setBid($acc['bid']);
@@ -373,6 +373,7 @@ class HesabdariController extends AbstractController
                 else
                     $cheque->setAmount($hesabdariRow->getBs());
                 $cheque->setLocked(false);
+                $cheque->setRejected(false);
                 $cheque->setStatus('پاس نشده');
                 $entityManager->persist($cheque);
                 $entityManager->flush();

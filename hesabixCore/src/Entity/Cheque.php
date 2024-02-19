@@ -71,6 +71,9 @@ class Cheque
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $date = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $rejected = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -311,6 +314,18 @@ class Cheque
     public function setDate(?string $date): static
     {
         $this->date = $date;
+
+        return $this;
+    }
+
+    public function isRejected(): ?bool
+    {
+        return $this->rejected;
+    }
+
+    public function setRejected(?bool $rejected): static
+    {
+        $this->rejected = $rejected;
 
         return $this;
     }

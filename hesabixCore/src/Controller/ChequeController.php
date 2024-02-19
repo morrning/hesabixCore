@@ -32,9 +32,49 @@ class ChequeController extends AbstractController
             'bid'=>$acc['bid'],
             'type'=>'input'
         ]);
-        return $this->json([
-            'input'=>Explore::SerializeCheques(array_reverse($chequesInput))
+        $chequesOutput = $entityManager->getRepository(Cheque::class)->findBy([
+            'bid'=>$acc['bid'],
+            'type'=>'output'
         ]);
+        return $this->json([
+            'input'=>Explore::SerializeCheques(array_reverse($chequesInput)),
+            'output'=>Explore::SerializeCheques(array_reverse($chequesOutput))
+        ]);
+    }
+
+    #[Route('/api/cheque/info/{id}', name: 'app_cheque_info')]
+    public function app_cheque_info(string $id, Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,Jdate $jdate): JsonResponse
+    {
+        $acc = $access->hasRole('cheque');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $cheque = $entityManager->getRepository(Cheque::class)->findOneBy([
+            'bid'=>$acc['bid'],
+            'id'=>$id
+        ]);
+        if(!$cheque)
+            throw $this->createNotFoundException('cheque not found');
+        return $this->json(Explore::SerializeCheque($cheque));
+    }
+
+    #[Route('/api/cheque/reject/{id}', name: 'app_cheque_reject')]
+    public function app_cheque_reject(string $id, Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,Jdate $jdate): JsonResponse
+    {
+        $acc = $access->hasRole('cheque');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $cheque = $entityManager->getRepository(Cheque::class)->findOneBy([
+            'bid'=>$acc['bid'],
+            'id'=>$id
+        ]);
+        if(!$cheque)
+            throw $this->createNotFoundException('cheque not found');
+        $cheque->setStatus('برگشت خورده');
+        $cheque->setRejected(true);
+        $log->insert('بانکداری','چک  شماره  شماره ' . $cheque->getNumber() . ' به برگشت خورده تغییر یافت. ',$this->getUser(),$request->headers->get('activeBid'));
+        $entityManager->persist($cheque);
+        $entityManager->flush();
+        return $this->json(['result'=>'ok']);
     }
 
     #[Route('/api/cheque/pass/{id}', name: 'app_cheque_pass')]
@@ -62,7 +102,7 @@ class ChequeController extends AbstractController
             throw $this->createNotFoundException();
         if($cheque->isLocked())
             throw $this->createAccessDeniedException('cheque operation not permitted');
-        
+
         //edit cheque info
         $cheque->setBank($bank);
         $cheque->setStatus('پاس شده');
