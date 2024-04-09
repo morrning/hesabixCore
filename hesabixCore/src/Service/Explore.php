@@ -210,6 +210,9 @@ class Explore{
         if(!$cheque)
             return null;
         $jdate = new Jdate;
+        $label = '';
+        if($cheque->getType() == 'input')
+            $label = 'چک شماره ' . $cheque->getNumber() . ' مربوط به ' . $cheque->getPerson()->getNikename() . ' با مبلغ ' . $cheque->getAmount();
         return [
             'id'  => $cheque->getId(),
             'number'=> $cheque->getNumber(),
@@ -224,7 +227,8 @@ class Explore{
             'status'=>$cheque->getStatus(),
             'date'=>$cheque->getDate(),
             'locked'=>$cheque->isLocked(),
-            'rejected'=>$cheque->isRejected()
+            'rejected'=>$cheque->isRejected(),
+            'label' => $label
         ];
     }
 

@@ -42,6 +42,23 @@ class ChequeController extends AbstractController
         ]);
     }
 
+    #[Route('/api/cheque/list/forpay', name: 'app_cheque_list_for_pay')]
+    public function app_cheque_list_for_pay(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,Jdate $jdate): JsonResponse
+    {
+        $acc = $access->hasRole('cheque');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $cheques = $entityManager->getRepository(Cheque::class)->findBy([
+            'bid'=>$acc['bid'],
+            'type'=>'input',
+            'locked'=>false,
+        ]);
+        
+        return $this->json(
+            Explore::SerializeCheques(array_reverse($cheques)),
+        );
+    }
+
     #[Route('/api/cheque/info/{id}', name: 'app_cheque_info')]
     public function app_cheque_info(string $id, Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,Jdate $jdate): JsonResponse
     {
