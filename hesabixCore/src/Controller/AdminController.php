@@ -8,6 +8,7 @@ use App\Entity\ChangeReport;
 use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
 use App\Entity\Person;
+use App\Entity\Registry;
 use App\Entity\Settings;
 use App\Entity\StoreroomTicket;
 use App\Entity\User;
@@ -15,6 +16,7 @@ use App\Entity\WalletTransaction;
 use App\Service\Jdate;
 use App\Service\Notification;
 use App\Service\Provider;
+use App\Service\registryMGR;
 use App\Service\SMS;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
@@ -192,6 +194,22 @@ class AdminController extends AbstractController
         throw $this->createNotFoundException();
     }
 
+    #[Route('/api/admin/sms/plan/info', name: 'admin_sms_plan_info')]
+    public function admin_sms_plan_info(registryMGR $registryMGR,Jdate $jdate,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    {
+
+        $resp = [];
+        $resp['walletpay'] = $registryMGR->get('sms','walletPay');
+        $resp['changePassword'] = $registryMGR->get('sms','changePassword');
+        $resp['f2a'] = $registryMGR->get('sms','f2a');
+        $resp['ticketReplay'] = $registryMGR->get('sms','ticketReplay');
+        $resp['ticketRec'] = $registryMGR->get('sms','ticketRec');
+        $resp['fromNum'] = $registryMGR->get('sms','fromNum');
+        $resp['sharefaktor'] = $registryMGR->get('sms','sharefaktor');
+        $resp['plan'] = $registryMGR->get('sms','plan');
+        return $this->json($resp);
+    }
+
     #[Route('/api/admin/settings/system/info', name: 'admin_settings_system_info')]
     public function admin_settings_system_info(Jdate $jdate,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
     {
@@ -209,7 +227,7 @@ class AdminController extends AbstractController
 
 
     #[Route('/api/admin/settings/system/info/save', name: 'admin_settings_system_info_save')]
-    public function admin_settings_system_info_save(EntityManagerInterface $entityManager,Request $request): Response
+    public function admin_settings_system_info_save(Registry $registry, EntityManagerInterface $entityManager,Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {

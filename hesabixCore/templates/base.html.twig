@@ -9,14 +9,14 @@
         <meta content="Babak Alizadeh" name="author"/>
         <meta content="توسعه فناوری سرکش" name="publisher"/>
         <meta name="keywords" content="{{ settings.siteKeywords }},{% block keywords %}{% endblock %}">
-        <title>حسابیکس - {% block title %}{% endblock %}</title>
+        <title>حسابکس - {% block title %}{% endblock %}</title>
         <meta name='robots' content='index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
         <meta property="og:locale" content="fa_IR" />
         <meta property="og:type" content="article" />
         <meta property="og:title" content="{{ block('title') }}" />
         <meta property="og:description" content="{% if block('description') %}{{ block('description') }}{% else %}{{ settings.discription }}{% endif %}" />
         <meta property="og:url" content="{{ twigFunctions.getCurrentUrl() }}" />
-        <meta property="og:site_name" content="حسابیکس" />
+        <meta property="og:site_name" content="حسابکس" />
         <!-- Icons -->
         <link rel="icon" href="{{ asset('/favicon.ico') }}">
         <!-- END Icons -->
@@ -34,7 +34,7 @@
         {# Run `composer require symfony/webpack-encore-bundle` to start using Symfony UX #}
         {% block stylesheets %}
         {% endblock %}
-        <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"ابر چیست؟","acceptedAnswer":{"@type":"Answer","text":"ابر زیرساختی مجازی از منابع محاسباتی و ذخیره‌سازی داده است که از طریق اینترنت به کاربران ارائه می‌شود. این منابع می‌توانند شامل سرورها، فضای ذخیره‌سازی داده، شبکه‌ و تجهیزات مجازی‌سازی باشند. "}},{"@type":"Question","name":"نرم ‌افزار حسابداری ابری چیست؟ ","acceptedAnswer":{"@type":"Answer","text":"نرم افزار حسابداری ابری که به آن نرم افزار حسابداری آنلاین هم می‌گویند، نرم افزاری است که به شما کمک می‌کند دفاتر حسابداری خود را آنلاین ثبت و نگهداری کنید. نرم افزار حسابداری ابری مانند حسابیکس به جای اینکه روی رایانه رومیزی یا سرورهای سازمان (در محل مشتری) نصب شود، در فضای ابری قرار دارد. همین ویژگی باعث می‌شود تا به داده‌های مالی و امکانات سیستم از هر دستگاه آنلاینی در هر زمانی و مکانی دسترسی داشته باشید. "}},{"@type":"Question","name":"آیا امکان قطع شدن حسابیکس وجود دارد؟ ","acceptedAnswer":{"@type":"Answer","text":" 24 ساعته و با ضریب دسترسی بالای 99 درصد، دسترسی به حسابیکس وجود دارد. "}},{"@type":"Question","name":" آیا حسابیکس آنلاین است یا نیاز به دانلود و نصب نرم افزار است؟ ","acceptedAnswer":{"@type":"Answer","text":" شما نیاز به دانلود و نصب هیچ نرم افزاری ندارید. حسابیکس کاملاً آنلاین است و شما پس از ثبت نام می توانید وارد حساب کاربری خود شده و حسابداری خود را شروع کنید. "}},{"@type":"Question","name":" آیا برای اپ موبایل هزینه جداگانه ای باید بپردازم؟ ","acceptedAnswer":{"@type":"Answer","text":" خیر، اپ موبایل حسابیکس رایگان بوده و شما با همان اکانت خود که در وب سایت وارد می شوید می توانید وارد اپ موبایل هم شوید و نیازی به پرداخت هزینه جداگانه نیست. "}},{"@type":"Question","name":" چقدر طول می‌کشد تا به حسابیکس مسلط شویم؟ ","acceptedAnswer":{"@type":"Answer","text":"فقط کافی است کار با حسابیکس را آغاز کنید. متوجه می‌شوید که تجربه کاربری نرم‌افزار طوری است که با حداقل زمان به نرم‌افزار مسلط شوید.همچنین می‌توانید از بخش دانشنامه به مطالب و ویدئوهای آموزشی دسترسی داشته باشید. "}},{"@type":"Question","name":" آیا برای کار با حسابیکس نیاز به دانش حسابداری است؟ ","acceptedAnswer":{"@type":"Answer","text":"خیر، حسابیکس بگونه ای طراحی شده که تقریبا همه کارهای لازم بصورت اتوماتیک انجام می شوند. به عنوان مثال با ثبت فاکتور فروش، سند حسابداری مربوطه بصورت اتوماتیک ثبت می شود، همینطور در مورد سایر عملیات های حسابداری مثل دریافت، پرداخت، ضایعات و ...\nاگر چه حسابداران و افرادی که دانش حسابداری دارند نیز می توانند بخوبی با حسابیکس کار کنند و از مزایای دانش خود بهره ببرند. "}},{"@type":"Question","name":" نسخه پشتیبان در این نرم‌افزار چگونه تهیه می‌شود؟ ","acceptedAnswer":{"@type":"Answer","text":" حسابیکس، خودکار و روزانه، از اطلاعات شما نسخه پشتیبان تهیه می‌کند؛ بنابراین نگرانی بابت از بین رفتن اطلاعات وجود ندارد.بعلاوه بصورت خودکار هر روز از داده های کاربران نسخه پشتیبان تهیه و تمامی داده ها بصورت رمزنگاری شده روی فضای ابری نگهداری می شوند.همچنین کاربران می توانند نسخه مستقیم پایگاه داده را با تماس با بخش پشتیبانی دریافت کنند. "}},{"@type":"Question","name":" آینده نرم‌افزارهای حسابداری ابری چیست؟ ","acceptedAnswer":{"@type":"Answer","text":" به نظر می‌رسد با امکانات متمایز این تکنولوژی، در آینده نزدیک نرم‌افزارهای سنتی حذف شوند و با نرم‌افزارهای ابری جایگزین شوند. حدود 70% کسب‌وکارهای کوچک و متوسط در دنیا نرم‌افزار حسابداری ابری را به نرم‌افزار حسابداری سنتی ترجیح می‌دهند. این روند در ایران در حال شکل‌گیری است. "}},{"@type":"Question","name":" اگر اینترنت قطع شود امکان کار با حسابیکس وجود دارد؟ ","acceptedAnswer":{"@type":"Answer","text":" برای استفاده از نرم افزارهای ابری شما باید به شبکه اینترنت دسترسی داشته باشید. به دلیل استفاده حسابیکس از سرورهای داخل ایران، با قطع شدن اینترنت بین المللی امکان دسترسی به دیتا برای کاربران حسابیکس وجود دارد و با محدودیتی مواجه نخواهند شد. "}}]}</script>
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"ابر چیست؟","acceptedAnswer":{"@type":"Answer","text":"ابر زیرساختی مجازی از منابع محاسباتی و ذخیره‌سازی داده است که از طریق اینترنت به کاربران ارائه می‌شود. این منابع می‌توانند شامل سرورها، فضای ذخیره‌سازی داده، شبکه‌ و تجهیزات مجازی‌سازی باشند. "}},{"@type":"Question","name":"نرم ‌افزار حسابداری ابری چیست؟ ","acceptedAnswer":{"@type":"Answer","text":"نرم افزار حسابداری ابری که به آن نرم افزار حسابداری آنلاین هم می‌گویند، نرم افزاری است که به شما کمک می‌کند دفاتر حسابداری خود را آنلاین ثبت و نگهداری کنید. نرم افزار حسابداری ابری مانند حسابکس به جای اینکه روی رایانه رومیزی یا سرورهای سازمان (در محل مشتری) نصب شود، در فضای ابری قرار دارد. همین ویژگی باعث می‌شود تا به داده‌های مالی و امکانات سیستم از هر دستگاه آنلاینی در هر زمانی و مکانی دسترسی داشته باشید. "}},{"@type":"Question","name":"آیا امکان قطع شدن حسابکس وجود دارد؟ ","acceptedAnswer":{"@type":"Answer","text":" 24 ساعته و با ضریب دسترسی بالای 99 درصد، دسترسی به حسابکس وجود دارد. "}},{"@type":"Question","name":" آیا حسابکس آنلاین است یا نیاز به دانلود و نصب نرم افزار است؟ ","acceptedAnswer":{"@type":"Answer","text":" شما نیاز به دانلود و نصب هیچ نرم افزاری ندارید. حسابکس کاملاً آنلاین است و شما پس از ثبت نام می توانید وارد حساب کاربری خود شده و حسابداری خود را شروع کنید. "}},{"@type":"Question","name":" آیا برای اپ موبایل هزینه جداگانه ای باید بپردازم؟ ","acceptedAnswer":{"@type":"Answer","text":" خیر، اپ موبایل حسابکس رایگان بوده و شما با همان اکانت خود که در وب سایت وارد می شوید می توانید وارد اپ موبایل هم شوید و نیازی به پرداخت هزینه جداگانه نیست. "}},{"@type":"Question","name":" چقدر طول می‌کشد تا به حسابکس مسلط شویم؟ ","acceptedAnswer":{"@type":"Answer","text":"فقط کافی است کار با حسابکس را آغاز کنید. متوجه می‌شوید که تجربه کاربری نرم‌افزار طوری است که با حداقل زمان به نرم‌افزار مسلط شوید.همچنین می‌توانید از بخش دانشنامه به مطالب و ویدئوهای آموزشی دسترسی داشته باشید. "}},{"@type":"Question","name":" آیا برای کار با حسابکس نیاز به دانش حسابداری است؟ ","acceptedAnswer":{"@type":"Answer","text":"خیر، حسابکس بگونه ای طراحی شده که تقریبا همه کارهای لازم بصورت اتوماتیک انجام می شوند. به عنوان مثال با ثبت فاکتور فروش، سند حسابداری مربوطه بصورت اتوماتیک ثبت می شود، همینطور در مورد سایر عملیات های حسابداری مثل دریافت، پرداخت، ضایعات و ...\nاگر چه حسابداران و افرادی که دانش حسابداری دارند نیز می توانند بخوبی با حسابکس کار کنند و از مزایای دانش خود بهره ببرند. "}},{"@type":"Question","name":" نسخه پشتیبان در این نرم‌افزار چگونه تهیه می‌شود؟ ","acceptedAnswer":{"@type":"Answer","text":" حسابکس، خودکار و روزانه، از اطلاعات شما نسخه پشتیبان تهیه می‌کند؛ بنابراین نگرانی بابت از بین رفتن اطلاعات وجود ندارد.بعلاوه بصورت خودکار هر روز از داده های کاربران نسخه پشتیبان تهیه و تمامی داده ها بصورت رمزنگاری شده روی فضای ابری نگهداری می شوند.همچنین کاربران می توانند نسخه مستقیم پایگاه داده را با تماس با بخش پشتیبانی دریافت کنند. "}},{"@type":"Question","name":" آینده نرم‌افزارهای حسابداری ابری چیست؟ ","acceptedAnswer":{"@type":"Answer","text":" به نظر می‌رسد با امکانات متمایز این تکنولوژی، در آینده نزدیک نرم‌افزارهای سنتی حذف شوند و با نرم‌افزارهای ابری جایگزین شوند. حدود 70% کسب‌وکارهای کوچک و متوسط در دنیا نرم‌افزار حسابداری ابری را به نرم‌افزار حسابداری سنتی ترجیح می‌دهند. این روند در ایران در حال شکل‌گیری است. "}},{"@type":"Question","name":" اگر اینترنت قطع شود امکان کار با حسابکس وجود دارد؟ ","acceptedAnswer":{"@type":"Answer","text":" برای استفاده از نرم افزارهای ابری شما باید به شبکه اینترنت دسترسی داشته باشید. به دلیل استفاده حسابکس از سرورهای داخل ایران، با قطع شدن اینترنت بین المللی امکان دسترسی به دیتا برای کاربران حسابکس وجود دارد و با محدودیتی مواجه نخواهند شد. "}}]}</script>
         {% block javascripts %}
         {% endblock %}
 
@@ -51,8 +51,8 @@
                        <!-- Logo -->
                        <img class="me-2" src="{{ asset('/img/logo-blue.png') }}" alt="" width="48" height="48">
 
-                       <a class="text-dark fw-semibold tracking-wide" href="{{ path('general_home') }}"><span class="opacity-75">حسابیکس</span>
-                           <small class="fw-lighter d-none d-sm-block">نرم‌افزار حسابداری ابری و کاملا رایگان</small>
+                       <a class="text-dark fw-semibold tracking-wide" href="{{ path('general_home') }}"><span class="opacity-75">حسابکس</span>
+                           <small class="fw-lighter d-none d-sm-block">نرم‌افزار حسابداری ابری   </small>
                        </a>
                        <!-- END Logo -->
                    </div>
@@ -86,7 +86,7 @@
                                <li class="nav-main-item">
                                    <a class="nav-main-link" href="{{ path('general_home') }}">
                                        <i class="nav-main-link-icon fa fa-home"></i>
-                                       <span class="nav-main-link-name"> حسابیکس </span>
+                                       <span class="nav-main-link-name"> حسابکس </span>
                                    </a>
                                </li>
                                <li class="nav-main-item">
@@ -114,7 +114,7 @@
                                    </a>
                                </li>
                                <li class="nav-main-item">
-                                   <a class="nav-main-link bg-warning text-light" href="tel:02191031705">
+                                   <a class="nav-main-link bg-warning text-light" href="tel:09365286776">
                                        <i class="nav-main-link-icon fa fa-phone text-light"></i>
                                        <span class="nav-main-link-name"> تماس با پشتیبانی </span>
                                    </a>
@@ -122,12 +122,12 @@
                                <li class="nav-main-item">
                                    <a aria-expanded="true" aria-haspopup="true" class="nav-main-link active nav-main-link-submenu" data-toggle="submenu" href="#">
                                        <i class="nav-main-link-icon fa fa-percentage"></i>
-                                       <span class="nav-main-link-name">درباره حسابیکس</span>
+                                       <span class="nav-main-link-name">درباره حسابکس</span>
                                    </a>
                                    <ul class="nav-main-submenu">
                                        <li class="nav-main-item">
                                            <a class="nav-main-link" href="{{ path('general_about') }}">
-                                               <span class="nav-main-link-name">داستان حسابیکس</span>
+                                               <span class="nav-main-link-name">داستان حسابکس</span>
                                            </a>
                                        </li>
                                        <li class="nav-main-item">
@@ -224,7 +224,7 @@
                                    <ul class="list list-simple-mini">
                                        <li>
                                            <a class="fw-semibold" href="/front/apps/woocommerce">
-                                               <i class="fa fa-fw fa-shop text-primary-lighter me-1"></i> افزونه ووکامرس حسابیکس</a>
+                                               <i class="fa fa-fw fa-shop text-primary-lighter me-1"></i> افزونه ووکامرس حسابکس</a>
                                        </li>
                                    </ul>
                                </div>
@@ -240,7 +240,7 @@
                                        </li>
                                        <li>
                                            <a class="fw-semibold" href="/front/about">
-                                               <i class="fa fa-fw fa-hand-paper text-primary-lighter me-1"></i> درباره حسابیکس </a>
+                                               <i class="fa fa-fw fa-hand-paper text-primary-lighter me-1"></i> درباره حسابکس </a>
                                        </li>
                                        <li>
                                            <a class="fw-semibold" href="/front/terms">
@@ -257,9 +257,9 @@
                        <div class="col-sm-12 col-md-3 text-center my-2">
                         {{settings.footerScripts | raw}}
                         <div class="m-2">
-                            <a class="fw-semibold" href="https://github.com/morrning/hesabixUI" target="_blank">حسابیکس</a>
+                            <a class="fw-semibold" href="https://hesabax.ir/" target="_blank">حسابکس</a>
                                با <i class="fa fa-heart text-danger"></i>
-                               متن باز است.
+                                و عشق توسعه یافته.
                         </div>
                        </div>
                    </div>

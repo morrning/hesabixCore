@@ -50,6 +50,9 @@ class Settings
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $footer = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $activeSmsPanel = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -195,6 +198,18 @@ class Settings
     public function setFooter(?string $footer): static
     {
         $this->footer = $footer;
+
+        return $this;
+    }
+
+    public function getActiveSmsPanel(): ?string
+    {
+        return $this->activeSmsPanel;
+    }
+
+    public function setActiveSmsPanel(?string $activeSmsPanel): static
+    {
+        $this->activeSmsPanel = $activeSmsPanel;
 
         return $this;
     }

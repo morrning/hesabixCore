@@ -1,6 +1,7 @@
 <?php
 namespace App\Service;
 use App\Entity\Business;
+use App\Entity\Registry;
 use App\Entity\Settings;
 use App\Entity\User;
 use Melipayamak\MelipayamakApi;
@@ -24,17 +25,48 @@ class SMS
 
     public function send(array $params,$bodyID,$to): void
     {
-        try{
-            $username = $this->settings->getPayamakUsername();
-            $password = $this->settings->getPayamakPassword();
-            $api = new MelipayamakApi($username,$password);
-            $sms = $api->sms('soap');
-            $response = $sms->sendByBaseNumber($params,$to,$bodyID);
-            $json = json_decode($response);
-            echo $json->Value; //RecId or Error Number 
-        }catch(\Exception $e){
-            //echo $e->getMessage();
+        $settings = $this->entityManager->getRepository(Settings::class)->findAll()[0];
+        if($settings->getActiveSmsPanel() == 'melipayamak'){
+            try{
+                        $username = $this->settings->getPayamakUsername();
+                        $password = $this->settings->getPayamakPassword();
+                        $api = new MelipayamakApi($username,$password);
+                        $sms = $api->sms('soap');
+                        $response = $sms->sendByBaseNumber($params,$to,$bodyID);
+                        $json = json_decode($response);
+                        echo $json->Value; //RecId or Error Number 
+                    }catch(\Exception $e){
+                        //echo $e->getMessage();
+                    }
+
         }
+        elseif($settings->getActiveSmsPanel() == 'idePayam'){
+            ini_set("soap.wsdl_cache_enabled", "0");
+            $patternID = $this->entityManager->getRepository(Registry::class)->findOneBy([
+                'root'=>'sms',
+                'name'=>$bodyID
+            ]);
+            $fromNum = $this->entityManager->getRepository(Registry::class)->findOneBy([
+                'root'=>'sms',
+                'name'=>'fromNum'
+            ]);
+            //create next
+            $pt = [];
+            foreach($params as $param){
+                $pt['{' + array_search($param,$params) + '}'] = $param;
+            }
+            $soap = new \SoapClient("http://185.112.33.61/wbs/send.php?wsdl");
+            $soap->token =  $this->settings->getMelipayamakToken();
+            $soap->fromNum = $fromNum->getValueOfKey();
+            $soap->toNum = array($to);
+            $soap->patternID = $patternID->getValueOfKey();
+            $soap->Content = json_encode($pt,JSON_UNESCAPED_UNICODE);
+            $soap->Type = 0;
+            $array = $soap->SendSMSByPattern($soap->fromNum, $soap->toNum, $soap->Content, $soap->patternID, $soap->Type, $soap->token);
+            
+        }
+
+        
     }
 
     public function sendByBalance(array $params,$bodyID,$to,Business $business,User $user,$balance = 500): int
