@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Service\Jdate;
 use App\Service\Notification;
 use App\Service\Provider;
+use App\Service\registryMGR;
 use App\Service\SMS;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -49,7 +50,7 @@ class SupportController extends AbstractController
         ]);
     }
     #[Route('/api/admin/support/mod/{id}', name: 'app_admin_support_mod')]
-    public function app_admin_support_mod(SMS $SMS,Request $request, EntityManagerInterface $entityManager,Notification $notifi,string $id = ''): JsonResponse
+    public function app_admin_support_mod(registryMGR $registryMGR, SMS $SMS,Request $request, EntityManagerInterface $entityManager,Notification $notifi,string $id = ''): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -72,8 +73,13 @@ class SupportController extends AbstractController
             $entityManager->persist($support);
             $entityManager->flush();
             //send sms to customer
-            if($item->getSubmitter()->getMobile())
-                $SMS->send([$item->getId()],'162251',$item->getSubmitter()->getMobile());
+            if($item->getSubmitter()->getMobile()){
+                $SMS->send(
+                    [$item->getId()],
+                    $registryMGR->get('sms','ticketReplay'),
+                    $item->getSubmitter()->getMobile()
+                );
+            }
             //send notification to user
             $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
             $url = $settings->getAppSite() . '/profile/support-view/' . $item->getId();
@@ -105,7 +111,7 @@ class SupportController extends AbstractController
     }
 
     #[Route('/api/support/mod/{id}', name: 'app_support_mod')]
-    public function app_support_mod(SMS $SMS,Request $request, EntityManagerInterface $entityManager,string $id = ''): JsonResponse
+    public function app_support_mod(registryMGR $registryMGR,SMS $SMS,Request $request, EntityManagerInterface $entityManager,string $id = ''): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -123,7 +129,12 @@ class SupportController extends AbstractController
                 $entityManager->persist($item);
                 $entityManager->flush();
                 //send sms to manager
-                $SMS->send([$item->getId()],'162214','09183282405');
+                $SMS->send(
+                    [$item->getId()],
+                    $registryMGR->get('sms','ticketRec'),
+                    $registryMGR->get('ticket','managerMobile')
+                );
+                
                 return $this->json([
                     'error'=> 0,
                     'message'=> 'ok',
@@ -149,8 +160,13 @@ class SupportController extends AbstractController
                 $entityManager->flush();
                 //send sms to manager
                 $admins = $entityManager->getRepository(User::class)->findByRole('ROLE_ADMIN');
-                foreach($admins as $admin)
-                    $SMS->send([$item->getId()],'162214',$admin->getMobile());
+                foreach($admins as $admin){
+                    $SMS->send(
+                        [$item->getId()],
+                        $registryMGR->get('sms','ticketRec'),
+                        $admin->getMobile()
+                    );
+                }
                 return $this->json([
                     'error'=> 0,
                     'message'=> 'ok',

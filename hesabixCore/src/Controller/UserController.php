@@ -243,7 +243,6 @@ class UserController extends AbstractController
             $user->setActive(false);
             $entityManager->persist($user);
             $entityManager->flush();
-            $SMS->send([$user->getVerifyCode()],'162246',$user->getMobile());
             $SMS->send(
                 [$user->getVerifyCode()],
                 $registryMGR->get('sms','f2a'),
@@ -279,7 +278,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/user/active/code/info/{id}', name: 'api_user_active_code_info')]
-    public function api_user_active_code_info(MailerInterface $mailer,SMS $SMS,String $id,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    public function api_user_active_code_info(registryMGR $registryMGR,MailerInterface $mailer,SMS $SMS,String $id,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
     {
         $send = false;
         $user = $entityManager->getRepository(User::class)->find($id);
@@ -314,7 +313,11 @@ class UserController extends AbstractController
 
         if($send){
             //send sms and email
-            $SMS->send([$user->getVerifyCode()],'162246',$user->getMobile());
+            $SMS->send(
+                [$user->getVerifyCode()],
+                $registryMGR->get('sms','f2a'),
+                $user->getMobile()
+            );
             $email = (new Email())
                 ->to($user->getEmail())
                 ->priority(Email::PRIORITY_HIGH)
@@ -331,7 +334,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/user/reset/password/send-to-sms/{id}', name: 'api_user_forget_reset_password')]
-    public function api_user_forget_reset_password(MailerInterface $mailer,SMS $SMS,String $id,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    public function api_user_forget_reset_password(registryMGR $registryMGR,MailerInterface $mailer,SMS $SMS,String $id,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -353,7 +356,12 @@ class UserController extends AbstractController
                         );
                         $entityManager->persist($obj);
                         $entityManager->flush();
-                        $SMS->send([$password],163543,$obj->getMobile());
+                        
+                        $SMS->send(
+                            [$password],
+                            $registryMGR->get('sms','changePassword'),
+                            $obj->getMobile()
+                        );
                         $email = (new Email())
                             ->to($obj->getEmail())
                             ->priority(Email::PRIORITY_HIGH)
@@ -401,7 +409,7 @@ class UserController extends AbstractController
         return $this->json(['result'=>'not correct','id'=>$user->getId(),'active'=>false]);
     }
     #[Route('/api/user/forget/password/send-code', name: 'api_user_forget_password_send_code')]
-    public function api_user_forget_password_send_code(#[CurrentUser] ?User $user,SMS $SMS,MailerInterface $mailer,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    public function api_user_forget_password_send_code(registryMGR $registryMGR,#[CurrentUser] ?User $user,SMS $SMS,MailerInterface $mailer,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -422,7 +430,11 @@ class UserController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
         //send sms and email
-        $SMS->send([$user->getVerifyCode()],'160887',$user->getMobile());
+        $SMS->send(
+            [$user->getVerifyCode()],
+            $registryMGR->get('sms','recPassword'),
+            $user->getMobile()
+        );
         $email = (new Email())
             ->to($user->getEmail())
             ->priority(Email::PRIORITY_HIGH)

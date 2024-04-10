@@ -12,6 +12,7 @@ use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Notification;
 use App\Service\Provider;
+use App\Service\registryMGR;
 use App\Service\SMS;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -222,7 +223,7 @@ class SMSController extends AbstractController
      * @throws \ReflectionException
      */
     #[Route('/api/sms/send/sell-invoice/{id}/{num}', name: 'api_sms_send_invoice')]
-    public function api_sms_send_invoice(SMS $SMS,String $id,String $num,Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    public function api_sms_send_invoice(registryMGR $registryMGR, SMS $SMS,String $id,String $num,Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
     {
         $acc = $access->hasRole('sell');
         if(!$acc)
@@ -245,7 +246,7 @@ class SMSController extends AbstractController
         return $this->json(['result'=>
             $SMS->sendByBalance(
                 [$bid->getName(),'sell/' . $bid->getId() . '/' . $shortLink],
-                168030,
+                $registryMGR->get('sms','sharefaktor'),
                 $num,$bid,$this->getUser(),3
             )]);
 

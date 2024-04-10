@@ -11,53 +11,53 @@ class SMS
 {
     private EntityManagerInterface $entityManager;
     private Settings $settings;
+    private registryMGR $registryMGR;
 
     private int $smsPrice = 2500;
 
     /**
      * @param EntityManagerInterface $entityManager
      */
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager,registryMGR $registryMGR)
     {
         $this->entityManager = $entityManager;
+        $this->registryMGR = $registryMGR;
         $this->settings = $entityManager->getRepository(Settings::class)->findAll()[0];
+
     }
 
     public function send(array $params,$bodyID,$to): void
     {
-        $settings = $this->entityManager->getRepository(Settings::class)->findAll()[0];
-        if($settings->getActiveSmsPanel() == 'melipayamak'){
+        if($this->registryMGR->get('sms','plan') == 'melipayamak'){    
             try{
-                        $username = $this->settings->getPayamakUsername();
-                        $password = $this->settings->getPayamakPassword();
+                        $username = $this->registryMGR->get('sms','username');
+                        $password = $this->registryMGR->get('sms','password');
                         $api = new MelipayamakApi($username,$password);
                         $sms = $api->sms('soap');
                         $response = $sms->sendByBaseNumber($params,$to,$bodyID);
                         $json = json_decode($response);
-                        echo $json->Value; //RecId or Error Number 
+                        
                     }catch(\Exception $e){
-                        //echo $e->getMessage();
+                        echo $e->getMessage();
+                        die();
                     }
 
         }
-        elseif($settings->getActiveSmsPanel() == 'idePayam'){
+        elseif($this->registryMGR->get('sms','plan') == 'idePayam'){
             ini_set("soap.wsdl_cache_enabled", "0");
             $patternID = $this->entityManager->getRepository(Registry::class)->findOneBy([
                 'root'=>'sms',
                 'name'=>$bodyID
             ]);
-            $fromNum = $this->entityManager->getRepository(Registry::class)->findOneBy([
-                'root'=>'sms',
-                'name'=>'fromNum'
-            ]);
+            
             //create next
             $pt = [];
             foreach($params as $param){
                 $pt['{' + array_search($param,$params) + '}'] = $param;
             }
             $soap = new \SoapClient("http://185.112.33.61/wbs/send.php?wsdl");
-            $soap->token =  $this->settings->getMelipayamakToken();
-            $soap->fromNum = $fromNum->getValueOfKey();
+            $soap->token =  $this->registryMGR->get('sms','username');
+            $soap->fromNum = $this->registryMGR->get('sms','fromNum');
             $soap->toNum = array($to);
             $soap->patternID = $patternID->getValueOfKey();
             $soap->Content = json_encode($pt,JSON_UNESCAPED_UNICODE);
