@@ -43,27 +43,23 @@ class SMS
                     }
 
         }
-        elseif($this->registryMGR->get('sms','plan') == 'idePayam'){
+        elseif($this->registryMGR->get('sms','plan') == 'idepayam'){
             ini_set("soap.wsdl_cache_enabled", "0");
-            $patternID = $this->entityManager->getRepository(Registry::class)->findOneBy([
-                'root'=>'sms',
-                'name'=>$bodyID
-            ]);
             
             //create next
             $pt = [];
             foreach($params as $param){
-                $pt['{' + array_search($param,$params) + '}'] = $param;
+                $pt['{' . strval(array_search($param,$params)) . '}'] = $param;
             }
             $soap = new \SoapClient("http://185.112.33.61/wbs/send.php?wsdl");
-            $soap->token =  $this->registryMGR->get('sms','username');
+            $soap->token =  $this->registryMGR->get('sms','token');
             $soap->fromNum = $this->registryMGR->get('sms','fromNum');
             $soap->toNum = array($to);
-            $soap->patternID = $patternID->getValueOfKey();
+            $soap->patternID = $bodyID;
             $soap->Content = json_encode($pt,JSON_UNESCAPED_UNICODE);
             $soap->Type = 0;
             $array = $soap->SendSMSByPattern($soap->fromNum, $soap->toNum, $soap->Content, $soap->patternID, $soap->Type, $soap->token);
-            
+           
         }
 
         
