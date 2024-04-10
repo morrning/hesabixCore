@@ -20,6 +20,7 @@ use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use App\Entity\User;
 use App\Security\EmailVerifier;
+use App\Service\registryMGR;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\Form\FormError;
@@ -206,7 +207,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/user/register', name: 'api_user_register')]
-    public function api_user_register(SMS $SMS,MailerInterface $mailer,Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
+    public function api_user_register(registryMGR $registryMGR,SMS $SMS,MailerInterface $mailer,Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -243,6 +244,11 @@ class UserController extends AbstractController
             $entityManager->persist($user);
             $entityManager->flush();
             $SMS->send([$user->getVerifyCode()],'162246',$user->getMobile());
+            $SMS->send(
+                [$user->getVerifyCode()],
+                $registryMGR->get('sms','f2a'),
+                $user->getMobile()
+            );
             try {
                 $email = (new Email())
                     ->to($user->getEmail())

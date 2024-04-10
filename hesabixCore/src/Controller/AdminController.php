@@ -14,6 +14,7 @@ use App\Entity\StoreroomTicket;
 use App\Entity\User;
 use App\Entity\WalletTransaction;
 use App\Service\Jdate;
+use App\Service\JsonResp;
 use App\Service\Notification;
 use App\Service\Provider;
 use App\Service\registryMGR;
@@ -199,6 +200,9 @@ class AdminController extends AbstractController
     {
 
         $resp = [];
+        $resp['username'] = $registryMGR->get('sms','username');
+        $resp['password'] = $registryMGR->get('sms','password');
+        $resp['token'] = $registryMGR->get('sms','token');
         $resp['walletpay'] = $registryMGR->get('sms','walletPay');
         $resp['changePassword'] = $registryMGR->get('sms','changePassword');
         $resp['f2a'] = $registryMGR->get('sms','f2a');
@@ -208,6 +212,41 @@ class AdminController extends AbstractController
         $resp['sharefaktor'] = $registryMGR->get('sms','sharefaktor');
         $resp['plan'] = $registryMGR->get('sms','plan');
         return $this->json($resp);
+    }
+
+    #[Route('/api/admin/sms/plan/info/save', name: 'admin_sms_plan_info_save')]
+    public function admin_sms_plan_info_save(registryMGR $registryMGR,Jdate $jdate,#[CurrentUser] ?User $user,UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager,Request $request): Response
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        if(array_key_exists('username',$params))
+            $registryMGR->update('sms','username',$params['username']);
+        if(array_key_exists('password',$params))
+            $registryMGR->update('sms','password',$params['password']);
+        if(array_key_exists('token',$params))
+            $registryMGR->update('sms','token',$params['token']);
+
+        if(array_key_exists('walletpay',$params))
+            $registryMGR->update('sms','walletpay',$params['walletpay']);
+        if(array_key_exists('changePassword',$params))
+            $registryMGR->update('sms','changePassword',$params['changePassword']);
+        if(array_key_exists('f2a',$params))
+            $registryMGR->update('sms','f2a',$params['f2a']);
+        if(array_key_exists('ticketReplay',$params))
+            $registryMGR->update('sms','ticketReplay',$params['ticketReplay']);
+        if(array_key_exists('ticketRec',$params))
+            $registryMGR->update('sms','ticketRec',$params['ticketRec']);
+        if(array_key_exists('fromNum',$params))
+            $registryMGR->update('sms','fromNum',$params['fromNum']);
+        if(array_key_exists('sharefaktor',$params))
+            $registryMGR->update('sms','sharefaktor',$params['sharefaktor']);
+        if(array_key_exists('plan',$params))
+            $registryMGR->update('sms','plan',$params['plan']);
+       
+        return $this->json(JsonResp::success());
     }
 
     #[Route('/api/admin/settings/system/info', name: 'admin_settings_system_info')]
@@ -370,7 +409,7 @@ class AdminController extends AbstractController
     }
 
     #[Route('/api/admin/wallets/transactions/insert', name: 'app_admin_wallets_transactions_insert')]
-    public function app_admin_wallets_transactions_insert(SMS $SMS,Jdate $jdate,Notification $notification,Request $request,EntityManagerInterface $entityManager): JsonResponse
+    public function app_admin_wallets_transactions_insert(registryMGR $registryMGR, SMS $SMS,Jdate $jdate,Notification $notification,Request $request,EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -394,7 +433,11 @@ class AdminController extends AbstractController
             $entityManager->persist($item);
             $entityManager->flush();
             $notification->insert('تسویه کیف پول انجام شد.','/acc/wallet/view',$bid,$bid->getOwner());
-            $SMS->send([$bid->getName()],174225,$bid->getOwner()->getMobile());
+            $SMS->send(
+                [$bid->getName()],
+                $registryMGR->get('sms','walletpay'),
+                $bid->getOwner()->getMobile()
+            );
             return $this->json(['result' => 1]);
 
         }

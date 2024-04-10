@@ -27,4 +27,8 @@ class JsonResp
             'tempStatus'    => $hesabdariDoc->getTempStatus(),
         ];
     }
+
+    public static function success(){
+        return ['error'=>0];
+    }
 }

@@ -14,11 +14,6 @@ class Settings
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $payamakUsername = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $payamakPassword = null;
 
     #[ORM\Column(nullable: true)]
     private ?bool $activeSendSms = null;
@@ -31,9 +26,6 @@ class Settings
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $storagePrice = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $melipayamakToken = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $siteKeywords = null;
@@ -56,30 +48,6 @@ class Settings
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getPayamakUsername(): ?string
-    {
-        return $this->payamakUsername;
-    }
-
-    public function setPayamakUsername(?string $payamakUsername): static
-    {
-        $this->payamakUsername = $payamakUsername;
-
-        return $this;
-    }
-
-    public function getPayamakPassword(): ?string
-    {
-        return $this->payamakPassword;
-    }
-
-    public function setPayamakPassword(?string $payamakPassword): static
-    {
-        $this->payamakPassword = $payamakPassword;
-
-        return $this;
     }
 
     public function isActiveSendSms(): ?bool
@@ -126,18 +94,6 @@ class Settings
     public function setStoragePrice(?string $storagePrice): static
     {
         $this->storagePrice = $storagePrice;
-
-        return $this;
-    }
-
-    public function getMelipayamakToken(): ?string
-    {
-        return $this->melipayamakToken;
-    }
-
-    public function setMelipayamakToken(?string $melipayamakToken): static
-    {
-        $this->melipayamakToken = $melipayamakToken;
 
         return $this;
     }
