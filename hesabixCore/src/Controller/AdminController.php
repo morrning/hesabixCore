@@ -205,6 +205,7 @@ class AdminController extends AbstractController
         $resp['token'] = $registryMGR->get('sms','token');
         $resp['walletpay'] = $registryMGR->get('sms','walletPay');
         $resp['changePassword'] = $registryMGR->get('sms','changePassword');
+        $resp['recPassword'] = $registryMGR->get('sms','recPassword');
         $resp['f2a'] = $registryMGR->get('sms','f2a');
         $resp['ticketReplay'] = $registryMGR->get('sms','ticketReplay');
         $resp['ticketRec'] = $registryMGR->get('sms','ticketRec');
@@ -233,6 +234,8 @@ class AdminController extends AbstractController
             $registryMGR->update('sms','walletpay',$params['walletpay']);
         if(array_key_exists('changePassword',$params))
             $registryMGR->update('sms','changePassword',$params['changePassword']);
+        if(array_key_exists('recPassword',$params))
+            $registryMGR->update('sms','recPassword',$params['recPassword']);
         if(array_key_exists('f2a',$params))
             $registryMGR->update('sms','f2a',$params['f2a']);
         if(array_key_exists('ticketReplay',$params))
