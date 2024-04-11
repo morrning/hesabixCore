@@ -353,6 +353,7 @@ class HesabdariController extends AbstractController
                     'id'=>$row['chequeOwner']
                 ]);
                 $cheque = new Cheque();
+                echo $hesabdariRow->getRef();
                 $cheque->setBid($acc['bid']);
                 $cheque->setSubmitter($this->getUser());
                 $cheque->setPayDate($row['chequeDate']);
