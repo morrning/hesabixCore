@@ -443,6 +443,7 @@ class CommodityController extends AbstractController
         $sheet = $spreadsheet->getSheet($spreadsheet->getFirstSheetIndex());
         $data = $sheet->toArray();
         unset($data[0]);
+    
         foreach($data as $item){
             //load cat
             $unit = $entityManager->getRepository(commodity::class)->findOneBy([
@@ -456,17 +457,39 @@ class CommodityController extends AbstractController
                 'name'=>$item[2],
                 'bid' =>$acc['bid']
             ]);
+            $cat = $entityManager->getRepository(CommodityCat::class)->findOneBy([
+                'name'=>$item[8],
+                'bid' =>$acc['bid']
+            ]);
+
+            $rootcat = $entityManager->getRepository(CommodityCat::class)->findOneBy([
+                'name'=>'دسته بندی ها',
+                'bid' =>$acc['bid'],
+                'root'=>'1',
+                'upper'=>null
+            ]);
+            if(!$cat){
+                $cat = new CommodityCat();
+                $cat->setBid($acc['bid']);
+                $cat->setName($item[8]);
+                $cat->setUpper($rootcat->getId());
+                $cat->setRoot(1);
+                $entityManager->persist($cat);
+                $entityManager->flush();
+            }
             //check exist before
             if(!$commodity){
+
                 $commodity = new commodity();
+
+            } 
                 $commodity->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'commodity'));
                 $commodity->setName($item[2]);
                 $commodity->setBid($acc['bid']);
                 $commodity->setUnit($unit);
+                $commodity->setCat($cat);
                 $commodity->setOrderPoint(0);
                 $commodity->setDayLoading(0);
-                if(array_key_exists(1,$item))
-                    $commodity->setName($item[1]);
                 if(array_key_exists(3,$item))
                     $commodity->setPriceSell($item[3]);
                 if(array_key_exists(4,$item))
@@ -484,7 +507,6 @@ class CommodityController extends AbstractController
                     }
                 }
                 $entityManager->persist($commodity);
-            }
            $entityManager->flush();
         }
         $log->insert('کالا/خدمات','تعداد '. count($data) . ' کالا یا خدمات به صورت گروهی وارد شد.',$this->getUser(),$request->headers->get('activeBid'));
@@ -516,4 +538,6 @@ class CommodityController extends AbstractController
         return $this->json(['result' => 1]);
     }
 }
+
+
 

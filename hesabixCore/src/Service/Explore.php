@@ -26,7 +26,7 @@ class Explore{
                 $person = self::ExplorePerson($item->getPerson());
             }
             elseif($item->getCommodity()){
-                $commodities[] = Explore::ExploreCommodity($item->getCommodity(),$item->getCommdityCount());
+                $commodities[] = Explore::ExploreCommodity($item->getCommodity(),$item->getCommdityCount(),$item->getDes());
             }
         }
         $result['person'] = $person;
@@ -42,7 +42,7 @@ class Explore{
                 $person = self::ExplorePerson($item->getPerson());
             }
             elseif($item->getCommodity()){
-                $commodities[] = Explore::ExploreCommodity($item->getCommodity(),$item->getCommdityCount());
+                $commodities[] = Explore::ExploreCommodity($item->getCommodity(),$item->getCommdityCount(),$item->getDes());
             }
         }
         $result['person'] = $person;
@@ -63,7 +63,7 @@ class Explore{
             'des'           => $doc->getDes(),
             'amount'        => $doc->getAmount(),
             'mdate'         => '',
-            'plugin'        => $doc->getPlugin()
+            'plugin'        => $doc->getPlugin(),
         ];
     }
 
@@ -89,11 +89,11 @@ class Explore{
             'des'               => $row->getDes(),
             'plugin'            => $row->getPlugin(),
             'commodity_count'   => $row->getCommdityCount(),
-            'commodity'         => self::ExploreCommodity($row->getCommodity())
+            'commodity'         => self::ExploreCommodity($row->getCommodity(),$row->getCommdityCount(),$row->getDes())
         ];
     }
 
-    public static function ExploreCommodity(Commodity | null $item, int $count = 0){
+    public static function ExploreCommodity(Commodity | null $item, int | null $count = 0,string $des = ''){
         if($item)
             return [
                 'id'            => $item->getId(),
@@ -105,7 +105,9 @@ class Explore{
                 'khadamat'      => $item->isKhadamat(),
                 'speed_access'  => $item->isSpeedAccess(),
                 //most be completed
-                'count'         => $count
+                'count'         => $count,
+                'unit'          =>$item->getUnit()->getName(),
+                'des'           =>$des
             ];
         return null;
     }
