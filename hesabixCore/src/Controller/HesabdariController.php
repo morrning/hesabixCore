@@ -107,7 +107,10 @@ class HesabdariController extends AbstractController
                 $temp['ref'] = $item->getCommodity()->getName();
                 $temp['refCode'] = $item->getCommodity()->getCode();
                 $temp['count'] = $item->getCommdityCount();
-                $temp['unitPrice'] = $item->getBs()/$item->getCommdityCount();
+                if($doc->getType() == 'sell')
+                    $temp['unitPrice'] = $item->getBs()/$item->getCommdityCount();
+                elseif($doc->getType() == 'buy')
+                    $temp['unitPrice'] = $item->getBd()/$item->getCommdityCount();
                 $temp['commodity'] = [
                     'id' => $item->getCommodity()->getId(),
                     'name' => $item->getCommodity()->getName(),

@@ -540,7 +540,8 @@ class BusinessController extends AbstractController
         ]);
 
         $docs = $entityManager->getRepository(HesabdariDoc::class)->findBy([
-            'bid'=>$buss
+            'bid'=>$buss,
+            'year'=>$year,
         ]);
 
         $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
@@ -550,7 +551,23 @@ class BusinessController extends AbstractController
         $bssum = 0;
         foreach ($rows as $row)
             $bssum += $row->getBs();
-
+        $buys = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+            'bid'=>$buss,
+            'year'=>$year,
+            'type'=>'buy',
+        ]);
+        $buysTotal = 0;
+        foreach($buys as $item)
+            $buysTotal += $item->getAmount();
+        
+        $sells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid'=>$buss,
+                'year'=>$year,
+                'type'=>'sell',
+        ]);
+        $sellsTotal = 0;
+        foreach($sells as $item)
+            $sellsTotal += $item->getAmount();
         $response = [
             'personCount'=>count($persons),
             'bankCount'=>count($banks),
@@ -558,7 +575,9 @@ class BusinessController extends AbstractController
             'income'=> $bssum,
             'commodity'=>count($entityManager->getRepository(Commodity::class)->findby([
                 'bid'=>$buss
-            ]))
+            ])),
+            'buys_total'=>$buysTotal,
+            'sells_total'=>$sellsTotal,
         ];
         return $this->json($response);
     }

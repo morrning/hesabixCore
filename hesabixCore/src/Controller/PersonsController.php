@@ -158,7 +158,6 @@ class PersonsController extends AbstractController
                 'bid'=>$request->headers->get('activeBid')
             ]);
         }
-
         $response = $provider->ArrayEntity2Array($persons,0);
         foreach ($persons as $key =>$person){
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
@@ -175,6 +174,179 @@ class PersonsController extends AbstractController
             $response[$key]['balance'] = $bs - $bd;
         }
         return $this->json($response);
+    }
+
+    #[Route('/api/person/list/debtors/{amount}', name: 'app_persons_list_debtors')]
+    public function app_persons_list_debtors(string $amount,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        if(!$access->hasRole('person'))
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(array_key_exists('speedAccess',$params)){
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$request->headers->get('activeBid'),
+                'speedAccess'=>true
+            ]);
+        }
+        else{
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$request->headers->get('activeBid')
+            ]);
+        }
+
+        $response = $provider->ArrayEntity2Array($persons,0);
+        foreach ($persons as $key =>$person){
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'person'=>$person
+            ]);
+            $bs = 0;
+            $bd = 0;
+            foreach ($rows as $row){
+                $bs += $row->getBs();
+                $bd += $row->getBd();
+            }
+            $response[$key]['bs'] = $bs;
+            $response[$key]['bd'] = $bd;
+            $response[$key]['balance'] = $bs - $bd;
+        }
+        $result = [];
+        foreach ($response as $key =>$person){
+            if($person['bd'] - $person['bs'] > $amount ){
+                 array_push($result,$person);
+            } 
+        }
+        return $this->json($result);
+    }
+    #[Route('/api/person/list/debtors/print/{amount}', name: 'app_persons_debtors_list_print')]
+    public function app_persons_debtors_list_print(string $amount,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('person');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+
+        $persons = $entityManager->getRepository(Person::class)->findBy([
+            'bid'=>$request->headers->get('activeBid')
+        ]);
+        $response = $provider->ArrayEntity2Array($persons,0);
+        foreach ($persons as $key =>$person){
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'person'=>$person
+            ]);
+            $bs = 0;
+            $bd = 0;
+            foreach ($rows as $row){
+                $bs += $row->getBs();
+                $bd += $row->getBd();
+            }
+            $response[$key]['bs'] = $bs;
+            $response[$key]['bd'] = $bd;
+            $response[$key]['balance'] = $bs - $bd;
+        }
+        $result = [];
+        foreach ($response as $key =>$person){
+            if($person['bd'] - $person['bs'] > $amount ){
+                 array_push($result,$person);
+            } 
+        }
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/personsDebtors.html.twig',[
+                'page_title'=>'فهرست بدهکاران',
+                'bid'=>$acc['bid'],
+                'persons'=>$result
+            ]));
+        return $this->json(['id'=>$pid]);
+    }
+
+    #[Route('/api/person/list/depositors/{amount}', name: 'app_persons_list_depoistors')]
+    public function app_persons_list_depoistors(string $amount,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        if(!$access->hasRole('person'))
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(array_key_exists('speedAccess',$params)){
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$request->headers->get('activeBid'),
+                'speedAccess'=>true
+            ]);
+        }
+        else{
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$request->headers->get('activeBid')
+            ]);
+        }
+
+        $response = $provider->ArrayEntity2Array($persons,0);
+        foreach ($persons as $key =>$person){
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'person'=>$person
+            ]);
+            $bs = 0;
+            $bd = 0;
+            foreach ($rows as $row){
+                $bs += $row->getBs();
+                $bd += $row->getBd();
+            }
+            $response[$key]['bs'] = $bs;
+            $response[$key]['bd'] = $bd;
+            $response[$key]['balance'] = $bs - $bd;
+        }
+        $result = [];
+        foreach ($response as $key =>$person){
+            if($person['bs'] - $person['bd'] > $amount ){
+                 array_push($result,$person);
+            } 
+        }
+        return $this->json($result);
+    }
+
+    #[Route('/api/person/list/depositors/print/{amount}', name: 'app_persons_depositors_list_print')]
+    public function app_persons_depositors_list_print(string $amount,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('person');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+
+        $persons = $entityManager->getRepository(Person::class)->findBy([
+            'bid'=>$request->headers->get('activeBid')
+        ]);
+        $response = $provider->ArrayEntity2Array($persons,0);
+        foreach ($persons as $key =>$person){
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'person'=>$person
+            ]);
+            $bs = 0;
+            $bd = 0;
+            foreach ($rows as $row){
+                $bs += $row->getBs();
+                $bd += $row->getBd();
+            }
+            $response[$key]['bs'] = $bs;
+            $response[$key]['bd'] = $bd;
+            $response[$key]['balance'] = $bs - $bd;
+        }
+        $result = [];
+        foreach ($response as $key =>$person){
+            if($person['bs'] - $person['bd'] > $amount ){
+                 array_push($result,$person);
+            } 
+        }
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/personsDepositors.html.twig',[
+                'page_title'=>'فهرست بستانکاران',
+                'bid'=>$acc['bid'],
+                'persons'=>$result
+            ]));
+        return $this->json(['id'=>$pid]);
     }
 
     #[Route('/api/person/list/print', name: 'app_persons_list_print')]
