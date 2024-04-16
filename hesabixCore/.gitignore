@@ -6,7 +6,7 @@
 /../public_html/bundles/
 /../public_html/cdn/
 /var/
-
+/templates/
 /vendor/
 /../hesabixArchive/
 ###< symfony/framework-bundle ###
