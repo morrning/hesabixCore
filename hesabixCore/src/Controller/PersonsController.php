@@ -9,6 +9,9 @@ use App\Entity\Business;
 use App\Service\Provider;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
+use App\Entity\PersonCard;
+use App\Entity\PersonType;
+use App\Service\Explore;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -33,6 +36,19 @@ class PersonsController extends AbstractController
         return substr(str_shuffle(str_repeat($x='23456789ABCDEFGHJKLMNPQRSTUVWXYZ', ceil($length/strlen($x)) )),1,$length);
     }
 
+     /**
+     * @throws \ReflectionException
+     */
+    #[Route('/api/person/types/get', name: 'app_persons_types_get')]
+    public function app_persons_types_get(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('person');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+        $items = $entityManager->getRepository(PersonType::class)->findAll();
+        return $this->json(Explore::ExplorePersonTypes($items));
+    }
+
     /**
      * @throws \ReflectionException
      */
@@ -46,7 +62,8 @@ class PersonsController extends AbstractController
             'bid'=>$acc['bid'],
             'code'=>$code
         ]);
-        $response = $provider->Entity2Array($person,0);
+        $types = $entityManager->getRepository(PersonType::class)->findAll();
+        $response = Explore::ExplorePerson($person,$types);
         $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
             'person'=>$person
         ]);
@@ -110,6 +127,8 @@ class PersonsController extends AbstractController
             $person->setDes($params['des']);
         if(array_key_exists('mobile',$params))
             $person->setMobile($params['mobile']);
+        if(array_key_exists('mobile2',$params))
+            $person->setMobile2($params['mobile2']);
         if(array_key_exists('fax',$params))
             $person->setFax($params['fax']);
         if(array_key_exists('website',$params))
@@ -132,7 +151,58 @@ class PersonsController extends AbstractController
             $person->setShenasemeli($params['shenasemeli']);
         if(array_key_exists('company',$params))
             $person->setCompany($params['company']);
+
+        //inset cards
+        if(array_key_exists('accounts',$params)){
+            foreach($params['accounts'] as $item){
+                $card = $entityManager->getRepository(PersonCard::class)->findOneBy([
+                    'bid'=>$acc['bid'],
+                    'person'=>$person,
+                    'bank'=>$item['bank']
+                ]);
+                if(!$card)
+                   $card = new PersonCard();     
+                
+                $card->setPerson($person);
+                $card->setBid($acc['bid']);
+                $card->setShabaNum($item['shabaNum']);
+                $card->setCardNum($item['cardNum']);
+                $card->setAccountNum($item['accountNum']);
+                $card->setBank($item['bank']);
+                $entityManager->persist($card);
+            }
+        }
+        //remove not sended accounts
+        $accounts = $entityManager->getRepository(PersonCard::class)->findBy([
+            'bid'=>$acc['bid'],
+            'person'=>$person,
+        ]);
+        foreach($accounts as $item){
+            $deleted = true;
+            foreach($params['accounts'] as $param){
+                if($item->getBank() == $param['bank']){
+                    $deleted = false;
+                }
+            }
+            if($deleted){
+                $entityManager->remove($item);
+            }
+        }
         $entityManager->persist($person);
+
+        //insert new types
+        $types = $entityManager->getRepository(PersonType::class)->findAll();
+        foreach($params['types'] as $item){
+            if($item['checked'] == true)
+                $person->addType($entityManager->getRepository(PersonType::class)->findOneBy([
+                    'code'=>$item['code']
+                ]));
+            elseif($item['checked'] == false){
+                $person->removeType($entityManager->getRepository(PersonType::class)->findOneBy([
+                    'code'=>$item['code']
+                ]));
+            }
+        }
         $entityManager->flush();
         $log->insert('اشخاص','شخص با نام مستعار ' . $params['nikename'] . ' افزوده/ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));
         return $this->json(['result' => 1]);

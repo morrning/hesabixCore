@@ -205,6 +205,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Cheque::class, orphanRemoval: true)]
     private Collection $cheques;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PersonCard::class, orphanRemoval: true)]
+    private Collection $personCards;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -231,6 +234,7 @@ class Business
         $this->shareholders = new ArrayCollection();
         $this->hooks = new ArrayCollection();
         $this->cheques = new ArrayCollection();
+        $this->personCards = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1384,6 +1388,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($cheque->getBid() === $this) {
                 $cheque->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PersonCard>
+     */
+    public function getPersonCards(): Collection
+    {
+        return $this->personCards;
+    }
+
+    public function addPersonCard(PersonCard $personCard): static
+    {
+        if (!$this->personCards->contains($personCard)) {
+            $this->personCards->add($personCard);
+            $personCard->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePersonCard(PersonCard $personCard): static
+    {
+        if ($this->personCards->removeElement($personCard)) {
+            // set the owning side to null (unless already changed)
+            if ($personCard->getBid() === $this) {
+                $personCard->setBid(null);
             }
         }
 

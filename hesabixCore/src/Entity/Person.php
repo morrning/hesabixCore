@@ -119,6 +119,15 @@ class Person
     #[ORM\OneToMany(mappedBy: 'person', targetEntity: Cheque::class)]
     private Collection $cheques;
 
+    #[ORM\ManyToMany(targetEntity: PersonType::class, inversedBy: 'people')]
+    private Collection $type;
+
+    #[ORM\OneToMany(mappedBy: 'person', targetEntity: PersonCard::class, orphanRemoval: true)]
+    private Collection $personCards;
+
+    #[ORM\Column(length: 15, nullable: true)]
+    private ?string $mobile2 = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -127,6 +136,8 @@ class Person
         $this->storeroomTickets = new ArrayCollection();
         $this->shareholders = new ArrayCollection();
         $this->cheques = new ArrayCollection();
+        $this->type = new ArrayCollection();
+        $this->personCards = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -622,6 +633,72 @@ class Person
                 $cheque->setPerson(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PersonType>
+     */
+    public function getType(): Collection
+    {
+        return $this->type;
+    }
+
+    public function addType(PersonType $type): static
+    {
+        if (!$this->type->contains($type)) {
+            $this->type->add($type);
+        }
+
+        return $this;
+    }
+
+    public function removeType(PersonType $type): static
+    {
+        $this->type->removeElement($type);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PersonCard>
+     */
+    public function getPersonCards(): Collection
+    {
+        return $this->personCards;
+    }
+
+    public function addPersonCard(PersonCard $personCard): static
+    {
+        if (!$this->personCards->contains($personCard)) {
+            $this->personCards->add($personCard);
+            $personCard->setPerson($this);
+        }
+
+        return $this;
+    }
+
+    public function removePersonCard(PersonCard $personCard): static
+    {
+        if ($this->personCards->removeElement($personCard)) {
+            // set the owning side to null (unless already changed)
+            if ($personCard->getPerson() === $this) {
+                $personCard->setPerson(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getMobile2(): ?string
+    {
+        return $this->mobile2;
+    }
+
+    public function setMobile2(?string $mobile2): static
+    {
+        $this->mobile2 = $mobile2;
 
         return $this;
     }

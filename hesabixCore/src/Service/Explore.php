@@ -13,10 +13,24 @@ use App\Entity\HesabdariRow;
 use App\Entity\HesabdariTable;
 use App\Entity\Money;
 use App\Entity\Person;
+use App\Entity\PersonType;
 use App\Entity\Salary;
 
 class Explore{
-
+    public static function ExplorePersonType(PersonType $type){
+        return [
+            'label'=>$type->getLabel(),
+            'code'=>$type->getCode(),
+            'checked'=>false
+        ];
+    }
+    
+    public static function ExplorePersonTypes($types){
+        $result = [];
+        foreach($types as $type)
+            $result[] = self::ExplorePersonType($type);
+        return $result;
+    }
     public static function ExploreSellDoc(HesabdariDoc $hesabdariDoc){
         $result = self::ExploreHesabdariDoc($hesabdariDoc);
         $person = [];
@@ -143,17 +157,64 @@ class Explore{
             ];
         return null;
     }
-    public static function ExplorePerson(Person | null $person){
-        if($person)
-            return [
+    public static function ExplorePerson(Person | null $person,array $typesAll){
+        if($person){
+            $res = [
                 'id'         => $person->getId(),
                 'code'       => $person->getCode(),
                 'nikename'  => $person->getNikename(),
                 'name'       => $person->getName(),
-                //most be completed
+                'tel'       => $person->getTel(),
+                'mobile'       => $person->getmobile(),
+                'mobile2'       => $person->getMobile2(),
+                'des'           =>$person->getDes(),
+                'company'       => $person->getCompany(),
+                'shenasemeli'       => $person->getShenasemeli(),
+                'sabt'       => $person->getSabt(),
+                'shahr'       => $person->getShahr(),
+                'keshvar'     => $person->getKeshvar(),
+                'ostan'       => $person->getOstan(),
+                'postalcode'       => $person->getPostalcode(),
+                'codeeghtesadi' => $person->getCodeeghtesadi(),
+                'email' => $person->getEmail(),
+                'website' => $person->getWebsite(),
+                'fax' => $person->getFax(),
+                'birthday' => $person->getBirthday(),
+                'speedAccess'=>$person->isSpeedAccess(),
+
             ];
+            $res['accounts'] = self::ExplorePersonCards($person);
+            $res['types'] = self::ExplorePersonTypes($typesAll);
+            
+            foreach($res['types'] as $key=>$item){
+                foreach($person->getType() as $type){
+                    if($item['code'] == $type->getCode())
+                        $res['types'][$key]['checked'] = true;
+                }
+            }
+            return $res;
+        }
         return null;
     }
+    public static function ExplorePersons($items){
+        $result = [];
+        foreach($items as $item)
+            $result[] = self::ExplorePerson($item);
+        return $result;
+    }
+    public static function ExplorePersonCards(Person $person){
+        $res = [];
+        foreach($person->getPersonCards() as $item){
+            $res[] = [
+                'bank'=>$item->getBank(),
+                'shabaNum'=>$item->getShabaNum(),
+                'cardNum'=>$item->getCardNum(),
+                'accountNum'=>$item->getAccountNum()
+            ];
+        }
+        return $res;
+    }
+
     public static function ExploreHesabdariTable(HesabdariTable $table){
         return [
             'id'        => $table->getId(),
