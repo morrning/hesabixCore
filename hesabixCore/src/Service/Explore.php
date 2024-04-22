@@ -181,7 +181,6 @@ class Explore{
                 'fax' => $person->getFax(),
                 'birthday' => $person->getBirthday(),
                 'speedAccess'=>$person->isSpeedAccess(),
-
             ];
             $res['accounts'] = self::ExplorePersonCards($person);
             $res['types'] = self::ExplorePersonTypes($typesAll);
@@ -196,12 +195,13 @@ class Explore{
         }
         return null;
     }
-    public static function ExplorePersons($items){
+    public static function ExplorePersons($items,$types){
         $result = [];
         foreach($items as $item)
-            $result[] = self::ExplorePerson($item);
+            $result[] = self::ExplorePerson($item,$types);
         return $result;
     }
+    
     public static function ExplorePersonCards(Person $person){
         $res = [];
         foreach($person->getPersonCards() as $item){

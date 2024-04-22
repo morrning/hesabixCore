@@ -23,6 +23,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
 
 class PersonsController extends AbstractController
 {
@@ -208,8 +209,8 @@ class PersonsController extends AbstractController
         return $this->json(['result' => 1]);
     }
 
-    #[Route('/api/person/list', name: 'app_persons_list')]
-    public function app_persons_list(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/person/list/limit', name: 'app_persons_list_limit')]
+    public function app_persons_list_limit(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
         if(!$access->hasRole('person'))
             throw $this->createAccessDeniedException();
@@ -228,7 +229,38 @@ class PersonsController extends AbstractController
                 'bid'=>$request->headers->get('activeBid')
             ]);
         }
-        $response = $provider->ArrayEntity2Array($persons,0);
+        $response = [];
+        foreach ($persons as $key =>$person){
+            $response[] = [
+                'id'    => $person->getId(),
+                'nikename'=>$person->getNikename(),
+                'code'  =>$person->getCode(),
+            ];
+        }
+        return $this->json($response);
+    }
+
+    #[Route('/api/person/list', name: 'app_persons_list')]
+    public function app_persons_list(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): Response
+    {
+        if(!$access->hasRole('person'))
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if(array_key_exists('speedAccess',$params)){
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$request->headers->get('activeBid'),
+                'speedAccess'=>true
+            ]);
+        }
+        else{
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid'=>$request->headers->get('activeBid')
+            ]);
+        }
+        $response = Explore::ExplorePersons($persons,$entityManager->getRepository(PersonType::class)->findAll());
         foreach ($persons as $key =>$person){
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
                 'person'=>$person
@@ -243,7 +275,7 @@ class PersonsController extends AbstractController
             $response[$key]['bd'] = $bd;
             $response[$key]['balance'] = $bs - $bd;
         }
-        return $this->json($response);
+        return new Response(json_encode($response));
     }
 
     #[Route('/api/person/list/debtors/{amount}', name: 'app_persons_list_debtors')]
