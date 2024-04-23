@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Service;
 
 use App\Entity\BankAccount;
@@ -16,53 +17,57 @@ use App\Entity\Person;
 use App\Entity\PersonType;
 use App\Entity\Salary;
 
-class Explore{
-    public static function ExplorePersonType(PersonType $type){
+class Explore
+{
+    public static function ExplorePersonType(PersonType $type)
+    {
         return [
-            'label'=>$type->getLabel(),
-            'code'=>$type->getCode(),
-            'checked'=>false
+            'label' => $type->getLabel(),
+            'code' => $type->getCode(),
+            'checked' => false
         ];
     }
-    
-    public static function ExplorePersonTypes($types){
+
+    public static function ExplorePersonTypes($types)
+    {
         $result = [];
-        foreach($types as $type)
+        foreach ($types as $type)
             $result[] = self::ExplorePersonType($type);
         return $result;
     }
-    public static function ExploreSellDoc(HesabdariDoc $hesabdariDoc){
+    public static function ExploreSellDoc(HesabdariDoc $hesabdariDoc)
+    {
         $result = self::ExploreHesabdariDoc($hesabdariDoc);
         $person = [];
         $commodities = [];
-        foreach($hesabdariDoc->getHesabdariRows() as $item){
-            if($item->getPerson()){
+        foreach ($hesabdariDoc->getHesabdariRows() as $item) {
+            if ($item->getPerson()) {
                 $person = self::ExplorePerson($item->getPerson());
-            }
-            elseif($item->getCommodity()){
-                $commodities[] = Explore::ExploreCommodity($item->getCommodity(),$item->getCommdityCount(),$item->getDes());
+            } elseif ($item->getCommodity()) {
+                $commodities[] = Explore::ExploreCommodity($item->getCommodity(), $item->getCommdityCount(), $item->getDes());
             }
         }
         $result['person'] = $person;
         return $result;
     }
 
-    public static function ExploreBuyDoc(HesabdariDoc $hesabdariDoc){
+    public static function ExploreBuyDoc(HesabdariDoc $hesabdariDoc)
+    {
         $result = self::ExploreHesabdariDoc($hesabdariDoc);
         $person = [];
         $commodities = [];
-        foreach($hesabdariDoc->getHesabdariRows() as $item){
-            if($item->getPerson()){
+        foreach ($hesabdariDoc->getHesabdariRows() as $item) {
+            if ($item->getPerson()) {
                 $person = self::ExplorePerson($item->getPerson());
-            }
-            elseif($item->getCommodity()){
-                $commodities[] = Explore::ExploreCommodity($item->getCommodity(),$item->getCommdityCount(),$item->getDes());
+            } elseif ($item->getCommodity()) {
+                $commodities[] = Explore::ExploreCommodity($item->getCommodity(), $item->getCommdityCount(), $item->getDes());
             }
         }
         $result['person'] = $person;
         return $result;
     }
-    public static function ExploreHesabdariDoc(HesabdariDoc $doc){
+    public static function ExploreHesabdariDoc(HesabdariDoc $doc)
+    {
         return [
             'id'            => $doc->getId(),
             'update'        => $doc->getCode(),
@@ -81,14 +86,16 @@ class Explore{
         ];
     }
 
-    public static function ExploreHesabdariRows($rows){
+    public static function ExploreHesabdariRows($rows)
+    {
         $result = [];
-        foreach($rows as $row){
+        foreach ($rows as $row) {
             $result[] = self::ExploreHesabdariRow($row);
         }
         return $result;
     }
-    public static function ExploreHesabdariRow(HesabdariRow $row){
+    public static function ExploreHesabdariRow(HesabdariRow $row)
+    {
         return [
             'id'                => $row->getId(),
             'bid'               => self::ExploreBid($row->getBid()),
@@ -103,12 +110,13 @@ class Explore{
             'des'               => $row->getDes(),
             'plugin'            => $row->getPlugin(),
             'commodity_count'   => $row->getCommdityCount(),
-            'commodity'         => self::ExploreCommodity($row->getCommodity(),$row->getCommdityCount(),$row->getDes())
+            'commodity'         => self::ExploreCommodity($row->getCommodity(), $row->getCommdityCount(), $row->getDes())
         ];
     }
 
-    public static function ExploreCommodity(Commodity | null $item, int | null $count = 0,string $des = ''){
-        if($item)
+    public static function ExploreCommodity(Commodity | null $item, int | null $count = 0, string $des = '')
+    {
+        if ($item)
             return [
                 'id'            => $item->getId(),
                 'code'          => $item->getCode(),
@@ -120,14 +128,15 @@ class Explore{
                 'speed_access'  => $item->isSpeedAccess(),
                 //most be completed
                 'count'         => $count,
-                'unit'          =>$item->getUnit()->getName(),
-                'des'           =>$des
+                'unit'          => $item->getUnit()->getName(),
+                'des'           => $des
             ];
         return null;
     }
 
-    public static function ExploreBank(BankAccount | null $item){
-        if($item)
+    public static function ExploreBank(BankAccount | null $item)
+    {
+        if ($item)
             return [
                 'id'         => $item->getId(),
                 'code'       => $item->getCode(),
@@ -137,8 +146,9 @@ class Explore{
         return null;
     }
 
-    public static function ExploreCashdesk(Cashdesk | null $item){
-        if($item)
+    public static function ExploreCashdesk(Cashdesk | null $item)
+    {
+        if ($item)
             return [
                 'id'         => $item->getId(),
                 'code'       => $item->getCode(),
@@ -147,8 +157,9 @@ class Explore{
             ];
         return null;
     }
-    public static function ExploreSalary(Salary | null $item){
-        if($item)
+    public static function ExploreSalary(Salary | null $item)
+    {
+        if ($item)
             return [
                 'id'         => $item->getId(),
                 'code'       => $item->getCode(),
@@ -157,8 +168,9 @@ class Explore{
             ];
         return null;
     }
-    public static function ExplorePerson(Person | null $person,array $typesAll){
-        if($person){
+    public static function ExplorePerson(Person | null $person, array $typesAll = [])
+    {
+        if ($person) {
             $res = [
                 'id'         => $person->getId(),
                 'code'       => $person->getCode(),
@@ -167,7 +179,7 @@ class Explore{
                 'tel'       => $person->getTel(),
                 'mobile'       => $person->getmobile(),
                 'mobile2'       => $person->getMobile2(),
-                'des'           =>$person->getDes(),
+                'des'           => $person->getDes(),
                 'company'       => $person->getCompany(),
                 'shenasemeli'       => $person->getShenasemeli(),
                 'sabt'       => $person->getSabt(),
@@ -180,42 +192,47 @@ class Explore{
                 'website' => $person->getWebsite(),
                 'fax' => $person->getFax(),
                 'birthday' => $person->getBirthday(),
-                'speedAccess'=>$person->isSpeedAccess(),
+                'speedAccess' => $person->isSpeedAccess(),
+                'address' => $person->getAddress(),
             ];
             $res['accounts'] = self::ExplorePersonCards($person);
-            $res['types'] = self::ExplorePersonTypes($typesAll);
-            
-            foreach($res['types'] as $key=>$item){
-                foreach($person->getType() as $type){
-                    if($item['code'] == $type->getCode())
-                        $res['types'][$key]['checked'] = true;
+            if (count($typesAll) != 0) {
+                $res['types'] = self::ExplorePersonTypes($typesAll);
+                foreach ($res['types'] as $key => $item) {
+                    foreach ($person->getType() as $type) {
+                        if ($item['code'] == $type->getCode())
+                            $res['types'][$key]['checked'] = true;
+                    }
                 }
             }
             return $res;
         }
         return null;
     }
-    public static function ExplorePersons($items,$types){
+    public static function ExplorePersons($items, $types)
+    {
         $result = [];
-        foreach($items as $item)
-            $result[] = self::ExplorePerson($item,$types);
+        foreach ($items as $item)
+            $result[] = self::ExplorePerson($item, $types);
         return $result;
     }
-    
-    public static function ExplorePersonCards(Person $person){
+
+    public static function ExplorePersonCards(Person $person)
+    {
         $res = [];
-        foreach($person->getPersonCards() as $item){
+        foreach ($person->getPersonCards() as $item) {
             $res[] = [
-                'bank'=>$item->getBank(),
-                'shabaNum'=>$item->getShabaNum(),
-                'cardNum'=>$item->getCardNum(),
-                'accountNum'=>$item->getAccountNum()
+                'bank' => $item->getBank(),
+                'shabaNum' => $item->getShabaNum(),
+                'cardNum' => $item->getCardNum(),
+                'accountNum' => $item->getAccountNum()
             ];
         }
         return $res;
     }
 
-    public static function ExploreHesabdariTable(HesabdariTable $table){
+    public static function ExploreHesabdariTable(HesabdariTable $table)
+    {
         return [
             'id'        => $table->getId(),
             'upper_id'  => $table->getUpper()->getId(),
@@ -224,14 +241,16 @@ class Explore{
             'code'      => $table->getCode()
         ];
     }
-    public static function ExploreMoney(Money $money){
+    public static function ExploreMoney(Money $money)
+    {
         return [
             'id'     => $money->getId(),
             'label'  => $money->getLabel(),
             'name'   => $money->getName(),
         ];
     }
-    public static function ExploreYear(Year $year){
+    public static function ExploreYear(Year $year)
+    {
         return [
             'id'    => $year->getId(),
             'label' => $year->getLabel(),
@@ -242,14 +261,16 @@ class Explore{
         ];
     }
 
-    public static function ExploreUser(User $user){
+    public static function ExploreUser(User $user)
+    {
         return [
             'id'    => $user->getId(),
             'name'  => $user->getFullName()
         ];
     }
 
-    public static function ExploreBid(Business $bid){
+    public static function ExploreBid(Business $bid)
+    {
         return [
             'id'    => $bid->getId(),
             'name'  => $bid->getName(),
@@ -257,49 +278,51 @@ class Explore{
         ];
     }
 
-    public static function ExploreBuyDocsList(array $items){
+    public static function ExploreBuyDocsList(array $items)
+    {
         $result = [];
-        foreach($items as $item){
+        foreach ($items as $item) {
             $result[] = [
-                'id'=>$item->getId(),
-                'date'=>$item->getDate(),
-                'des'=>$item->getDes(),
+                'id' => $item->getId(),
+                'date' => $item->getDate(),
+                'des' => $item->getDes(),
             ];
         }
-       return $result;
+        return $result;
     }
 
-    public static function SerializeCheque(Cheque | null $cheque){
-        if(!$cheque)
+    public static function SerializeCheque(Cheque | null $cheque)
+    {
+        if (!$cheque)
             return null;
         $jdate = new Jdate;
         $label = '';
-        if($cheque->getType() == 'input')
+        if ($cheque->getType() == 'input')
             $label = 'چک شماره ' . $cheque->getNumber() . ' مربوط به ' . $cheque->getPerson()->getNikename() . ' با مبلغ ' . $cheque->getAmount();
         return [
             'id'  => $cheque->getId(),
-            'number'=> $cheque->getNumber(),
-            'sayadNum'=>$cheque->getSayadNum(),
-            'chequeBank'=>$cheque->getBankOncheque(),
-            'person'=>self::ExplorePerson($cheque->getPerson()),
-            'bank'=>self::ExploreBank($cheque->getBank()),
-            'des'=>$cheque->getDes(),
-            'datePay'=>$cheque->getPayDate(),
-            'type'=>$cheque->getType(),
-            'amount'=>$cheque->getAmount(),
-            'status'=>$cheque->getStatus(),
-            'date'=>$cheque->getDate(),
-            'locked'=>$cheque->isLocked(),
-            'rejected'=>$cheque->isRejected(),
+            'number' => $cheque->getNumber(),
+            'sayadNum' => $cheque->getSayadNum(),
+            'chequeBank' => $cheque->getBankOncheque(),
+            'person' => self::ExplorePerson($cheque->getPerson()),
+            'bank' => self::ExploreBank($cheque->getBank()),
+            'des' => $cheque->getDes(),
+            'datePay' => $cheque->getPayDate(),
+            'type' => $cheque->getType(),
+            'amount' => $cheque->getAmount(),
+            'status' => $cheque->getStatus(),
+            'date' => $cheque->getDate(),
+            'locked' => $cheque->isLocked(),
+            'rejected' => $cheque->isRejected(),
             'label' => $label
         ];
     }
 
-    public static function SerializeCheques(array $cheques){
+    public static function SerializeCheques(array $cheques)
+    {
         $result = [];
-        foreach($cheques as $cheque)
+        foreach ($cheques as $cheque)
             $result[] = self::SerializeCheque($cheque);
         return $result;
     }
-
 }

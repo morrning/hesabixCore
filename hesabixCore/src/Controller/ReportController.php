@@ -67,6 +67,9 @@ class ReportController extends AbstractController
                 'name' => $item->getCommodity()->getName(),
                 'unit' => $item->getCommodity()->getUnit()->getName(),
                 'count' => $item->getCommdityCount(),
+                'date' => $item->getDoc()->getDate(),
+                'docCode' => $item->getDoc()->getCode(),
+                'type' => $item->getDoc()->getType()
             ];
             if ($params['type'] == 'buy') {
                 $temp['priceAll'] = $item->getBd();

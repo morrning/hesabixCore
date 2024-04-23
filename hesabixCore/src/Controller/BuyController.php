@@ -6,6 +6,7 @@ use App\Service\Log;
 use App\Service\Access;
 use App\Service\JsonResp;
 use App\Entity\HesabdariDoc;
+use App\Entity\PersonType;
 use App\Entity\StoreroomTicket;
 use App\Service\Explore as ServiceExplore;
 use Doctrine\ORM\EntityManagerInterface;

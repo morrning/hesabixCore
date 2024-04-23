@@ -2,49 +2,50 @@
 
 namespace App\Controller;
 
+use App\Service\Log;
+use App\Service\Jdate;
+use App\Service\Access;
 use App\Entity\Business;
 use App\Entity\Commodity;
+use App\Entity\Storeroom;
+use App\Service\Provider;
 use App\Entity\CommodityCat;
+use App\Entity\HesabdariRow;
 use App\Entity\CommodityDrop;
 use App\Entity\CommodityUnit;
-use App\Entity\HesabdariRow;
-use App\Entity\Storeroom;
 use App\Entity\StoreroomItem;
-use App\Service\Access;
-use App\Service\Jdate;
-use App\Service\Log;
-use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class CommodityController extends AbstractController
 {
     #[Route('/api/commodity/list', name: 'app_commodity_list')]
-    public function app_commodity_list(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if(!$access->hasRole('commodity'))
+        if (!$access->hasRole('commodity'))
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(array_key_exists('speedAccess',$params)){
+        if (array_key_exists('speedAccess', $params)) {
             $items = $entityManager->getRepository(Commodity::class)->findBy([
-                'bid'=>$request->headers->get('activeBid'),
-                'speedAccess'=>true
+                'bid' => $request->headers->get('activeBid'),
+                'speedAccess' => true
             ]);
-        }
-        else{
+        } else {
             $items = $entityManager->getRepository(Commodity::class)->findBy([
-                'bid'=>$request->headers->get('activeBid')
+                'bid' => $request->headers->get('activeBid')
             ]);
         }
         $res = [];
-        foreach ($items as $item){
+        foreach ($items as $item) {
             $temp = [];
             $temp['id'] = $item->getId();
             $temp['name'] = $item->getName();
@@ -55,10 +56,10 @@ class CommodityController extends AbstractController
             $temp['priceSell'] = $item->getPriceSell();
             $temp['code'] = $item->getCode();
             $temp['cat'] = null;
-            if($item->getCat())
+            if ($item->getCat())
                 $temp['cat'] = $item->getCat()->getName();
             $temp['khadamat'] = false;
-            if($item->isKhadamat())
+            if ($item->isKhadamat())
                 $temp['khadamat'] = true;
 
             $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
@@ -69,87 +70,135 @@ class CommodityController extends AbstractController
         }
         return $this->json($res);
     }
-    #[Route('/api/commodity/list/print', name: 'app_commodity_list_print')]
-    public function app_commodity_list_print(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/commodity/list/excel', name: 'app_commodity_list_excel')]
+    public function app_commodity_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
-            throw $this->createAccessDeniedException();
-        $items = $entityManager->getRepository(Commodity::class)->findBy([
-            'bid'=>$request->headers->get('activeBid')
-        ]);
-        $pid = $provider->createPrint(
-            $acc['bid'],
-            $this->getUser(),
-            $this->renderView('pdf/commodity.html.twig',[
-                'page_title'=>'فهرست کالا و خدمات',
-                'bid'=>$acc['bid'],
-                'persons'=>$items
-            ]));
-        return $this->json(['id'=>$pid]);
-    }
-    #[Route('/api/commodity/info/{code}', name: 'app_commodity_info')]
-    public function app_commodity_info($code,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
-    {
-        $acc = $access->hasRole('commodity');
-        if(!$acc)
-            throw $this->createAccessDeniedException();
-        $data = $entityManager->getRepository(Commodity::class)->findOneBy([
-            'bid'=>$acc['bid'],
-            'code'=>$code
-        ]);
-        $data->setUnit($data->getUnit()->getName());
-        $res = $provider->Entity2ArrayJustIncludes($data,['isSpeedAccess','isCommodityCountCheck','getName','getUnit','getPriceBuy','getPriceSell','getCat','getOrderPoint','getdes','getId','getDayLoading','isKhadamat','getCode','getMinOrderCount','getLabel'],1);
-        $res['cat'] = '';
-        if($data->getCat())
-            $res['cat'] = $data->getCat()->getId();
-        return $this->json($res);
-    }
-
-    #[Route('/api/commodity/mod/{code}', name: 'app_commodity_mod')]
-    public function app_commodity_mod(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
-    {
-        $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(!array_key_exists('name',$params))
-            return $this->json(['result'=>-1]);
-        if(count_chars(trim($params['name'])) == 0)
-            return $this->json(['result'=>3]);
-        if($code == 0){
+        if (!array_key_exists('items', $params)) {
+            $items = $entityManager->getRepository(Commodity::class)->findBy([
+                'bid' => $acc['bid']
+            ]);
+        } else {
+            $items = [];
+            foreach ($params['items'] as $param) {
+                $prs = $entityManager->getRepository(Commodity::class)->findOneBy([
+                    'id' => $param['id'],
+                    'bid' => $acc['bid']
+                ]);
+                if ($prs)
+                    $items[] = $prs;
+            }
+        }
+        return new BinaryFileResponse($provider->createExcell($items));
+    }
+
+    #[Route('/api/commodity/list/print', name: 'app_commodity_list_print')]
+    public function app_commodity_list_print(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (!array_key_exists('items', $params)) {
+            $items = $entityManager->getRepository(Commodity::class)->findBy([
+                'bid' => $request->headers->get('activeBid')
+            ]);
+        } else {
+            $items = [];
+            foreach ($params['items'] as $param) {
+                $prs = $entityManager->getRepository(Commodity::class)->findOneBy([
+                    'id' => $param['id'],
+                    'bid' => $acc['bid']
+                ]);
+                if ($prs)
+                    $items[] = $prs;
+            }
+        }
+
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/commodity.html.twig', [
+                'page_title' => 'فهرست کالا و خدمات',
+                'bid' => $acc['bid'],
+                'persons' => $items
+            ])
+        );
+        return $this->json(['id' => $pid]);
+    }
+    #[Route('/api/commodity/info/{code}', name: 'app_commodity_info')]
+    public function app_commodity_info($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $data = $entityManager->getRepository(Commodity::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'code' => $code
+        ]);
+        $data->setUnit($data->getUnit()->getName());
+        $res = $provider->Entity2ArrayJustIncludes($data, ['isSpeedAccess', 'isCommodityCountCheck', 'getName', 'getUnit', 'getPriceBuy', 'getPriceSell', 'getCat', 'getOrderPoint', 'getdes', 'getId', 'getDayLoading', 'isKhadamat', 'getCode', 'getMinOrderCount', 'getLabel'], 1);
+        $res['cat'] = '';
+        if ($data->getCat())
+            $res['cat'] = $data->getCat()->getId();
+        return $this->json($res);
+    }
+
+    #[Route('/api/commodity/mod/{code}', name: 'app_commodity_mod')]
+    public function app_commodity_mod(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (!array_key_exists('name', $params))
+            return $this->json(['result' => -1]);
+        if (count_chars(trim($params['name'])) == 0)
+            return $this->json(['result' => 3]);
+        if ($code == 0) {
             $data = $entityManager->getRepository(Commodity::class)->findOneBy([
-                'name'=>$params['name']
+                'name' => $params['name']
             ]);
             //check exist before
-            if($data)
-                return $this->json(['result'=>2]);
+            if ($data)
+                return $this->json(['result' => 2]);
             $data = new Commodity();
-            $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'Commodity'));
-        }
-        else{
+            $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'Commodity'));
+        } else {
             $data = $entityManager->getRepository(Commodity::class)->findOneBy([
-                'bid'=>$acc['bid'],
-                'code'=>$code
+                'bid' => $acc['bid'],
+                'code' => $code
             ]);
-            if(!$data)
+            if (!$data)
                 throw $this->createNotFoundException();
         }
-        $unit = $entityManager->getRepository(CommodityUnit::class)->findOneBy(['name'=>$params['unit']]);
-        if(!$unit)
+        $unit = $entityManager->getRepository(CommodityUnit::class)->findOneBy(['name' => $params['unit']]);
+        if (!$unit)
             throw $this->createNotFoundException('unit not fount!');
         $data->setUnit($unit);
         $data->setBid($acc['bid']);
         $data->setname($params['name']);
-        if($params['khadamat'] == 'true') $data->setKhadamat(true);
+        if ($params['khadamat'] == 'true') $data->setKhadamat(true);
         else $data->setKhadamat(false);
         $data->setDes($params['des']);
         $data->setPriceSell($params['priceSell']);
         $data->setPriceBuy($params['priceBuy']);
-        if(array_key_exists('commodityCountCheck',$params)){
+        if (array_key_exists('commodityCountCheck', $params)) {
             $data->setCommodityCountCheck($params['commodityCountCheck']);
         }
         $data->setMinOrderCount($params['minOrderCount']);
@@ -157,14 +206,14 @@ class CommodityController extends AbstractController
         $data->setDayLoading($params['dayLoading']);
         $data->setOrderPoint($params['orderPoint']);
         //set cat
-        if(array_key_exists('cat',$params)){
-            if($params['cat'] != ''){
-                if(is_int($params['cat']))
+        if (array_key_exists('cat', $params)) {
+            if ($params['cat'] != '') {
+                if (is_int($params['cat']))
                     $cat = $entityManager->getRepository(CommodityCat::class)->find($params['cat']);
                 else
                     $cat = $entityManager->getRepository(CommodityCat::class)->find($params['cat']['id']);
-                if($cat){
-                    if($cat->getBid() == $acc['bid']){
+                if ($cat) {
+                    if ($cat->getBid() == $acc['bid']) {
                         $data->setCat($cat);
                     }
                 }
@@ -172,64 +221,63 @@ class CommodityController extends AbstractController
         }
         $entityManager->persist($data);
         $entityManager->flush();
-        $log->insert('کالا و خدمات','کالا / خدمات با نام  ' . $params['name'] . ' افزوده/ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));
+        $log->insert('کالا و خدمات', 'کالا / خدمات با نام  ' . $params['name'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
         return $this->json(['result' => 1]);
     }
 
     #[Route('/api/commodity/units', name: 'app_commodity_units')]
-    public function app_commodity_units(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_units(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if(!$access->hasRole('commodity'))
+        if (!$access->hasRole('commodity'))
             throw $this->createAccessDeniedException();
         $items = $entityManager->getRepository(CommodityUnit::class)->findAll();
         return $this->json($items);
     }
 
     #[Route('/api/commodity/drop/list', name: 'app_commodity_drop_list')]
-    public function app_commodity_drop_list(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_drop_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if(!$access->hasRole('commodity'))
+        if (!$access->hasRole('commodity'))
             throw $this->createAccessDeniedException();
         $items = $entityManager->getRepository(CommodityDrop::class)->findBy([
-            'bid'=>$request->headers->get('activeBid')
+            'bid' => $request->headers->get('activeBid')
         ]);
         $generalItems = $entityManager->getRepository(CommodityDrop::class)->findBy([
-            'bid'=>null
+            'bid' => null
         ]);
 
-        return $this->json($provider->ArrayEntity2Array(array_merge($items,$generalItems),0));
+        return $this->json($provider->ArrayEntity2Array(array_merge($items, $generalItems), 0));
     }
 
     #[Route('/api/commodity/drop/mod/{code}', name: 'app_commodity_drop_mod')]
-    public function app_commodity_drop_mod(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    public function app_commodity_drop_mod(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(!array_key_exists('name',$params))
-            return $this->json(['result'=>-1]);
-        if(count_chars(trim($params['name'])) == 0)
-            return $this->json(['result'=>3]);
-        if($code == 0){
+        if (!array_key_exists('name', $params))
+            return $this->json(['result' => -1]);
+        if (count_chars(trim($params['name'])) == 0)
+            return $this->json(['result' => 3]);
+        if ($code == 0) {
             $data = $entityManager->getRepository(CommodityDrop::class)->findOneBy([
-                'name'=>$params['name'],
-                'bid'=>$acc['bid']
+                'name' => $params['name'],
+                'bid' => $acc['bid']
             ]);
             //check exist before
-            if($data)
-                return $this->json(['result'=>2]);
+            if ($data)
+                return $this->json(['result' => 2]);
             $data = new CommodityDrop();
-        }
-        else{
+        } else {
             $data = $entityManager->getRepository(CommodityDrop::class)->findOneBy([
-                'bid'=>$acc['bid'],
-                'id'=>$code
+                'bid' => $acc['bid'],
+                'id' => $code
             ]);
-            if(!$data)
+            if (!$data)
                 throw $this->createNotFoundException();
         }
         $data->setName($params['name']);
@@ -237,7 +285,7 @@ class CommodityController extends AbstractController
         $data->setCanEdit(true);
         $entityManager->persist($data);
         $entityManager->flush();
-        $log->insert('کالا و خدمات','ویژگی کالا / خدمات با نام ' . $params['name'] . ' افزوده/ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));
+        $log->insert('کالا و خدمات', 'ویژگی کالا / خدمات با نام ' . $params['name'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
         return $this->json(['result' => 1]);
     }
 
@@ -245,94 +293,93 @@ class CommodityController extends AbstractController
      * @throws \ReflectionException
      */
     #[Route('/api/commodity/drop/info/{code}', name: 'app_commodity_drop_info')]
-    public function app_commodity_drop_info($code,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_drop_info($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $data = $entityManager->getRepository(CommodityDrop::class)->findOneBy([
-            'bid'=>$acc['bid'],
-            'id'=>$code
+            'bid' => $acc['bid'],
+            'id' => $code
         ]);
-        return $this->json($provider->Entity2Array($data,0));
+        return $this->json($provider->Entity2Array($data, 0));
     }
     #[Route('/api/commodity/cat/get/line', name: 'app_commodity_cat_get_line')]
-    public function app_commodity_cat_get_line(Jdate $jdate,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_cat_get_line(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
 
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
-        $temp =[];
+        $temp = [];
         $nodes = $entityManager->getRepository(CommodityCat::class)->findBy([
-            'bid'=>$acc['bid'],
+            'bid' => $acc['bid'],
         ]);
-        if(count($nodes) == 0)
-            $nodes = $this->createDefaultCat($acc['bid'],$entityManager);
-        return $this->json($provider->ArrayEntity2Array($nodes,0));
+        if (count($nodes) == 0)
+            $nodes = $this->createDefaultCat($acc['bid'], $entityManager);
+        return $this->json($provider->ArrayEntity2Array($nodes, 0));
     }
 
     #[Route('/api/commodity/cat/get', name: 'app_commodity_cat_get')]
-    public function app_commodity_cat_get(Jdate $jdate,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_cat_get(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
 
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
-        $temp =[];
+        $temp = [];
         $nodes = $entityManager->getRepository(CommodityCat::class)->findBy([
-            'bid'=>$acc['bid']
+            'bid' => $acc['bid']
         ]);
-        if(count($nodes) == 0)
-            $nodes = $this->createDefaultCat($acc['bid'],$entityManager);
-        foreach ($nodes as $node){
-            if($this->hasChild($entityManager,$node)){
-                $temp[$node->getId()]=[
-                    'text'=>$node->getName(),
-                    'children'=>$this->getChildsLabel($entityManager,$node)
+        if (count($nodes) == 0)
+            $nodes = $this->createDefaultCat($acc['bid'], $entityManager);
+        foreach ($nodes as $node) {
+            if ($this->hasChild($entityManager, $node)) {
+                $temp[$node->getId()] = [
+                    'text' => $node->getName(),
+                    'children' => $this->getChildsLabel($entityManager, $node)
                 ];
-            }
-            else{
-                $temp[$node->getId()]=[
-                    'text'=>$node->getName(),
+            } else {
+                $temp[$node->getId()] = [
+                    'text' => $node->getName(),
                 ];
             }
         }
         $root = $entityManager->getRepository(CommodityCat::class)->findOneBy([
-            'bid'=>$acc['bid'],
-            'root'=>true
+            'bid' => $acc['bid'],
+            'root' => true
         ]);
-        return $this->json(['items'=>$temp,'root'=>$root->getId()]);
+        return $this->json(['items' => $temp, 'root' => $root->getId()]);
     }
 
     #[Route('/api/commodity/cat/childs', name: 'app_commodity_cat_childs')]
-    public function app_commodity_cat_childs(Jdate $jdate,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_cat_childs(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
 
-        $items= $entityManager->getRepository(CommodityCat::class)->findOneBy([
-            'bid'=>$acc['bid'],
-            'root'=>true
+        $items = $entityManager->getRepository(CommodityCat::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'root' => true
         ]);
-        return $this->json($this->getChilds($entityManager,$items));
+        return $this->json($this->getChilds($entityManager, $items));
     }
     #[Route('/api/commodity/cat/insert', name: 'app_commodity_cat_insert')]
-    public function app_commodity_cat_insert(Jdate $jdate,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_cat_insert(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(!array_key_exists('upper',$params) || !array_key_exists('text',$params))
-            return $this->json(['result'=>-1]);
+        if (!array_key_exists('upper', $params) || !array_key_exists('text', $params))
+            return $this->json(['result' => -1]);
         $upper = $entityManager->getRepository(CommodityCat::class)->find($params['upper']);
-        if($upper){
-            if($upper->getBid() == $acc['bid']){
+        if ($upper) {
+            if ($upper->getBid() == $acc['bid']) {
                 $cat = new CommodityCat();
                 $cat->setBid($acc['bid']);
                 $cat->setRoot(false);
@@ -340,40 +387,41 @@ class CommodityController extends AbstractController
                 $cat->setUpper($upper->getId());
                 $entityManager->persist($cat);
                 $entityManager->flush();
-                return $this->json(['result'=>1,'id'=>$cat->getId()]);
+                return $this->json(['result' => 1, 'id' => $cat->getId()]);
             }
         }
-        return $this->json(['result'=>1]);
+        return $this->json(['result' => 1]);
     }
     #[Route('/api/commodity/cat/edit', name: 'app_commodity_cat_edit')]
-    public function app_commodity_cat_edit(Jdate $jdate,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_cat_edit(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(!array_key_exists('id',$params) || !array_key_exists('text',$params))
-            return $this->json(['result'=>-1]);
+        if (!array_key_exists('id', $params) || !array_key_exists('text', $params))
+            return $this->json(['result' => -1]);
         $node = $entityManager->getRepository(CommodityCat::class)->find($params['id']);
-        if($node){
-            if($node->getBid() == $acc['bid']){
+        if ($node) {
+            if ($node->getBid() == $acc['bid']) {
                 $node->setName($params['text']);
                 $entityManager->persist($node);
                 $entityManager->flush();
-                return $this->json(['result'=>1,'id'=>$node->getId()]);
+                return $this->json(['result' => 1, 'id' => $node->getId()]);
             }
         }
-        return $this->json(['result'=>1]);
+        return $this->json(['result' => 1]);
     }
-    private function getChildsLabel(EntityManagerInterface $entityManager, mixed $node){
+    private function getChildsLabel(EntityManagerInterface $entityManager, mixed $node)
+    {
         $childs =  $entityManager->getRepository(CommodityCat::class)->findBy([
-            'upper'=>$node
+            'upper' => $node
         ]);
         $temp = [];
-        foreach ($childs as $child){
+        foreach ($childs as $child) {
             $temp[] = $child->getId();
         }
         return $temp;
@@ -381,37 +429,37 @@ class CommodityController extends AbstractController
 
     private function hasChild(EntityManagerInterface $entityManager, mixed $node)
     {
-        if(count($entityManager->getRepository(CommodityCat::class)->findBy([
-                'upper'=>$node
-            ]))!= 0)
+        if (count($entityManager->getRepository(CommodityCat::class)->findBy([
+            'upper' => $node
+        ])) != 0)
             return true;
         return false;
     }
 
-    private function getChilds(EntityManagerInterface $entityManager, mixed $node){
+    private function getChilds(EntityManagerInterface $entityManager, mixed $node)
+    {
         $childs =  $entityManager->getRepository(CommodityCat::class)->findBy([
-            'upper'=>$node
+            'upper' => $node
         ]);
         $temp = [];
-        foreach ($childs as $child){
-            if($this->hasChild($entityManager,$child)){
-                $temp[]=[
-                    'id'=>$child->getId(),
-                    'label'=>$child->getName(),
-                    'children'=>$this->getChilds($entityManager,$child)
+        foreach ($childs as $child) {
+            if ($this->hasChild($entityManager, $child)) {
+                $temp[] = [
+                    'id' => $child->getId(),
+                    'label' => $child->getName(),
+                    'children' => $this->getChilds($entityManager, $child)
                 ];
-            }
-            else{
-                $temp[]=[
-                    'id'=>$child->getId(),
-                    'label'=>$child->getName(),
+            } else {
+                $temp[] = [
+                    'id' => $child->getId(),
+                    'label' => $child->getName(),
                 ];
             }
         }
         return $temp;
     }
 
-    public function createDefaultCat(Business $bid,EntityManagerInterface $en): array
+    public function createDefaultCat(Business $bid, EntityManagerInterface $en): array
     {
         $item = new CommodityCat();
         $item->setName('دسته بندی ها');
@@ -427,14 +475,14 @@ class CommodityController extends AbstractController
         $child->setName('بدون دسته‌بندی');
         $en->persist($child);
         $en->flush();
-        return [$item,$child];
+        return [$item, $child];
     }
 
     #[Route('/api/commodity/import/excel', name: 'app_commodity_import_excel')]
-    public function app_commodity_import_excel(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_import_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $file = $request->files->get('file');
         $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
@@ -443,32 +491,32 @@ class CommodityController extends AbstractController
         $sheet = $spreadsheet->getSheet($spreadsheet->getFirstSheetIndex());
         $data = $sheet->toArray();
         unset($data[0]);
-    
-        foreach($data as $item){
+
+        foreach ($data as $item) {
             //load cat
             $unit = $entityManager->getRepository(commodity::class)->findOneBy([
-                'name'=>$item[7],
+                'name' => $item[7],
             ]);
-            if(!$unit){
+            if (!$unit) {
                 $unit = $entityManager->getRepository(CommodityUnit::class)->findAll()[0];
             }
 
             $commodity = $entityManager->getRepository(commodity::class)->findOneBy([
-                'name'=>$item[2],
-                'bid' =>$acc['bid']
+                'name' => $item[2],
+                'bid' => $acc['bid']
             ]);
             $cat = $entityManager->getRepository(CommodityCat::class)->findOneBy([
-                'name'=>$item[8],
-                'bid' =>$acc['bid']
+                'name' => $item[8],
+                'bid' => $acc['bid']
             ]);
 
             $rootcat = $entityManager->getRepository(CommodityCat::class)->findOneBy([
-                'name'=>'دسته بندی ها',
-                'bid' =>$acc['bid'],
-                'root'=>'1',
-                'upper'=>null
+                'name' => 'دسته بندی ها',
+                'bid' => $acc['bid'],
+                'root' => '1',
+                'upper' => null
             ]);
-            if(!$cat){
+            if (!$cat) {
                 $cat = new CommodityCat();
                 $cat->setBid($acc['bid']);
                 $cat->setName($item[8]);
@@ -478,66 +526,61 @@ class CommodityController extends AbstractController
                 $entityManager->flush();
             }
             //check exist before
-            if(!$commodity){
-
+            if (!$commodity) {
                 $commodity = new commodity();
-
-            } 
-                $commodity->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'commodity'));
-                $commodity->setName($item[2]);
+                $commodity->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'commodity'));
                 $commodity->setBid($acc['bid']);
-                $commodity->setUnit($unit);
-                $commodity->setCat($cat);
-                $commodity->setOrderPoint(0);
-                $commodity->setDayLoading(0);
-                if(array_key_exists(3,$item))
-                    $commodity->setPriceSell($item[3]);
-                if(array_key_exists(4,$item))
-                    $commodity->setPriceBuy($item[4]);
-                if(array_key_exists(1,$item))
-                    $commodity->setSpeedAccess($item[1]);
-                if(array_key_exists(5,$item))
-                    $commodity->setMinOrderCount($item[5]);
-                if(array_key_exists(6,$item))
-                    $commodity->setDes($item[6]);
-                if(array_key_exists(0,$item)){
-                    $commodity->setKhadamat(true);
-                    if($item[0] == '1'){
-                        $commodity->setKhadamat(false);
-                    }
+            }
+            $commodity->setName($item[2]);
+            $commodity->setUnit($unit);
+            $commodity->setCat($cat);
+            $commodity->setOrderPoint(0);
+            $commodity->setDayLoading(0);
+            if (array_key_exists(3, $item))
+                $commodity->setPriceSell($item[3]);
+            if (array_key_exists(4, $item))
+                $commodity->setPriceBuy($item[4]);
+            if (array_key_exists(1, $item))
+                $commodity->setSpeedAccess($item[1]);
+            if (array_key_exists(5, $item))
+                $commodity->setMinOrderCount($item[5]);
+            if (array_key_exists(6, $item))
+                $commodity->setDes($item[6]);
+            if (array_key_exists(0, $item)) {
+                $commodity->setKhadamat(true);
+                if ($item[0] == '1') {
+                    $commodity->setKhadamat(false);
                 }
-                $entityManager->persist($commodity);
-           $entityManager->flush();
+            }
+            $entityManager->persist($commodity);
+            $entityManager->flush();
         }
-        $log->insert('کالا/خدمات','تعداد '. count($data) . ' کالا یا خدمات به صورت گروهی وارد شد.',$this->getUser(),$request->headers->get('activeBid'));
+        $log->insert('کالا/خدمات', 'تعداد ' . count($data) . ' کالا یا خدمات به صورت گروهی وارد شد.', $this->getUser(), $request->headers->get('activeBid'));
         return $this->json(['result' => 1]);
     }
 
     #[Route('/api/commodity/delete/{code}', name: 'app_commodity_delete')]
-    public function app_commodity_delete(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    public function app_commodity_delete(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
 
-        $commodity = $entityManager->getRepository(Commodity::class)->findOneBy(['bid'=>$acc['bid'],'code'=>$code]);
-        if(!$commodity)
+        $commodity = $entityManager->getRepository(Commodity::class)->findOneBy(['bid' => $acc['bid'], 'code' => $code]);
+        if (!$commodity)
             throw $this->createNotFoundException();
         //check accounting docs
-        $docs = $entityManager->getRepository(HesabdariRow::class)->findby(['bid'=>$acc['bid'], 'commodity'=>$commodity]);
-        if(count($docs) > 0)
+        $docs = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'commodity' => $commodity]);
+        if (count($docs) > 0)
             return $this->json(['result' => 2]);
         //check for storeroom docs
-        $storeDocs = $entityManager->getRepository(StoreroomItem::class)->findby(['bid'=>$acc['bid'], 'commodity'=>$commodity]);
-        if(count($storeDocs) > 0)
+        $storeDocs = $entityManager->getRepository(StoreroomItem::class)->findby(['bid' => $acc['bid'], 'commodity' => $commodity]);
+        if (count($storeDocs) > 0)
             return $this->json(['result' => 2]);
 
         $comName = $commodity->getName();
         $entityManager->remove($commodity);
-        $log->insert('کالا/خدمات',' کالا / خدمات با نام '. $comName . ' حذف شد. ',$this->getUser(),$acc['bid']->getId());
+        $log->insert('کالا/خدمات', ' کالا / خدمات با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
     }
 }
-
-
-
