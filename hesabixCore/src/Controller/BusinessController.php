@@ -16,6 +16,7 @@ use App\Entity\Business;
 use App\Entity\Hook;
 use App\Entity\Year;
 use App\Service\Access;
+use App\Service\Explore;
 use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Provider;
@@ -74,7 +75,7 @@ class BusinessController extends AbstractController
         $response['website'] = $bus->getWesite();
         $response['email'] = $bus->getEmail();
         $response['maliyatafzode'] = $bus->getMaliyatafzode();
-        $response['arzmain'] = $bus->getMoney()->getName();
+        $response['arzmain'] = Explore::ExploreMoney($bus->getMoney());
         $response['type'] = $bus->getType();
         $response['zarinpalCode'] = $bus->getZarinpalCode();
         $response['smsCharge'] = $bus->getSmsCharge();
@@ -83,6 +84,12 @@ class BusinessController extends AbstractController
         $response['walletMatchBank'] = null;
         if ($bus->isWalletEnable())
             $response['walletMatchBank'] = $provider->Entity2Array($bus->getWalletMatchBank(), 0);
+        $year = $entityManager->getRepository(Year::class)->findOneBy([
+            'bid' => $bus,
+            'head'=>true
+        ]);
+        $response['year'] = Explore::ExploreYear($year);
+        
         return $this->json($response);
     }
 
@@ -230,6 +237,20 @@ class BusinessController extends AbstractController
                 $startYearArray = explode('-', $params['year']['start']);
                 $year->setStart($jdate->jmktime(0, 0, 0, $startYearArray[1], $startYearArray[2], $startYearArray[0]));
                 $endYearArray = explode('-', $params['year']['end']);
+                $year->setEnd($jdate->jmktime(0, 0, 0, $endYearArray[1], $endYearArray[2], $endYearArray[0]));
+                $year->setLabel($params['year']['label']);
+                $entityManager->persist($year);
+                $entityManager->flush();
+            }
+            else{
+                //not new business update business year
+                $year = $entityManager->getRepository(Year::class)->findOneBy([
+                    'bid' => $business,
+                    'head'=>true
+                ]);
+                $startYearArray = explode('-', $params['year']['startShamsi']);
+                $year->setStart($jdate->jmktime(0, 0, 0, $startYearArray[1], $startYearArray[2], $startYearArray[0]));
+                $endYearArray = explode('-', $params['year']['endShamsi']);
                 $year->setEnd($jdate->jmktime(0, 0, 0, $endYearArray[1], $endYearArray[2], $endYearArray[0]));
                 $year->setLabel($params['year']['label']);
                 $entityManager->persist($year);

@@ -251,13 +251,16 @@ class Explore
     }
     public static function ExploreYear(Year $year)
     {
+        $jdate = new Jdate();
         return [
             'id'    => $year->getId(),
             'label' => $year->getLabel(),
             'head'  => $year->isHead(),
             'start' => $year->getStart(),
             'end'   => $year->getEnd(),
-            'now'   => time()
+            'now'   => time(),
+            'startShamsi'=> $jdate->jdate('Y-n-d',$year->getStart()),
+            'endShamsi'=> $jdate->jdate('Y-n-d',$year->getEnd()),
         ];
     }
 

@@ -170,6 +170,23 @@ class Provider
         $writer->save($filePath);
         return $filePath;
     }
+
+    /**
+     * @throws Exception
+     */
+    public function createExcellFromArray(array $entities,array $headers = null){
+
+        $spreadsheet = new Spreadsheet();
+        $activeWorksheet = $spreadsheet->getActiveSheet();
+        $activeWorksheet->fromArray($entities,null,'A1');
+        $activeWorksheet->setRightToLeft(true);
+        $activeWorksheet->getHeaderFooter()->setOddHeader('&CHeader of the Document');
+        $writer = new Xlsx($spreadsheet);
+        $filePath = __DIR__ . '/../../var/'.$this->RandomString(12).'.xlsx';
+        $writer->save($filePath);
+        return $filePath;
+    }
+
     /**
      * function to generate random strings
      * @param 		int 	$length 	number of characters in the generated string
