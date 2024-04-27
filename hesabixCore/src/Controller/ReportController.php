@@ -21,7 +21,7 @@ class ReportController extends AbstractController
     #[Route('/api/report/person/buysell', name: 'app_report_person_buysell')]
     public function app_report_person_buysell(Access $access, Request $request, EntityManagerInterface $entityManagerInterface): JsonResponse
     {
-        $acc = $access->hasRole('reports');
+        $acc = $access->hasRole('report');
         if (!$acc) {
             throw $this->createAccessDeniedException();
         }
@@ -94,7 +94,7 @@ class ReportController extends AbstractController
     #[Route('/api/report/person/buysell/export/excel', name: 'app_report_person_buysell_export_excell')]
     public function app_report_person_buysell_export_excell(Provider $provider, Access $access, Request $request, EntityManagerInterface $entityManagerInterface): BinaryFileResponse | JsonResponse | StreamedResponse
     {
-        $acc = $access->hasRole('reports');
+        $acc = $access->hasRole('report');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
