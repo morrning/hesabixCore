@@ -28,7 +28,8 @@ class CommodityController extends AbstractController
     #[Route('/api/commodity/list', name: 'app_commodity_list')]
     public function app_commodity_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if (!$access->hasRole('commodity'))
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
@@ -66,6 +67,84 @@ class CommodityController extends AbstractController
             $temp['minOrderCount'] = $item->getMinOrderCount();
             $temp['dayLoading'] = $item->getDayLoading();
             $temp['orderPoint'] = $item->getOrderPoint();
+            //calculate count
+            if ($item->isKhadamat()) {
+                $temp['count'] = 0;
+            } else {
+                $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                    'bid' => $acc['bid'],
+                    'commodity' => $item
+                ]);
+                $count = 0;
+                foreach ($rows as $row) {
+                    if ($row->getDoc()->getType() == 'buy') {
+                        $count += $row->getCommdityCount();
+                    } elseif ($row->getDoc()->getType() == 'sell') {
+                        $count -= $row->getCommdityCount();
+                    }
+                }
+                $temp['count'] = $count;
+            }
+
+            $res[] = $temp;
+        }
+        return $this->json($res);
+    }
+    #[Route('/api/commodity/list/search', name: 'app_commodity_list_search')]
+    public function app_commodity_list_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (array_key_exists('search', $params))
+            $items = $entityManager->getRepository(Commodity::class)->searchByName($acc['bid'], $params['search'], 10);
+        else
+            $items = $entityManager->getRepository(Commodity::class)->getLasts($acc['bid'], 10);
+        $res = [];
+        foreach ($items as $key => $item) {
+            $temp = [];
+            $temp['id'] = $item->getId();
+            $temp['name'] = $item->getName();
+            $temp['unit'] = $item->getUnit()->getName();
+            $temp['des'] = $item->getDes();
+            $temp['priceBuy'] = $item->getPriceBuy();
+            $temp['speedAccess'] = $item->isSpeedAccess();
+            $temp['priceSell'] = $item->getPriceSell();
+            $temp['code'] = $item->getCode();
+            $temp['cat'] = null;
+            if ($item->getCat())
+                $temp['cat'] = $item->getCat()->getName();
+            $temp['khadamat'] = false;
+            if ($item->isKhadamat())
+                $temp['khadamat'] = true;
+
+            $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
+            $temp['minOrderCount'] = $item->getMinOrderCount();
+            $temp['dayLoading'] = $item->getDayLoading();
+            $temp['orderPoint'] = $item->getOrderPoint();
+            //calculate count
+            if ($item->isKhadamat()) {
+                $temp['count'] = 0;
+            } else {
+                $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                    'bid' => $acc['bid'],
+                    'commodity' => $item
+                ]);
+                $count = 0;
+                foreach ($rows as $row) {
+                    if ($row->getDoc()->getType() == 'buy') {
+                        $count += $row->getCommdityCount();
+                    } elseif ($row->getDoc()->getType() == 'sell') {
+                        $count -= $row->getCommdityCount();
+                    }
+                }
+                $temp['count'] = $count;
+            }
+
             $res[] = $temp;
         }
         return $this->json($res);
@@ -153,6 +232,25 @@ class CommodityController extends AbstractController
         $res['cat'] = '';
         if ($data->getCat())
             $res['cat'] = $data->getCat()->getId();
+        $count = 0;
+        //calculate count
+        if ($data->isKhadamat()) {
+            $res['count'] = 0;
+        } else {
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bid' => $acc['bid'],
+                'commodity' => $data
+            ]);
+            foreach ($rows as $row) {
+                if ($row->getDoc()->getType() == 'buy') {
+                    $count += $row->getCommdityCount();
+                } elseif ($row->getDoc()->getType() == 'sell') {
+                    $count -= $row->getCommdityCount();
+                }
+            }
+            $res['count'] = $count;
+        }
+
         return $this->json($res);
     }
 

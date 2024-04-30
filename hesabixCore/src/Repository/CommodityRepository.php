@@ -2,11 +2,12 @@
 
 namespace App\Repository;
 
+use App\Entity\Business;
 use App\Entity\Commodity;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
+use Doctrine\ORM\OptimisticLockException;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
  * @method Commodity|null find($id, $lockMode = null, $lockVersion = null)
@@ -53,6 +54,35 @@ class CommodityRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult()
             ;
+    }
+    /**
+     * @return Person[] Returns an array of Person objects
+     */
+    public function searchByName(Business $bid,string $search,int $maxResults = 10): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.bid = :val')
+            ->andWhere("p.name LIKE :search")
+            ->setParameter('val', $bid)
+            ->setParameter('search', '%' . $search . '%')
+            ->setMaxResults($maxResults)
+            ->orderBy('p.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Person[] Returns an array of Person objects
+     */
+    public function getLasts(Business $bid,int $maxResults = 10): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.bid = :val')
+            ->setParameter('val', $bid)
+            ->setMaxResults($maxResults)
+            ->orderBy('p.id', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
     // /**
     //  * @return Commodity[] Returns an array of Commodity objects
