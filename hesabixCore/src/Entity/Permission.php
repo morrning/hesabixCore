@@ -105,6 +105,18 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $cheque = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $plugAccproRfbuy = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $plugAccproRfsell = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $plugAccproAccounting = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $plugAccproCloseYear = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -466,6 +478,54 @@ class Permission
     public function setCheque(?bool $cheque): static
     {
         $this->cheque = $cheque;
+
+        return $this;
+    }
+
+    public function isPlugAccproRfbuy(): ?bool
+    {
+        return $this->plugAccproRfbuy;
+    }
+
+    public function setPlugAccproRfbuy(?bool $plugAccproRfbuy): static
+    {
+        $this->plugAccproRfbuy = $plugAccproRfbuy;
+
+        return $this;
+    }
+
+    public function isPlugAccproRfsell(): ?bool
+    {
+        return $this->plugAccproRfsell;
+    }
+
+    public function setPlugAccproRfsell(?bool $plugAccproRfsell): static
+    {
+        $this->plugAccproRfsell = $plugAccproRfsell;
+
+        return $this;
+    }
+
+    public function isPlugAccproAccounting(): ?bool
+    {
+        return $this->plugAccproAccounting;
+    }
+
+    public function setPlugAccproAccounting(?bool $plugAccproAccounting): static
+    {
+        $this->plugAccproAccounting = $plugAccproAccounting;
+
+        return $this;
+    }
+
+    public function isPlugAccproCloseYear(): ?bool
+    {
+        return $this->plugAccproCloseYear;
+    }
+
+    public function setPlugAccproCloseYear(?bool $plugAccproCloseYear): static
+    {
+        $this->plugAccproCloseYear = $plugAccproCloseYear;
 
         return $this;
     }

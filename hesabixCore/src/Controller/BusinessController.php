@@ -431,6 +431,10 @@ class BusinessController extends AbstractController
                     'archiveView' => true,
                     'active' => $perm->getUser()->isActive(),
                     'shareholder' => true,
+                    'plugAccproAccounting'=>true,
+                    'plugAccproRfsell'=>true,
+                    'plugAccproRfbuy'=>true,
+                    'plugAccproCloseYear'=>true,
                 ];
             } elseif ($perm) {
                 $result = [
@@ -466,6 +470,10 @@ class BusinessController extends AbstractController
                     'archiveView' => $perm->isArchiveView(),
                     'active' => $perm->getUser()->isActive(),
                     'shareholder' => $perm->isShareholder(),
+                    'plugAccproAccounting'=>$perm->isPlugAccproAccounting(),
+                    'plugAccproRfsell'=>$perm->isPlugAccproRfsell(),
+                    'plugAccproRfbuy'=>$perm->isPlugAccproRfbuy(),
+                    'plugAccproCloseYear'=>$perm->isPlugAccproCloseYear(),
                 ];
             }
             return $this->json($result);
@@ -529,6 +537,10 @@ class BusinessController extends AbstractController
                 $perm->setArchiveUpload($params['archiveUpload']);
                 $perm->setArchiveView($params['archiveView']);
                 $perm->setShareholder($params['shareholder']);
+                $perm->setPlugAccproCloseYear($params['plugAccproCloseYear']);
+                $perm->setPlugAccproRfbuy($params['plugAccproRfbuy']);
+                $perm->setPlugAccproRfsell($params['plugAccproRfsell']);
+                $perm->setPlugAccproAccounting($params['plugAccproAccounting']);
                 $entityManager->persist($perm);
                 $entityManager->flush();
                 $log->insert('تنظیمات پایه', 'ویرایش دسترسی‌های کاربر با پست الکترونیکی ' . $user->getEmail(), $this->getUser(), $business);

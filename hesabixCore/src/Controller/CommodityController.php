@@ -405,7 +405,6 @@ class CommodityController extends AbstractController
     #[Route('/api/commodity/cat/get/line', name: 'app_commodity_cat_get_line')]
     public function app_commodity_cat_get_line(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-
         $acc = $access->hasRole('commodity');
         if (!$acc)
             throw $this->createAccessDeniedException();
