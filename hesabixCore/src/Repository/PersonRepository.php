@@ -46,9 +46,8 @@ class PersonRepository extends ServiceEntityRepository
     public function searchByNikename(Business $bid,string $search,int $maxResults = 10): array
     {
         return $this->createQueryBuilder('p')
-            ->andwhere('p.bid = :val')
-            ->andWhere("p.nikename LIKE :search")
-            ->orWhere("p.mobile LIKE :search")
+            ->where('p.bid = :val')
+            ->andWhere("p.nikename LIKE :search OR p.mobile LIKE :search")
             ->setParameter('val', $bid)
             ->setParameter('search', '%' . $search . '%')
             ->setMaxResults($maxResults)
