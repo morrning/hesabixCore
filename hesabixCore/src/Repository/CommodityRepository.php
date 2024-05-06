@@ -61,7 +61,7 @@ class CommodityRepository extends ServiceEntityRepository
     public function searchByName(Business $bid,string $search,int $maxResults = 10): array
     {
         return $this->createQueryBuilder('p')
-            ->andWhere('p.bid = :val')
+            ->where('p.bid = :val')
             ->andWhere("p.name LIKE :search")
             ->setParameter('val', $bid)
             ->setParameter('search', '%' . $search . '%')
