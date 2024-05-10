@@ -255,6 +255,7 @@ class ArchiveController extends AbstractController
                     $newFilename
                 );} catch (FileException $e) {
                 // ... handle exception if something happens during file upload
+                return $this->json("error");
             }
 
             // updates the 'brochureFilename' property to store the PDF file name

@@ -17,20 +17,20 @@ use Symfony\Component\Routing\Annotation\Route;
 class CashdeskController extends AbstractController
 {
     #[Route('/api/cashdesk/list', name: 'app_cashdesk_list')]
-    public function app_cashdesk_list(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_cashdesk_list(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if(!$access->hasRole('cashdesk'))
+        if (!$access->hasRole('cashdesk'))
             throw $this->createAccessDeniedException();
         $datas = $entityManager->getRepository(Cashdesk::class)->findBy([
-            'bid'=>$request->headers->get('activeBid')
+            'bid' => $request->headers->get('activeBid')
         ]);
-        foreach($datas as $data){
+        foreach ($datas as $data) {
             $bs = 0;
             $bd = 0;
             $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'cashdesk'=>$data
+                'cashdesk' => $data
             ]);
-            foreach ($items as $item){
+            foreach ($items as $item) {
                 $bs += $item->getBs();
                 $bd += $item->getBd();
             }
@@ -40,49 +40,48 @@ class CashdeskController extends AbstractController
     }
 
     #[Route('/api/cashdesk/info/{code}', name: 'app_cashdesk_info')]
-    public function app_cashdesk_info($code,Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
+    public function app_cashdesk_info($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('cashdesk');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $data = $entityManager->getRepository(Cashdesk::class)->findOneBy([
-            'bid'=>$acc['bid'],
-            'code'=>$code
+            'bid' => $acc['bid'],
+            'code' => $code
         ]);
         return $this->json($data);
     }
 
     #[Route('/api/cashdesk/mod/{code}', name: 'app_cashdesk_mod')]
-    public function app_cashdesk_mod(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
+    public function app_cashdesk_mod(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
         $acc = $access->hasRole('cashdesk');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(!array_key_exists('name',$params))
-            return $this->json(['result'=>-1]);
-        if(count_chars(trim($params['name'])) == 0)
-            return $this->json(['result'=>3]);
-        if($code == 0){
+        if (!array_key_exists('name', $params))
+            return $this->json(['result' => -1]);
+        if (count_chars(trim($params['name'])) == 0)
+            return $this->json(['result' => 3]);
+        if ($code == 0) {
             $data = $entityManager->getRepository(Cashdesk::class)->findOneBy([
-                'name'=>$params['name'],
-                'bid' =>$acc['bid']
+                'name' => $params['name'],
+                'bid' => $acc['bid']
             ]);
             //check exist before
-            if($data)
-                return $this->json(['result'=>2]);
+            if ($data)
+                return $this->json(['result' => 2]);
             $data = new Cashdesk();
-            $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'cashdesk'));
-        }
-        else{
+            $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'cashdesk'));
+        } else {
             $data = $entityManager->getRepository(Cashdesk::class)->findOneBy([
-                'bid'=>$acc['bid'],
-                'code'=>$code
+                'bid' => $acc['bid'],
+                'code' => $code
             ]);
-            if(!$data)
+            if (!$data)
                 throw $this->createNotFoundException();
         }
         $data->setBid($acc['bid']);
@@ -90,7 +89,28 @@ class CashdeskController extends AbstractController
         $data->setDes($params['des']);
         $entityManager->persist($data);
         $entityManager->flush();
-        $log->insert('بانک‌داری',' صندوق با نام  ' . $params['name'] . ' افزوده/ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));
+        $log->insert('بانک‌داری', ' صندوق با نام  ' . $params['name'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
+        return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/cashdesk/delete/{code}', name: 'app_cashdesk_delete')]
+    public function app_cashdesk_delete(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('cashdesk');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $cashdesk = $entityManager->getRepository(Cashdesk::class)->findOneBy(['bid' => $acc['bid'], 'code' => $code]);
+        if (!$cashdesk)
+            throw $this->createNotFoundException();
+        //check accounting docs
+        $rows = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'cashdesk' => $cashdesk]);
+        if (count($rows) > 0)
+            return $this->json(['result' => 2]);
+
+        $name = $cashdesk->getName();
+        $entityManager->remove($cashdesk);
+        $log->insert('بانکداری', '  صندوق  با نام ' . $name . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
     }
 }
