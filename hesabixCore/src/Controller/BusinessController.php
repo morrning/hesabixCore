@@ -86,10 +86,10 @@ class BusinessController extends AbstractController
             $response['walletMatchBank'] = $provider->Entity2Array($bus->getWalletMatchBank(), 0);
         $year = $entityManager->getRepository(Year::class)->findOneBy([
             'bid' => $bus,
-            'head'=>true
+            'head' => true
         ]);
         $response['year'] = Explore::ExploreYear($year);
-        
+
         return $this->json($response);
     }
 
@@ -241,12 +241,11 @@ class BusinessController extends AbstractController
                 $year->setLabel($params['year']['label']);
                 $entityManager->persist($year);
                 $entityManager->flush();
-            }
-            else{
+            } else {
                 //not new business update business year
                 $year = $entityManager->getRepository(Year::class)->findOneBy([
                     'bid' => $business,
-                    'head'=>true
+                    'head' => true
                 ]);
                 $startYearArray = explode('-', $params['year']['startShamsi']);
                 $year->setStart($jdate->jmktime(0, 0, 0, $startYearArray[1], $startYearArray[2], $startYearArray[0]));
@@ -357,6 +356,31 @@ class BusinessController extends AbstractController
         return $this->json(['result' => -1]);
     }
 
+    #[Route('/api/business/removeuser/me', name: 'api_business_remove_user_me')]
+    public function api_business_remove_user_me(Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        if ($this->getUser()->getId() == $acc['bid']->getOwner()->getId()) {
+            throw $this->createNotFoundException();
+        }
+
+        $perm = $entityManager->getRepository(Permission::class)->findOneBy([
+            'user' => $this->getUser(),
+            'bid' => $acc['bid']
+        ]);
+        if ($perm && !$perm->isOwner()) {
+            $entityManager->remove($perm);
+            $entityManager->flush();
+            //add log to system
+            $log->insert('تنظیمات پایه', 'کاربر با پست الکترونیکی ' . $this->getUser()->getEmail() . '  کسب و کار را ترک کرد..', $this->getUser(), $acc['bid']);
+            return $this->json(['result' => 1]);
+        }
+
+        return $this->json(['result' => -1]);
+    }
+
     #[Route('/api/business/my/permission/state', name: 'api_business_my_permission_state')]
     public function api_business_my_permission_state(Request $request, Access $access): Response
     {
@@ -431,10 +455,10 @@ class BusinessController extends AbstractController
                     'archiveView' => true,
                     'active' => $perm->getUser()->isActive(),
                     'shareholder' => true,
-                    'plugAccproAccounting'=>true,
-                    'plugAccproRfsell'=>true,
-                    'plugAccproRfbuy'=>true,
-                    'plugAccproCloseYear'=>true,
+                    'plugAccproAccounting' => true,
+                    'plugAccproRfsell' => true,
+                    'plugAccproRfbuy' => true,
+                    'plugAccproCloseYear' => true,
                 ];
             } elseif ($perm) {
                 $result = [
@@ -470,10 +494,10 @@ class BusinessController extends AbstractController
                     'archiveView' => $perm->isArchiveView(),
                     'active' => $perm->getUser()->isActive(),
                     'shareholder' => $perm->isShareholder(),
-                    'plugAccproAccounting'=>$perm->isPlugAccproAccounting(),
-                    'plugAccproRfsell'=>$perm->isPlugAccproRfsell(),
-                    'plugAccproRfbuy'=>$perm->isPlugAccproRfbuy(),
-                    'plugAccproCloseYear'=>$perm->isPlugAccproCloseYear(),
+                    'plugAccproAccounting' => $perm->isPlugAccproAccounting(),
+                    'plugAccproRfsell' => $perm->isPlugAccproRfsell(),
+                    'plugAccproRfbuy' => $perm->isPlugAccproRfbuy(),
+                    'plugAccproCloseYear' => $perm->isPlugAccproCloseYear(),
                 ];
             }
             return $this->json($result);

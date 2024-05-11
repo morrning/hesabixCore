@@ -54,6 +54,6 @@ class RfbuyController extends AbstractController
         if(!$doc)
             throw $this->createNotFoundException();
         
-        return $this->json(Explore::ExploreSellDoc($doc));
+        return $this->json(Explore::ExploreRfbuyDoc($doc));
     }
 }

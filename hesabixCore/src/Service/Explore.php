@@ -51,7 +51,38 @@ class Explore
         return $result;
     }
 
+    public static function ExploreRfbuyDoc(HesabdariDoc $hesabdariDoc)
+    {
+        $result = self::ExploreHesabdariDoc($hesabdariDoc);
+        $person = [];
+        $commodities = [];
+        foreach ($hesabdariDoc->getHesabdariRows() as $item) {
+            if ($item->getPerson()) {
+                $person = self::ExplorePerson($item->getPerson());
+            } elseif ($item->getCommodity()) {
+                $commodities[] = Explore::ExploreCommodity($item->getCommodity(), $item->getCommdityCount(), $item->getDes());
+            }
+        }
+        $result['person'] = $person;
+        return $result;
+    }
+
     public static function ExploreBuyDoc(HesabdariDoc $hesabdariDoc)
+    {
+        $result = self::ExploreHesabdariDoc($hesabdariDoc);
+        $person = [];
+        $commodities = [];
+        foreach ($hesabdariDoc->getHesabdariRows() as $item) {
+            if ($item->getPerson()) {
+                $person = self::ExplorePerson($item->getPerson());
+            } elseif ($item->getCommodity()) {
+                $commodities[] = Explore::ExploreCommodity($item->getCommodity(), $item->getCommdityCount(), $item->getDes());
+            }
+        }
+        $result['person'] = $person;
+        return $result;
+    }
+    public static function ExploreRfsellDoc(HesabdariDoc $hesabdariDoc)
     {
         $result = self::ExploreHesabdariDoc($hesabdariDoc);
         $person = [];
