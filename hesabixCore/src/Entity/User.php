@@ -104,6 +104,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: Cheque::class, orphanRemoval: true)]
     private Collection $cheques;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: MostDes::class, orphanRemoval: true)]
+    private Collection $mostDes;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -125,6 +128,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->archiveOrders = new ArrayCollection();
         $this->hooks = new ArrayCollection();
         $this->cheques = new ArrayCollection();
+        $this->mostDes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -833,6 +837,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($cheque->getSubmitter() === $this) {
                 $cheque->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, MostDes>
+     */
+    public function getMostDes(): Collection
+    {
+        return $this->mostDes;
+    }
+
+    public function addMostDe(MostDes $mostDe): static
+    {
+        if (!$this->mostDes->contains($mostDe)) {
+            $this->mostDes->add($mostDe);
+            $mostDe->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMostDe(MostDes $mostDe): static
+    {
+        if ($this->mostDes->removeElement($mostDe)) {
+            // set the owning side to null (unless already changed)
+            if ($mostDe->getSubmitter() === $this) {
+                $mostDe->setSubmitter(null);
             }
         }
 
