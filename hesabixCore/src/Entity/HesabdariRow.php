@@ -85,6 +85,12 @@ class HesabdariRow
     #[ORM\ManyToOne(inversedBy: 'hesabdariRows')]
     private ?Cheque $cheque = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $discount = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $tax = null;
+
 
 
 
@@ -310,6 +316,30 @@ class HesabdariRow
     public function setCheque(?Cheque $cheque): static
     {
         $this->cheque = $cheque;
+
+        return $this;
+    }
+
+    public function getDiscount(): ?string
+    {
+        return $this->discount;
+    }
+
+    public function setDiscount(?string $discount): static
+    {
+        $this->discount = $discount;
+
+        return $this;
+    }
+
+    public function getTax(): ?string
+    {
+        return $this->tax;
+    }
+
+    public function setTax(?string $tax): static
+    {
+        $this->tax = $tax;
 
         return $this;
     }
