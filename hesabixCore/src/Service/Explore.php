@@ -44,7 +44,7 @@ class Explore
                 $person = self::ExplorePerson($item->getPerson());
             }
         }
-        $result['person'] = $person;       
+        $result['person'] = $person;
         return $result;
     }
 
@@ -124,7 +124,7 @@ class Explore
     }
     public static function ExploreHesabdariRow(HesabdariRow $row)
     {
-        return [
+        $temp = [
             'id'                => $row->getId(),
             'bid'               => self::ExploreBid($row->getBid()),
             'year'              => self::ExploreYear($row->getYear()),
@@ -139,9 +139,14 @@ class Explore
             'plugin'            => $row->getPlugin(),
             'commodity_count'   => $row->getCommdityCount(),
             'commodity'         => self::ExploreCommodity($row->getCommodity(), $row->getCommdityCount(), $row->getDes()),
-            'tax'               =>$row->getTax(),
-            'discount'          =>$row->getDiscount(),
         ];
+        if (!$row->getTax())
+            $row->setTax(0);
+        if (!$row->getDiscount())
+            $row->setDiscount(0);
+        $temp['tax'] = $row->getTax();
+        $temp['discount'] = $row->getDiscount();
+        return $temp;
     }
 
     public static function ExploreCommodity(Commodity | null $item, int | null $count = 0, string $des = '')
@@ -289,8 +294,8 @@ class Explore
             'start' => $year->getStart(),
             'end'   => $year->getEnd(),
             'now'   => time(),
-            'startShamsi'=> $jdate->jdate('Y-n-d',$year->getStart()),
-            'endShamsi'=> $jdate->jdate('Y-n-d',$year->getEnd()),
+            'startShamsi' => $jdate->jdate('Y-n-d', $year->getStart()),
+            'endShamsi' => $jdate->jdate('Y-n-d', $year->getEnd()),
         ];
     }
 
