@@ -110,6 +110,10 @@ class CommodityController extends AbstractController
             $temp['id'] = $item->getId();
             $temp['name'] = $item->getName();
             $temp['unit'] = $item->getUnit()->getName();
+            $temp['unitData'] = [
+                'name' => $item->getUnit()->getName(),
+                'floatNumber' => $item->getUnit()->getFloatNumber(),
+            ];
             $temp['des'] = $item->getDes();
             $temp['priceBuy'] = $item->getPriceBuy();
             $temp['speedAccess'] = $item->isSpeedAccess();

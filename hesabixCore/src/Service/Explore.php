@@ -39,15 +39,12 @@ class Explore
     {
         $result = self::ExploreHesabdariDoc($hesabdariDoc);
         $person = [];
-        $commodities = [];
         foreach ($hesabdariDoc->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = self::ExplorePerson($item->getPerson());
-            } elseif ($item->getCommodity()) {
-                $commodities[] = Explore::ExploreCommodity($item->getCommodity(), $item->getCommdityCount(), $item->getDes());
             }
         }
-        $result['person'] = $person;
+        $result['person'] = $person;       
         return $result;
     }
 
@@ -141,7 +138,9 @@ class Explore
             'des'               => $row->getDes(),
             'plugin'            => $row->getPlugin(),
             'commodity_count'   => $row->getCommdityCount(),
-            'commodity'         => self::ExploreCommodity($row->getCommodity(), $row->getCommdityCount(), $row->getDes())
+            'commodity'         => self::ExploreCommodity($row->getCommodity(), $row->getCommdityCount(), $row->getDes()),
+            'tax'               =>$row->getTax(),
+            'discount'          =>$row->getDiscount(),
         ];
     }
 

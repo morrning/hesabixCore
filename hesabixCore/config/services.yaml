@@ -26,6 +26,8 @@ services:
     # please note that last definitions always *replace* previous ones
     Jdate:
         class: App\Service\Jdate
+    Exctractor:
+        class: App\Service\Exctractor
     Log:
         class: App\Service\Log
         arguments: [ "@doctrine.orm.entity_manager" ]

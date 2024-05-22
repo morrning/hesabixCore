@@ -614,8 +614,17 @@ class BusinessController extends AbstractController
             'type' => 'buy',
         ]);
         $buysTotal = 0;
-        foreach ($buys as $item)
-            $buysTotal += $item->getAmount();
+        foreach ($buys as $item) {
+            $canAdd = false;
+            foreach ($item->getHesabdariRows() as $row) {
+                if ($row->getCommodity())
+                    $canAdd = true;
+            }
+            if ($canAdd) {
+                $buysTotal += $item->getAmount();
+            }
+        }
+
 
         $sells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $buss,
@@ -623,8 +632,16 @@ class BusinessController extends AbstractController
             'type' => 'sell',
         ]);
         $sellsTotal = 0;
-        foreach ($sells as $item)
-            $sellsTotal += $item->getAmount();
+        foreach ($sells as $item) {
+            $canAdd = false;
+            foreach ($item->getHesabdariRows() as $row) {
+                if ($row->getCommodity())
+                    $canAdd = true;
+            }
+            if ($canAdd) {
+                $sellsTotal += $item->getAmount();
+            }
+        }
         $response = [
             'personCount' => count($persons),
             'bankCount' => count($banks),

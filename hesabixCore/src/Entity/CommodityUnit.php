@@ -23,6 +23,9 @@ class CommodityUnit
     #[Ignore]
     private $commodities;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $floatNumber = null;
+
     public function __construct()
     {
         $this->commodities = new ArrayCollection();
@@ -71,6 +74,18 @@ class CommodityUnit
                 $commodity->setUnit(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getFloatNumber(): ?int
+    {
+        return $this->floatNumber;
+    }
+
+    public function setFloatNumber(?int $floatNumber): static
+    {
+        $this->floatNumber = $floatNumber;
 
         return $this;
     }
