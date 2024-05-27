@@ -137,7 +137,6 @@ class Business
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
-    #[Ignore]
     private ?User $owner = null;
 
     #[ORM\Column(nullable: true)]
@@ -211,6 +210,12 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: MostDes::class, orphanRemoval: true)]
     private Collection $mostDes;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PlugRepserviceOrder::class, orphanRemoval: true)]
+    private Collection $plugRepserviceOrders;
+
+    #[ORM\Column(length: 25, nullable: true)]
+    private ?string $plugRepserviceCode = null;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -239,6 +244,7 @@ class Business
         $this->cheques = new ArrayCollection();
         $this->personCards = new ArrayCollection();
         $this->mostDes = new ArrayCollection();
+        $this->plugRepserviceOrders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1454,6 +1460,48 @@ class Business
                 $mostDe->setBid(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugRepserviceOrder>
+     */
+    public function getPlugRepserviceOrders(): Collection
+    {
+        return $this->plugRepserviceOrders;
+    }
+
+    public function addPlugRepserviceOrder(PlugRepserviceOrder $plugRepserviceOrder): static
+    {
+        if (!$this->plugRepserviceOrders->contains($plugRepserviceOrder)) {
+            $this->plugRepserviceOrders->add($plugRepserviceOrder);
+            $plugRepserviceOrder->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugRepserviceOrder(PlugRepserviceOrder $plugRepserviceOrder): static
+    {
+        if ($this->plugRepserviceOrders->removeElement($plugRepserviceOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($plugRepserviceOrder->getBid() === $this) {
+                $plugRepserviceOrder->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getPlugRepserviceCode(): ?string
+    {
+        return $this->plugRepserviceCode;
+    }
+
+    public function setPlugRepserviceCode(?string $plugRepserviceCode): static
+    {
+        $this->plugRepserviceCode = $plugRepserviceCode;
 
         return $this;
     }

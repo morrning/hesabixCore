@@ -107,6 +107,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: MostDes::class, orphanRemoval: true)]
     private Collection $mostDes;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: PlugRepserviceOrder::class, orphanRemoval: true)]
+    private Collection $plugRepserviceOrders;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -129,6 +132,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->hooks = new ArrayCollection();
         $this->cheques = new ArrayCollection();
         $this->mostDes = new ArrayCollection();
+        $this->plugRepserviceOrders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -867,6 +871,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($mostDe->getSubmitter() === $this) {
                 $mostDe->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugRepserviceOrder>
+     */
+    public function getPlugRepserviceOrders(): Collection
+    {
+        return $this->plugRepserviceOrders;
+    }
+
+    public function addPlugRepserviceOrder(PlugRepserviceOrder $plugRepserviceOrder): static
+    {
+        if (!$this->plugRepserviceOrders->contains($plugRepserviceOrder)) {
+            $this->plugRepserviceOrders->add($plugRepserviceOrder);
+            $plugRepserviceOrder->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugRepserviceOrder(PlugRepserviceOrder $plugRepserviceOrder): static
+    {
+        if ($this->plugRepserviceOrders->removeElement($plugRepserviceOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($plugRepserviceOrder->getSubmitter() === $this) {
+                $plugRepserviceOrder->setSubmitter(null);
             }
         }
 

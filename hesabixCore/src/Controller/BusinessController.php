@@ -39,6 +39,7 @@ class BusinessController extends AbstractController
         $buss = $entityManager->getRepository(Permission::class)->findBy(['user' => $user]);
         $response = [];
         foreach ($buss as $bus) {
+            //echo $bus->getBid()->getId();
             $temp = [];
             $temp['id'] = $bus->getBid()->getId();
             $temp['owner'] = $bus->getBid()->getOwner()->getFullName();
@@ -459,6 +460,7 @@ class BusinessController extends AbstractController
                     'plugAccproRfsell' => true,
                     'plugAccproRfbuy' => true,
                     'plugAccproCloseYear' => true,
+                    'plugRepservice' => true,
                 ];
             } elseif ($perm) {
                 $result = [
@@ -498,6 +500,7 @@ class BusinessController extends AbstractController
                     'plugAccproRfsell' => $perm->isPlugAccproRfsell(),
                     'plugAccproRfbuy' => $perm->isPlugAccproRfbuy(),
                     'plugAccproCloseYear' => $perm->isPlugAccproCloseYear(),
+                    'plugRepservice' => $perm->isPlugRepservice(),
                 ];
             }
             return $this->json($result);
@@ -565,6 +568,7 @@ class BusinessController extends AbstractController
                 $perm->setPlugAccproRfbuy($params['plugAccproRfbuy']);
                 $perm->setPlugAccproRfsell($params['plugAccproRfsell']);
                 $perm->setPlugAccproAccounting($params['plugAccproAccounting']);
+                $perm->setPlugRepservice($params['plugRepservice']);
                 $entityManager->persist($perm);
                 $entityManager->flush();
                 $log->insert('تنظیمات پایه', 'ویرایش دسترسی‌های کاربر با پست الکترونیکی ' . $user->getEmail(), $this->getUser(), $business);

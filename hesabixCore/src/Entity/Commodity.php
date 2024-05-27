@@ -73,6 +73,9 @@ class Commodity
     #[ORM\Column(nullable: true)]
     private ?bool $speedAccess = null;
 
+    #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: PlugRepserviceOrder::class, orphanRemoval: true)]
+    private Collection $plugRepserviceOrders;
+
     public function __construct()
     {
         $this->setPriceBuy(0);
@@ -80,6 +83,7 @@ class Commodity
         $this->hesabdariRows = new ArrayCollection();
         $this->commodityDropLinks = new ArrayCollection();
         $this->storeroomItems = new ArrayCollection();
+        $this->plugRepserviceOrders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -341,6 +345,36 @@ class Commodity
     public function setSpeedAccess(?bool $speedAccess): static
     {
         $this->speedAccess = $speedAccess;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugRepserviceOrder>
+     */
+    public function getPlugRepserviceOrders(): Collection
+    {
+        return $this->plugRepserviceOrders;
+    }
+
+    public function addPlugRepserviceOrder(PlugRepserviceOrder $plugRepserviceOrder): static
+    {
+        if (!$this->plugRepserviceOrders->contains($plugRepserviceOrder)) {
+            $this->plugRepserviceOrders->add($plugRepserviceOrder);
+            $plugRepserviceOrder->setCommodity($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugRepserviceOrder(PlugRepserviceOrder $plugRepserviceOrder): static
+    {
+        if ($this->plugRepserviceOrders->removeElement($plugRepserviceOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($plugRepserviceOrder->getCommodity() === $this) {
+                $plugRepserviceOrder->setCommodity(null);
+            }
+        }
 
         return $this;
     }

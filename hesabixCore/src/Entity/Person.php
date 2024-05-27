@@ -128,6 +128,9 @@ class Person
     #[ORM\Column(length: 15, nullable: true)]
     private ?string $mobile2 = null;
 
+    #[ORM\OneToMany(mappedBy: 'person', targetEntity: PlugRepserviceOrder::class, orphanRemoval: true)]
+    private Collection $plugRepserviceOrders;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -138,6 +141,7 @@ class Person
         $this->cheques = new ArrayCollection();
         $this->type = new ArrayCollection();
         $this->personCards = new ArrayCollection();
+        $this->plugRepserviceOrders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -699,6 +703,36 @@ class Person
     public function setMobile2(?string $mobile2): static
     {
         $this->mobile2 = $mobile2;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugRepserviceOrder>
+     */
+    public function getPlugRepserviceOrders(): Collection
+    {
+        return $this->plugRepserviceOrders;
+    }
+
+    public function addPlugRepserviceOrder(PlugRepserviceOrder $plugRepserviceOrder): static
+    {
+        if (!$this->plugRepserviceOrders->contains($plugRepserviceOrder)) {
+            $this->plugRepserviceOrders->add($plugRepserviceOrder);
+            $plugRepserviceOrder->setPerson($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugRepserviceOrder(PlugRepserviceOrder $plugRepserviceOrder): static
+    {
+        if ($this->plugRepserviceOrders->removeElement($plugRepserviceOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($plugRepserviceOrder->getPerson() === $this) {
+                $plugRepserviceOrder->setPerson(null);
+            }
+        }
 
         return $this;
     }

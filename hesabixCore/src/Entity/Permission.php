@@ -117,6 +117,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $plugAccproCloseYear = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $plugRepservice = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -526,6 +529,18 @@ class Permission
     public function setPlugAccproCloseYear(?bool $plugAccproCloseYear): static
     {
         $this->plugAccproCloseYear = $plugAccproCloseYear;
+
+        return $this;
+    }
+
+    public function isPlugRepservice(): ?bool
+    {
+        return $this->plugRepservice;
+    }
+
+    public function setPlugRepservice(?bool $plugRepservice): static
+    {
+        $this->plugRepservice = $plugRepservice;
 
         return $this;
     }
