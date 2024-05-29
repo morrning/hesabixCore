@@ -200,7 +200,7 @@ class Provider
      * @param 		int 	$length 	number of characters in the generated string
      * @return 		string	a new string is created with random characters of the desired length
      */
-    private function RandomString($length = 32)
+    public function RandomString($length = 32)
     {
         return substr(str_shuffle(str_repeat($x = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
     }

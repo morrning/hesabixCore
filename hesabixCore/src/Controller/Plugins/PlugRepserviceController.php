@@ -82,7 +82,7 @@ class PlugRepserviceController extends AbstractController
         if (array_key_exists('sms', $params)) {
             if ($params['sms'] == true) {
                 //going to send sms
-                $sms->send(
+                $smsres = $sms->sendByBalance(
                     [
                         $person->getNikename(),
                         $order->getCode(),
@@ -90,10 +90,21 @@ class PlugRepserviceController extends AbstractController
                         $acc['bid']->getId() . '/' . $order->getShortlink()
                     ],
                     $registryMGR->get('sms', 'plugRepserviceStateGet'),
-                    $person->getMobile()
+                    $person->getMobile(),
+                    $acc['bid'],
+                    $this->getUser(),
+                    1
                 );
+                if ($smsres == 2) {
+                    return $this->json([
+                        'code' => 11,
+                        'data' => '',
+                        'message' => 'operation success but sms not send'
+                    ]);
+                }
             }
         }
+
         return $this->json($extractor->operationSuccess());
     }
 }
