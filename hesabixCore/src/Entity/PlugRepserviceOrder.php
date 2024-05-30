@@ -54,6 +54,9 @@ class PlugRepserviceOrder
     #[ORM\Column(length: 50)]
     private ?string $shortlink = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $motaleghat = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -199,6 +202,18 @@ class PlugRepserviceOrder
     public function setShortlink(string $shortlink): static
     {
         $this->shortlink = $shortlink;
+
+        return $this;
+    }
+
+    public function getMotaleghat(): ?string
+    {
+        return $this->motaleghat;
+    }
+
+    public function setMotaleghat(?string $motaleghat): static
+    {
+        $this->motaleghat = $motaleghat;
 
         return $this;
     }
