@@ -2,6 +2,7 @@
 
 namespace App\Controller\Plugins;
 
+use App\Entity\Business;
 use App\Service\Log;
 use App\Service\SMS;
 use App\Entity\Person;
@@ -22,6 +23,21 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class PlugRepserviceController extends AbstractController
 {
+    #[Route('/p/rep/{bid}/{sharelink}', name: 'app_plug_repservice_order_view_front')]
+    public function app_plug_repservice_order_view_front(string $bid,string $sharelink ,$provider, registryMGR $registryMGR, SMS $sms, Log $log, EntityManagerInterface $entityManagerInterface, Access $access, Request $request, Extractor $extractor): Response
+    {
+        $bid = $entityManagerInterface->getRepository(Business::class)->find($bid);
+        if(!$bid) throw $this->createNotFoundException();
+
+        $order = $entityManagerInterface->getRepository(PlugRepserviceOrder::class)->findOneBy([
+            'bid' => $bid,
+            'sharelink' => $sharelink
+        ]);
+        return $this->render('repservice/view.html.twig',[
+            'order'=>$order
+        ]);
+    }
+
     #[Route('/api/plug/repservice/order/mod', name: 'app_plug_repservice_order_mod')]
     public function app_plug_repservice_order_mod(Provider $provider, registryMGR $registryMGR, SMS $sms, Log $log, EntityManagerInterface $entityManagerInterface, Access $access, Request $request, Extractor $extractor): JsonResponse
     {
@@ -146,7 +162,7 @@ class PlugRepserviceController extends AbstractController
         $order->setState($state);
         $entityManagerInterface->persist($order);
         $entityManagerInterface->flush();
-        $log->insert('افزونه تعمیرکاران', ' وضعیت کالا با کد  ' . $order->getCode() . ' به ' . $state->getLabel() . 'تغییر یافت.', $this->getUser(), $acc['bid']->getId());
+        $log->insert('افزونه تعمیرکاران', ' وضعیت کالا با کد  ' . $order->getCode() . ' به ' . $state->getLabel() . ' تغییر یافت. ', $this->getUser(), $acc['bid']->getId());
 
         if (array_key_exists('sms', $params)) {
             //get state sms code

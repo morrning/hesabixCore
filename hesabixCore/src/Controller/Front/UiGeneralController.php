@@ -32,16 +32,16 @@ class UiGeneralController extends AbstractController
         $lastBusiness = $entityManager->getRepository(Business::class)->findLast();
         if($lastBusiness)
             return $this->render('general/home.html.twig',[
-                'business' => $busCount + 9405,
-                'users' => $users + 25471,
+                'business' => $busCount + 11405,
+                'users' => $users + 29471,
                 'docs' => $docs + 105412,
                 'lastBusinessName' => $lastBusiness->getname(),
                 'lastBusinessOwner' => $lastBusiness->getOwner()->getFullName(),
                 'blogPosts'=> $entityManager->getRepository(BlogPost::class)->findBy([],['dateSubmit'=>'DESC'],3)
             ]);
         return $this->render('general/home.html.twig',[
-                'business' => $busCount + 9405,
-                'users' => $users + 25471,
+                'business' => $busCount + 11405,
+                'users' => $users + 29471,
                 'docs' => $docs + 105412,
                 'lastBusinessName' => 'ثبت نشده',
                 'lastBusinessOwner' => 'ثبت نشده',

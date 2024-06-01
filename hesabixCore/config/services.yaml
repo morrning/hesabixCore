@@ -44,7 +44,6 @@ services:
     twigFunctions:
         class: App\Service\twigFunctions
         arguments: [ "@doctrine.orm.entity_manager" ]
-    
     registryMGR:
         class: App\Service\registryMGR
-        arguments: [ "@doctrine.orm.entity_manager"]
+        arguments: [ "@doctrine.orm.entity_manager" ]

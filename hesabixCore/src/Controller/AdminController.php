@@ -219,7 +219,7 @@ class AdminController extends AbstractController
             'get' => $registryMGR->get('sms', 'plugRepserviceStateGet'),
             'getback' => $registryMGR->get('sms', 'plugRepserviceStateGetback'),
             'repired' => $registryMGR->get('sms', 'plugRepserviceStateRepaired'),
-            'unrepired' => $registryMGR->get('sms', 'plugRepserviceStateUnrepired')
+            'unrepaired' => $registryMGR->get('sms', 'plugRepserviceStateUnrepired')
         ];
         return $this->json($resp);
     }
@@ -260,13 +260,13 @@ class AdminController extends AbstractController
 
         if (array_key_exists('plugRepservice', $params)) {
             if (array_key_exists('get', $params['plugRepservice']))
-                $registryMGR->update('sms', 'plugRepserviceStateGet', $params['plugRepservice']['plugRepserviceStateGet']);
+                $registryMGR->update('sms', 'plugRepserviceStateGet', $params['plugRepservice']['get']);
             if (array_key_exists('repired', $params['plugRepservice']))
                 $registryMGR->update('sms', 'plugRepserviceStateRepaired', $params['plugRepservice']['repired']);
-            if (array_key_exists('plugRepserviceStateGet', $params['plugRepservice']))
-                $registryMGR->update('sms', 'plugRepserviceStateGet', $params['plugRepservice']['plugRepserviceStateGet']);
-            if (array_key_exists('plugRepserviceStateGet', $params['plugRepservice']))
-                $registryMGR->update('sms', 'plugRepserviceStateGet', $params['plugRepservice']['plugRepserviceStateGet']);
+            if (array_key_exists('unrepaired', $params['plugRepservice']))
+                $registryMGR->update('sms', 'plugRepserviceStateUnrepired', $params['plugRepservice']['unrepaired']);
+            if (array_key_exists('getback', $params['plugRepservice']))
+                $registryMGR->update('sms', 'plugRepserviceStateGetback', $params['plugRepservice']['getback']);
         }
 
 
@@ -290,7 +290,7 @@ class AdminController extends AbstractController
 
 
     #[Route('/api/admin/settings/system/info/save', name: 'admin_settings_system_info_save')]
-    public function admin_settings_system_info_save(Registry $registry, EntityManagerInterface $entityManager, Request $request): Response
+    public function admin_settings_system_info_save(EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
