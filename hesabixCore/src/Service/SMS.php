@@ -13,7 +13,7 @@ class SMS
     private Settings $settings;
     private registryMGR $registryMGR;
 
-    private int $smsPrice = 150;
+    private int $smsPrice = 1500;
 
     /**
      * @param EntityManagerInterface $entityManager
