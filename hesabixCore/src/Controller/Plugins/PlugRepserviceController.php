@@ -24,17 +24,19 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 class PlugRepserviceController extends AbstractController
 {
     #[Route('/p/rep/{bid}/{sharelink}', name: 'app_plug_repservice_order_view_front')]
-    public function app_plug_repservice_order_view_front(string $bid,string $sharelink ,$provider, registryMGR $registryMGR, SMS $sms, Log $log, EntityManagerInterface $entityManagerInterface, Access $access, Request $request, Extractor $extractor): Response
+    public function app_plug_repservice_order_view_front(string $bid,string $sharelink, EntityManagerInterface $entityManagerInterface): Response
     {
         $bid = $entityManagerInterface->getRepository(Business::class)->find($bid);
         if(!$bid) throw $this->createNotFoundException();
 
         $order = $entityManagerInterface->getRepository(PlugRepserviceOrder::class)->findOneBy([
             'bid' => $bid,
-            'sharelink' => $sharelink
+            'shortlink' => $sharelink
         ]);
         return $this->render('repservice/view.html.twig',[
-            'order'=>$order
+            'order'=>$order,
+            'bid'=>$bid,
+            'person'=>$order->getPerson()
         ]);
     }
 
@@ -76,6 +78,7 @@ class PlugRepserviceController extends AbstractController
             $order->setBid($acc['bid']);
             $order->setcode($provider->getAccountingCode($acc['bid'], 'PlugRepservice'));
             $order->setShortlink($provider->RandomString(6) . time());
+
         } else {
             $order = $entityManagerInterface->getRepository(PlugRepserviceOrder::class)->findOneBy([
                 'bid' => $acc['bid'],
@@ -230,6 +233,33 @@ class PlugRepserviceController extends AbstractController
             ];
         }
         return $this->json($res);
+    }
+
+    #[Route('/api/repservice/order/info/{code}', name: 'app_plug_repservice_order_info')]
+    public function app_plug_repservice_order_info(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('plugRepservice');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $item = $entityManager->getRepository(PlugRepserviceOrder::class)->findOneBy(['bid' => $acc['bid'], 'code' => $code]);
+        if (!$item)
+            throw $this->createNotFoundException();
+        $temp = [
+            'update' => $item->getCode(),
+            'date'=>$item->getDate(),
+            'des'=>$item->getDes(),
+            'person'=>Explore::ExplorePerson($item->getPerson()),
+            'pelak'=>$item->getPelak(),
+            'serial'=>$item->getSerial(),
+            'motaleghat'=>$item->getMotaleghat(),
+            'commodity'=>Explore::ExploreCommodity($item->getCommodity()),
+            'sms'=>true
+        ];
+        if($item->getPerson()->getMobile() == null || $item->getPerson()->getMobile() == ''){
+            $temp['sms'] = false;
+        }
+        return $this->json($temp);
     }
 
     #[Route('/api/repservice/order/remove/{code}', name: 'app_plug_repservice_order_remove')]
