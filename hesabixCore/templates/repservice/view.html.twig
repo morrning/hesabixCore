@@ -58,7 +58,7 @@
 									{{bid.name}}
 								</p>
 								<address>آدرس :
-																																											استان
+																																																				استان
 									{{bid.ostan}}
 									شهرستان
 									{{bid.shahrestan}}
@@ -86,7 +86,7 @@
 									{{ person.nikename }}
 								</p>
 								<address>آدرس :
-																									استان
+																																		استان
 									{{person.ostan}}
 									شهرستان
 									{{person.shahr}}
@@ -124,9 +124,20 @@
 												<div class="fs-sm fw-semibold text-muted mb-2">
 													تاریخ:
 													{{order.date}}</div>
+												<div class="fs-sm fw-semibold text-muted mb-2">
+													تاریخ تحویل:
+													{{order.dateOut}}</div>
 												<p class="text-muted mb-2">
 													شرح:
 													{{order.des}}
+												</p>
+												<p class="text-muted mb-2">
+													مدل:
+													{{order.model}}
+												</p>
+												<p class="text-muted mb-2">
+													رنگ:
+													{{order.color}}
 												</p>
 												<p class="text-muted mb-2">
 													متعلقات:
@@ -141,7 +152,7 @@
 													{{order.pelak}}
 												</p>
 												<div>
-												<span class="text-info">وضعیت</span>
+													<span class="text-info">وضعیت</span>
 													<span class="badge bg-success">{{order.state.label}}</span>
 												</div>
 											</div>

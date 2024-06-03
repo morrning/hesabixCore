@@ -57,6 +57,15 @@ class PlugRepserviceOrder
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $motaleghat = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $model = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $color = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $dateOut = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -214,6 +223,42 @@ class PlugRepserviceOrder
     public function setMotaleghat(?string $motaleghat): static
     {
         $this->motaleghat = $motaleghat;
+
+        return $this;
+    }
+
+    public function getModel(): ?string
+    {
+        return $this->model;
+    }
+
+    public function setModel(?string $model): static
+    {
+        $this->model = $model;
+
+        return $this;
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->color;
+    }
+
+    public function setColor(?string $color): static
+    {
+        $this->color = $color;
+
+        return $this;
+    }
+
+    public function getDateOut(): ?string
+    {
+        return $this->dateOut;
+    }
+
+    public function setDateOut(?string $dateOut): static
+    {
+        $this->dateOut = $dateOut;
 
         return $this;
     }

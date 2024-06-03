@@ -136,4 +136,10 @@ class UiGeneralController extends AbstractController
         return $this->render('general/woocommerce.html.twig',);
     }
 
+    #[Route('/front/apps/repservice', name: 'general_apps_repservice')]
+    public function general_apps_repservice(EntityManagerInterface $entityManager): Response
+    {
+        return $this->render('general/repservice.html.twig',);
+    }
+
 }

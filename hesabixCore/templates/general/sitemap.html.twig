@@ -1,142 +1,151 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset
-        xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-    <!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
-    <url>
-        <loc>https://hesabix.ir/</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>1.00</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/faq</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/blog/home</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/about</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/contact</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/terms</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/privacy</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/open-source</loc>
-        <lastmod>2023-10-20T11:24:11+00:00</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide/general</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/api</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/update-list</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide/person</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.64</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide/commodity</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.64</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide/banks</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.64</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide/buy</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.64</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide/sell</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.64</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide/reports</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.64</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/help/guide/settings</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.64</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/features/setup</loc>
-        <lastmod>2023-11-10T16:17:43+00:00</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/features/user_management</loc>
-        <lastmod>2023-11-10T16:17:43+00:00</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/features/buy_sell</loc>
-        <lastmod>2023-11-10T16:17:43+00:00</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/front/apps/woocommerce</loc>
-        <lastmod>2023-11-10T16:17:43+00:00</lastmod>
-        <priority>0.80</priority>
-    </url>
-    <url>
-        <loc>https://hesabix.ir/login</loc>
-        <lastmod>{{ timeNow }}</lastmod>
-        <priority>0.64</priority>
-    </url>
-    {% for blog in blogs %}
-    <url>
-        <loc>{{ absolute_url(path('general_blog_post',{'url':blog.url})) }}</loc>
-        <lastmod>{{ blog.dateSubmit | date('c') }}</lastmod>
-        <priority>0.80</priority>
-    </url>
-    {% endfor %}
-    {% for doc in docs %}
-        <url>
-            <loc>{{ absolute_url(path('general_help_api',{'id':doc.id})) }}</loc>
-            <lastmod>{% if doc.dateSubmit is null %}{{ timeNow }}{% else %}{{ doc.dateSubmit | date('c') }}{% endif %}</lastmod>
-            <priority>0.80</priority>
-        </url>
-    {% endfor %}
+	xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+		            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+	<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+	<url>
+		<loc>https://hesabix.ir/</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>1.00</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/faq</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/blog/home</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/about</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/contact</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/terms</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/privacy</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/open-source</loc>
+		<lastmod>2023-10-20T11:24:11+00:00</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide/general</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/api</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/update-list</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide/person</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.64</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide/commodity</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.64</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide/banks</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.64</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide/buy</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.64</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide/sell</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.64</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide/reports</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.64</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/help/guide/settings</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.64</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/features/setup</loc>
+		<lastmod>2023-11-10T16:17:43+00:00</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/features/user_management</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/features/buy_sell</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/apps/woocommerce</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/front/apps/repservice</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.80</priority>
+	</url>
+	<url>
+		<loc>https://hesabix.ir/login</loc>
+		<lastmod>{{ timeNow }}</lastmod>
+		<priority>0.64</priority>
+	</url>
+	{% for blog in blogs %}
+		<url>
+			<loc>{{ absolute_url(path('general_blog_post',{'url':blog.url})) }}</loc>
+			<lastmod>{{ blog.dateSubmit | date('c') }}</lastmod>
+			<priority>0.80</priority>
+		</url>
+	{% endfor %}
+	{% for doc in docs %}
+		<url>
+			<loc>{{ absolute_url(path('general_help_api',{'id':doc.id})) }}</loc>
+			<lastmod>
+				{% if doc.dateSubmit is null %}
+					{{ timeNow }}
+				{% else %}
+					{{ doc.dateSubmit | date('c') }}
+				{% endif %}
+			</lastmod>
+			<priority>0.80</priority>
+		</url>
+	{% endfor %}
 </urlset>

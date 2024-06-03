@@ -14,6 +14,7 @@ use App\Service\registryMGR;
 use App\Entity\PlugRepserviceOrder;
 use App\Entity\PlugRepserviceOrderState;
 use App\Service\Explore;
+use App\Service\Jdate;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -57,6 +58,8 @@ class PlugRepserviceController extends AbstractController
             !array_key_exists('person', $params) ||
             !array_key_exists('serial', $params) ||
             !array_key_exists('motaleghat', $params) ||
+            !array_key_exists('color', $params) ||
+            !array_key_exists('model', $params) ||
             !array_key_exists('date', $params)
         )
             return $this->json($extractor->paramsNotSend());
@@ -92,6 +95,8 @@ class PlugRepserviceController extends AbstractController
         $order->setCommodity($commodity);
         $order->setPerson($person);
         $order->setDate($params['date']);
+        $order->setModel($params['model']);
+        $order->setColor($params['color']);
         $order->setDes($params['des']);
         $order->setMotaleghat($params['motaleghat']);
         $order->setPelak($params['pelak']);
@@ -131,7 +136,7 @@ class PlugRepserviceController extends AbstractController
     }
 
     #[Route('/api/plug/repservice/order/state/change', name: 'app_plug_repservice_order_state_change')]
-    public function app_plug_repservice_order_state_change(Provider $provider, registryMGR $registryMGR, SMS $sms, Log $log, EntityManagerInterface $entityManagerInterface, Access $access, Request $request, Extractor $extractor): JsonResponse
+    public function app_plug_repservice_order_state_change(Jdate $jdate,Provider $provider, registryMGR $registryMGR, SMS $sms, Log $log, EntityManagerInterface $entityManagerInterface, Access $access, Request $request, Extractor $extractor): JsonResponse
     {
         $acc = $access->hasRole('plugRepservice');
         if (!$acc)
@@ -163,6 +168,10 @@ class PlugRepserviceController extends AbstractController
             return $this->json($extractor->notFound());
         }
         $order->setState($state);
+        //set dateout if proccess finish
+        if($state->getCode() == 'getback'){
+            $order->setDateOut($jdate->jdate('Y-n-d',time()));
+        }
         $entityManagerInterface->persist($order);
         $entityManagerInterface->flush();
         $log->insert('افزونه تعمیرکاران', ' وضعیت کالا با کد  ' . $order->getCode() . ' به ' . $state->getLabel() . ' تغییر یافت. ', $this->getUser(), $acc['bid']->getId());
@@ -214,7 +223,7 @@ class PlugRepserviceController extends AbstractController
 
         $orders = $entityManagerInterface->getRepository(PlugRepserviceOrder::class)->findBy([
             'bid' => $acc['bid']
-        ]);
+        ],['code'=>'DESC']);
         return $this->json($this->ExploreOrders($orders));
     }
 
@@ -229,7 +238,8 @@ class PlugRepserviceController extends AbstractController
         foreach ($items as $item) {
             $res[] = [
                 'code' => $item->getCode(),
-                'label' => $item->getLabel()
+                'label' => $item->getLabel(),
+                'checked'=>false
             ];
         }
         return $this->json($res);
@@ -245,21 +255,8 @@ class PlugRepserviceController extends AbstractController
         $item = $entityManager->getRepository(PlugRepserviceOrder::class)->findOneBy(['bid' => $acc['bid'], 'code' => $code]);
         if (!$item)
             throw $this->createNotFoundException();
-        $temp = [
-            'update' => $item->getCode(),
-            'date'=>$item->getDate(),
-            'des'=>$item->getDes(),
-            'person'=>Explore::ExplorePerson($item->getPerson()),
-            'pelak'=>$item->getPelak(),
-            'serial'=>$item->getSerial(),
-            'motaleghat'=>$item->getMotaleghat(),
-            'commodity'=>Explore::ExploreCommodity($item->getCommodity()),
-            'sms'=>true
-        ];
-        if($item->getPerson()->getMobile() == null || $item->getPerson()->getMobile() == ''){
-            $temp['sms'] = false;
-        }
-        return $this->json($temp);
+    
+        return $this->json($this->ExploreOrder($item));
     }
 
     #[Route('/api/repservice/order/remove/{code}', name: 'app_plug_repservice_order_remove')]
@@ -282,6 +279,7 @@ class PlugRepserviceController extends AbstractController
     {
         $temp = [
             'id' => $item->getId(),
+            'update' => $item->getCode(),
             'code' => $item->getCode(),
             'person' => Explore::ExplorePerson($item->getPerson()),
             'commodity' => Explore::ExploreCommodity($item->getCommodity()),
@@ -295,8 +293,14 @@ class PlugRepserviceController extends AbstractController
                 'code' => $item->getState()->getCode(),
                 'label' => $item->getState()->getLabel()
             ],
-            'sms' => true
+            'dateOut'=>$item->getDateOut(),
+            'model'=>$item->getModel(),
+            'color'=>$item->getColor(),
+            'sms'=>true,
         ];
+        if($item->getPerson()->getMobile() == null || $item->getPerson()->getMobile() == ''){
+            $temp['sms'] = false;
+        }
 
         return $temp;
     }
