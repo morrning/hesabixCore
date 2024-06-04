@@ -95,6 +95,9 @@ class HesabdariDoc
     #[ORM\OneToMany(mappedBy: 'doc', targetEntity: Log::class)]
     private Collection $logs;
 
+    #[ORM\ManyToOne(inversedBy: 'hesabdariDocs')]
+    private ?InvoiceType $InvoiceLabel = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -453,6 +456,18 @@ class HesabdariDoc
                 $log->setDoc(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getInvoiceLabel(): ?InvoiceType
+    {
+        return $this->InvoiceLabel;
+    }
+
+    public function setInvoiceLabel(?InvoiceType $InvoiceLabel): static
+    {
+        $this->InvoiceLabel = $InvoiceLabel;
 
         return $this;
     }

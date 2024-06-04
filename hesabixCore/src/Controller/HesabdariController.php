@@ -226,6 +226,13 @@ class HesabdariController extends AbstractController
                     $temp['person'] = Explore::ExplorePerson($mainRow->getPerson());
             }
 
+            $temp['label'] = null;
+            if ($item->getInvoiceLabel()) {
+                $temp['label'] = [
+                    'code' => $item->getInvoiceLabel()->getCode(),
+                    'label' => $item->getInvoiceLabel()->getLabel()
+                ];
+            }
             //get status of doc
             $temp['status'] = 'تسویه نشده';
             $pays = 0;
