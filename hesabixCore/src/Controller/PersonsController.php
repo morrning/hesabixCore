@@ -723,6 +723,47 @@ class PersonsController extends AbstractController
         return $this->json(['id' => $pid]);
     }
 
+    #[Route('/api/person/receive/list/search', name: 'app_persons_receive_list_search')]
+    public function app_persons_receive_list_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('person_receive');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $items = $entityManager->getRepository(HesabdariDoc::class)->findBy(
+            [
+                'bid' => $acc['bid'],
+                'type' => 'person_receive',
+                'year'=>$acc['year']
+            ],
+            ['id' => 'DESC']
+        );
+        $res = [];
+        foreach($items as $item){
+            $temp = [
+                'id'=>$item->getId(),
+                'date'=>$item->getDate(),
+                'code'=>$item->getCode(),
+                'des'=>$item->getDes(),
+                'amount'=>$item->getAmount()
+            ];
+            $persons = [];
+            foreach($item->getHesabdariRows() as $row){
+                if($row->getPerson()){
+                    $persons[] = Explore::ExplorePerson($row->getPerson());
+                }
+            }
+            $temp['persons'] = $persons;
+            $res[] = $temp;
+        }
+        
+        return $this->json($res);
+    }
+
     /**
      * @throws Exception
      */
@@ -797,6 +838,47 @@ class PersonsController extends AbstractController
             ])
         );
         return $this->json(['id' => $pid]);
+    }
+
+    #[Route('/api/person/send/list/search', name: 'app_persons_send_list_search')]
+    public function app_persons_send_list_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('person_send');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $items = $entityManager->getRepository(HesabdariDoc::class)->findBy(
+            [
+                'bid' => $acc['bid'],
+                'type' => 'person_send',
+                'year'=>$acc['year']
+            ],
+            ['id' => 'DESC']
+        );
+        $res = [];
+        foreach($items as $item){
+            $temp = [
+                'id'=>$item->getId(),
+                'date'=>$item->getDate(),
+                'code'=>$item->getCode(),
+                'des'=>$item->getDes(),
+                'amount'=>$item->getAmount()
+            ];
+            $persons = [];
+            foreach($item->getHesabdariRows() as $row){
+                if($row->getPerson()){
+                    $persons[] = Explore::ExplorePerson($row->getPerson());
+                }
+            }
+            $temp['persons'] = $persons;
+            $res[] = $temp;
+        }
+        
+        return $this->json($res);
     }
 
     /**

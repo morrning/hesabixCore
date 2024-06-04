@@ -17,6 +17,7 @@ use App\Entity\PlugNoghreOrder;
 use App\Entity\Salary;
 use App\Entity\StoreroomTicket;
 use App\Service\Access;
+use App\Service\Explore;
 use App\Service\Jdate;
 use App\Service\JsonResp;
 use App\Service\Log;
@@ -222,7 +223,7 @@ class HesabdariController extends AbstractController
                 $mainRow = $entityManager->getRepository(HesabdariRow::class)->getNotEqual($item, 'person');
                 $temp['person'] = '';
                 if ($mainRow)
-                    $temp['person'] = $mainRow->getPerson()->getNikename();
+                    $temp['person'] = Explore::ExplorePerson($mainRow->getPerson());
             }
 
             //get status of doc
