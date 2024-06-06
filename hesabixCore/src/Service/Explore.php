@@ -164,7 +164,8 @@ class Explore
                 //most be completed
                 'count'         => $count,
                 'unit'          => $item->getUnit()->getName(),
-                'des'           => $des
+                'des'           => $des,
+                'withoutTax' => $item->isWithoutTax()
             ];
         return null;
     }

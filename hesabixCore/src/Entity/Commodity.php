@@ -76,6 +76,9 @@ class Commodity
     #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: PlugRepserviceOrder::class, orphanRemoval: true)]
     private Collection $plugRepserviceOrders;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $withoutTax = null;
+
     public function __construct()
     {
         $this->setPriceBuy(0);
@@ -375,6 +378,18 @@ class Commodity
                 $plugRepserviceOrder->setCommodity(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isWithoutTax(): ?bool
+    {
+        return $this->withoutTax;
+    }
+
+    public function setWithoutTax(?bool $withoutTax): static
+    {
+        $this->withoutTax = $withoutTax;
 
         return $this;
     }

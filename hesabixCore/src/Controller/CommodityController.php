@@ -62,7 +62,9 @@ class CommodityController extends AbstractController
             $temp['khadamat'] = false;
             if ($item->isKhadamat())
                 $temp['khadamat'] = true;
-
+            $temp['withoutTax'] = false;
+            if ($item->isWithoutTax())
+                $temp['withoutTax'] = true;
             $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
             $temp['minOrderCount'] = $item->getMinOrderCount();
             $temp['dayLoading'] = $item->getDayLoading();
@@ -232,7 +234,7 @@ class CommodityController extends AbstractController
             'code' => $code
         ]);
         $data->setUnit($data->getUnit()->getName());
-        $res = $provider->Entity2ArrayJustIncludes($data, ['isSpeedAccess', 'isCommodityCountCheck', 'getName', 'getUnit', 'getPriceBuy', 'getPriceSell', 'getCat', 'getOrderPoint', 'getdes', 'getId', 'getDayLoading', 'isKhadamat', 'getCode', 'getMinOrderCount', 'getLabel'], 1);
+        $res = $provider->Entity2ArrayJustIncludes($data, ['isSpeedAccess', 'isCommodityCountCheck', 'getName', 'getUnit', 'getPriceBuy', 'getPriceSell', 'getCat', 'getOrderPoint', 'getdes', 'getId', 'getDayLoading', 'isKhadamat', 'getCode', 'getMinOrderCount', 'getLabel', 'isWithoutTax'], 1);
         $res['cat'] = '';
         if ($data->getCat())
             $res['cat'] = $data->getCat()->getId();
@@ -297,6 +299,8 @@ class CommodityController extends AbstractController
         $data->setname($params['name']);
         if ($params['khadamat'] == 'true') $data->setKhadamat(true);
         else $data->setKhadamat(false);
+        if ($params['withoutTax'] == 'true') $data->setWithoutTax(true);
+        else $data->setWithoutTax(false);
         $data->setDes($params['des']);
         $data->setPriceSell($params['priceSell']);
         $data->setPriceBuy($params['priceBuy']);

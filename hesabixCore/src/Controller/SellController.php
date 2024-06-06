@@ -11,6 +11,7 @@ use App\Service\Extractor;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
 use App\Entity\HesabdariTable;
+use App\Entity\InvoiceType;
 use App\Entity\Person;
 use App\Entity\StoreroomTicket;
 use Doctrine\ORM\EntityManagerInterface;
@@ -84,7 +85,7 @@ class SellController extends AbstractController
                 'year' => $acc['year'],
                 'code' => $params['update']
             ]);
-            if (!$doc) $this->json($extractor->notFound());
+            if (!$doc) return $this->json($extractor->notFound());
 
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
                 'doc' => $doc
@@ -156,7 +157,7 @@ class SellController extends AbstractController
         $entityManager->persist($hesabdariRow);
 
         //set tax info
-        
+
         $entityManager->persist($doc);
         $entityManager->flush();
         $log->insert(
@@ -167,5 +168,111 @@ class SellController extends AbstractController
             $doc
         );
         return $this->json($extractor->operationSuccess());
+    }
+
+    #[Route('/api/sell/label/change', name: 'app_sell_label_change')]
+    public function app_sell_label_change(Request $request, Access $access, Extractor $extractor, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $acc = $access->hasRole('sell');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        if ($params['label'] != 'clear') {
+            $label = $entityManager->getRepository(InvoiceType::class)->findOneBy([
+                'code' => $params['label']['code'],
+                'type' => 'sell'
+            ]);
+            if (!$label) return $this->json($extractor->notFound());
+        }
+        foreach ($params['items'] as $item) {
+            $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                'bid' => $acc['bid'],
+                'year' => $acc['year'],
+                'code' => $item['code']
+            ]);
+            if (!$doc) return $this->json($extractor->notFound());
+            if ($params['label'] != 'clear') {
+                $doc->setInvoiceLabel($label);
+                $entityManager->persist($doc);
+                $log->insert(
+                    'حسابداری',
+                    ' تغییر برچسب فاکتور‌ شماره ' . $doc->getCode() . ' به ' . $label->getLabel(),
+                    $this->getUser(),
+                    $acc['bid']->getId(),
+                    $doc
+                );
+            } else {
+                $doc->setInvoiceLabel(null);
+                $entityManager->persist($doc);
+                $log->insert(
+                    'حسابداری',
+                    ' حذف برچسب فاکتور‌ شماره ' . $doc->getCode(),
+                    $this->getUser(),
+                    $acc['bid']->getId(),
+                    $doc
+                );
+            }
+        }
+        $entityManager->flush();
+        return $this->json($extractor->operationSuccess());
+    }
+
+    #[Route('/api/sell/docs/search', name: 'app_sell_docs_search')]
+    public function app_sell_docs_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('sell');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+            'bid' => $acc['bid'],
+            'year' => $acc['year'],
+            'type' => 'sell'
+        ], [
+            'id' => 'DESC'
+        ]);
+        $dataTemp = [];
+        foreach ($data as $item) {
+            $temp = [
+                'id' => $item->getId(),
+                'dateSubmit' => $item->getDateSubmit(),
+                'date' => $item->getDate(),
+                'type' => $item->getType(),
+                'code' => $item->getCode(),
+                'des' => $item->getDes(),
+                'amount' => $item->getAmount(),
+                'submitter' => $item->getSubmitter()->getFullName(),
+            ];
+            $mainRow = $entityManager->getRepository(HesabdariRow::class)->getNotEqual($item, 'person');
+            $temp['person'] = '';
+            if ($mainRow)
+                $temp['person'] = Explore::ExplorePerson($mainRow->getPerson());
+
+            $temp['label'] = null;
+            if ($item->getInvoiceLabel()) {
+                $temp['label'] = [
+                    'code' => $item->getInvoiceLabel()->getCode(),
+                    'label' => $item->getInvoiceLabel()->getLabel()
+                ];
+            }
+
+            $temp['relatedDocsCount'] = count($item->getRelatedDocs());
+            $pays = 0;
+            foreach ($item->getRelatedDocs() as $relatedDoc) {
+                $pays += $relatedDoc->getAmount();
+            }
+            $temp['relatedDocsPays'] = $pays;
+            $dataTemp[] = $temp;
+        }
+        return $this->json($dataTemp);
     }
 }
