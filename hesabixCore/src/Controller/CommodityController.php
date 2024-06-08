@@ -127,7 +127,9 @@ class CommodityController extends AbstractController
             $temp['khadamat'] = false;
             if ($item->isKhadamat())
                 $temp['khadamat'] = true;
-
+            $temp['withoutTax'] = false;
+            if ($item->isWithoutTax())
+                $temp['withoutTax'] = true;
             $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
             $temp['minOrderCount'] = $item->getMinOrderCount();
             $temp['dayLoading'] = $item->getDayLoading();
