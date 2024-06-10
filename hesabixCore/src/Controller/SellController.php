@@ -232,7 +232,6 @@ class SellController extends AbstractController
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-
         $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
             'year' => $acc['year'],
@@ -240,6 +239,7 @@ class SellController extends AbstractController
         ], [
             'id' => 'DESC'
         ]);
+
         $dataTemp = [];
         foreach ($data as $item) {
             $temp = [
