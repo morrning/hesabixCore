@@ -39,9 +39,16 @@ class Explore
     {
         $result = self::ExploreHesabdariDoc($hesabdariDoc);
         $person = [];
+        $comms = [];
         foreach ($hesabdariDoc->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = self::ExplorePerson($item->getPerson());
+            }
+            elseif($item->getCommodity()){
+                $comms[] = self::ExploreHesabdariRow($item);
+            }
+            elseif($item->getRef()->getCode() == '53'){
+                $result['discountAll'] = $item->getBd();
             }
         }
         $result['person'] = $person;

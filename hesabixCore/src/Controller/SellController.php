@@ -102,6 +102,34 @@ class SellController extends AbstractController
             $doc->setMoney($acc['bid']->getMoney());
             $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
         }
+        if($params['transferCost'] != 0){
+            $hesabdariRow = new HesabdariRow();
+            $hesabdariRow->setDes('حمل و نقل کالا');
+            $hesabdariRow->setBid($acc['bid']);
+            $hesabdariRow->setYear($acc['year']);
+            $hesabdariRow->setDoc($doc);
+            $hesabdariRow->setBs($params['transferCost']);
+            $hesabdariRow->setBd(0);
+            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
+                'code' => '61' // transfer cost income
+            ]);
+            $hesabdariRow->setRef($ref);
+            $entityManager->persist($hesabdariRow);
+        }
+        if($params['discountAll'] != 0){
+            $hesabdariRow = new HesabdariRow();
+            $hesabdariRow->setDes('تخفیف فاکتور');
+            $hesabdariRow->setBid($acc['bid']);
+            $hesabdariRow->setYear($acc['year']);
+            $hesabdariRow->setDoc($doc);
+            $hesabdariRow->setBs(0);
+            $hesabdariRow->setBd($params['discountAll']);
+            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
+                'code' => '104' // سایر هزینه های پخش و فروش
+            ]);
+            $hesabdariRow->setRef($ref);
+            $entityManager->persist($hesabdariRow);
+        }
         $doc->setDes($params['des']);
         $doc->setDate($params['date']);
         $sumTax = 0;
@@ -119,7 +147,7 @@ class SellController extends AbstractController
             $hesabdariRow->setDiscount($row['discount']);
             $hesabdariRow->setTax($row['tax']);
             $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '59' // sell commodity
+                'code' => '53' // sell commodity
             ]);
             $hesabdariRow->setRef($ref);
             $row['count'] = str_replace(',', '', $row['count']);
@@ -142,7 +170,7 @@ class SellController extends AbstractController
         $hesabdariRow->setYear($acc['year']);
         $hesabdariRow->setDoc($doc);
         $hesabdariRow->setBs(0);
-        $hesabdariRow->setBd($sumTax + $sumTotal);
+        $hesabdariRow->setBd($sumTax + $sumTotal + $params['transferCost'] - $params['discountAll']);
         $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
             'code' => '3' // persons
         ]);
