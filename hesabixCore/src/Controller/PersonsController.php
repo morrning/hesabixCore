@@ -11,6 +11,9 @@ use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
 use App\Entity\PersonCard;
 use App\Entity\PersonType;
+use App\Entity\Storeroom;
+use App\Entity\StoreroomItem;
+use App\Entity\StoreroomTicket;
 use App\Service\Explore;
 use Doctrine\ORM\EntityManagerInterface;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -982,6 +985,36 @@ class PersonsController extends AbstractController
             $entityManager->flush();
         }
         $log->insert('اشخاص', 'تعداد ' . count($data) . ' شخص به صورت گروهی وارد شد.', $this->getUser(), $request->headers->get('activeBid'));
+        return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/person/delete/{code}', name: 'app_person_delete')]
+    public function app_person_delete(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('person');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $person = $entityManager->getRepository(Person::class)->findOneBy(['bid' => $acc['bid'], 'code' => $code]);
+        if (!$person)
+            throw $this->createNotFoundException();
+        //check accounting docs
+        $docs = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'person' => $person]);
+        if (count($docs) > 0)
+            return $this->json(['result' => 2]);
+        //check for storeroom docs
+        $storeDocs = $entityManager->getRepository(StoreroomTicket::class)->findby(['bid' => $acc['bid'], 'Person' => $person]);
+        if (count($storeDocs) > 0)
+            return $this->json(['result' => 2]);
+        //check in repservice
+
+        $comName = $person->getName();
+        try {
+            $entityManager->remove($person);
+        } catch (Exception $e) {
+            return $this->json(['result' => 2]);
+        }
+        $log->insert('کالا/خدمات', '  شخص  با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
     }
 }

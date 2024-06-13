@@ -162,7 +162,7 @@ class SellController extends AbstractController
             $entityManager->persist($hesabdariRow);
         }
         //set amount of document
-        $doc->setAmount($sumTax + $sumTotal);
+        $doc->setAmount($sumTax + $sumTotal - $params['discountAll'] + $params['transferCost']);
         //set person buyer
         $hesabdariRow = new HesabdariRow();
         $hesabdariRow->setDes('فاکتور فروش');
@@ -299,6 +299,16 @@ class SellController extends AbstractController
                 $pays += $relatedDoc->getAmount();
             }
             $temp['relatedDocsPays'] = $pays;
+
+            foreach ($item->getHesabdariRows() as $item) {
+                if ($item->getRef()->getCode() == '104') {
+                    $temp['discountAll'] = $item->getBd();
+                } elseif ($item->getRef()->getCode() == '61') {
+                    $temp['transferCost'] = $item->getBs();
+                }
+            }
+            if(!array_key_exists('discountAll',$temp)) $temp['discountAll'] = 0;
+            if(!array_key_exists('transferCost',$temp)) $temp['transferCost'] = 0;
             $dataTemp[] = $temp;
         }
         return $this->json($dataTemp);

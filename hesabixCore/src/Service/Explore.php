@@ -39,18 +39,18 @@ class Explore
     {
         $result = self::ExploreHesabdariDoc($hesabdariDoc);
         $person = [];
-        $comms = [];
         foreach ($hesabdariDoc->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = self::ExplorePerson($item->getPerson());
             }
-            elseif($item->getCommodity()){
-                $comms[] = self::ExploreHesabdariRow($item);
-            }
-            elseif($item->getRef()->getCode() == '53'){
+            elseif($item->getRef()->getCode() == '104'){
                 $result['discountAll'] = $item->getBd();
+            } elseif ($item->getRef()->getCode() == '61') {
+                $result['transferCost'] = $item->getBs();
             }
         }
+        if (!array_key_exists('discountAll', $result)) $result['discountAll'] = 0;
+        if (!array_key_exists('transferCost', $result)) $result['transferCost'] = 0;
         $result['person'] = $person;
         return $result;
     }
@@ -156,7 +156,7 @@ class Explore
         return $temp;
     }
 
-    public static function ExploreCommodity(Commodity | null $item, int | null $count = 0, string $des = '')
+    public static function ExploreCommodity(Commodity | null $item, int | null $count = 0, string | null $des = '')
     {
         if ($item)
             return [

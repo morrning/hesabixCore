@@ -503,7 +503,15 @@ class HesabdariController extends AbstractController
                 foreach ($items as $item)
                     $entityManager->remove($item);
                 $entityManager->remove($relatedDoc);
-                $log->insert('حسابداری', 'سند حسابداری شماره ' . $relatedDoc->getCode() . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
+                $logs = $entityManager->getRepository(EntityLog::class)->findBy(['doc' => $relatedDoc]);
+                foreach ($logs as $item) {
+                    $item->setDoc(null);
+                    $entityManager->persist($item);
+                    $entityManager->flush();
+                }
+                $code = $doc->getCode();
+                $entityManager->remove($relatedDoc);
+                $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
             }
         }
 
@@ -514,9 +522,107 @@ class HesabdariController extends AbstractController
             $entityManager->persist($item);
             $entityManager->flush();
         }
+        $code = $doc->getCode();
         $entityManager->remove($doc);
         $entityManager->flush();
-        $log->insert('حسابداری', 'سند حسابداری شماره ' . $doc->getCode() . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
+        $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
+        return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/accounting/remove/group', name: 'app_accounting_remove_doc_group')]
+    public function app_accounting_remove_doc_group(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (!array_key_exists('items', $params))
+            $this->createNotFoundException();
+        foreach($params['items'] as $item){
+            $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                'code' => $item['code'],
+                'bid' => $request->headers->get('activeBid')
+            ]);
+            if (!$doc) throw $this->createNotFoundException();
+            $roll = '';
+            if ($doc->getType() == 'person_receive' || $doc->getType() == 'person_send') $roll = 'person';
+            elseif ($doc->getType() == 'sell_receive') $roll = 'sell';
+            elseif ($doc->getType() == 'buy_send') $roll = 'buy';
+            else
+                $roll = $doc->getType();
+            $acc = $access->hasRole($roll);
+            if (!$acc)
+                throw $this->createAccessDeniedException();
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'doc' => $doc
+            ]);
+            if ($doc->getPlugin() == 'plugNoghreOrder') {
+                $order = $entityManager->getRepository(PlugNoghreOrder::class)->findOneBy([
+                    'doc' => $doc
+                ]);
+                if ($order)
+                    $entityManager->remove($order);
+            }
+            //check wallet online transactions
+            $tempPays = $entityManager->getRepository(PayInfoTemp::class)->findOneBy(['doc' => $doc]);
+            if ($tempPays) {
+                //doc has transaction
+                return $this->json([
+                    'result' => 2,
+                    'message' => 'سند به دلیل داشتن تراکنش پرداخت آنلاین قابل حذف نیست.'
+                ]);
+            }
+            //check storeroom tickets
+            $tickets = $entityManager->getRepository(StoreroomTicket::class)->findBy(['doc' => $doc]);
+            foreach ($tickets as $ticket)
+                $entityManager->remove($ticket);
+            //remove rows and check sub systems
+            foreach ($rows as $row) {
+                if ($row->getCheque()) {
+                    if ($row->getCheque()->isLocked()) {
+                        //doc has transaction
+                        return $this->json([
+                            'result' => 2,
+                            'message' => 'سند به دلیل داشتن تراکنش مرتبط با چک بانکی قابل حذف نیست.'
+                        ]);
+                    }
+                    $log->insert('بانکداری', 'چک  شماره  شماره ' . $row->getCheque()->getNumber() . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
+                    $entityManager->remove($row->getCheque());
+                }
+                $entityManager->remove($row);
+            }
+    
+            foreach ($doc->getRelatedDocs() as $relatedDoc) {
+                if ($relatedDoc->getType() != 'walletPay') {
+                    $items = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $relatedDoc]);
+                    foreach ($items as $item)
+                        $entityManager->remove($item);
+                    $entityManager->remove($relatedDoc);
+                    $logs = $entityManager->getRepository(EntityLog::class)->findBy(['doc' => $relatedDoc]);
+                    foreach ($logs as $item) {
+                        $item->setDoc(null);
+                        $entityManager->persist($item);
+                        $entityManager->flush();
+                    }
+                    $code = $doc->getCode();
+                    $entityManager->remove($relatedDoc);
+                    $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
+                }
+            }
+    
+            //delete logs from documents
+            $logs = $entityManager->getRepository(EntityLog::class)->findBy(['doc' => $doc]);
+            foreach ($logs as $item) {
+                $item->setDoc(null);
+                $entityManager->persist($item);
+                $entityManager->flush();
+            }
+            $code = $doc->getCode();
+            $entityManager->remove($doc);
+            $entityManager->flush();
+            $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
+            
+        }
         return $this->json(['result' => 1]);
     }
 
