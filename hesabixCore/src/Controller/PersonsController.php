@@ -1014,7 +1014,7 @@ class PersonsController extends AbstractController
         } catch (Exception $e) {
             return $this->json(['result' => 2]);
         }
-        $log->insert('کالا/خدمات', '  شخص  با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
+        $log->insert('اشخاص', '  شخص  با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
     }
 }
