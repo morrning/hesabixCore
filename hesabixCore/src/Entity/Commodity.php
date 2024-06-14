@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\CommodityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Ignore;
 
@@ -78,6 +79,9 @@ class Commodity
 
     #[ORM\Column(nullable: true)]
     private ?bool $withoutTax = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $barcodes = null;
 
     public function __construct()
     {
@@ -390,6 +394,18 @@ class Commodity
     public function setWithoutTax(?bool $withoutTax): static
     {
         $this->withoutTax = $withoutTax;
+
+        return $this;
+    }
+
+    public function getBarcodes(): ?string
+    {
+        return $this->barcodes;
+    }
+
+    public function setBarcodes(?string $barcodes): static
+    {
+        $this->barcodes = $barcodes;
 
         return $this;
     }

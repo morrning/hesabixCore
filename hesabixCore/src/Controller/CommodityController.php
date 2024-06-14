@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\Explore;
 use App\Service\Log;
 use App\Service\Jdate;
 use App\Service\Access;
@@ -236,7 +237,7 @@ class CommodityController extends AbstractController
             'code' => $code
         ]);
         $data->setUnit($data->getUnit()->getName());
-        $res = $provider->Entity2ArrayJustIncludes($data, ['isSpeedAccess', 'isCommodityCountCheck', 'getName', 'getUnit', 'getPriceBuy', 'getPriceSell', 'getCat', 'getOrderPoint', 'getdes', 'getId', 'getDayLoading', 'isKhadamat', 'getCode', 'getMinOrderCount', 'getLabel', 'isWithoutTax'], 1);
+        $res = $provider->Entity2ArrayJustIncludes($data, ['isSpeedAccess', 'isCommodityCountCheck', 'getName', 'getUnit', 'getPriceBuy', 'getPriceSell', 'getCat', 'getOrderPoint', 'getdes', 'getId', 'getDayLoading', 'isKhadamat', 'getCode', 'getMinOrderCount', 'getLabel', 'isWithoutTax','getBarcodes'], 1);
         $res['cat'] = '';
         if ($data->getCat())
             $res['cat'] = $data->getCat()->getId();
@@ -308,6 +309,9 @@ class CommodityController extends AbstractController
         $data->setPriceBuy($params['priceBuy']);
         if (array_key_exists('commodityCountCheck', $params)) {
             $data->setCommodityCountCheck($params['commodityCountCheck']);
+        }
+        if (array_key_exists('barcodes', $params)) {
+            $data->setBarcodes($params['barcodes']);
         }
         $data->setMinOrderCount($params['minOrderCount']);
         $data->setSpeedAccess($params['speedAccess']);

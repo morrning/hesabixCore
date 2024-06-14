@@ -216,6 +216,9 @@ class Business
     #[ORM\Column(length: 25, nullable: true)]
     private ?string $plugRepserviceCode = null;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Printer::class, orphanRemoval: true)]
+    private Collection $printers;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -245,6 +248,7 @@ class Business
         $this->personCards = new ArrayCollection();
         $this->mostDes = new ArrayCollection();
         $this->plugRepserviceOrders = new ArrayCollection();
+        $this->printers = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1502,6 +1506,36 @@ class Business
     public function setPlugRepserviceCode(?string $plugRepserviceCode): static
     {
         $this->plugRepserviceCode = $plugRepserviceCode;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Printer>
+     */
+    public function getPrinters(): Collection
+    {
+        return $this->printers;
+    }
+
+    public function addPrinter(Printer $printer): static
+    {
+        if (!$this->printers->contains($printer)) {
+            $this->printers->add($printer);
+            $printer->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePrinter(Printer $printer): static
+    {
+        if ($this->printers->removeElement($printer)) {
+            // set the owning side to null (unless already changed)
+            if ($printer->getBid() === $this) {
+                $printer->setBid(null);
+            }
+        }
 
         return $this;
     }
