@@ -172,7 +172,11 @@ class Explore
                 'count'         => $count,
                 'unit'          => $item->getUnit()->getName(),
                 'des'           => $des,
-                'withoutTax' => $item->isWithoutTax()
+                'withoutTax' => $item->isWithoutTax(),
+                'unitData' => [
+                    'name' => $item->getUnit()->getName(),
+                    'floatNumber' => $item->getUnit()->getFloatNumber(),
+                ]
             ];
         return null;
     }

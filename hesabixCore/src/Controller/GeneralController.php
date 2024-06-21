@@ -67,7 +67,13 @@ class GeneralController extends AbstractController
         $print = $entityManager->getRepository(PrinterQueue::class)->findOneBy(['pid'=>$id]);
         if(!$print)
             throw $this->createNotFoundException();
-        $pdfMGR->streamTwig2PDF($print);
+        if($print->isPosprint()){
+            $pdfMGR->streamTwig2PDFInvoiceType($print);
+        }
+        else{
+          $pdfMGR->streamTwig2PDF($print);  
+        }
+        
         return new Response('');
     }
 }

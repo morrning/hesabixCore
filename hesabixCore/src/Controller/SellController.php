@@ -313,4 +313,35 @@ class SellController extends AbstractController
         }
         return $this->json($dataTemp);
     }
+
+    #[Route('/api/sell/posprinter/invoice', name: 'app_sell_posprinter_invoice')]
+    public function app_sell_posprinter_invoice(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $acc = $access->hasRole('sell');
+        if (!$acc) throw $this->createAccessDeniedException();
+
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'code' => $params['code']
+        ]);
+        if (!$doc) throw $this->createNotFoundException();
+        $posPrint = false;
+        if(array_key_exists('posprint',$params)) $posPrint = true;
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/posPrinters/sell.html.twig', [
+                'bid' => $acc['bid'],
+                'doc'=>$doc,
+                'rows'=>$doc->getHesabdariRows()
+            ]),
+            $posPrint
+        );
+        return $this->json(['id' => $pid]);
+    }
 }

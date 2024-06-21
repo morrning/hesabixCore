@@ -106,7 +106,7 @@ class PersonsController extends AbstractController
             if ($person)
                 return $this->json(['result' => 2]);
             $person = new Person();
-            $person->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'person'));
+            $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
         } else {
             $person = $entityManager->getRepository(Person::class)->findOneBy([
                 'bid' => $acc['bid'],
@@ -208,7 +208,7 @@ class PersonsController extends AbstractController
             }
         }
         $entityManager->flush();
-        $log->insert('اشخاص', 'شخص با نام مستعار ' . $params['nikename'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
+        $log->insert('اشخاص', 'شخص با نام مستعار ' . $params['nikename'] . ' افزوده/ویرایش شد.', $this->getUser(), $acc['bid']);
         return $this->json(['result' => 1]);
     }
 
@@ -254,7 +254,8 @@ class PersonsController extends AbstractController
     #[Route('/api/person/list/limit', name: 'app_persons_list_limit')]
     public function app_persons_list_limit(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if (!$access->hasRole('person'))
+        $acc = $access->hasRole('person');
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
@@ -262,12 +263,12 @@ class PersonsController extends AbstractController
         }
         if (array_key_exists('speedAccess', $params)) {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $request->headers->get('activeBid'),
+                'bid' => $acc['bid'],
                 'speedAccess' => true
             ]);
         } else {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $request->headers->get('activeBid')
+                'bid' => $acc['bid']
             ]);
         }
         $response = [];
@@ -298,7 +299,8 @@ class PersonsController extends AbstractController
     #[Route('/api/person/list', name: 'app_persons_list')]
     public function app_persons_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): Response
     {
-        if (!$access->hasRole('person'))
+        $acc = $access->hasRole('person');
+        if(!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
@@ -306,12 +308,12 @@ class PersonsController extends AbstractController
         }
         if (array_key_exists('speedAccess', $params)) {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $request->headers->get('activeBid'),
+                'bid' => $acc['bid'],
                 'speedAccess' => true
             ]);
         } else {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $request->headers->get('activeBid')
+                'bid' => $acc['bid']
             ]);
         }
         $response = Explore::ExplorePersons($persons, $entityManager->getRepository(PersonType::class)->findAll());
@@ -335,7 +337,8 @@ class PersonsController extends AbstractController
     #[Route('/api/person/list/debtors/{amount}', name: 'app_persons_list_debtors')]
     public function app_persons_list_debtors(string $amount, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if (!$access->hasRole('person'))
+        $acc = $access->hasRole('person');
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
@@ -343,12 +346,12 @@ class PersonsController extends AbstractController
         }
         if (array_key_exists('speedAccess', $params)) {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $request->headers->get('activeBid'),
+                'bid' => $acc['bid'],
                 'speedAccess' => true
             ]);
         } else {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $request->headers->get('activeBid')
+                'bid' => $acc['bid']
             ]);
         }
 
@@ -383,7 +386,7 @@ class PersonsController extends AbstractController
             throw $this->createAccessDeniedException();
 
         $persons = $entityManager->getRepository(Person::class)->findBy([
-            'bid' => $request->headers->get('activeBid')
+            'bid' => $acc['bid']
         ]);
         $response = $provider->ArrayEntity2Array($persons, 0);
         foreach ($persons as $key => $person) {
@@ -421,7 +424,8 @@ class PersonsController extends AbstractController
     #[Route('/api/person/list/depositors/{amount}', name: 'app_persons_list_depoistors')]
     public function app_persons_list_depoistors(string $amount, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if (!$access->hasRole('person'))
+        $acc = $access->hasRole('person');
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
@@ -429,12 +433,12 @@ class PersonsController extends AbstractController
         }
         if (array_key_exists('speedAccess', $params)) {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $request->headers->get('activeBid'),
+                'bid' => $acc['bid'],
                 'speedAccess' => true
             ]);
         } else {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $request->headers->get('activeBid')
+                'bid' => $acc['bid']
             ]);
         }
 
@@ -470,7 +474,7 @@ class PersonsController extends AbstractController
             throw $this->createAccessDeniedException();
 
         $persons = $entityManager->getRepository(Person::class)->findBy([
-            'bid' => $request->headers->get('activeBid')
+            'bid' => $acc['bid']
         ]);
         $response = $provider->ArrayEntity2Array($persons, 0);
         foreach ($persons as $key => $person) {
@@ -940,7 +944,7 @@ class PersonsController extends AbstractController
             //check exist before
             if (!$person) {
                 $person = new Person();
-                $person->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'person'));
+                $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
                 $person->setNikename($item[0]);
                 $person->setBid($acc['bid']);
 
@@ -984,7 +988,7 @@ class PersonsController extends AbstractController
             }
             $entityManager->flush();
         }
-        $log->insert('اشخاص', 'تعداد ' . count($data) . ' شخص به صورت گروهی وارد شد.', $this->getUser(), $request->headers->get('activeBid'));
+        $log->insert('اشخاص', 'تعداد ' . count($data) . ' شخص به صورت گروهی وارد شد.', $this->getUser(), $acc['bid']);
         return $this->json(['result' => 1]);
     }
 

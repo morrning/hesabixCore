@@ -70,6 +70,10 @@ class CommodityController extends AbstractController
             $temp['minOrderCount'] = $item->getMinOrderCount();
             $temp['dayLoading'] = $item->getDayLoading();
             $temp['orderPoint'] = $item->getOrderPoint();
+            $temp['unitData'] = [
+                'name' => $item->getUnit()->getName(),
+                'floatNumber' => $item->getUnit()->getFloatNumber(),
+            ];
             //calculate count
             if ($item->isKhadamat()) {
                 $temp['count'] = 0;

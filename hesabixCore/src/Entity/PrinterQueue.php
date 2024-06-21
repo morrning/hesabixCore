@@ -30,6 +30,9 @@ class PrinterQueue
     #[ORM\ManyToOne]
     private ?Business $bid = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $posprint = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -91,6 +94,18 @@ class PrinterQueue
     public function setBid(?Business $bid): static
     {
         $this->bid = $bid;
+
+        return $this;
+    }
+
+    public function isPosprint(): ?bool
+    {
+        return $this->posprint;
+    }
+
+    public function setPosprint(?bool $posprint): static
+    {
+        $this->posprint = $posprint;
 
         return $this;
     }

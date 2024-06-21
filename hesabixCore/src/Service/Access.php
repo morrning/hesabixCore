@@ -1,8 +1,11 @@
 <?php
 
 namespace App\Service;
+
+use App\Entity\APIToken;
 use App\Entity\Business;
 use App\Entity\Permission;
+use App\Entity\UserToken;
 use App\Entity\Year;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,6 +19,9 @@ class Access
     protected Request $request;
     protected RequestStack $requestStack;
     protected UserInterface | null $user;
+
+    protected Business | string $bid;
+
     function __construct(
         EntityManagerInterface  $entityManager,
         TokenStorageInterface $tokenStorage,
@@ -36,12 +42,33 @@ class Access
     {
         if(is_null($this->user))
             return false;
-        $bid = $this->em->getRepository(Business::class)->find($this->request->headers->get('activeBid'));
-        if(is_null($bid))
-            return false;
-        $year = $this->em->getRepository(Year::class)->find($this->request->headers->get('activeYear'));
-        if(is_null($year))
-            return false;
+        if ($this->request->headers->get('activeBid')) {
+            $bid = $this->em->getRepository(Business::class)->find($this->request->headers->get('activeBid'));
+            if (is_null($bid)) {
+                return false;
+            }
+        }
+        elseif($this->request->headers->get('api-key')){
+            $token = $this->em->getRepository(APIToken::class)->findOneBy([
+                'token'=>$this->request->headers->get('api-key')
+            ]);
+            if(!$token) { return false; }
+            $bid = $token->getBid();
+        }
+        if ($this->request->headers->get('activeYear')) {
+            $year = $this->em->getRepository(Year::class)->findOneBy([
+                'id' => $this->request->headers->get('activeYear'),
+                'bid'=>$bid
+            ]);
+            if (!$year) { return false; }
+        }
+        elseif($this->request->headers->get('api-key')){
+            $year = $this->em->getRepository(Year::class)->findOneBy([
+                'head' => true,
+                'bid'=>$bid
+            ]);
+        }
+        
         $accessArray = [
             'bid'=>$bid,
             'user'=>$this->user,

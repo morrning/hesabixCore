@@ -46,6 +46,37 @@ class pdfMGR
         $mpdf->Output();
     }
 
+    public function streamTwig2PDFInvoiceType(PrinterQueue $printQueue, $configs = [])
+    {
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8', 'format' => [80, 600],
+            'fontdata' => [
+                'vazirmatn' => [
+                    'R' => 'Vazir-Regular-FD.ttf',
+                    'I' => 'Vazir-Regular-FD.ttf',
+                    'useOTL' => 0xFF,
+                    'useKashida' => 75,
+                ]
+            ],
+            'default_font' => 'vazirmatn',
+            'tempDir' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf',
+            'setAutoTopMargin' => true,
+            'autoArabic' => true,
+            'margin-collapse' => 'collapse|none'
+        ]);
+        $mpdf->AddPageByArray([
+            'margin-left' => 0,
+            'margin-right' => 0,
+            'margin-top' => 0,
+            'margin-bottom' => 0,
+        ]);
+        $mpdf->AddFontDirectory(__DIR__ . '../Fonts');
+        $mpdf->WriteHTML($printQueue->getView());
+
+        $mpdf->Output();
+    }
+
     private function imageToBase64($path) {
         $path = $path;
         $type = pathinfo($path, PATHINFO_EXTENSION);

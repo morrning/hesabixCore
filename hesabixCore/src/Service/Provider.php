@@ -147,13 +147,14 @@ class Provider
         return $result;
     }
 
-    public function createPrint(Business $bid, User $user, String $data)
+    public function createPrint(Business $bid, User $user, String $data,$posPrint = false)
     {
         $print = new PrinterQueue();
         $print->setDateSubmit(time());
         $print->setSubmitter($user);
         $print->setBid($bid);
         $print->setView($data);
+        $print->setPosprint($posPrint);
         $print->setPid($this->RandomString(128));
         $this->entityManager->persist($print);
         $this->entityManager->flush();
