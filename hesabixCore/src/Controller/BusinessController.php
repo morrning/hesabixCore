@@ -580,8 +580,9 @@ class BusinessController extends AbstractController
     }
 
     #[Route('/api/business/stat', name: 'api_business_stat')]
-    public function api_business_stat(Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
+    public function api_business_stat(Jdate $jdate,Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
     {
+        $dateNow = $jdate->jdate('Y/m/d',time());
         $buss = $entityManager->getRepository(Business::class)->find(
             $request->headers->get('activeBid')
         );
@@ -618,6 +619,7 @@ class BusinessController extends AbstractController
             'type' => 'buy',
         ]);
         $buysTotal = 0;
+        $buysToday = 0;
         foreach ($buys as $item) {
             $canAdd = false;
             foreach ($item->getHesabdariRows() as $row) {
@@ -626,9 +628,11 @@ class BusinessController extends AbstractController
             }
             if ($canAdd) {
                 $buysTotal += $item->getAmount();
+                if($item->getDate() == $dateNow){
+                    $buysToday += $item->getAmount();
+                }
             }
         }
-
 
         $sells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $buss,
@@ -636,6 +640,7 @@ class BusinessController extends AbstractController
             'type' => 'sell',
         ]);
         $sellsTotal = 0;
+        $sellsToday = 0;
         foreach ($sells as $item) {
             $canAdd = false;
             foreach ($item->getHesabdariRows() as $row) {
@@ -644,6 +649,9 @@ class BusinessController extends AbstractController
             }
             if ($canAdd) {
                 $sellsTotal += $item->getAmount();
+                if($item->getDate() == $dateNow){
+                    $sellsToday += $item->getAmount();
+                }
             }
         }
         $response = [
@@ -655,7 +663,9 @@ class BusinessController extends AbstractController
                 'bid' => $buss
             ])),
             'buys_total' => $buysTotal,
+            'buys_today' => $buysToday,
             'sells_total' => $sellsTotal,
+            'sells_today' => $sellsToday
         ];
         return $this->json($response);
     }

@@ -219,6 +219,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Printer::class, orphanRemoval: true)]
     private Collection $printers;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PrintTemplate::class, orphanRemoval: true)]
+    private Collection $printTemplates;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -249,6 +252,7 @@ class Business
         $this->mostDes = new ArrayCollection();
         $this->plugRepserviceOrders = new ArrayCollection();
         $this->printers = new ArrayCollection();
+        $this->printTemplates = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1534,6 +1538,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($printer->getBid() === $this) {
                 $printer->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PrintTemplate>
+     */
+    public function getPrintTemplates(): Collection
+    {
+        return $this->printTemplates;
+    }
+
+    public function addPrintTemplate(PrintTemplate $printTemplate): static
+    {
+        if (!$this->printTemplates->contains($printTemplate)) {
+            $this->printTemplates->add($printTemplate);
+            $printTemplate->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePrintTemplate(PrintTemplate $printTemplate): static
+    {
+        if ($this->printTemplates->removeElement($printTemplate)) {
+            // set the owning side to null (unless already changed)
+            if ($printTemplate->getBid() === $this) {
+                $printTemplate->setBid(null);
             }
         }
 

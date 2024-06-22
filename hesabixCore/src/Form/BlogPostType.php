@@ -14,6 +14,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\File;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class BlogPostType extends AbstractType
 {
@@ -22,7 +23,21 @@ class BlogPostType extends AbstractType
         $builder
             ->add('title',TextType::class)
             ->add('intero',TextareaType::class)
-            ->add('body',CKEditorType::class)
+            ->add(
+                'body',
+                CKEditorType::class,
+                [
+                    'filebrowsers' => [
+                        'VideoUpload',
+                        'VideoBrowse',
+                    ],
+                    'config' => array(
+                        'filebrowserBrowseRoute'           => 'my_route',
+                        'filebrowserBrowseRouteParameters' => array('slug' => 'my-slug'),
+                        'filebrowserBrowseRouteType'       => UrlGeneratorInterface::ABSOLUTE_URL,
+                    ),
+                ]
+            )
             ->add('img', FileType::class, [
                 'label' => 'Img',
 
