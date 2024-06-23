@@ -338,9 +338,11 @@ class SellController extends AbstractController
             $this->renderView('pdf/posPrinters/sell.html.twig', [
                 'bid' => $acc['bid'],
                 'doc'=>$doc,
-                'rows'=>$doc->getHesabdariRows()
+                'rows'=>$doc->getHesabdariRows(),
+                'printInvoice'=>$params['posPrint'],
+                'printcashdeskRecp'=>$params['posPrintRecp'],
             ]),
-            $posPrint
+            true
         );
         return $this->json(['id' => $pid]);
     }

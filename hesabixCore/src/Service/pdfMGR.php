@@ -50,7 +50,7 @@ class pdfMGR
     {
 
         $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8', 'format' => [80, 600],
+            'mode' => 'utf-8', 'format' => [80, 300],
             'fontdata' => [
                 'vazirmatn' => [
                     'R' => 'Vazir-Regular-FD.ttf',

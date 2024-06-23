@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="fa" direction="rtl">
+<html lang="fa" direction="rtl"></html>
 
 	<head>
 		<style>
 			body {
-				margin: 0;
+				margin: 5px;
 				padding: 0;
 				font-size: 100%;
 			}
@@ -15,9 +15,10 @@
 
 			tr {
 				width: 100%;
-
 			}
-
+			th,td {
+				border: 1px solid black !important;
+			}
 			h1 {
 				text-align: center;
 				vertical-align: middle;
@@ -119,8 +120,8 @@
 			}
 		</style>
 	</head>
-
 	<body style="direction:rtl; text-align:right; width:100%">
+{% if printInvoice%}
 		<header>
 			<p style="text-align:center;">{{ bid.name }}</p>
 		</header>
@@ -134,10 +135,6 @@
 						<span>#
 							{{doc.code | number_format}}</span>
 					</td>
-				</tr>
-				<tr>
-					<td style="text-align:right"></td>
-					<td></td>
 				</tr>
 				<tr>
 					<th class="center-align" colspan="2">
@@ -174,17 +171,65 @@
 				</tr>
 			</tbody>
 		</table>
-		<section style="margin-bottom:10px;margin-top:10px;">
-			<p style="text-align:center">
+		<section style="margin-bottom:10px;margin-top:10px;text-align:center;">
+			<b style="text-align:center">
 				از خرید شما متشکریم
-			</p>
+			</b>
 		</section>
 		<footer style="text-align:center">
-			<p>{{ bid.name }}</p>
 			<p>{{ bid.address }}</p>
 			<p>{{ bid.tel }}</p>
 			<p>hesabix.ir</p>
 		</footer>
+{% endif %}
+
+{% if printcashdeskRecp%}
+		{% if printInvoice %}
+			<hr>
+		{% endif %}
+		<table class="bill-details">
+			<tbody style="text-align:right">
+				<tr>
+					<td style="text-align:right">تاریخ :
+						<span>{{doc.date}}</span>
+					</td>
+					<td style="text-align:right">شماره :
+						<span>#
+							{{doc.code | number_format}}</span>
+					</td>
+				</tr>
+				<tr>
+					<th class="center-align" colspan="2">
+						<span class="receipt">قبض صندوق</span>
+					</th>
+				</tr>
+			</tbody>
+		</table>
+
+		<table class="items">
+			<thead style="background:gray;text-color:white;">
+				<tr>
+					<th class="heading name">کالا</th>
+					<th class="heading qty">تعداد</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for row in rows %}
+					{% if row.commodity != null %}
+						<tr>
+							<td>{{row.commodity.name}}</td>
+							<td>{{row.commdityCount}}</td>
+						</tr>
+					{% endif %}
+				{% endfor %}
+			</tbody>
+		</table>
+		<footer style="text-align:center">
+			<p>{{ bid.name }}</p>
+		</footer>
+{% endif %}
+
 	</body>
 
 </html>
