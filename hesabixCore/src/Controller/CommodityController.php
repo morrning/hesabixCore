@@ -283,7 +283,8 @@ class CommodityController extends AbstractController
             return $this->json(['result' => 3]);
         if ($code == 0) {
             $data = $entityManager->getRepository(Commodity::class)->findOneBy([
-                'name' => $params['name']
+                'name' => $params['name'],
+                'bid'=> $acc['bid']
             ]);
             //check exist before
             if ($data)
