@@ -47,3 +47,6 @@ services:
     registryMGR:
         class: App\Service\registryMGR
         arguments: [ "@doctrine.orm.entity_manager" ]
+    Printers:
+        class: App\Service\Printers
+        arguments: [ "@doctrine.orm.entity_manager" ]

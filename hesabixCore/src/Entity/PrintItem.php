@@ -23,6 +23,9 @@ class PrintItem
     #[ORM\Column(nullable: true)]
     private ?bool $printed = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $type = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +63,18 @@ class PrintItem
     public function setPrinted(?bool $printed): static
     {
         $this->printed = $printed;
+
+        return $this;
+    }
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(string $type): static
+    {
+        $this->type = $type;
 
         return $this;
     }

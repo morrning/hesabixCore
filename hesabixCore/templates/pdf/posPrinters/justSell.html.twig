@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="fa" direction="rtl"></html>
+<html lang="fa" direction="rtl">
+
 	<head>
 		<style>
 			body {
@@ -15,7 +16,8 @@
 			tr {
 				width: 100%;
 			}
-			th,td {
+			th,
+			td {
 				border: 1px solid black !important;
 			}
 			h1 {
@@ -120,7 +122,6 @@
 		</style>
 	</head>
 	<body style="direction:rtl; text-align:right; width:100%">
-{% if printInvoice%}
 		<header>
 			<p style="text-align:center;">{{ bid.name }}</p>
 		</header>
@@ -180,55 +181,6 @@
 			<p>{{ bid.tel }}</p>
 			<p>hesabix.ir</p>
 		</footer>
-{% endif %}
-
-{% if printcashdeskRecp%}
-		{% if printInvoice %}
-<pagebreak>
-
-		{% endif %}
-		<table class="bill-details">
-			<tbody style="text-align:right">
-				<tr>
-					<td style="text-align:right">تاریخ :
-						<span>{{doc.date}}</span>
-					</td>
-					<td style="text-align:right">شماره :
-						<span>#
-							{{doc.code | number_format}}</span>
-					</td>
-				</tr>
-				<tr>
-					<th class="center-align" colspan="2">
-						<span class="receipt">قبض صندوق</span>
-					</th>
-				</tr>
-			</tbody>
-		</table>
-
-		<table class="items">
-			<thead style="background:gray;text-color:white;">
-				<tr>
-					<th class="heading name">کالا</th>
-					<th class="heading qty">تعداد</th>
-				</tr>
-			</thead>
-
-			<tbody>
-				{% for row in rows %}
-					{% if row.commodity != null %}
-						<tr>
-							<td>{{row.commodity.name}}</td>
-							<td>{{row.commdityCount}}</td>
-						</tr>
-					{% endif %}
-				{% endfor %}
-			</tbody>
-		</table>
-		<footer style="text-align:center">
-			<p>{{ bid.name }}</p>
-		</footer>
-{% endif %}
 	</body>
 </html>
 

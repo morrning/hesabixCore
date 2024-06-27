@@ -14,6 +14,7 @@ use App\Entity\HesabdariTable;
 use App\Entity\InvoiceType;
 use App\Entity\Person;
 use App\Entity\StoreroomTicket;
+use App\Service\Printers;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -315,7 +316,7 @@ class SellController extends AbstractController
     }
 
     #[Route('/api/sell/posprinter/invoice', name: 'app_sell_posprinter_invoice')]
-    public function app_sell_posprinter_invoice(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_sell_posprinter_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -330,9 +331,9 @@ class SellController extends AbstractController
             'code' => $params['code']
         ]);
         if (!$doc) throw $this->createNotFoundException();
-        $posPrint = false;
-        if(array_key_exists('posprint',$params)) $posPrint = true;
-        $pid = $provider->createPrint(
+        $pdfPid = 0;
+        if ($params['pdf']) {
+            $pdfPid = $provider->createPrint(
             $acc['bid'],
             $this->getUser(),
             $this->renderView('pdf/posPrinters/sell.html.twig', [
@@ -342,8 +343,38 @@ class SellController extends AbstractController
                 'printInvoice'=>$params['posPrint'],
                 'printcashdeskRecp'=>$params['posPrintRecp'],
             ]),
-            true
-        );
-        return $this->json(['id' => $pid]);
+                true
+            );
+        }
+
+
+        if ($params['posPrint'] == true) {
+            $pid = $provider->createPrint(
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/posPrinters/justSell.html.twig', [
+                    'bid' => $acc['bid'],
+                    'doc' => $doc,
+                    'rows' => $doc->getHesabdariRows(),
+                ]),
+                true
+            );
+            $printers->addFile($pid, $acc, "fastSellInvoice");
+        }
+        if ($params['posPrintRecp'] == true) {
+            $pid = $provider->createPrint(
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/posPrinters/cashdesk.html.twig', [
+                    'bid' => $acc['bid'],
+                    'doc' => $doc,
+                    'rows' => $doc->getHesabdariRows(),
+                ]),
+                true
+            );
+            $printers->addFile($pid, $acc, "fastSellCashdesk");
+        }
+
+        return $this->json(['id' => $pdfPid]);
     }
 }

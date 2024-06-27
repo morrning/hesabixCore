@@ -142,4 +142,10 @@ class UiGeneralController extends AbstractController
         return $this->render('general/repservice.html.twig',);
     }
 
+    #[Route('/front/apps/hesabixbox', name: 'general_apps_hesabixbox')]
+    public function general_apps_hesabixbox(EntityManagerInterface $entityManager): Response
+    {
+        return $this->render('general/hesabixbox.html.twig',);
+    }
+
 }
