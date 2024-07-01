@@ -222,6 +222,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PrintTemplate::class, orphanRemoval: true)]
     private Collection $printTemplates;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $avatar = null;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -1570,6 +1573,18 @@ class Business
                 $printTemplate->setBid(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?string $avatar): static
+    {
+        $this->avatar = $avatar;
 
         return $this;
     }
