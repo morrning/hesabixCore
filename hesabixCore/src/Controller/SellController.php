@@ -377,4 +377,65 @@ class SellController extends AbstractController
 
         return $this->json(['id' => $pdfPid]);
     }
+
+    #[Route('/api/sell/print/invoice', name: 'app_sell_print_invoice')]
+    public function app_sell_print_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $acc = $access->hasRole('sell');
+        if (!$acc) throw $this->createAccessDeniedException();
+
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'code' => $params['code']
+        ]);
+        if (!$doc) throw $this->createNotFoundException();
+        $person = null;
+        $discount = 0;
+        $transfer = 0;
+        foreach ($doc->getHesabdariRows() as $item) {
+            if ($item->getPerson()) {
+                $person = $item->getPerson();
+            } elseif ($item->getRef()->getCode() == 104) {
+                $discount = $item->getBd();
+            } elseif ($item->getRef()->getCode() == 61) {
+                $transfer = $item->getBs();
+            }
+        }
+        $pdfPid = 0;
+        if ($params['pdf']) {
+            $pdfPid = $provider->createPrint(
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/printers/sell.html.twig', [
+                    'bid' => $acc['bid'],
+                    'doc' => $doc,
+                    'rows' => $doc->getHesabdariRows(),
+                    'person' => $person,
+                    'printInvoice' => $params['printers'],
+                    'discount' => $discount,
+                    'transfer' => $transfer
+                ]),
+                false
+            );
+        }
+        if ($params['printers'] == true) {
+            $pid = $provider->createPrint(
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/posPrinters/justSell.html.twig', [
+                    'bid' => $acc['bid'],
+                    'doc' => $doc,
+                    'rows' => $doc->getHesabdariRows(),
+                ]),
+                false
+            );
+            $printers->addFile($pid, $acc, "fastSellInvoice");
+        }
+        return $this->json(['id' => $pdfPid]);
+    }
 }

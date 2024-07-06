@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fa" direction="rtl"></html>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<head>
+	<style>
+		@page {
+			margin: 3%;
+			margin-header: 0;
+			margin-footer: 0;
+		}
+
+		.center {
+			text-align: center;
+		}
+		.text-white {
+			color: white;
+		}
+		.stimol td,
+		.stimol th {
+			border: 1px solid black;
+		}
+		.item {
+			height: 40px;
+		}
+	</style>
+</head>
+<body style="direction:rtl; width:100%">
+	<div class="block-content pt-1 pb-3 d-none d-sm-block">
+		<div class="c-print container-xl">
+			<div class="tg-wrap" style="width:100%; border:1px solid black;border-radius: 8px;">
+				<table class="rounded" style="width:100%;">
+					<thead>
+						<tr>
+							<td style="width:20%">
+								<img src="{{ "/api/avatar/get/file/" ~ bid.avatar}}" width="65"/>
+							</td>
+							<td style="width:60%; text-align:center">
+								<h3 class="">صورتحساب فروش کالا و خدمات</h3>
+							</td>
+							<td style="width:20%">
+								<h4>
+									<b>تاریخ:</b>
+									{{ doc.date }}</h4>
+								<br/>
+								<h4>
+									<b>شماره:</b>
+									{{ doc.code }}</h4>
+
+							</td>
+						</tr>
+					</thead>
+				</table>
+			</div>
+			<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
+				<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
+					<b style="color:white;">فروشنده</b>
+				</div>
+				<table style="width:100%;">
+					<tbody>
+						<tr style="text-align:center;">
+							<td class="">
+								<p>
+									<b>نام:
+									</b>
+									{{ bid.legalName }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>شماره ثبت / شناسه ملی:
+									</b>
+									{{ bid.shomaresabt }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>شماره اقتصادی:
+									</b>
+									{{ bid.codeeghtesadi }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>تلفن / نمابر:</b>
+									{{ bid.tel }}
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<td class="" colspan="1">
+								<p>
+									<b>کد پستی:</b>
+									{{ bid.postalcode }}
+								</p>
+							</td>
+							<td class="" colspan="3">
+								<p>
+									<b>آدرس:
+									</b>
+									استان
+									{{ bid.ostan }}، شهر
+									{{ bid.shahrestan }}،
+									{{ bid.address }}
+								</p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
+				<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
+					<b style="color:white;">خریدار</b>
+				</div>
+				<table style="width:100%;">
+					<tbody>
+						<tr style="text-align:center;">
+							<td class="">
+								<p>
+									<b>نام:
+									</b>
+									{{ bid.legalName }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>شماره ثبت / شناسه ملی:
+									</b>
+									{{ bid.shomaresabt }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>شماره اقتصادی:
+									</b>
+									{{ bid.codeeghtesadi }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>تلفن / نمابر:</b>
+									{{ bid.tel }}
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<td class="" colspan="1">
+								<p>
+									<b>کد پستی:</b>
+									{{ bid.postalcode }}
+								</p>
+							</td>
+							<td class="" colspan="3">
+								<p>
+									<b>آدرس:
+									</b>
+									استان
+									{{ bid.ostan }}، شهر
+									{{ bid.shahrestan }}،
+									{{ bid.address }}
+								</p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div style="width:100%;margin-top:5px;text-align:center;">
+				<table style="width:100%;">
+					<thead>
+						<tr class="stimol" style="background-color:gray;">
+							<th class="text-white" style="width:80px">ردیف</th>
+							<th class="text-white">کالا/خدمات</th>
+							<th class="text-white">شرح</th>
+							<th class="text-white">تعداد / مقدار</th>
+							<th class="text-white">مبلغ واحد</th>
+							<th class="text-white">تخفیف</th>
+							<th class="text-white">مالیات</th>
+							<th class="text-white">مبلغ کل</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% set taxAll = 0 %}
+						{% set rowIndex = 0 %}
+						{% for item in rows%}
+							{% if item.commodity %}
+								{%  set taxAll = taxAll + item.tax %}
+								{% set rowIndex = rowIndex + 1 %}
+								<tr class="stimol">
+									<td class="center item">{{rowIndex}}</td>
+									<td class="center item">
+										{{ item.commodity.code }}
+										-
+										{{ item.commodity.name }}</td>
+									<td class="center item">{{ item.des }}</td>
+									<td class="center item">
+										{{ item.commdityCount | number_format }}
+										{{ item.commodity.unit.name }}
+									</td>
+									<td class="center item">{{ ((item.bs - item.tax + item.discount) / item.commdityCount) | number_format }}</td>
+									<td class="center item">{{ item.discount | number_format }}</td>
+									<td class="center item">{{ item.tax | number_format}}</td>
+									<td class="center item">{{ item.bs| number_format }}</td>
+								</tr>
+							{% endif %}
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			<div style="width:100%;margin-top:0px;text-align:center;">
+				<table style="width:100%;">
+					<tbody>
+						<tr class="stimol">
+							<td class="item">
+								<h4>
+									تخفیف:
+									{{discount | number_format}}
+								</h4>
+							</td>
+							<td class="item">
+								<h4>
+									مالیات:
+									{{taxAll | number_format}}
+								</h4>
+							</td>
+							<td class="item">
+								<h4>
+									حمل و نقل:
+									{{transfer | number_format}}
+								</h4>
+							</td>
+							<td class="item">
+								<h4>
+									جمع کل:
+									{{doc.amount | number_format}}
+								</h4>
+							</td>
+						</tr>
+
+						<tr class="stimol">
+							<td class="item" colspan="4">
+								<h4>
+									توضیحات:
+									{{doc.des}}
+								</h4>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div style="width:100%;margin-top:20px;text-align:center;">
+				<table style="width:100%;">
+					<tbody>
+						<tr class="">
+							<td class="center" style="height:90px">
+								<h4>
+									مهر و امضا خریدار
+								</h4>
+							</td>
+							<td class="center" style="height:90px">
+								<h4>
+									مهر و امضا فروشنده:
+								</h4>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</body>
+</body></div></body></html>
+
