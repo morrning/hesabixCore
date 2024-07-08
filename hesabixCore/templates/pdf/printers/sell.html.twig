@@ -192,7 +192,7 @@
 										{{ item.commodity.name }}</td>
 									<td class="center item">{{ item.des }}</td>
 									<td class="center item">
-										{{ item.commdityCount | number_format }}
+										{{ item.commdityCount }}
 										{{ item.commodity.unit.name }}
 									</td>
 									<td class="center item">{{ ((item.bs - item.tax + item.discount) / item.commdityCount) | number_format }}</td>
