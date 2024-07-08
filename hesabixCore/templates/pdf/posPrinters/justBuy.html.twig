@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fa" direction="rtl">
+
+	<head>
+		<style>
+			body {
+				margin: 5px;
+				padding: 0;
+				font-size: 100%;
+			}
+
+			table {
+				width: 100%;
+			}
+
+			tr {
+				width: 100%;
+			}
+			th,
+			td {
+				border: 1px solid black !important;
+			}
+			h1 {
+				text-align: center;
+				vertical-align: middle;
+			}
+
+			#logo {
+				width: 60%;
+				text-align: center;
+				-webkit-align-content: center;
+				align-content: center;
+				padding: 5px;
+				margin: 0 auto;
+				display: block;
+			}
+
+			header {
+				width: 100%;
+				text-align: center;
+				-webkit-align-content: center;
+				align-content: center;
+				vertical-align: middle;
+			}
+
+			.items thead {
+				text-align: center;
+			}
+
+			.center-align {
+				text-align: center;
+			}
+
+			.bill-details td {
+				font-size: 12px;
+			}
+
+			.receipt {
+				font-size: medium;
+			}
+
+			.items .heading {
+				font-size: 12.5px;
+				text-transform: uppercase;
+				border-top: 1px solid black;
+				margin-bottom: 4px;
+				border-bottom: 1px solid black;
+				vertical-align: middle;
+			}
+
+			.items thead tr th:first-child,
+			.items tbody tr td:first-child {
+				word-break: break-all;
+				text-align: center;
+			}
+
+			.items td {
+				font-size: 12px;
+				text-align: center;
+				vertical-align: bottom;
+			}
+
+			.price::after {
+				content: "";
+				text-align: right;
+			}
+
+			.sum-up {
+				text-align: right !important;
+			}
+			.total {
+				font-size: 13px;
+				border-top: 1px dashed black !important;
+				border-bottom: 1px dashed black !important;
+			}
+			.total.text,
+			.total.price {
+				text-align: right;
+			}
+			.total.price::after {
+				content: " ریال ";
+			}
+			.line {
+				border-top: 1px solid black !important;
+			}
+
+			p {
+				padding: 1px;
+				margin: 0;
+			}
+			section,
+			footer {
+				font-size: 12px;
+			}
+			tbody,
+			thead,
+			th,
+			td,
+			tr {
+				text-align: center;
+			}
+		</style>
+	</head>
+	<body style="direction:rtl; text-align:right; width:100%">
+		<header>
+			<p style="text-align:center;">{{ bid.name }}</p>
+		</header>
+		<table class="bill-details">
+			<tbody style="text-align:right">
+				<tr>
+					<td style="text-align:right">تاریخ :
+						<span>{{doc.date}}</span>
+					</td>
+					<td style="text-align:right">شماره :
+						<span>#
+							{{doc.code | number_format}}</span>
+					</td>
+				</tr>
+				<tr>
+					<th class="center-align" colspan="2">
+						<span class="receipt">رسید خرید</span>
+					</th>
+				</tr>
+			</tbody>
+		</table>
+
+		<table class="items">
+			<thead style="background:gray;text-color:white;">
+				<tr>
+					<th class="heading name">کالا</th>
+					<th class="heading qty">تعداد</th>
+					<th class="heading rate">فی</th>
+					<th class="heading amount">جمع</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{% for row in rows %}
+					{% if row.commodity != null %}
+						<tr>
+							<td>{{row.commodity.name}}</td>
+							<td>{{row.commdityCount}}</td>
+							<td class="price">{{(row.bs / row.commdityCount) | number_format}}</td>
+							<td class="price">{{row.bs | number_format}}</td>
+						</tr>
+					{% endif %}
+				{% endfor %}
+				<tr>
+					<th colspan="3" class="total text">جمع فاکتور</th>
+					<th class="total price">{{doc.amount | number_format}}</th>
+				</tr>
+			</tbody>
+		</table>
+		<section style="margin-bottom:10px;margin-top:10px;text-align:center;">
+			<b style="text-align:center">
+				از خرید شما متشکریم
+			</b>
+		</section>
+		<footer style="text-align:center">
+			<p>{{ bid.address }}</p>
+			<p>{{ bid.tel }}</p>
+			<p>hesabix.ir</p>
+		</footer>
+	</body>
+</html>
+

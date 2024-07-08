@@ -223,7 +223,7 @@ class PlugRepserviceController extends AbstractController
 
         $orders = $entityManagerInterface->getRepository(PlugRepserviceOrder::class)->findBy([
             'bid' => $acc['bid']
-        ],['code'=>'DESC']);
+        ],['date'=>'DESC']);
         return $this->json($this->ExploreOrders($orders));
     }
 
