@@ -104,7 +104,7 @@ class PlugRepserviceController extends AbstractController
         $order->setState($entityManagerInterface->getRepository(PlugRepserviceOrderState::class)->findOneBy(['code' => 'get']));
         $entityManagerInterface->persist($order);
         $entityManagerInterface->flush();
-        $log->insert('افزونه تعمیرکاران', ' رسید دریافت کالا با نام  ' . $person->getNikename() . ' افزوده/ویرایش شد.', $this->getUser(), $acc['bid']->getId());
+        $log->insert('افزونه تعمیرکاران', ' رسید دریافت کالا با نام  ' . $person->getNikename() . ' افزوده/ویرایش شد.', $this->getUser(), $acc['bid']->getId(),null,$order);
 
         if (array_key_exists('sms', $params)) {
             if ($params['sms'] == true) {
@@ -174,13 +174,15 @@ class PlugRepserviceController extends AbstractController
         }
         $entityManagerInterface->persist($order);
         $entityManagerInterface->flush();
-        $log->insert('افزونه تعمیرکاران', ' وضعیت کالا با کد  ' . $order->getCode() . ' به ' . $state->getLabel() . ' تغییر یافت. ', $this->getUser(), $acc['bid']->getId());
+        $log->insert('افزونه تعمیرکاران', ' وضعیت کالا با کد  ' . $order->getCode() . ' به ' . $state->getLabel() . ' تغییر یافت. ', $this->getUser(), $acc['bid']->getId(),null,$order);
 
         if (array_key_exists('sms', $params)) {
             //get state sms code
             if($params['state']['code'] == 'get') $smsPattern = $registryMGR->get('sms', 'plugRepserviceStateGet');
             elseif($params['state']['code'] == 'repaired') $smsPattern = $registryMGR->get('sms', 'plugRepserviceStateRepaired');
             elseif($params['state']['code'] == 'unrepired') $smsPattern = $registryMGR->get('sms', 'plugRepserviceStateUnrepired');
+            elseif($params['state']['code'] == 'creating') $smsPattern = $registryMGR->get('sms', 'plugRepserviceStateCreating');
+            elseif($params['state']['code'] == 'created') $smsPattern = $registryMGR->get('sms', 'plugRepserviceStateCreated');
             else  $smsPattern = $registryMGR->get('sms', 'plugRepserviceStateGetback');
             if ($params['sms'] == true) {
                 //going to send sms

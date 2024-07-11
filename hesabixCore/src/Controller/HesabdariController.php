@@ -523,6 +523,7 @@ class HesabdariController extends AbstractController
             $entityManager->flush();
         }
         $code = $doc->getCode();
+        foreach($doc->getNotes() as $note){ $entityManager->remove($note);}
         $entityManager->remove($doc);
         $entityManager->flush();
         $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
@@ -618,6 +619,7 @@ class HesabdariController extends AbstractController
                 $entityManager->flush();
             }
             $code = $doc->getCode();
+            foreach($doc->getNotes() as $note){ $entityManager->remove($note);}
             $entityManager->remove($doc);
             $entityManager->flush();
             $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));

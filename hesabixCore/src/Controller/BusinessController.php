@@ -654,6 +654,48 @@ class BusinessController extends AbstractController
                 }
             }
         }
+
+        $sends = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+            'bid' => $buss,
+            'year' => $year,
+            'type' => 'person_send',
+        ]);
+        $sendsTotal = 0;
+        $sendsToday = 0;
+        foreach ($sends as $item) {
+            $canAdd = false;
+            foreach ($item->getHesabdariRows() as $row) {
+                if ($row->getPerson())
+                    $canAdd = true;
+            }
+            if ($canAdd) {
+                $sendsTotal += $item->getAmount();
+                if($item->getDate() == $dateNow){
+                    $sendsToday += $item->getAmount();
+                }
+            }
+        }
+
+        $recs = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+            'bid' => $buss,
+            'year' => $year,
+            'type' => 'person_receive',
+        ]);
+        $recsTotal = 0;
+        $recsToday = 0;
+        foreach ($recs as $item) {
+            $canAdd = false;
+            foreach ($item->getHesabdariRows() as $row) {
+                if ($row->getPerson())
+                    $canAdd = true;
+            }
+            if ($canAdd) {
+                $recsTotal += $item->getAmount();
+                if($item->getDate() == $dateNow){
+                    $recsToday += $item->getAmount();
+                }
+            }
+        }
         $response = [
             'personCount' => count($persons),
             'bankCount' => count($banks),
@@ -665,7 +707,11 @@ class BusinessController extends AbstractController
             'buys_total' => $buysTotal,
             'buys_today' => $buysToday,
             'sells_total' => $sellsTotal,
-            'sells_today' => $sellsToday
+            'sells_today' => $sellsToday,
+            'sends_total' => $sendsTotal,
+            'sends_today' => $sendsToday,
+            'recs_total' => $recsTotal,
+            'recs_today' => $recsToday,
         ];
         return $this->json($response);
     }

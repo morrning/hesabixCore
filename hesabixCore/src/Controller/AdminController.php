@@ -219,7 +219,9 @@ class AdminController extends AbstractController
             'get' => $registryMGR->get('sms', 'plugRepserviceStateGet'),
             'getback' => $registryMGR->get('sms', 'plugRepserviceStateGetback'),
             'repired' => $registryMGR->get('sms', 'plugRepserviceStateRepaired'),
-            'unrepaired' => $registryMGR->get('sms', 'plugRepserviceStateUnrepired')
+            'unrepaired' => $registryMGR->get('sms', 'plugRepserviceStateUnrepired'),
+            'creating' => $registryMGR->get('sms', 'plugRepserviceStateCreating'),
+            'created' => $registryMGR->get('sms', 'plugRepserviceStateCreated')
         ];
         return $this->json($resp);
     }
@@ -267,6 +269,10 @@ class AdminController extends AbstractController
                 $registryMGR->update('sms', 'plugRepserviceStateUnrepired', $params['plugRepservice']['unrepaired']);
             if (array_key_exists('getback', $params['plugRepservice']))
                 $registryMGR->update('sms', 'plugRepserviceStateGetback', $params['plugRepservice']['getback']);
+            if (array_key_exists('creating', $params['plugRepservice']))
+                $registryMGR->update('sms', 'plugRepserviceStateCreating', $params['plugRepservice']['creating']);
+            if (array_key_exists('created', $params['plugRepservice']))
+                $registryMGR->update('sms', 'plugRepserviceStateCreated', $params['plugRepservice']['created']);
         }
 
 
@@ -493,5 +499,25 @@ class AdminController extends AbstractController
             'result' => 0,
             'filename' => 'Hesabix-' . $time . '.sql',
         ]);
+    }
+    #[Route('/api/admin/logs/last', name: 'api_admin_logs_last')]
+    public function api_admin_logs_last(Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy([], ['id' => 'DESC'], 250);
+        $temps = [];
+        foreach ($logs as $log) {
+            $temp = [];
+            if ($log->getUser())
+                $temp['user'] = $log->getUser()->getFullName();
+            else
+                $temp['user'] = '';
+            $temp['des'] = $log->getDes();
+            $temp['part'] = $log->getPart();
+            $temp['bid'] = $log->getBid()->getName();
+            $temp['date'] = $jdate->jdate('Y/n/d H:i', $log->getDateSubmit());
+            $temp['ipaddress'] = $log->getIpaddress();
+            $temps[] = $temp;
+        }
+        return $this->json(array_reverse($temps));
     }
 }

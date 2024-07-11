@@ -225,6 +225,9 @@ class Business
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $avatar = null;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Note::class, orphanRemoval: true)]
+    private Collection $notes;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -256,6 +259,7 @@ class Business
         $this->plugRepserviceOrders = new ArrayCollection();
         $this->printers = new ArrayCollection();
         $this->printTemplates = new ArrayCollection();
+        $this->notes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1585,6 +1589,36 @@ class Business
     public function setAvatar(?string $avatar): static
     {
         $this->avatar = $avatar;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Note>
+     */
+    public function getNotes(): Collection
+    {
+        return $this->notes;
+    }
+
+    public function addNote(Note $note): static
+    {
+        if (!$this->notes->contains($note)) {
+            $this->notes->add($note);
+            $note->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNote(Note $note): static
+    {
+        if ($this->notes->removeElement($note)) {
+            // set the owning side to null (unless already changed)
+            if ($note->getBid() === $this) {
+                $note->setBid(null);
+            }
+        }
 
         return $this;
     }

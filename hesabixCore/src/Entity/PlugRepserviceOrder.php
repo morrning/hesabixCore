@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PlugRepserviceOrderRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PlugRepserviceOrderRepository::class)]
@@ -65,6 +67,14 @@ class PlugRepserviceOrder
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $dateOut = null;
+
+    #[ORM\OneToMany(mappedBy: 'repserviceOrder', targetEntity: Log::class)]
+    private Collection $logs;
+
+    public function __construct()
+    {
+        $this->logs = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -259,6 +269,36 @@ class PlugRepserviceOrder
     public function setDateOut(?string $dateOut): static
     {
         $this->dateOut = $dateOut;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Log>
+     */
+    public function getLogs(): Collection
+    {
+        return $this->logs;
+    }
+
+    public function addLog(Log $log): static
+    {
+        if (!$this->logs->contains($log)) {
+            $this->logs->add($log);
+            $log->setRepserviceOrder($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLog(Log $log): static
+    {
+        if ($this->logs->removeElement($log)) {
+            // set the owning side to null (unless already changed)
+            if ($log->getRepserviceOrder() === $this) {
+                $log->setRepserviceOrder(null);
+            }
+        }
 
         return $this;
     }

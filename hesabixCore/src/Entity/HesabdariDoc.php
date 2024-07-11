@@ -98,6 +98,9 @@ class HesabdariDoc
     #[ORM\ManyToOne(inversedBy: 'hesabdariDocs')]
     private ?InvoiceType $InvoiceLabel = null;
 
+    #[ORM\OneToMany(mappedBy: 'doc', targetEntity: Note::class)]
+    private Collection $notes;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -105,6 +108,7 @@ class HesabdariDoc
         $this->relatedDocs = new ArrayCollection();
         $this->storeroomTickets = new ArrayCollection();
         $this->logs = new ArrayCollection();
+        $this->notes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -468,6 +472,36 @@ class HesabdariDoc
     public function setInvoiceLabel(?InvoiceType $InvoiceLabel): static
     {
         $this->InvoiceLabel = $InvoiceLabel;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Note>
+     */
+    public function getNotes(): Collection
+    {
+        return $this->notes;
+    }
+
+    public function addNote(Note $note): static
+    {
+        if (!$this->notes->contains($note)) {
+            $this->notes->add($note);
+            $note->setDoc($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNote(Note $note): static
+    {
+        if ($this->notes->removeElement($note)) {
+            // set the owning side to null (unless already changed)
+            if ($note->getDoc() === $this) {
+                $note->setDoc(null);
+            }
+        }
 
         return $this;
     }

@@ -110,6 +110,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: PlugRepserviceOrder::class, orphanRemoval: true)]
     private Collection $plugRepserviceOrders;
 
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: Note::class, orphanRemoval: true)]
+    private Collection $notes;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -133,6 +136,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->cheques = new ArrayCollection();
         $this->mostDes = new ArrayCollection();
         $this->plugRepserviceOrders = new ArrayCollection();
+        $this->notes = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -901,6 +905,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($plugRepserviceOrder->getSubmitter() === $this) {
                 $plugRepserviceOrder->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Note>
+     */
+    public function getNotes(): Collection
+    {
+        return $this->notes;
+    }
+
+    public function addNote(Note $note): static
+    {
+        if (!$this->notes->contains($note)) {
+            $this->notes->add($note);
+            $note->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNote(Note $note): static
+    {
+        if ($this->notes->removeElement($note)) {
+            // set the owning side to null (unless already changed)
+            if ($note->getSubmitter() === $this) {
+                $note->setSubmitter(null);
             }
         }
 

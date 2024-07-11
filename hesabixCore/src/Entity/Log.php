@@ -34,6 +34,9 @@ class Log
     #[ORM\ManyToOne(inversedBy: 'logs')]
     private ?HesabdariDoc $doc = null;
 
+    #[ORM\ManyToOne(inversedBy: 'logs')]
+    private ?PlugRepserviceOrder $repserviceOrder = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -119,6 +122,18 @@ class Log
     public function setDoc(?HesabdariDoc $doc): static
     {
         $this->doc = $doc;
+
+        return $this;
+    }
+
+    public function getRepserviceOrder(): ?PlugRepserviceOrder
+    {
+        return $this->repserviceOrder;
+    }
+
+    public function setRepserviceOrder(?PlugRepserviceOrder $repserviceOrder): static
+    {
+        $this->repserviceOrder = $repserviceOrder;
 
         return $this;
     }
