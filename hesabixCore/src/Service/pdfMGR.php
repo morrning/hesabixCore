@@ -3,21 +3,27 @@
 namespace App\Service;
 
 use App\Entity\PrinterQueue;
-use Dompdf\Dompdf;
-use Symfony\Component\HttpFoundation\Response;
+use App\Service\Twig;
+
 use Twig\Environment;
 class pdfMGR
 {
 
     private $twig;
 
-    public function __construct(Environment $twig)
+    public function __construct(Twig $twig)
     {
         $this->twig = $twig;
     }
 
     public function streamTwig2PDF(PrinterQueue $printQueue,$configs = []){
+        // Load Twig File
+        $template = $this->twig->load('pdf/footer.html.twig');
 
+        // Render HTML
+        $footer = $template->render([
+            
+        ]);
         $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
         $fontDirs = $defaultConfig['fontDir'];
         $mpdf = new \Mpdf\Mpdf([
@@ -37,9 +43,10 @@ class pdfMGR
             'tempDir' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf',
             'autoArabic' => true,
         ]);
-       
         $mpdf->AddFontDirectory(__DIR__ . '../Fonts');
+        $mpdf->SetHTMLFooter($footer);
         $mpdf->WriteHTML($printQueue->getView());
+        $mpdf->SetAutoPageBreak(true);
         $mpdf->Output();
     }
 

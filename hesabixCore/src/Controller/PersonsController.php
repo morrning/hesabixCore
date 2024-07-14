@@ -683,7 +683,8 @@ class PersonsController extends AbstractController
             $this->renderView('pdf/person_card.html.twig', [
                 'page_title' => 'کارت حساب'  . ' ' . $person->getNikename(),
                 'bid' => $acc['bid'],
-                'items' => $transactions
+                'items' => $transactions,
+                'person' => $person
             ])
         );
         return $this->json(['id' => $pid]);

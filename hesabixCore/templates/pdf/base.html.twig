@@ -1,12 +1,57 @@
-<html dir="rtl">
+<!DOCTYPE html>
+<html lang="fa" direction="rtl"></html>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>چاپ</title>
+<style>
+	
+
+	.center {
+		text-align: center;
+	}
+	.text-white {
+		color: white;
+	}
+	.stimol td,
+	.stimol th {
+		border: 1px solid black;
+	}
+	.item {
+		height: 40px;
+	}
+</style>
+
+
 </head>
-<body>
-<h3 style="text-align: center; margin-top: 0px; padding-top: 0px;">{{bid.name}}</h3>
-<p style="text-align: center;">{{ page_title }}</p>
-<div style="width: 100%">
-    {% block body %}{% endblock %}
-</div>
+<body style="direction:rtl; width:100%">
+	<div class="block-content pt-1 pb-3 d-none d-sm-block">
+		<div class="c-print container-xl">
+			<div class="tg-wrap" style="width:100%; border:1px solid black;border-radius: 8px;">
+				<table class="rounded" style="width:100%;">
+					<thead>
+						<tr>
+							<td style="width:20%">
+								<img src="{{ "/api/avatar/get/file/" ~ bid.avatar}}" width="65"/>
+							</td>
+							<td style="width:60%; text-align:center">
+								<h3 class="">{{bid.name}}</h3>
+								<h5>{{ page_title }}</h5>
+							</td>
+							<td style="width:20%; text-align:center">
+								<p class="">
+                                    تاریخ:
+									{{ Jdate.GetTodayDate() }}
+								</p>
+							</td>
+						</tr>
+					</thead>
+				</table>
+			</div>
+			{% block body %}{% endblock %}
+		</div>
+
 </body>
+
+</body></body></div></body></html>
+
