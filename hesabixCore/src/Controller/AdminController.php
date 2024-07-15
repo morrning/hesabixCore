@@ -503,8 +503,9 @@ class AdminController extends AbstractController
     #[Route('/api/admin/logs/last', name: 'api_admin_logs_last')]
     public function api_admin_logs_last(Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
     {
-        $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy([], ['id' => 'ASC'], 250);
+        $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy([], ['id' => 'DESC'], 250);
         $temps = [];
+        $logs = array_reverse($logs);
         foreach ($logs as $log) {
             $temp = [];
             if ($log->getUser())
