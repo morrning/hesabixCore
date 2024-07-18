@@ -646,7 +646,7 @@ class PersonsController extends AbstractController
     #[Route('/api/person/card/list/print', name: 'app_persons_card_list_print')]
     public function app_persons_card_list_print(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        $acc = $access->hasRole('person_receive');
+        $acc = $access->hasRole('person');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
@@ -693,7 +693,7 @@ class PersonsController extends AbstractController
     #[Route('/api/person/receive/list/print', name: 'app_persons_receive_list_print')]
     public function app_persons_receive_list_print(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        $acc = $access->hasRole('person_receive');
+        $acc = $access->hasRole('getpay');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
@@ -734,7 +734,7 @@ class PersonsController extends AbstractController
     #[Route('/api/person/receive/list/search', name: 'app_persons_receive_list_search')]
     public function app_persons_receive_list_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        $acc = $access->hasRole('person_receive');
+        $acc = $access->hasRole('getpay');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
@@ -778,7 +778,7 @@ class PersonsController extends AbstractController
     #[Route('/api/person/receive/list/excel', name: 'app_persons_receive_list_excel')]
     public function app_persons_receive_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
     {
-        $acc = $access->hasRole('person_receive');
+        $acc = $access->hasRole('getpay');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
@@ -810,7 +810,7 @@ class PersonsController extends AbstractController
     #[Route('/api/person/send/list/print', name: 'app_persons_send_list_print')]
     public function app_persons_send_list_print(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        $acc = $access->hasRole('person_send');
+        $acc = $access->hasRole('getpay');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
@@ -851,7 +851,7 @@ class PersonsController extends AbstractController
     #[Route('/api/person/send/list/search', name: 'app_persons_send_list_search')]
     public function app_persons_send_list_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        $acc = $access->hasRole('person_send');
+        $acc = $access->hasRole('getpay');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
@@ -895,7 +895,7 @@ class PersonsController extends AbstractController
     #[Route('/api/person/send/list/excel', name: 'app_persons_send_list_excel')]
     public function app_persons_send_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
     {
-        $acc = $access->hasRole('person_send');
+        $acc = $access->hasRole('getpay');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];

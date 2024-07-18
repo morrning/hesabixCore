@@ -83,6 +83,9 @@ class Commodity
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $barcodes = null;
 
+    #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: PriceListDetail::class, orphanRemoval: true)]
+    private Collection $priceListDetails;
+
     public function __construct()
     {
         $this->setPriceBuy(0);
@@ -91,6 +94,7 @@ class Commodity
         $this->commodityDropLinks = new ArrayCollection();
         $this->storeroomItems = new ArrayCollection();
         $this->plugRepserviceOrders = new ArrayCollection();
+        $this->priceListDetails = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -406,6 +410,36 @@ class Commodity
     public function setBarcodes(?string $barcodes): static
     {
         $this->barcodes = $barcodes;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PriceListDetail>
+     */
+    public function getPriceListDetails(): Collection
+    {
+        return $this->priceListDetails;
+    }
+
+    public function addPriceListDetail(PriceListDetail $priceListDetail): static
+    {
+        if (!$this->priceListDetails->contains($priceListDetail)) {
+            $this->priceListDetails->add($priceListDetail);
+            $priceListDetail->setCommodity($this);
+        }
+
+        return $this;
+    }
+
+    public function removePriceListDetail(PriceListDetail $priceListDetail): static
+    {
+        if ($this->priceListDetails->removeElement($priceListDetail)) {
+            // set the owning side to null (unless already changed)
+            if ($priceListDetail->getCommodity() === $this) {
+                $priceListDetail->setCommodity(null);
+            }
+        }
 
         return $this;
     }

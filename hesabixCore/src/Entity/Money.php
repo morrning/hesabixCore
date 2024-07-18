@@ -24,9 +24,13 @@ class Money
     #[ORM\OneToMany(mappedBy: 'money', targetEntity: Business::class, orphanRemoval: true)]
     private Collection $businesses;
 
+    #[ORM\OneToMany(mappedBy: 'money', targetEntity: PriceListDetail::class, orphanRemoval: true)]
+    private Collection $priceListDetails;
+
     public function __construct()
     {
         $this->businesses = new ArrayCollection();
+        $this->priceListDetails = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -82,6 +86,36 @@ class Money
             // set the owning side to null (unless already changed)
             if ($business->getMoney() === $this) {
                 $business->setMoney(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PriceListDetail>
+     */
+    public function getPriceListDetails(): Collection
+    {
+        return $this->priceListDetails;
+    }
+
+    public function addPriceListDetail(PriceListDetail $priceListDetail): static
+    {
+        if (!$this->priceListDetails->contains($priceListDetail)) {
+            $this->priceListDetails->add($priceListDetail);
+            $priceListDetail->setMoney($this);
+        }
+
+        return $this;
+    }
+
+    public function removePriceListDetail(PriceListDetail $priceListDetail): static
+    {
+        if ($this->priceListDetails->removeElement($priceListDetail)) {
+            // set the owning side to null (unless already changed)
+            if ($priceListDetail->getMoney() === $this) {
+                $priceListDetail->setMoney(null);
             }
         }
 

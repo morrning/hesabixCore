@@ -228,6 +228,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Note::class, orphanRemoval: true)]
     private Collection $notes;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PriceList::class, orphanRemoval: true)]
+    private Collection $priceLists;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -260,6 +263,7 @@ class Business
         $this->printers = new ArrayCollection();
         $this->printTemplates = new ArrayCollection();
         $this->notes = new ArrayCollection();
+        $this->priceLists = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1617,6 +1621,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($note->getBid() === $this) {
                 $note->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PriceList>
+     */
+    public function getPriceLists(): Collection
+    {
+        return $this->priceLists;
+    }
+
+    public function addPriceList(PriceList $priceList): static
+    {
+        if (!$this->priceLists->contains($priceList)) {
+            $this->priceLists->add($priceList);
+            $priceList->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePriceList(PriceList $priceList): static
+    {
+        if ($this->priceLists->removeElement($priceList)) {
+            // set the owning side to null (unless already changed)
+            if ($priceList->getBid() === $this) {
+                $priceList->setBid(null);
             }
         }
 

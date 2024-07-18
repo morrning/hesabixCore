@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\PriceListDetail;
 use App\Service\Explore;
 use App\Service\Log;
 use App\Service\Jdate;
@@ -14,6 +15,7 @@ use App\Entity\CommodityCat;
 use App\Entity\HesabdariRow;
 use App\Entity\CommodityDrop;
 use App\Entity\CommodityUnit;
+use App\Entity\PriceList;
 use App\Entity\StoreroomItem;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -240,8 +242,7 @@ class CommodityController extends AbstractController
             'bid' => $acc['bid'],
             'code' => $code
         ]);
-        $data->setUnit($data->getUnit()->getName());
-        $res = $provider->Entity2ArrayJustIncludes($data, ['isSpeedAccess', 'isCommodityCountCheck', 'getName', 'getUnit', 'getPriceBuy', 'getPriceSell', 'getCat', 'getOrderPoint', 'getdes', 'getId', 'getDayLoading', 'isKhadamat', 'getCode', 'getMinOrderCount', 'getLabel', 'isWithoutTax','getBarcodes'], 1);
+        $res = Explore::ExploreCommodity($data);
         $res['cat'] = '';
         if ($data->getCat())
             $res['cat'] = $data->getCat()->getId();
@@ -337,6 +338,28 @@ class CommodityController extends AbstractController
             }
         }
         $entityManager->persist($data);
+        if (array_key_exists('prices', $params)) {
+            foreach ($params['prices'] as $item) {
+                $priceList = $entityManager->getRepository(PriceList::class)->findOneBy([
+                    'bid' => $acc['bid'],
+                    'id' => $item['list']['id']
+                ]);
+                if ($priceList) {
+                    $detail = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
+                        'list' => $priceList,
+                    ]);
+                    if (!$detail) {
+                        $detail = new PriceListDetail;
+                    }
+                    $detail->setList($priceList);
+                    $detail->setCommodity($data);
+                    $detail->setPriceSell($item['priceSell']);
+                    $detail->setPriceBuy(0);
+                    $detail->setMoney($acc['bid']->getMoney());
+                    $entityManager->persist($detail);
+                }
+            }
+        }
         $entityManager->flush();
         $log->insert('کالا و خدمات', 'کالا / خدمات با نام  ' . $params['name'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
         return $this->json(['result' => 1]);
@@ -697,6 +720,90 @@ class CommodityController extends AbstractController
         $comName = $commodity->getName();
         $entityManager->remove($commodity);
         $log->insert('کالا/خدمات', ' کالا / خدمات با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
+        return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/commodity/pricelist/list', name: 'app_commodity_pricelist_list')]
+    public function app_commodity_pricelist_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $items = $entityManager->getRepository(PriceList::class)->findBy([
+            'bid' => $acc['bid']
+        ]);
+        return $this->json(Explore::ExploreCommodityPriceList($items));
+    }
+
+    #[Route('/api/commodity/pricelist/mod/{code}', name: 'app_commodity_pricelist_mod')]
+    public function app_commodity_pricelist_mod(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (!array_key_exists('label', $params))
+            return $this->json(['result' => -1]);
+        if (count_chars(trim($params['label'])) == 0)
+            return $this->json(['result' => 3]);
+        if ($code == 0) {
+            $data = $entityManager->getRepository(PriceList::class)->findOneBy([
+                'label' => $params['label'],
+                'bid' => $acc['bid']
+            ]);
+            //check exist before
+            if ($data)
+                return $this->json(['result' => 2]);
+            $data = new PriceList();
+        } else {
+            $data = $entityManager->getRepository(PriceList::class)->findOneBy([
+                'bid' => $acc['bid'],
+                'id' => $code
+            ]);
+            if (!$data)
+                throw $this->createNotFoundException();
+        }
+        $data->setLabel($params['label']);
+        $data->setBid($acc['bid']);
+        $entityManager->persist($data);
+        $entityManager->flush();
+        $log->insert('کالا و خدمات', 'فهرست قیمت  کالا / خدمات با نام ' . $params['label'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
+        return $this->json(['result' => 1]);
+    }
+
+    /**
+     * @throws \ReflectionException
+     */
+    #[Route('/api/commodity/pricelist/info/{code}', name: 'app_commodity_pricelist_info')]
+    public function app_commodity_pricelist_info($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $data = $entityManager->getRepository(PriceList::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'id' => $code
+        ]);
+        return $this->json($provider->Entity2Array($data, 0));
+    }
+
+    #[Route('/api/commodity/pricelist/delete/{code}', name: 'app_commodity_pricelist_delete')]
+    public function app_commodity_pricelist_delete(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $item = $entityManager->getRepository(PriceList::class)->findOneBy(['bid' => $acc['bid'], 'id' => $code]);
+        if (!$item)
+            throw $this->createNotFoundException();
+
+        $comName = $item->getLabel();
+        $entityManager->remove($item);
+        $log->insert('کالا/خدمات', 'فهرست قیمت کالا و خدمات با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
     }
 }

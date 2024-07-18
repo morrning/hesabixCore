@@ -236,8 +236,12 @@ class BusinessController extends AbstractController
                 $year->setBid($business);
                 $year->setHead(true);
                 $startYearArray = explode('-', $params['year']['start']);
+                if(count($startYearArray) == 1)  $startYearArray = explode('/', $params['year']['start']);
+
                 $year->setStart($jdate->jmktime(0, 0, 0, $startYearArray[1], $startYearArray[2], $startYearArray[0]));
                 $endYearArray = explode('-', $params['year']['end']);
+                if(count($endYearArray) == 1)  $startYearArray = explode('/', $params['year']['end']);
+
                 $year->setEnd($jdate->jmktime(0, 0, 0, $endYearArray[1], $endYearArray[2], $endYearArray[0]));
                 $year->setLabel($params['year']['label']);
                 $entityManager->persist($year);
@@ -248,9 +252,13 @@ class BusinessController extends AbstractController
                     'bid' => $business,
                     'head' => true
                 ]);
+
                 $startYearArray = explode('-', $params['year']['startShamsi']);
+                if(count($startYearArray) == 1)  $startYearArray = explode('/', $params['year']['startShamsi']);
+
                 $year->setStart($jdate->jmktime(0, 0, 0, $startYearArray[1], $startYearArray[2], $startYearArray[0]));
                 $endYearArray = explode('-', $params['year']['endShamsi']);
+                if(count($endYearArray) == 1)  $endYearArray = explode('/', $params['year']['endShamsi']);
                 $year->setEnd($jdate->jmktime(0, 0, 0, $endYearArray[1], $endYearArray[2], $endYearArray[0]));
                 $year->setLabel($params['year']['label']);
                 $entityManager->persist($year);

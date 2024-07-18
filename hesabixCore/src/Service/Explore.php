@@ -15,10 +15,25 @@ use App\Entity\HesabdariTable;
 use App\Entity\Money;
 use App\Entity\Person;
 use App\Entity\PersonType;
+use App\Entity\PriceListDetail;
 use App\Entity\Salary;
 
 class Explore
 {
+    public static function ExploreCommodityPriceList($items)
+    {
+        $result = [];
+        foreach ($items as $item)
+            $result[] = self::ExploreCommodityPriceListOne($item);
+        return $result;
+    }
+    public static function ExploreCommodityPriceListOne($item)
+    {
+        return [
+            'id' => $item->getId(),
+            'label' => $item->getLabel()
+        ];
+    }
     public static function ExplorePersonType(PersonType $type)
     {
         return [
@@ -162,29 +177,53 @@ class Explore
 
     public static function ExploreCommodity(Commodity | null $item, int | null $count = 0, string | null $des = '')
     {
-        if ($item)
-            return [
+        if ($item){
+             $result =  [
                 'id'            => $item->getId(),
                 'code'          => $item->getCode(),
                 'name'          => $item->getName(),
                 'des'           => $item->getDes(),
-                'price_buy'     => $item->getPriceBuy(),
-                'price_sell'    => $item->getPriceSell(),
+                'priceBuy'     => $item->getPriceBuy(),
+                'priceSell'    => $item->getPriceSell(),
                 'khadamat'      => $item->isKhadamat(),
-                'speed_access'  => $item->isSpeedAccess(),
-                //most be completed
                 'count'         => $count,
                 'unit'          => $item->getUnit()->getName(),
-                'des'           => $des,
-                'withoutTax' => $item->isWithoutTax(),
+                'withoutTax'    => $item->isWithoutTax(),
+                'barcodes'      => $item->getBarcodes(),
+                'commodityCountCheck' => $item->isCommodityCountCheck(),
+                'speedAccess'  => $item->isSpeedAccess(),
+                'orderPoint'    =>$item->getOrderPoint(),
+                'dayLoading'    =>$item->getDayLoading(),
+                'minOrderCount' =>$item->getMinOrderCount(),
                 'unitData' => [
                     'name' => $item->getUnit()->getName(),
                     'floatNumber' => $item->getUnit()->getFloatNumber(),
-                ]
+                ],
+                'prices'=>self::ExploreCommodityPriceListDetails($item->getPriceListDetails())
             ];
+            if($des){ $result['des'] = $des;}
+            return $result;
+        }
+           
         return null;
     }
 
+    public static function ExploreCommodityPriceListDetail(PriceListDetail | null $item)
+    {
+        return [
+            'id'            => $item->getId(),
+            'list'         => self::ExploreCommodityPriceListOne($item->getList()),
+            'priceBuy'     => $item->getPriceBuy(),
+            'priceSell'    => $item->getPriceSell(),
+        ];
+    }
+    public static function ExploreCommodityPriceListDetails($items)
+    {
+        $result = [];
+        foreach ($items as $item)
+            $result[] = self::ExploreCommodityPriceListDetail($item);
+        return $result;
+    }
     public static function ExploreBank(BankAccount | null $item)
     {
         if ($item)
@@ -192,7 +231,6 @@ class Explore
                 'id'         => $item->getId(),
                 'code'       => $item->getCode(),
                 'name'       => $item->getName(),
-                //most be completed
             ];
         return null;
     }
