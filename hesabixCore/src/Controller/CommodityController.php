@@ -265,6 +265,28 @@ class CommodityController extends AbstractController
             $res['count'] = $count;
         }
 
+        //calculate other prices
+        $pricesAll = $entityManager->getRepository(PriceList::class)->findBy([
+            'bid' => $acc['bid']
+        ]);
+        foreach($pricesAll as $item){
+            $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
+                'list'=> $item,
+                'commodity' => $data
+            ]);
+            if($priceDetails){
+                $res['prices'][] = Explore::ExploreCommodityPriceListDetail($priceDetails);
+            }
+            else{
+                $spd = new PriceListDetail;
+                $spd->setList($item);
+                $spd->setMoney($acc['bid']->getMoney());
+                $spd->setCommodity($data);
+                $spd->setPriceBuy(0);
+                $spd->setPriceSell(0);
+                $res['prices'][] = Explore::ExploreCommodityPriceListDetail($spd);
+            }
+        }
         return $this->json($res);
     }
 
@@ -338,6 +360,8 @@ class CommodityController extends AbstractController
             }
         }
         $entityManager->persist($data);
+
+        //save prices list
         if (array_key_exists('prices', $params)) {
             foreach ($params['prices'] as $item) {
                 $priceList = $entityManager->getRepository(PriceList::class)->findOneBy([
@@ -347,6 +371,7 @@ class CommodityController extends AbstractController
                 if ($priceList) {
                     $detail = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
                         'list' => $priceList,
+                        'commodity' => $data
                     ]);
                     if (!$detail) {
                         $detail = new PriceListDetail;
@@ -735,6 +760,29 @@ class CommodityController extends AbstractController
         return $this->json(Explore::ExploreCommodityPriceList($items));
     }
 
+    #[Route('/api/commodity/pricelist/view/{id}', name: 'app_commodity_pricelist_view')]
+    public function app_commodity_pricelist_view($id,Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $price = $entityManager->getRepository(PriceList::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'id' => $id
+        ]);
+        $items = $entityManager->getRepository(PriceListDetail::class)->findBy([
+            'list' => $price
+        ]);
+        $res = [];
+        foreach($items as $item){
+            $temp = [];
+            $temp['id'] = $item->getId();
+            $temp['commodity'] = Explore::ExploreCommodity($item->getCommodity());
+            $temp['priceSell'] = $item->getPriceSell();
+            $res[] = $temp; 
+        }
+        return $this->json($res);
+    }
     #[Route('/api/commodity/pricelist/mod/{code}', name: 'app_commodity_pricelist_mod')]
     public function app_commodity_pricelist_mod(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {

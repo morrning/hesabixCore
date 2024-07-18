@@ -31,7 +31,7 @@ class Explore
     {
         return [
             'id' => $item->getId(),
-            'label' => $item->getLabel()
+            'label' => $item->getLabel(),
         ];
     }
     public static function ExplorePersonType(PersonType $type)
@@ -199,7 +199,6 @@ class Explore
                     'name' => $item->getUnit()->getName(),
                     'floatNumber' => $item->getUnit()->getFloatNumber(),
                 ],
-                'prices'=>self::ExploreCommodityPriceListDetails($item->getPriceListDetails())
             ];
             if($des){ $result['des'] = $des;}
             return $result;
