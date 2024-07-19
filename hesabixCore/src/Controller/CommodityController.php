@@ -94,7 +94,6 @@ class CommodityController extends AbstractController
                 }
                 $temp['count'] = $count;
             }
-
             $res[] = $temp;
         }
         return $this->json($res);
@@ -160,6 +159,29 @@ class CommodityController extends AbstractController
                 $temp['count'] = $count;
             }
 
+            //calculate other prices
+            $pricesAll = $entityManager->getRepository(PriceList::class)->findBy([
+                'bid' => $acc['bid']
+            ]);
+            foreach ($pricesAll as $list) {
+                $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
+                    'list' => $list,
+                    'commodity' => $item
+                ]);
+                if ($priceDetails) {
+                    $temp['prices'][] = Explore::ExploreCommodityPriceListDetail($priceDetails);
+                } else {
+                    $spd = new PriceListDetail;
+                    $spd->setList($list);
+                    $spd->setMoney($acc['bid']->getMoney());
+                    $spd->setCommodity($item);
+                    $spd->setPriceBuy(0);
+                    $spd->setPriceSell(0);
+                    $entityManager->persist($spd);
+                    $entityManager->flush();
+                    $temp['prices'][] = Explore::ExploreCommodityPriceListDetail($spd);
+                }
+            }
             $res[] = $temp;
         }
         return $this->json($res);

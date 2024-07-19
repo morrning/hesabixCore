@@ -21,6 +21,18 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class YearController extends AbstractController
 {
+    public function createDefaultYear(Business $bid,EntityManagerInterface $entityManagerInterface) : Year{
+        $year = new Year();
+        $year->setBid($bid);
+        $year->setHead(true);
+        $year->setLabel('سال مالی اول');
+        $year->setStart(time());
+        $year->setEnd(time() + 31563000);
+        $entityManagerInterface->persist($year);
+        $entityManagerInterface->flush();
+        return $year;
+
+    }
     #[Route('/api/year/list', name: 'app_year_list')]
     public function app_year_list(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -30,6 +42,10 @@ class YearController extends AbstractController
         $years = $entityManager->getRepository(Year::class)->findBy([
             'bid' => $business
         ]);
+        if (count($years) == 0) {
+            //no year created create first year
+            $years = [$this->createDefaultYear($business,$entityManager)];
+        }
         return $this->json($years);
     }
 

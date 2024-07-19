@@ -251,7 +251,9 @@ class BusinessController extends AbstractController
                     'bid' => $business,
                     'head' => true
                 ]);
-
+                if(!$year){
+                    $year = new Year;
+                }
                 $startYearArray = explode('-', $params['year']['startShamsi']);
                 if(count($startYearArray) == 1)  $startYearArray = explode('/', $params['year']['startShamsi']);
 

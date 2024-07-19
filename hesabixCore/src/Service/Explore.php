@@ -337,9 +337,16 @@ class Explore
             'name'   => $money->getName(),
         ];
     }
-    public static function ExploreYear(Year $year)
+    public static function ExploreYear(Year | null $year)
     {
         $jdate = new Jdate();
+        if(!$year){
+            $year = new Year();
+            $year->setHead(true);
+            $year->setLabel('سال مالی اول');
+            $year->setStart(time());
+            $year->setEnd(time() + 31536000);
+        }
         return [
             'id'    => $year->getId(),
             'label' => $year->getLabel(),
@@ -347,8 +354,8 @@ class Explore
             'start' => $year->getStart(),
             'end'   => $year->getEnd(),
             'now'   => time(),
-            'startShamsi' => $jdate->jdate('Y-n-d', $year->getStart()),
-            'endShamsi' => $jdate->jdate('Y-n-d', $year->getEnd()),
+            'startShamsi' => $jdate->jdate('Y/n/d', $year->getStart()),
+            'endShamsi' => $jdate->jdate('Y/n/d', $year->getEnd()),
         ];
     }
 
