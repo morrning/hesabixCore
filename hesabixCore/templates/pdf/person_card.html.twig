@@ -75,6 +75,7 @@
 		<tbody>
 			<tr style="text-align: center; background-color: grey; text-color: white">
 				<td style="width: 35px;">ردیف</td>
+				<td class="center item">فاکتور/سند</td>
 				<td class="center item">تاریخ</td>
 				<td class="center item">توضیحات</td>
 				<td class="center item">تفضیل</td>
@@ -86,6 +87,7 @@
 
 <tr class="stimol">
 	<td class="center item">{{ loop.index }}</td>
+	<td class="center item">{{ item.doc.code }}</td>
 	<td class="center item">{{ item.doc.date }}</td>
 	<td class="center item">{{ item.des }}</td>
 	<td class="center item">{{ item.ref.name }}</td>
