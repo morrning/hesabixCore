@@ -1,0 +1,338 @@
+{% extends "base-betheme.html.twig" %}
+{% block title %}
+	نرم افزار حسابداری آنلاین ، متن باز و کاملا رایگان
+{% endblock %}
+{% block body %}
+	<div class="px-4 py-3 text-center">
+		<div class="row">
+			<div class="col-sm-12 col-md-6 mb-2 pt-4">
+				<h1 class="fw-bold text-primary-darker">
+					<img class="" src="/img/logo-blue.png" alt="حسابیکس لوگو" width="72" height="72">
+					حسابداری آنلاین حسابیکس
+				</h1>
+				<p class="lead mb-4">
+					برای کار با حسابیکس فقط به یک دستگاه متصل به اینترنت نیاز دارید، فرقی نمی‌کند که این دستگاه تبلت یا موبایل باشد یا اینکه رایانه و لپ تاپ.
+																									                        نیاز نیست که هیچگونه نرم افزاری را نصب کنید. کافیست در سایت ثبت نام کرده و بلافاصله کسب و کار خود را مدیریت کنید.
+				</p>
+				<div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+					<a href="{{ twigFunctions.systemSettings().appSite }}/user/login" class="btn btn-success btn-lg px-4 gap-3">
+						<i class="fa fa-door-open"></i>
+						ورود | عضویت رایگان
+					</a>
+					{% if is_granted('ROLE_ADMIN') %}
+						<a href="/app/dashboard" class="btn btn-alt-danger btn-lg px-4 gap-3">
+							<i class="fa fa-door-open"></i>
+							پنل مدیریت
+						</a>
+					{% endif %}
+				</div>
+			</div>
+			<div class="col-sm-12 col-md-6 mb-2">
+				<img alt="پیش نمایش حسابیکس" class="img-fluid rounded-3" src="/img/cover.jpg"/>
+			</div>
+		</div>
+	</div>
+	<div class="container py-3 d-block d-sm-none">
+		<div class="row">
+			<div class="col-12 d-md-flex align-items-md-center">
+				<div class="block block-rounded w-100 my-3 bg-image text-center bg-primary-op">
+					<div class="block-content block-content-full bg-white-90">
+						<img alt="" class="img-avatar img-avatar96 img-avatar-thumb" src="{{asset('/img/logo-blue.png')}}">
+						<p class="text-black-75 fw-medium mb-0">نتیجه اعتماد کاربران</p>
+					</div>
+					<div class="block-content block-content-full bg-body-extra-light">
+						<div class="row g-sm my-2">
+							<div class="col-4">
+								<p class="mb-2">
+									<i class="fa fa-fw fa-2x fa-shop text-muted"></i>
+								</p>
+								<p class="fs-sm mb-0">
+									{{ business | number_format }}
+									کسب‌و‌کار
+								</p>
+							</div>
+							<div class="col-4">
+								<p class="mb-2">
+									<i class="fa fa-fw fa-2x fa-user-tie text-muted"></i>
+								</p>
+								<p class="fs-sm mb-0">
+									{{ users | number_format }}
+									کاربر
+								</p>
+							</div>
+							<div class="col-4">
+								<p class="mb-2">
+									<i class="fa fa-fw fa-2x fa-money-bill-wave text-muted"></i>
+								</p>
+								<p class="fs-sm mb-0">
+									{{ docs | number_format }}
+									سند
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="container d-none d-sm-block">
+		<div class="row items-push py-5">
+			<div class="col-sm-3 col-xl-3 mb-2">
+				<a class="block block-rounded block-fx-pop text-center h-100 mb-0 border border-primary" href="javascript:void(0)">
+					<div class="block-content block-content-full">
+						<div class="item item-circle bg-primary-lighter mx-auto my-3">
+							<i class="fa fa-users text-primary"></i>
+						</div>
+						<div class="display-5 fw-bold">
+							{{ users | number_format }}
+						</div>
+						<div class="text-muted mt-1">
+							کاربران
+						</div>
+					</div>
+				</a>
+			</div>
+			<div class="col-sm-3 col-xl-3 mb-2">
+				<a class="block block-rounded block-fx-pop text-center h-100 mb-0 border border-primary" href="javascript:void(0)">
+					<div class="block-content block-content-full">
+						<div class="item item-circle bg-xinspire-lighter mx-auto my-3">
+							<i class="fa fa-home-user text-xinspire-dark"></i>
+						</div>
+						<div class="display-5 fw-bold">
+							{{ business | number_format }}
+						</div>
+						<div class="text-muted mt-1">
+							کسب‌و‌کارها
+						</div>
+					</div>
+				</a>
+			</div>
+			<div class="col-sm-3 col-xl-3 mb-2">
+				<a class="block block-rounded block-fx-pop text-center h-100 mb-0 border border-primary" href="javascript:void(0)">
+					<div class="block-content block-content-full">
+						<div class="item item-circle bg-xsmooth-lighter mx-auto my-3">
+							<i class="fa fa-paperclip text-xsmooth"></i>
+						</div>
+						<div class="display-5 fw-bold">
+							{{ docs | number_format }}
+						</div>
+						<div class="text-muted mt-1">
+							اسناد
+						</div>
+					</div>
+				</a>
+			</div>
+			<div class="col-sm-3 col-xl-3 mb-2">
+				<a class="block block-rounded block-fx-pop text-center h-100 mb-0 border border-primary" href="javascript:void(0)">
+					<div class="block-content block-content-full">
+						<div class="item item-circle bg-xplay-lighter mx-auto my-3">
+							<i class="fa fa-box text-xplay"></i>
+						</div>
+						<div class="display-5 fw-bold">
+							780,000+
+						</div>
+						<div class="text-muted mt-1">
+							کالاها‌و‌خدمات
+						</div>
+					</div>
+				</a>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="row">
+			<div class="col-sm-12 col-md-6 mb-2">
+				<div class="col-12 mb-2">
+					<div class="card">
+						<div class="card-body">
+							<h5 class="card-title text-primary-dark">
+								حسابیکس چیست؟
+							</h5>
+							<p class="card-text">
+								حسابیکس اولین نرم افزار کامل حسابداری تحت وب است. این نرم افزار بر اساس فناوری رایانش ابری ساخته شده است. یعنی کلیه اطلاعات شما بر روی سرورهای حسابیکس قرار می گیرد. ما امنیت اطلاعات و حریم خصوصی کلیه کاربران را به طور کامل تضمین می کنیم. برای کار با حسابیکس فقط به یک دستگاه متصل به اینترنت نیاز دارید، فرقی نمی کند که این دستگاه تبلت یا موبایل باشد یا اینکه رایانه و لپ تاپ. نیاز نیست که هیچگونه نرم افزاری را نصب کنید. کافیست در سایت ثبت نام کرده و بلافاصله کسب و کار خود را مدیریت کنید.
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="col-12 mb-2">
+					<div class="card">
+						<div class="card-body">
+							<h5 class="card-title text-primary-dark">
+								ساده و قدرتمند
+							</h5>
+							<p class="card-text">
+								برای کار با حسابیکس فقط به یک دستگاه متصل به اینترنت نیاز دارید، مهم نیست که این دستگاه تبلت یا موبایل باشد یا اینکه رایانه و لپ تاپ.
+																																								                                    نیاز نیست که هیچگونه نرم افزاری را نصب کنید. کافیست در سایت ثبت نام کرده و بلافاصله کسب و کار خود را مدیریت کنید.
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-sm-12 col-md-6 mb-2">
+				<div class="row">
+					<div class="col-12 mb-2">
+						<div class="card">
+							<div class="card-body">
+								<h5 class="card-title text-primary-dark">
+									نقاط قوت و تمایز
+								</h5>
+								<p class="card-text">
+									در حسابیکس می توانید فاکتورهای مشتریان را به صورت آنلاین برای آنها ارسال کنید، مشتری نیز می تواند فاکتور یا حتی مانده بدهی خود را به صورت آنلاین پرداخت کند. کلیه اسناد مربوطه نیز توسط نرم افزار به صورت اتوماتیک صادر می شوند. از سوی دیگر ذینفعان کسب و کار شما، مانند مشتریان یا تامین کنندگان، می توانند به صورت آنلاین و بروز، کارت حساب خود را مشاهده کنند.
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-12 mb-2">
+						<div class="card">
+							<div class="card-body">
+								<h5 class="card-title text-primary-dark">
+									سریع و به روز
+								</h5>
+								<p class="card-text">
+									با وجود اینکه حسابیکس بر روی بستر اینترنت ارائه می شود، این نرم افزار بسیار سریع است. تجربه کاربری ارائه شده در حسابیکس نه تنها از لحاظ سرعت با نرم افزارهای تحت ویندوز رقابت می کند بلکه در بسیاری از موارد عملیات را سریعتر انجام می دهد. به علاوه حسابیکس همیشه بروز است. هر زمان که به سیستم وارد می شوید، آخرین نسخه از نرم افزار در دسترس شما قرار می گیرد. این امکانات به رایگان در اختیار کلیه کاربران قرار می گیرد.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="container">
+		<div class="py-3 py-sm-5">
+			<div class="block block-rounded block-transparent bg-body">
+				<div class="block-content block-content-full">
+					<div class="row justify-content-sm-between align-items-center p-md-3">
+						<div class="col-sm-6">
+							<h4 class="mb-2">
+								راه اندازی حسابیکس در کسب و کار شما
+							</h4>
+							<p class="text-muted mb-sm-0">
+								حسابیکس بسیار انعطاف پذیر و برای مدیریت اکثر کسب و کارها کارآمد است.برای آموزش راه اندازی اولیه کسب و کار خود در حسابیکس کافی است با ما تماس بگیرید .
+																																								                                    راه‌اندازی کسب و کار و مشاوره با کارشناسان ما کاملا رایگان است
+							</p>
+						</div>
+						<div class="col-sm-6 text-sm-end">
+							<a class="btn btn-primary px-4 py-2 mt-1" href="{{ path('general_contact') }}">
+								تماس با ما
+								<i class="fa fa-fw fa-arrow-left opacity-50 ms-1"></i>
+							</a>
+							<a class="btn btn-info px-4 py-2 mt-1" href="{{ twigFunctions.systemSettings().appSite }}/user/login">
+								ارسال تیکت
+								<i class="fa fa-fw fa-arrow-left opacity-50 ms-1"></i>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-sm-12 col-md-12">
+				<div class="block block-rounded block-transparent">
+					<div class="bg-image">
+						<div class="block-content block-content-full bg-white rounded-2">
+							<div class="row px-0 justify-content-sm-between align-items-center">
+								<div class="col-sm-12">
+									<h4 class="mb-2 text-primary-dark">
+										<i class="fa fa-user-plus"></i>
+										جدیدترین عضو حسابیکس...
+									</h4>
+									<p class=" mb-sm-0">
+										به جدیدترین عضو حسابیکس
+										<span class="text-primary">
+											{{ lastBusinessOwner }}
+										</span>
+										که کسب‌و‌کار خود را با نام
+										<span class="text-primary">
+											{{ lastBusinessName }}
+										</span>
+										ایجاد کرده‌اند خوش‌آمد می‌گوییم.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="container mb-3 d-none d-sm-block">
+		<div class="row">
+			<div class="col-12 py-2 text-center">
+				<h1>حامیان حسابیکس</h1>
+			</div>
+			<div class="col-sm-12 col-md-4">
+				<div class="card">
+					<img src="{{ asset('/banners/raddata.png') }}" class="card-img-top" alt="راددیتا">
+					<div class="card-body text-center">
+						<h5 class="card-title text-primary">مرکز ارتباطات راد دیتا</h5>
+						<p class="card-text">پیشرو در ارائه خدمات فنی مهندسی و سرویس های مرکز داده در ایران و خارج با بالاترین کیفیت و قیمت مناسب</p>
+						<a href="https://raddata.ir" target="_blank" class="btn btn-primary">وب سایت</a>
+					</div>
+				</div>
+			</div>
+			<div class="col-sm-12 col-md-4">
+				<div class="card">
+					<img src="{{ asset('/img/parspack-black.png') }}" class="card-img-top bg-black p-3" alt="پارس‌پک">
+					<div class="card-body text-center">
+						<h5 class="card-title text-primary">پارس‌پک</h5>
+						<p class="card-text">از یک استارت‌آپ کوچک تا سازمانی بزرگ پشتیبان‌تان هستیم. پیشرو در راهکارهای ابری</p>
+						<a href="https://parspack.com" target="_blank" class="btn btn-primary">وب سایت</a>
+					</div>
+				</div>
+			</div>
+			<div class="col-sm-12 col-md-4">
+				<div class="card">
+					<img src="{{ asset('/img/melipayamak-card.png') }}" class="img-flude card-img-top bg-white p-3" alt="ملی پیامک">
+					<div class="card-body text-center">
+						<h5 class="card-title text-primary">سامانه پیام کوتاه ملی‌پیامک</h5>
+						<p class="card-text">ملی پیامک یک سامانه پیامکی معمولی نیست! یک ابزار قدرتمند است برای آنکه مشتری را جذب کنید، از او نگهداری کنید، یک رابطه پایدار بسازید و خدمات بهتری ارائه دهید. وقت آن رسیده که نگاهی بزرگ‌تر به پیام کوتاه داشته باشیم.
+						</p>
+						<a href="https://www.melipayamak.com/?utm_source=hesabix&utm_medium=affiliate&utm_campaign=hesabix-camp" target="_blank" class="btn btn-primary">
+							<i class="fa fa-link me-2"></i>
+							سفارش پنل پیامک
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="content content-boxed mt-0 pt-0">
+		{% if blogPosts | length > 0 %}
+			<h3>
+				وبلاگ حسابیکس
+			</h3>
+			<div class="row items-push">
+				{% for item in blogPosts %}
+					<div class="col-sm-12 col-md-4">
+						<a class="block block-rounded block-transparent d-md-flex align-items-md-stretch bg-image h-100 mb-0 js-click-ripple-enabled" data-toggle="click-ripple" href="{{ path('general_blog_post',{'url':item.url}) }}" style="background-image: url('/blog/media/{{ item.img }}'); overflow: hidden; position: relative; z-index: 1;">
+							<div class="block-content block-content-full bg-black-50">
+								<span class="d-inline-block py-1 px-2 rounded bg-black-75 fs-sm fw-bold text-uppercase text-white">
+									{{ item.cat.label }}
+								</span>
+								<div class="py-6">
+									<div class="fs-sm mb-2">
+										<i class="fa fa-star text-warning"></i>
+										<i class="fa fa-star text-warning"></i>
+										<i class="fa fa-star text-warning"></i>
+										<i class="fa fa-star text-warning"></i>
+										<i class="fa fa-star text-warning"></i>
+									</div>
+									<h3 class="fw-bold text-white mb-1">
+										{{ item.title }}
+									</h3>
+								</div>
+								<span class="fs-sm fw-bold text-uppercase text-white-75">
+									{{ item.submitter.fullname }}
+									|
+									{{ Jdate.jdate('Y/n/d',item.dateSubmit) }}
+								</span>
+							</div>
+						</a>
+					</div>
+				{% endfor %}
+			</div>
+		{% endif %}
+	</div>
+{% endblock %}
+

@@ -163,25 +163,31 @@ class CommodityController extends AbstractController
             $pricesAll = $entityManager->getRepository(PriceList::class)->findBy([
                 'bid' => $acc['bid']
             ]);
-            foreach ($pricesAll as $list) {
-                $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
-                    'list' => $list,
-                    'commodity' => $item
-                ]);
-                if ($priceDetails) {
-                    $temp['prices'][] = Explore::ExploreCommodityPriceListDetail($priceDetails);
-                } else {
-                    $spd = new PriceListDetail;
-                    $spd->setList($list);
-                    $spd->setMoney($acc['bid']->getMoney());
-                    $spd->setCommodity($item);
-                    $spd->setPriceBuy(0);
-                    $spd->setPriceSell(0);
-                    $entityManager->persist($spd);
-                    $entityManager->flush();
-                    $temp['prices'][] = Explore::ExploreCommodityPriceListDetail($spd);
+            if(count($pricesAll) == 0){
+                $temp['prices'] = [];
+            }
+            else{
+                foreach ($pricesAll as $list) {
+                    $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
+                        'list' => $list,
+                        'commodity' => $item
+                    ]);
+                    if ($priceDetails) {
+                        $temp['prices'][] = Explore::ExploreCommodityPriceListDetail($priceDetails);
+                    } else {
+                        $spd = new PriceListDetail;
+                        $spd->setList($list);
+                        $spd->setMoney($acc['bid']->getMoney());
+                        $spd->setCommodity($item);
+                        $spd->setPriceBuy(0);
+                        $spd->setPriceSell(0);
+                        $entityManager->persist($spd);
+                        $entityManager->flush();
+                        $temp['prices'][] = Explore::ExploreCommodityPriceListDetail($spd);
+                    }
                 }
             }
+            
             $res[] = $temp;
         }
         return $this->json($res);
@@ -291,24 +297,30 @@ class CommodityController extends AbstractController
         $pricesAll = $entityManager->getRepository(PriceList::class)->findBy([
             'bid' => $acc['bid']
         ]);
-        foreach($pricesAll as $item){
-            $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
-                'list'=> $item,
-                'commodity' => $data
-            ]);
-            if($priceDetails){
-                $res['prices'][] = Explore::ExploreCommodityPriceListDetail($priceDetails);
-            }
-            else{
-                $spd = new PriceListDetail;
-                $spd->setList($item);
-                $spd->setMoney($acc['bid']->getMoney());
-                $spd->setCommodity($data);
-                $spd->setPriceBuy(0);
-                $spd->setPriceSell(0);
-                $res['prices'][] = Explore::ExploreCommodityPriceListDetail($spd);
+        if (count($pricesAll) == 0) {
+            $res['prices'] = [];
+        } else {
+            foreach ($pricesAll as $item) {
+                $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
+                    'list'=> $item,
+                    'commodity' => $data
+                ]);
+                if($priceDetails){
+                    $res['prices'][] = Explore::ExploreCommodityPriceListDetail($priceDetails);
+                }
+                else{
+                    $spd = new PriceListDetail;
+                    $spd->setList($item);
+                    $spd->setMoney($acc['bid']->getMoney());
+                    $spd->setCommodity($data);
+                    $spd->setPriceBuy(0);
+                    $spd->setPriceSell(0);
+                    $res['prices'][] = Explore::ExploreCommodityPriceListDetail($spd);
+                }
             }
         }
+        
+        
         return $this->json($res);
     }
 
