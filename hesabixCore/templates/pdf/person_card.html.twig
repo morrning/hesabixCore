@@ -83,23 +83,69 @@
 				<td class="center item">بستانکار</td>
 				<td class="center item">سال مالی</td>
 			</tr>
-			{% for item in items %}
-
-<tr class="stimol">
-	<td class="center item">{{ loop.index }}</td>
-	<td class="center item">{{ item.doc.code }}</td>
-	<td class="center item">{{ item.doc.date }}</td>
-	<td class="center item">{{ item.des }}</td>
-	<td class="center item">{{ item.ref.name }}</td>
-	<td class="center item">{{ item.bd | number_format }}</td>
-	<td class="center item">{{ item.bs | number_format }}</td>
-	<td class="center item">{{ item.year.label }}</td>
-</tr>
-{% endfor %}
+	{% set sumBs = 0 %}
+	{% set sumBd = 0 %}
+	{% for item in items %}
+		{% set sumBs = sumBs + item.bs %}
+		{% set sumBd = sumBd + item.bd %}
+		<tr class="stimol">
+			<td class="center item">{{ loop.index }}</td>
+			<td class="center item">{{ item.doc.code }}</td>
+			<td class="center item">{{ item.doc.date }}</td>
+			<td class="center item">{{ item.des }}</td>
+			<td class="center item">{{ item.ref.name }}</td>
+			<td class="center item">{{ item.bd | number_format }}</td>
+			<td class="center item">{{ item.bs | number_format }}</td>
+			<td class="center item">{{ item.year.label }}</td>
+		</tr>
+	{% endfor %}
 </tbody>
-
 </table>
 
 </div>
-
+<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
+	<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
+		<b style="color:white;">وضعیت حساب</b>
+	</div>
+	<table style="width:100%;">
+		<tbody>
+			<tr style="text-align:center;">
+				<td class="center">
+					<p>
+						<b>جمع بستانکار:
+						</b>
+						{{ sumBs | number_format }}
+					</p>
+				</td>
+				<td class="center">
+					<p>
+						<b>جمع بدهکار:
+						</b>
+						{{ sumBd | number_format }}
+					</p>
+				</td>
+				<td class="center">
+					<p>
+						<b>تراز حساب:
+						</b>
+					<span>{{ (sumBs - sumBd) | abs |number_format }}</span>
+					</p>
+				</td>
+				<td class="center">
+					<p>
+						<b> وضعیت:
+						</b>
+						{% if sumBs > sumBd%}
+						بستانکار
+						{% elseif sumBs == sumBd %}
+						تسویه شده
+						{% else %}
+						بدهکار
+						{% endif %}
+					</p>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
 {% endblock %}
