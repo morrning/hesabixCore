@@ -8,6 +8,7 @@ use App\Service\SMS;
 use App\Entity\Person;
 use App\Service\Access;
 use App\Entity\Commodity;
+use App\Entity\Log as EntityLog;
 use App\Service\Provider;
 use App\Service\Extractor;
 use App\Service\registryMGR;
@@ -272,6 +273,13 @@ class PlugRepserviceController extends AbstractController
         if (!$item)
             throw $this->createNotFoundException();
         $code = $item->getCode();
+        // remove logs
+        $logs = $entityManager->getRepository(EntityLog::class)->findBy(['repserviceOrder' => $item]);
+        foreach($logs as $lg){
+            $lg->setRepserviceOrder(null);
+            $entityManager->persist($lg);
+        }
+        $entityManager->flush();
         $entityManager->remove($item);
         $log->insert('افزونه تعمیرکاران', 'درخواست با شماره قبض' . $code . 'حذف شد.', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);

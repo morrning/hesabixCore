@@ -153,9 +153,50 @@ class StoreroomController extends AbstractController
                 }
         }
 
+        $rfsells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+            'bid' => $acc['bid'],
+            'type' => 'rfsell'
+        ]);
+        $rfsellsForExport = [];
+        foreach ($rfsells as $sell) {
+            $temp = $provider->Entity2Array($sell, 0);
+            $person = $this->getPerson($sell);
+            $temp['person'] = $provider->Entity2ArrayJustIncludes($person, ['getCode', 'getNikename', 'getDes']);
+            $temp['person']['des'] = ' # ' . $person->getCode() . ' ' . $person->getNikename();
+            $temp['commodities'] = $this->getCommodities($sell, $provider);
+            //check storeroom exist
+            $this->calcStoreRemaining($temp, $sell, $entityManager);
+            $temp['des'] = 'فاکتور برگشت از فروش شماره # ' . $sell->getCode();
+            if (array_key_exists('storeroomComplete', $temp))
+                if (!$temp['storeroomComplete']) {
+                    $rfsellsForExport[] = $temp;
+                }
+        }
+
+        $rfbuys = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+            'bid' => $acc['bid'],
+            'type' => 'rfbuy'
+        ]);
+        $rfbuysForExport = [];
+        foreach ($rfbuys as $buy) {
+            $temp = $provider->Entity2Array($buy, 0);
+            $person = $this->getPerson($buy);
+            $temp['person'] = $provider->Entity2ArrayJustIncludes($person, ['getCode', 'getNikename', 'getDes']);
+            $temp['person']['des'] = ' # ' . $person->getCode() . ' ' . $person->getNikename();
+            $temp['commodities'] = $this->getCommodities($buy, $provider);
+            //check storeroom exist
+            $this->calcStoreRemaining($temp, $buy, $entityManager);
+            $temp['des'] = 'فاکتور برگشت از خرید شماره # ' . $buy->getCode();
+            if (array_key_exists('storeroomComplete', $temp))
+                if (!$temp['storeroomComplete']) {
+                    $rfbuysForExport[] = $temp;
+                }
+        }
         return $this->json([
             'buys' => $buysForExport,
-            'sells' => $sellsForExport
+            'sells' => $sellsForExport,
+            'rfsells' => $rfsellsForExport,
+            'rfbuys' => $rfbuysForExport
         ]);
     }
 
