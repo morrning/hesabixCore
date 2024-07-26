@@ -6,13 +6,14 @@ use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
 use App\Entity\Person;
+use App\Service\Printers;
+use App\Service\Provider;
 use App\Entity\Storeroom;
 use App\Entity\StoreroomItem;
 use App\Entity\StoreroomTicket;
 use App\Entity\StoreroomTransferType;
 use App\Service\Access;
 use App\Service\Log;
-use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 use ReflectionException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -441,6 +442,8 @@ class StoreroomController extends AbstractController
             'bid' => $acc['bid'],
             'year' => $acc['year'],
             'type' => $type
+        ],[
+            'date'=>'DESC'
         ]);
         return $this->json($provider->ArrayEntity2ArrayJustIncludes($tickets, [
             'getDes',
@@ -473,7 +476,7 @@ class StoreroomController extends AbstractController
         $res['person'] = $provider->Entity2ArrayJustIncludes($ticket->getPerson(), ['getKeshvar', 'getOstan', 'getShahr', 'getAddress', 'getNikename', 'getCodeeghtesadi', 'getPostalcode', 'getName', 'getTel', 'getSabt'], 0);
         //get rows
         $rows = $entityManager->getRepository(StoreroomItem::class)->findBy(['ticket' => $ticket]);
-        $res['commodities'] = $provider->ArrayEntity2ArrayJustIncludes($rows, ['getId', 'getDes', 'getCode', 'getName', 'getCommodity', 'getUnit', 'getCount'], 2);
+        $res['commodities'] = $provider->ArrayEntity2ArrayJustIncludes($rows, ['getId', 'getDes', 'getCode', 'getName', 'getCommodity', 'getUnit', 'getCount','getReferal'], 2);
 
         //calculate rows data
         $this->calcStoreRemaining($res, $ticket->getDoc(), $entityManager);
@@ -560,5 +563,43 @@ class StoreroomController extends AbstractController
         return $this->json([
             'result' => 0
         ]);
+    }
+
+    #[Route('/api/storeroom/print/ticket', name: 'app_storeroom_print_ticket')]
+    public function app_storeroom_print_ticket(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $acc = $access->hasRole('store');
+        if (!$acc) throw $this->createAccessDeniedException();
+
+        $doc = $entityManager->getRepository(StoreroomTicket::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'code' => $params['code']
+        ]);
+        if (!$doc) throw $this->createNotFoundException();
+        if($params['type'] == 'input'){
+            $title = 'حواله ورود به انبار';
+        }
+        else{
+            $title = 'حواله خروج از انبار';
+        }
+        $pdfPid = 0;
+        $pdfPid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/printers/storeroom/input.html.twig', [
+                'title'=> $title,
+                'bid' => $acc['bid'],
+                'doc' => $doc,
+                'rows' => $doc->getStoreroomItems(),
+                'person' => $doc->getPerson()
+            ]),
+            false
+        );
+        return $this->json(['id' => $pdfPid]);
     }
 }

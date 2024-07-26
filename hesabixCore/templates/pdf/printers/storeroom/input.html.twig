@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fa" direction="rtl"></html>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<head>
+	<style>
+		.center {
+			text-align: center;
+		}
+		.text-white {
+			color: white;
+		}
+		.stimol td,
+		.stimol th {
+			border: 1px solid black;
+		}
+		.item {
+			height: 40px;
+		}
+	</style>
+</head>
+<body style="direction:rtl; width:100%">
+	<div class="block-content pt-1 pb-3 d-none d-sm-block">
+		<div class="c-print container-xl">
+			<div class="tg-wrap" style="width:100%; border:1px solid black;border-radius: 8px;">
+				<table class="rounded" style="width:100%;">
+					<thead>
+						<tr>
+							<td style="width:20%">
+								<img src="{{ "/api/avatar/get/file/" ~ bid.avatar}}" width="65"/>
+							</td>
+							<td style="width:60%; text-align:center">
+								<h3 class="">{{ bid.name }}</h3>
+								<br/>
+								<h4 class="">{{ title }}</h4>
+							</td>
+							<td style="width:20%">
+								<h4>
+									<b>تاریخ:</b>
+									{{ doc.date }}</h4>
+								<br/>
+								<h4>
+									<b>شماره:</b>
+									{{ doc.code }}</h4>
+
+							</td>
+						</tr>
+					</thead>
+				</table>
+			</div>
+			<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
+				<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
+					<b style="color:white;">طرف حساب</b>
+				</div>
+				<table style="width:100%;">
+					<tbody>
+						<tr style="text-align:center;">
+							<td class="">
+								<p>
+									<b>نام:
+									</b>
+									{{ person.nikename }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>
+										شناسه ملی:
+									</b>
+									{{ person.shenasemeli }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>شماره ثبت:
+									</b>
+									{{ person.sabt }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>شماره اقتصادی:
+									</b>
+									{{ person.codeeghtesadi }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>تلفن / نمابر:</b>
+									{{ person.tel }}
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<td class="" colspan="1">
+								<p>
+									<b>کد پستی:</b>
+									{{ person.postalcode }}
+								</p>
+							</td>
+							<td class="" colspan="3">
+								<p>
+									<b>آدرس:
+									</b>
+									استان
+									{{ person.ostan }}، شهر
+									{{ person.shahr }}،
+									{{ person.address }}
+								</p>
+							</td>
+						</tr>
+						<tr style="text-align:center;">
+							<td class="">
+								<p>
+									<b>حمل و نقل:
+									</b>
+									{{ doc.transfer }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>
+										تحویل:
+									</b>
+									{{ doc.receiver }}
+								</p>
+							</td>
+							<td class="center">
+								<p>
+									<b>روش تحویل:
+									</b>
+									{{ doc.transferType.name }}
+								</p>
+							</td>
+							<td class="center" colspan="2">
+								<p>
+									<b>شماره پیگیری:
+									</b>
+									{{ doc.referral }}
+								</p>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div style="width:100%;margin-top:5px;text-align:center;">
+				<table style="width:100%;">
+					<thead>
+						<tr class="stimol" style="background-color:gray;">
+							<th class="text-white" style="width:80px">ردیف</th>
+							<th class="text-white">کالا/خدمات</th>
+							<th class="text-white">واحد</th>
+							<th class="text-white">تعداد</th>
+							<th class="text-white">ارجاع</th>
+							<th class="text-white">شرح</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% set rowIndex =  0 %}
+						{% for row in rows %}
+							{% set rowIndex = rowIndex + 1 %}
+							<tr class="stimol">
+								<td class="center item">{{ rowIndex }}</td>
+								<td class="center item">{{ row.commodity.code }}
+									{{ row.commodity.name }}</td>
+								<td class="center item">{{ row.commodity.unit.name }}</td>
+								<td class="center item">{{ row.count }}</td>
+								<td class="center item">{{ row.referal }}</td>
+								<td class="center item">{{ row.des }}</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+			<div style="width:40%;margin-top:20px;text-align:center;float:left;">
+				<table style="width:100%;">
+					<tbody>
+						<tr class="">
+							<td class="center" style="height:90px">
+								<h4>
+									مهر و امضا انباردار
+									{{ doc.storeroom.name }}
+								</h4>
+								<br/>
+								<h5>
+									{{doc.storeroom.manager}}
+								</h5>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</body>
+</body></div></body></html>
+
