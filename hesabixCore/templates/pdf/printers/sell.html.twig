@@ -14,7 +14,7 @@
 			border: 1px solid black;
 		}
 		.item {
-			height: 40px;
+			height: 30px;
 		}
 	</style>
 </head>
@@ -45,69 +45,75 @@
 					</thead>
 				</table>
 			</div>
-			<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
-				<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
-					<b style="color:white;">فروشنده</b>
-				</div>
-				<table style="width:100%;">
-					<tbody>
-						<tr style="text-align:center;">
-							<td class="">
-								<p>
-									<b>نام:
-									</b>
-									{{ bid.legalName }}
-								</p>
-							</td>
-							<td class="center">
-								<p>
-									<b> شناسه ملی:
-									</b>
-									{{ bid.shenasemeli }}
-								</p>
-							</td>
-							<td class="center">
-								<p>
-									<b>شماره ثبت:
-									</b>
-									{{ bid.shomaresabt }}
-								</p>
-							</td>
-							<td class="center">
-								<p>
-									<b>شماره اقتصادی:
-									</b>
-									{{ bid.codeeghtesadi }}
-								</p>
-							</td>
-							<td class="center">
-								<p>
-									<b>تلفن / نمابر:</b>
-									{{ bid.tel }}
-								</p>
-							</td>
-						</tr>
-						<tr>
-							<td class="" colspan="1">
-								<p>
-									<b>کد پستی:</b>
-									{{ bid.postalcode }}
-								</p>
-							</td>
-							<td class="" colspan="3">
-								<p>
-									<b>آدرس:
-									</b>
-									استان
-									{{ bid.ostan }}، شهر
-									{{ bid.shahrestan }}،
-									{{ bid.address }}
-								</p>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
+{% if printOptions.bidInfo %}
+
+<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
+	<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
+		<b style="color:white;">فروشنده</b>
+	</div>
+	<table style="width:100%;">
+		<tbody>
+			<tr style="text-align:center;">
+				<td class="">
+					<p>
+						<b>نام:
+						</b>
+						{{ bid.legalName }}
+					</p>
+				</td>
+				<td class="center">
+					<p>
+						<b>
+							شناسه ملی:
+						</b>
+						{{ bid.shenasemeli }}
+					</p>
+				</td>
+				<td class="center">
+					<p>
+						<b>شماره ثبت:
+						</b>
+						{{ bid.shomaresabt }}
+					</p>
+				</td>
+				<td class="center">
+					<p>
+						<b>شماره اقتصادی:
+						</b>
+						{{ bid.codeeghtesadi }}
+					</p>
+				</td>
+				<td class="center">
+					<p>
+						<b>تلفن / نمابر:</b>
+						{{ bid.tel }}
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<td class="" colspan="1">
+					<p>
+						<b>کد پستی:</b>
+						{{ bid.postalcode }}
+					</p>
+				</td>
+				<td class="" colspan="3">
+					<p>
+						<b>آدرس:
+						</b>
+						استان
+						{{ bid.ostan }}، شهر
+						{{ bid.shahrestan }}،
+						{{ bid.address }}
+					</p>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+
+{% endif %}
+
 			<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
 				<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
 					<b style="color:white;">خریدار</b>
@@ -180,8 +186,12 @@
 							<th class="text-white">شرح</th>
 							<th class="text-white">تعداد / مقدار</th>
 							<th class="text-white">مبلغ واحد</th>
-							<th class="text-white">تخفیف</th>
-							<th class="text-white">مالیات</th>
+							{% if printOptions.discountInfo %}
+								<th class="text-white">تخفیف</th>
+							{% endif %}
+							{% if printOptions.taxInfo %}
+								<th class="text-white">مالیات</th>
+							{% endif %}
 							<th class="text-white">مبلغ کل</th>
 						</tr>
 					</thead>
@@ -204,8 +214,12 @@
 										{{ item.commodity.unit.name }}
 									</td>
 									<td class="center item">{{ ((item.bs - item.tax + item.discount) / item.commdityCount) | number_format }}</td>
-									<td class="center item">{{ item.discount | number_format }}</td>
-									<td class="center item">{{ item.tax | number_format}}</td>
+									{% if printOptions.discountInfo %}
+										<td class="center item">{{ item.discount | number_format }}</td>
+									{% endif %}
+									{% if printOptions.taxInfo %}
+										<td class="center item">{{ item.tax | number_format}}</td>
+									{% endif %}
 									<td class="center item">{{ item.bs| number_format }}</td>
 								</tr>
 							{% endif %}
@@ -217,81 +231,63 @@
 				<table style="width:100%;">
 					<tbody>
 						<tr class="stimol">
-							<td class="item">
+							<td class="item" style="width:70%;padding:1%">
+								<h4>
+									توضیحات:
+									{{doc.des}}
+									<br>
+										{% if (doc.relatedDocs | length != 0) and (printOptions.pays == true) %}
+										<h4 class="">
+											پرداخت‌ها:
+										</h4>
+										<ul class="">
+											{% for item in doc.relatedDocs%}	
+												<li class="">
+													{{item.date}} - {{ item.amount | number_format }} - {{ item.des }}
+												</li>	
+											{% endfor %}
+										</ul>
+										{% if printOptions.note == true %}
+										<h4 class="">
+											یاداشت:
+										</h4>
+										<ul class="">
+											<li class="">
+												{{note}}
+											</li>
+										</ul>
+										{% endif %}
+									</div>
+									{% endif %}
+								</h4>
+							</td>
+							<td class="item" style="width:15%;padding:1%">
 								<h4>
 									تخفیف:
 									{{discount | number_format}}
 								</h4>
-							</td>
-							<td class="item">
 								<h4>
 									مالیات:
 									{{taxAll | number_format}}
 								</h4>
-							</td>
-							<td class="item">
 								<h4>
 									حمل و نقل:
 									{{transfer | number_format}}
 								</h4>
-							</td>
-							<td class="item">
 								<h4>
 									مبلغ کل بدون تخفیف:
 									{{ (doc.amount + discount) | number_format}}
 								</h4>
-							</td>
-							<td class="item">
 								<h4>
 									جمع کل قابل پرداخت:
-									{{doc.amount | number_format}}
-								</h4>
-							</td>
-						</tr>
-						<tr class="stimol">
-							<td class="item" colspan="5">
-								<h4>
-									توضیحات:
-									{{doc.des}}
+									{{ doc.amount | number_format }}
 								</h4>
 							</td>
 						</tr>
 					</tbody>
 				</table>
-			</div>
-			{% if doc.relatedDocs | length != 0 %}
-<h4 class="">
-					پرداخت‌ها:
-				</h4>
-			<div style="width:60%;margin-top:0px;text-align:center;">
-				<table style="width:100%;">
-					<thead>
-						<tr class="stimol" style="background-color:gray;">
-							<th class="text-white" style="width:80px">ردیف</th>
-							<th class="text-white">تاریخ</th>
-							<th class="text-white">مبلغ</th>
-							<th class="text-white">شرح</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tbody>
-							{% set rowIndex = 0 %}
-							{% for item in doc.relatedDocs%}
-								{% set rowIndex = rowIndex + 1 %}
-								<tr class="stimol">
-									<td class="center item">{{rowIndex}}</td>
-									<td class="center item">{{item.date}}</td>
-									<td class="center item">{{ item.amount | number_format }}</td>
-									<td class="center item">{{ item.des }}</td>
-								</tr>
-							{% endfor %}
-						</tbody>
-					</tbody>
-				</table>
-			</div>
-			{% endif %}
-				
-			<div style="width:40%;margin-top:20px;text-align:center;float:left;">
+			</div>	
+			<div style="width:40%;margin-top:0px;text-align:center;float:left;">
 				<table style="width:100%;">
 					<tbody>
 						<tr class="">

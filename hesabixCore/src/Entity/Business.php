@@ -231,6 +231,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PriceList::class, orphanRemoval: true)]
     private Collection $priceLists;
 
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PrintOptions::class, orphanRemoval: true)]
+    private Collection $printOptions;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -264,6 +267,7 @@ class Business
         $this->printTemplates = new ArrayCollection();
         $this->notes = new ArrayCollection();
         $this->priceLists = new ArrayCollection();
+        $this->printOptions = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1651,6 +1655,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($priceList->getBid() === $this) {
                 $priceList->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PrintOptions>
+     */
+    public function getPrintOptions(): Collection
+    {
+        return $this->printOptions;
+    }
+
+    public function addPrintOption(PrintOptions $printOption): static
+    {
+        if (!$this->printOptions->contains($printOption)) {
+            $this->printOptions->add($printOption);
+            $printOption->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePrintOption(PrintOptions $printOption): static
+    {
+        if ($this->printOptions->removeElement($printOption)) {
+            // set the owning side to null (unless already changed)
+            if ($printOption->getBid() === $this) {
+                $printOption->setBid(null);
             }
         }
 

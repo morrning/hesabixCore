@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use App\Entity\Printer;
 use App\Entity\PrintItem;
+use App\Entity\PrintOptions;
 use App\Service\Access;
+use App\Service\Explore;
 use App\Service\Extractor;
 use App\Service\Log;
 use App\Service\Provider;
@@ -28,7 +30,60 @@ class PrintersController extends AbstractController
         return substr(str_shuffle(str_repeat($x = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
     }
 
+    #[Route('/api/printers/options/info', name: 'app_printers_options_info')]
+    public function app_printers_options_info(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('settings');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $settings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
+        if (!$settings) {
+            $settings = new PrintOptions;
+            $settings->setBid($acc['bid']);
+            $entityManager->persist($settings);
+            $entityManager->flush();
+        }
 
+        $temp = [];
+        $temp['sell']['id'] = $settings->getId();
+        $temp['sell']['bidInfo'] = $settings->isSellBidInfo();
+        $temp['sell']['taxInfo'] = $settings->isSellTaxInfo();
+        $temp['sell']['discountInfo'] = $settings->isSellDiscountInfo();
+        $temp['sell']['note'] = $settings->isSellNote();
+        $temp['sell']['noteString'] = $settings->getSellNoteString();
+        $temp['sell']['pays'] = $settings->isSellPays();
+        return $this->json($temp);
+    }
+
+    #[Route('/api/printers/options/save', name: 'app_printers_options_save')]
+    public function app_printers_options_save(Extractor $extractor, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('settings');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $settings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
+        if (!$settings) {
+            $settings = new PrintOptions;
+            $settings->setBid($acc['bid']);
+            $entityManager->persist($settings);
+            $entityManager->flush();
+        }
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $settings->setSellBidInfo($params['sell']['bidInfo']);
+        $settings->setSellTaxInfo($params['sell']['taxInfo']);
+        $settings->setSellDiscountInfo($params['sell']['discountInfo']);
+        $settings->setSellNote($params['sell']['note']);
+        $settings->setSellNoteString($params['sell']['noteString']);
+        $settings->setSellPays($params['sell']['pays']);
+        $entityManager->persist($settings);
+        $entityManager->flush();
+        $log->insert('تنظیمات چاپ', 'تنظیمات چاپ به روز رسانی شد.', $this->getUser(), $acc['bid']->getId());
+        return $this->json($extractor->operationSuccess());
+    }
     #[Route('/api/printers/list', name: 'app_printers_list')]
     public function app_printers_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {

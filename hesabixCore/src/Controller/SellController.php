@@ -13,6 +13,7 @@ use App\Entity\HesabdariRow;
 use App\Entity\HesabdariTable;
 use App\Entity\InvoiceType;
 use App\Entity\Person;
+use App\Entity\PrintOptions;
 use App\Entity\StoreroomTicket;
 use App\Service\Printers;
 use Doctrine\ORM\EntityManagerInterface;
@@ -408,6 +409,33 @@ class SellController extends AbstractController
         }
         $pdfPid = 0;
         if ($params['pdf']) {
+            $printOptions = [
+                'bidInfo' => true,
+                'pays'     =>true,
+                'taxInfo'   =>true,
+                'discountInfo'  =>true,
+                'note'  =>true
+            ];
+            if(array_key_exists('printOptions',$params)){
+                if(array_key_exists('bidInfo',$params['printOptions'])){
+                    $printOptions['bidInfo'] = $params['printOptions']['bidInfo'];
+                }
+                if(array_key_exists('pays',$params['printOptions'])){
+                    $printOptions['pays'] = $params['printOptions']['pays'];
+                }
+                if(array_key_exists('taxInfo',$params['printOptions'])){
+                    $printOptions['taxInfo'] = $params['printOptions']['taxInfo'];
+                }
+                if(array_key_exists('discountInfo',$params['printOptions'])){
+                    $printOptions['discountInfo'] = $params['printOptions']['discountInfo'];
+                }
+                if(array_key_exists('note',$params['printOptions'])){
+                    $printOptions['note'] = $params['printOptions']['note'];
+                }
+            }
+            $note = '';
+            $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
+            if($printSettings){$note = $printSettings->getSellNoteString();}
             $pdfPid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
@@ -418,7 +446,9 @@ class SellController extends AbstractController
                     'person' => $person,
                     'printInvoice' => $params['printers'],
                     'discount' => $discount,
-                    'transfer' => $transfer
+                    'transfer' => $transfer,
+                    'printOptions'=> $printOptions,
+                    'note'=> $note
                 ]),
                 false
             );
