@@ -90,6 +90,18 @@ class PrintOptions
     #[ORM\Column(nullable: true)]
     private ?bool $RfsellPays = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sellPaper = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $buyPaper = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $rfbuyPaper = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $rfsellPaper = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -391,6 +403,54 @@ class PrintOptions
     public function setRfsellPays(?bool $RfsellPays): static
     {
         $this->RfsellPays = $RfsellPays;
+
+        return $this;
+    }
+
+    public function getSellPaper(): ?string
+    {
+        return $this->sellPaper;
+    }
+
+    public function setSellPaper(?string $sellPaper): static
+    {
+        $this->sellPaper = $sellPaper;
+
+        return $this;
+    }
+
+    public function getBuyPaper(): ?string
+    {
+        return $this->buyPaper;
+    }
+
+    public function setBuyPaper(?string $buyPaper): static
+    {
+        $this->buyPaper = $buyPaper;
+
+        return $this;
+    }
+
+    public function getRfbuyPaper(): ?string
+    {
+        return $this->rfbuyPaper;
+    }
+
+    public function setRfbuyPaper(?string $rfbuyPaper): static
+    {
+        $this->rfbuyPaper = $rfbuyPaper;
+
+        return $this;
+    }
+
+    public function getRfsellPaper(): ?string
+    {
+        return $this->rfsellPaper;
+    }
+
+    public function setRfsellPaper(?string $rfsellPaper): static
+    {
+        $this->rfsellPaper = $rfsellPaper;
 
         return $this;
     }

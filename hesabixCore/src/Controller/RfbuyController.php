@@ -63,7 +63,7 @@ class RfbuyController extends AbstractController
         if (!$doc)
             throw $this->createNotFoundException();
 
-        return $this->json(Explore::ExploreSellDoc($doc));
+        return $this->json(Explore::ExploreRfbuyDoc($doc));
     }
 
     #[Route('/api/rfbuy/mod', name: 'app_rfbuy_mod')]
@@ -353,14 +353,14 @@ class RfbuyController extends AbstractController
             $pid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
-                $this->renderView('pdf/posPrinters/justSell.html.twig', [
+                $this->renderView('pdf/posPrinters/justRfbuy.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
                     'rows' => $doc->getHesabdariRows(),
                 ]),
                 true
             );
-            $printers->addFile($pid, $acc, "fastSellInvoice");
+            $printers->addFile($pid, $acc, "fastRfbuyInvoice");
         }
         if ($params['posPrintRecp'] == true) {
             $pid = $provider->createPrint(
@@ -373,7 +373,7 @@ class RfbuyController extends AbstractController
                 ]),
                 true
             );
-            $printers->addFile($pid, $acc, "fastSellCashdesk");
+            $printers->addFile($pid, $acc, "fastRfbuyCashdesk");
         }
 
         return $this->json(['id' => $pdfPid]);
@@ -435,7 +435,7 @@ class RfbuyController extends AbstractController
             }
             $note = '';
             $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
-            if($printSettings){$note = $printSettings->getSellNoteString();}
+            if($printSettings){$note = $printSettings->getRfbuyNoteString();}
             $pdfPid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
@@ -457,14 +457,14 @@ class RfbuyController extends AbstractController
             $pid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
-                $this->renderView('pdf/posPrinters/justSell.html.twig', [
+                $this->renderView('pdf/posPrinters/justRfbuy.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
                     'rows' => $doc->getHesabdariRows(),
                 ]),
                 false
             );
-            $printers->addFile($pid, $acc, "fastSellInvoice");
+            $printers->addFile($pid, $acc, "fastRfbuyInvoice");
         }
         return $this->json(['id' => $pdfPid]);
     }

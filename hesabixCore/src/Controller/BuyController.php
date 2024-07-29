@@ -368,14 +368,14 @@ class BuyController extends AbstractController
             $pid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
-                $this->renderView('pdf/posPrinters/justSell.html.twig', [
+                $this->renderView('pdf/posPrinters/justBuy.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
                     'rows' => $doc->getHesabdariRows(),
                 ]),
                 true
             );
-            $printers->addFile($pid, $acc, "fastSellInvoice");
+            $printers->addFile($pid, $acc, "fastBuyInvoice");
         }
         if ($params['posPrintRecp'] == true) {
             $pid = $provider->createPrint(
@@ -388,7 +388,7 @@ class BuyController extends AbstractController
                 ]),
                 true
             );
-            $printers->addFile($pid, $acc, "fastSellCashdesk");
+            $printers->addFile($pid, $acc, "fastBuyCashdesk");
         }
 
         return $this->json(['id' => $pdfPid]);
@@ -450,7 +450,7 @@ class BuyController extends AbstractController
             }
             $note = '';
             $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
-            if($printSettings){$note = $printSettings->getSellNoteString();}
+            if($printSettings){$note = $printSettings->getBuyNoteString();}
             $pdfPid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
@@ -472,14 +472,14 @@ class BuyController extends AbstractController
             $pid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
-                $this->renderView('pdf/posPrinters/justSell.html.twig', [
+                $this->renderView('pdf/posPrinters/justBuy.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
                     'rows' => $doc->getHesabdariRows(),
                 ]),
                 false
             );
-            $printers->addFile($pid, $acc, "fastSellInvoice");
+            $printers->addFile($pid, $acc, "fastBuyInvoice");
         }
         return $this->json(['id' => $pdfPid]);
     }

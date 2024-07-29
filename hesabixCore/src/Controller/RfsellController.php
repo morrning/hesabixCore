@@ -450,7 +450,7 @@ class RfsellController extends AbstractController
             }
             $note = '';
             $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
-            if($printSettings){$note = $printSettings->getSellNoteString();}
+            if($printSettings){$note = $printSettings->getRfsellNoteString();}
             $pdfPid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
