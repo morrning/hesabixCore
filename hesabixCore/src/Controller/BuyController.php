@@ -13,6 +13,7 @@ use App\Entity\HesabdariRow;
 use App\Entity\HesabdariTable;
 use App\Entity\InvoiceType;
 use App\Entity\Person;
+use App\Entity\PrintOptions;
 use App\Entity\StoreroomTicket;
 use App\Service\Printers;
 use Doctrine\ORM\EntityManagerInterface;
@@ -179,7 +180,7 @@ class BuyController extends AbstractController
         }
         //set amount of document
         $doc->setAmount($sumTax + $sumTotal - $params['discountAll'] + $params['transferCost']);
-        //set person seller
+        //set person buyer
         $hesabdariRow = new HesabdariRow();
         $hesabdariRow->setDes('فاکتور خرید');
         $hesabdariRow->setBid($acc['bid']);
@@ -193,7 +194,7 @@ class BuyController extends AbstractController
         $hesabdariRow->setRef($ref);
         $person = $entityManager->getRepository(Person::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $params['seller']['code']
+            'code' => $params['buyer']['code']
         ]);
         if (!$person)
             return $this->json($extractor->paramsNotSend());
@@ -330,6 +331,69 @@ class BuyController extends AbstractController
         return $this->json($dataTemp);
     }
 
+    #[Route('/api/buy/posprinter/invoice', name: 'app_buy_posprinter_invoice')]
+    public function app_buy_posprinter_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $acc = $access->hasRole('buy');
+        if (!$acc) throw $this->createAccessDeniedException();
+
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'code' => $params['code']
+        ]);
+        if (!$doc) throw $this->createNotFoundException();
+        $pdfPid = 0;
+        if ($params['pdf']) {
+            $pdfPid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/posPrinters/buy.html.twig', [
+                'bid' => $acc['bid'],
+                'doc'=>$doc,
+                'rows'=>$doc->getHesabdariRows(),
+                'printInvoice'=>$params['posPrint'],
+                'printcashdeskRecp'=>$params['posPrintRecp'],
+            ]),
+                true
+            );
+        }
+
+
+        if ($params['posPrint'] == true) {
+            $pid = $provider->createPrint(
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/posPrinters/justSell.html.twig', [
+                    'bid' => $acc['bid'],
+                    'doc' => $doc,
+                    'rows' => $doc->getHesabdariRows(),
+                ]),
+                true
+            );
+            $printers->addFile($pid, $acc, "fastSellInvoice");
+        }
+        if ($params['posPrintRecp'] == true) {
+            $pid = $provider->createPrint(
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/posPrinters/cashdesk.html.twig', [
+                    'bid' => $acc['bid'],
+                    'doc' => $doc,
+                    'rows' => $doc->getHesabdariRows(),
+                ]),
+                true
+            );
+            $printers->addFile($pid, $acc, "fastSellCashdesk");
+        }
+
+        return $this->json(['id' => $pdfPid]);
+    }
+
     #[Route('/api/buy/print/invoice', name: 'app_buy_print_invoice')]
     public function app_buy_print_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -353,13 +417,40 @@ class BuyController extends AbstractController
             if ($item->getPerson()) {
                 $person = $item->getPerson();
             } elseif ($item->getRef()->getCode() == 104) {
-                $discount = $item->getBs();
-            } elseif ($item->getRef()->getCode() == 90) {
-                $transfer = $item->getBd();
+                $discount = $item->getBd();
+            } elseif ($item->getRef()->getCode() == 61) {
+                $transfer = $item->getBs();
             }
         }
         $pdfPid = 0;
         if ($params['pdf']) {
+            $printOptions = [
+                'bidInfo' => true,
+                'pays'     =>true,
+                'taxInfo'   =>true,
+                'discountInfo'  =>true,
+                'note'  =>true
+            ];
+            if(array_key_exists('printOptions',$params)){
+                if(array_key_exists('bidInfo',$params['printOptions'])){
+                    $printOptions['bidInfo'] = $params['printOptions']['bidInfo'];
+                }
+                if(array_key_exists('pays',$params['printOptions'])){
+                    $printOptions['pays'] = $params['printOptions']['pays'];
+                }
+                if(array_key_exists('taxInfo',$params['printOptions'])){
+                    $printOptions['taxInfo'] = $params['printOptions']['taxInfo'];
+                }
+                if(array_key_exists('discountInfo',$params['printOptions'])){
+                    $printOptions['discountInfo'] = $params['printOptions']['discountInfo'];
+                }
+                if(array_key_exists('note',$params['printOptions'])){
+                    $printOptions['note'] = $params['printOptions']['note'];
+                }
+            }
+            $note = '';
+            $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
+            if($printSettings){$note = $printSettings->getSellNoteString();}
             $pdfPid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
@@ -370,7 +461,9 @@ class BuyController extends AbstractController
                     'person' => $person,
                     'printInvoice' => $params['printers'],
                     'discount' => $discount,
-                    'transfer' => $transfer
+                    'transfer' => $transfer,
+                    'printOptions'=> $printOptions,
+                    'note'=> $note
                 ]),
                 false
             );
@@ -379,14 +472,14 @@ class BuyController extends AbstractController
             $pid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
-                $this->renderView('pdf/posPrinters/justBuy.html.twig', [
+                $this->renderView('pdf/posPrinters/justSell.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
                     'rows' => $doc->getHesabdariRows(),
                 ]),
                 false
             );
-            $printers->addFile($pid, $acc, "fastBuyInvoice");
+            $printers->addFile($pid, $acc, "fastSellInvoice");
         }
         return $this->json(['id' => $pdfPid]);
     }

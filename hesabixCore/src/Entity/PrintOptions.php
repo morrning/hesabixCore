@@ -36,6 +36,60 @@ class PrintOptions
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $sellNoteString = null;
 
+    #[ORM\Column]
+    private ?bool $buyBidInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $buyTaxInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $buyDiscountInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $buyNote = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $buyNoteString = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $buyPays = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfbuyBidInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfbuyTaxInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfbuyDiscountInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfbuyNote = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $RfbuyNoteString = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfBuyPays = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfsellBidInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfsellTaxInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfsellDiscountInfo = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfsellNote = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $RfsellNoteString = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $RfsellPays = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -121,6 +175,222 @@ class PrintOptions
     public function setSellNoteString(?string $sellNoteString): static
     {
         $this->sellNoteString = $sellNoteString;
+
+        return $this;
+    }
+
+    public function isBuyBidInfo(): ?bool
+    {
+        return $this->buyBidInfo;
+    }
+
+    public function setBuyBidInfo(bool $buyBidInfo): static
+    {
+        $this->buyBidInfo = $buyBidInfo;
+
+        return $this;
+    }
+
+    public function isBuyTaxInfo(): ?bool
+    {
+        return $this->buyTaxInfo;
+    }
+
+    public function setBuyTaxInfo(?bool $buyTaxInfo): static
+    {
+        $this->buyTaxInfo = $buyTaxInfo;
+
+        return $this;
+    }
+
+    public function isBuyDiscountInfo(): ?bool
+    {
+        return $this->buyDiscountInfo;
+    }
+
+    public function setBuyDiscountInfo(?bool $buyDiscountInfo): static
+    {
+        $this->buyDiscountInfo = $buyDiscountInfo;
+
+        return $this;
+    }
+
+    public function isBuyNote(): ?bool
+    {
+        return $this->buyNote;
+    }
+
+    public function setBuyNote(?bool $buyNote): static
+    {
+        $this->buyNote = $buyNote;
+
+        return $this;
+    }
+
+    public function getBuyNoteString(): ?string
+    {
+        return $this->buyNoteString;
+    }
+
+    public function setBuyNoteString(?string $buyNoteString): static
+    {
+        $this->buyNoteString = $buyNoteString;
+
+        return $this;
+    }
+
+    public function isBuyPays(): ?bool
+    {
+        return $this->buyPays;
+    }
+
+    public function setBuyPays(?bool $buyPays): static
+    {
+        $this->buyPays = $buyPays;
+
+        return $this;
+    }
+
+    public function isRfbuyBidInfo(): ?bool
+    {
+        return $this->RfbuyBidInfo;
+    }
+
+    public function setRfbuyBidInfo(?bool $RfbuyBidInfo): static
+    {
+        $this->RfbuyBidInfo = $RfbuyBidInfo;
+
+        return $this;
+    }
+
+    public function isRfbuyTaxInfo(): ?bool
+    {
+        return $this->RfbuyTaxInfo;
+    }
+
+    public function setRfbuyTaxInfo(?bool $RfbuyTaxInfo): static
+    {
+        $this->RfbuyTaxInfo = $RfbuyTaxInfo;
+
+        return $this;
+    }
+
+    public function isRfbuyDiscountInfo(): ?bool
+    {
+        return $this->RfbuyDiscountInfo;
+    }
+
+    public function setRfbuyDiscountInfo(?bool $RfbuyDiscountInfo): static
+    {
+        $this->RfbuyDiscountInfo = $RfbuyDiscountInfo;
+
+        return $this;
+    }
+
+    public function isRfbuyNote(): ?bool
+    {
+        return $this->RfbuyNote;
+    }
+
+    public function setRfbuyNote(?bool $RfbuyNote): static
+    {
+        $this->RfbuyNote = $RfbuyNote;
+
+        return $this;
+    }
+
+    public function getRfbuyNoteString(): ?string
+    {
+        return $this->RfbuyNoteString;
+    }
+
+    public function setRfbuyNoteString(?string $RfbuyNoteString): static
+    {
+        $this->RfbuyNoteString = $RfbuyNoteString;
+
+        return $this;
+    }
+
+    public function isRfBuyPays(): ?bool
+    {
+        return $this->RfBuyPays;
+    }
+
+    public function setRfBuyPays(?bool $RfBuyPays): static
+    {
+        $this->RfBuyPays = $RfBuyPays;
+
+        return $this;
+    }
+
+    public function isRfsellBidInfo(): ?bool
+    {
+        return $this->RfsellBidInfo;
+    }
+
+    public function setRfsellBidInfo(?bool $RfsellBidInfo): static
+    {
+        $this->RfsellBidInfo = $RfsellBidInfo;
+
+        return $this;
+    }
+
+    public function isRfsellTaxInfo(): ?bool
+    {
+        return $this->RfsellTaxInfo;
+    }
+
+    public function setRfsellTaxInfo(?bool $RfsellTaxInfo): static
+    {
+        $this->RfsellTaxInfo = $RfsellTaxInfo;
+
+        return $this;
+    }
+
+    public function isRfsellDiscountInfo(): ?bool
+    {
+        return $this->RfsellDiscountInfo;
+    }
+
+    public function setRfsellDiscountInfo(?bool $RfsellDiscountInfo): static
+    {
+        $this->RfsellDiscountInfo = $RfsellDiscountInfo;
+
+        return $this;
+    }
+
+    public function isRfsellNote(): ?bool
+    {
+        return $this->RfsellNote;
+    }
+
+    public function setRfsellNote(?bool $RfsellNote): static
+    {
+        $this->RfsellNote = $RfsellNote;
+
+        return $this;
+    }
+
+    public function getRfsellNoteString(): ?string
+    {
+        return $this->RfsellNoteString;
+    }
+
+    public function setRfsellNoteString(?string $RfsellNoteString): static
+    {
+        $this->RfsellNoteString = $RfsellNoteString;
+
+        return $this;
+    }
+
+    public function isRfsellPays(): ?bool
+    {
+        return $this->RfsellPays;
+    }
+
+    public function setRfsellPays(?bool $RfsellPays): static
+    {
+        $this->RfsellPays = $RfsellPays;
 
         return $this;
     }

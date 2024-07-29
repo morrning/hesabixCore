@@ -52,6 +52,30 @@ class PrintersController extends AbstractController
         $temp['sell']['note'] = $settings->isSellNote();
         $temp['sell']['noteString'] = $settings->getSellNoteString();
         $temp['sell']['pays'] = $settings->isSellPays();
+
+        $temp['buy']['id'] = $settings->getId();
+        $temp['buy']['bidInfo'] = $settings->isBuyBidInfo();
+        $temp['buy']['taxInfo'] = $settings->isBuyTaxInfo();
+        $temp['buy']['discountInfo'] = $settings->isBuyDiscountInfo();
+        $temp['buy']['note'] = $settings->isBuyNote();
+        $temp['buy']['noteString'] = $settings->getBuyNoteString();
+        $temp['buy']['pays'] = $settings->isBuyPays();
+
+        $temp['rfbuy']['id'] = $settings->getId();
+        $temp['rfbuy']['bidInfo'] = $settings->isRfbuyBidInfo();
+        $temp['rfbuy']['taxInfo'] = $settings->isRfbuyTaxInfo();
+        $temp['rfbuy']['discountInfo'] = $settings->isRfbuyDiscountInfo();
+        $temp['rfbuy']['note'] = $settings->isRfbuyNote();
+        $temp['rfbuy']['noteString'] = $settings->getRfbuyNoteString();
+        $temp['rfbuy']['pays'] = $settings->isRfbuyPays();
+
+        $temp['rfsell']['id'] = $settings->getId();
+        $temp['rfsell']['bidInfo'] = $settings->isRfsellBidInfo();
+        $temp['rfsell']['taxInfo'] = $settings->isRfsellTaxInfo();
+        $temp['rfsell']['discountInfo'] = $settings->isRfsellDiscountInfo();
+        $temp['rfsell']['note'] = $settings->isRfsellNote();
+        $temp['rfsell']['noteString'] = $settings->getRfsellNoteString();
+        $temp['rfsell']['pays'] = $settings->isRfsellPays();
         return $this->json($temp);
     }
 
@@ -79,6 +103,28 @@ class PrintersController extends AbstractController
         $settings->setSellNote($params['sell']['note']);
         $settings->setSellNoteString($params['sell']['noteString']);
         $settings->setSellPays($params['sell']['pays']);
+        
+        $settings->setBuyBidInfo($params['buy']['bidInfo']);
+        $settings->setBuyTaxInfo($params['buy']['taxInfo']);
+        $settings->setBuyDiscountInfo($params['buy']['discountInfo']);
+        $settings->setBuyNote($params['buy']['note']);
+        $settings->setBuyNoteString($params['buy']['noteString']);
+        $settings->setBuyPays($params['buy']['pays']);
+
+        $settings->setRfbuyBidInfo($params['rfbuy']['bidInfo']);
+        $settings->setRfbuyTaxInfo($params['rfbuy']['taxInfo']);
+        $settings->setRfbuyDiscountInfo($params['rfbuy']['discountInfo']);
+        $settings->setRfbuyNote($params['rfbuy']['note']);
+        $settings->setRfbuyNoteString($params['rfbuy']['noteString']);
+        $settings->setRfbuyPays($params['rfbuy']['pays']);
+
+        $settings->setRfsellBidInfo($params['rfsell']['bidInfo']);
+        $settings->setRfsellTaxInfo($params['rfsell']['taxInfo']);
+        $settings->setRfsellDiscountInfo($params['rfsell']['discountInfo']);
+        $settings->setRfsellNote($params['rfsell']['note']);
+        $settings->setRfsellNoteString($params['rfsell']['noteString']);
+        $settings->setRfsellPays($params['rfsell']['pays']);
+
         $entityManager->persist($settings);
         $entityManager->flush();
         $log->insert('تنظیمات چاپ', 'تنظیمات چاپ به روز رسانی شد.', $this->getUser(), $acc['bid']->getId());
