@@ -28,12 +28,15 @@ class pdfMGR
         if(!$size){ $size = 'A4-L'; }
         $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
         $fontDirs = $defaultConfig['fontDir'];
+
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8', 'format' => $size,
             'fontDir' => array_merge($fontDirs, [
-                __DIR__ . '../Fonts',
+                dirname(__DIR__) . '/Fonts',
             ]),
-            'fontdata' => [
+            'fontdata' => $fontData + [
                 'vazirmatn' => [
                     'R' => 'Vazir-Regular-FD.ttf',
                     'I' => 'Vazir-Regular-FD.ttf',
@@ -45,7 +48,6 @@ class pdfMGR
             'tempDir' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf',
             'autoArabic' => true,
         ]);
-        $mpdf->AddFontDirectory(__DIR__ . '../Fonts');
         $mpdf->SetHTMLFooter($footer);
         $mpdf->WriteHTML($printQueue->getView());
         $mpdf->SetAutoPageBreak(true);
