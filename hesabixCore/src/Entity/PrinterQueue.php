@@ -33,6 +33,9 @@ class PrinterQueue
     #[ORM\Column(nullable: true)]
     private ?bool $posprint = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $paperSize = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -106,6 +109,18 @@ class PrinterQueue
     public function setPosprint(?bool $posprint): static
     {
         $this->posprint = $posprint;
+
+        return $this;
+    }
+
+    public function getPaperSize(): ?string
+    {
+        return $this->paperSize;
+    }
+
+    public function setPaperSize(?string $paperSize): static
+    {
+        $this->paperSize = $paperSize;
 
         return $this;
     }

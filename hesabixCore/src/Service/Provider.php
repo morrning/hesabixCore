@@ -147,12 +147,13 @@ class Provider
         return $result;
     }
 
-    public function createPrint(Business $bid, User $user, String $data,$posPrint = false)
+    public function createPrint(Business $bid, User $user, String $data,$posPrint = false,$paperSize = 'A4-L')
     {
         $print = new PrinterQueue();
         $print->setDateSubmit(time());
         $print->setSubmitter($user);
         $print->setBid($bid);
+        $print->setPaperSize($paperSize);
         $print->setView($data);
         $print->setPosprint($posPrint);
         $print->setPid($this->RandomString(128));

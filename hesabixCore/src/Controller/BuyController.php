@@ -142,7 +142,7 @@ class BuyController extends AbstractController
             $hesabdariRow->setBd(0);
             $hesabdariRow->setBs($params['discountAll']);
             $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '104' // سایر هزینه های پخش و خرید
+                'code' => '51' //  تخفیفات نقدی خرید 
             ]);
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
@@ -180,7 +180,7 @@ class BuyController extends AbstractController
         }
         //set amount of document
         $doc->setAmount($sumTax + $sumTotal - $params['discountAll'] + $params['transferCost']);
-        //set person buyer
+        //set person person
         $hesabdariRow = new HesabdariRow();
         $hesabdariRow->setDes('فاکتور خرید');
         $hesabdariRow->setBid($acc['bid']);
@@ -189,12 +189,12 @@ class BuyController extends AbstractController
         $hesabdariRow->setBd(0);
         $hesabdariRow->setBs($sumTax + $sumTotal + $params['transferCost'] - $params['discountAll']);
         $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-            'code' => '3' // persons
+            'code' => '8' // persons
         ]);
         $hesabdariRow->setRef($ref);
         $person = $entityManager->getRepository(Person::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $params['buyer']['code']
+            'code' => $params['person']['code']
         ]);
         if (!$person)
             return $this->json($extractor->paramsNotSend());
@@ -429,7 +429,8 @@ class BuyController extends AbstractController
                 'pays'     =>true,
                 'taxInfo'   =>true,
                 'discountInfo'  =>true,
-                'note'  =>true
+                'note'  =>true,
+                'paper' =>'A4-L'
             ];
             if(array_key_exists('printOptions',$params)){
                 if(array_key_exists('bidInfo',$params['printOptions'])){
@@ -446,6 +447,9 @@ class BuyController extends AbstractController
                 }
                 if(array_key_exists('note',$params['printOptions'])){
                     $printOptions['note'] = $params['printOptions']['note'];
+                }
+                if(array_key_exists('paper',$params['printOptions'])){
+                    $printOptions['paper'] = $params['printOptions']['paper'];
                 }
             }
             $note = '';
@@ -465,7 +469,8 @@ class BuyController extends AbstractController
                     'printOptions'=> $printOptions,
                     'note'=> $note
                 ]),
-                false
+                false,
+                $printOptions['paper']
             );
         }
         if ($params['printers'] == true) {

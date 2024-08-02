@@ -24,10 +24,12 @@ class pdfMGR
         $footer = $template->render([
             
         ]);
+        $size = $printQueue->getPaperSize();
+        if(!$size){ $size = 'A4-L'; }
         $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
         $fontDirs = $defaultConfig['fontDir'];
         $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8', 'format' => 'A4-L',
+            'mode' => 'utf-8', 'format' => $size,
             'fontDir' => array_merge($fontDirs, [
                 __DIR__ . '../Fonts',
             ]),

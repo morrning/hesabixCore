@@ -180,7 +180,7 @@ class RfsellController extends AbstractController
         }
         //set amount of document
         $doc->setAmount($sumTax + $sumTotal - $params['discountAll'] + $params['transferCost']);
-        //set person buyer
+        //set person person
         $hesabdariRow = new HesabdariRow();
         $hesabdariRow->setDes('فاکتور برگشت از فروش');
         $hesabdariRow->setBid($acc['bid']);
@@ -194,7 +194,7 @@ class RfsellController extends AbstractController
         $hesabdariRow->setRef($ref);
         $person = $entityManager->getRepository(Person::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $params['buyer']['code']
+            'code' => $params['person']['code']
         ]);
         if (!$person)
             return $this->json($extractor->paramsNotSend());
@@ -429,7 +429,8 @@ class RfsellController extends AbstractController
                 'pays'     =>true,
                 'taxInfo'   =>true,
                 'discountInfo'  =>true,
-                'note'  =>true
+                'note'  =>true,
+                'paper' =>'A4-L'
             ];
             if(array_key_exists('printOptions',$params)){
                 if(array_key_exists('bidInfo',$params['printOptions'])){
@@ -446,6 +447,9 @@ class RfsellController extends AbstractController
                 }
                 if(array_key_exists('note',$params['printOptions'])){
                     $printOptions['note'] = $params['printOptions']['note'];
+                }
+                if(array_key_exists('paper',$params['printOptions'])){
+                    $printOptions['paper'] = $params['printOptions']['paper'];
                 }
             }
             $note = '';
@@ -465,7 +469,8 @@ class RfsellController extends AbstractController
                     'printOptions'=> $printOptions,
                     'note'=> $note
                 ]),
-                false
+                false,
+                $printOptions['paper']
             );
         }
         if ($params['printers'] == true) {

@@ -52,6 +52,8 @@ class PrintersController extends AbstractController
         $temp['sell']['note'] = $settings->isSellNote();
         $temp['sell']['noteString'] = $settings->getSellNoteString();
         $temp['sell']['pays'] = $settings->isSellPays();
+        $temp['sell']['paper'] = $settings->getSellPaper();
+        if(!$temp['sell']['paper']) { $temp['sell']['paper'] = 'A4-L'; }
 
         $temp['buy']['id'] = $settings->getId();
         $temp['buy']['bidInfo'] = $settings->isBuyBidInfo();
@@ -60,6 +62,8 @@ class PrintersController extends AbstractController
         $temp['buy']['note'] = $settings->isBuyNote();
         $temp['buy']['noteString'] = $settings->getBuyNoteString();
         $temp['buy']['pays'] = $settings->isBuyPays();
+        $temp['buy']['paper'] = $settings->getBuyPaper();
+        if(!$temp['buy']['paper']) { $temp['buy']['paper'] = 'A4-L'; }
 
         $temp['rfbuy']['id'] = $settings->getId();
         $temp['rfbuy']['bidInfo'] = $settings->isRfbuyBidInfo();
@@ -68,6 +72,8 @@ class PrintersController extends AbstractController
         $temp['rfbuy']['note'] = $settings->isRfbuyNote();
         $temp['rfbuy']['noteString'] = $settings->getRfbuyNoteString();
         $temp['rfbuy']['pays'] = $settings->isRfbuyPays();
+        $temp['rfbuy']['paper'] = $settings->getRfbuyPaper();
+        if(!$temp['rfbuy']['paper']) { $temp['rfbuy']['paper'] = 'A4-L'; }
 
         $temp['rfsell']['id'] = $settings->getId();
         $temp['rfsell']['bidInfo'] = $settings->isRfsellBidInfo();
@@ -76,6 +82,9 @@ class PrintersController extends AbstractController
         $temp['rfsell']['note'] = $settings->isRfsellNote();
         $temp['rfsell']['noteString'] = $settings->getRfsellNoteString();
         $temp['rfsell']['pays'] = $settings->isRfsellPays();
+        $temp['rfsell']['paper'] = $settings->getRfsellPaper();
+        if(!$temp['rfsell']['paper']) { $temp['rfsell']['paper'] = 'A4-L'; }
+
         return $this->json($temp);
     }
 
@@ -103,13 +112,15 @@ class PrintersController extends AbstractController
         $settings->setSellNote($params['sell']['note']);
         $settings->setSellNoteString($params['sell']['noteString']);
         $settings->setSellPays($params['sell']['pays']);
-        
+        $settings->setSellPaper($params['sell']['paper']);
+
         $settings->setBuyBidInfo($params['buy']['bidInfo']);
         $settings->setBuyTaxInfo($params['buy']['taxInfo']);
         $settings->setBuyDiscountInfo($params['buy']['discountInfo']);
         $settings->setBuyNote($params['buy']['note']);
         $settings->setBuyNoteString($params['buy']['noteString']);
         $settings->setBuyPays($params['buy']['pays']);
+        $settings->setBuyPaper($params['buy']['paper']);
 
         $settings->setRfbuyBidInfo($params['rfbuy']['bidInfo']);
         $settings->setRfbuyTaxInfo($params['rfbuy']['taxInfo']);
@@ -117,6 +128,7 @@ class PrintersController extends AbstractController
         $settings->setRfbuyNote($params['rfbuy']['note']);
         $settings->setRfbuyNoteString($params['rfbuy']['noteString']);
         $settings->setRfbuyPays($params['rfbuy']['pays']);
+        $settings->setRfbuyPaper($params['rfbuy']['paper']);
 
         $settings->setRfsellBidInfo($params['rfsell']['bidInfo']);
         $settings->setRfsellTaxInfo($params['rfsell']['taxInfo']);
@@ -124,6 +136,7 @@ class PrintersController extends AbstractController
         $settings->setRfsellNote($params['rfsell']['note']);
         $settings->setRfsellNoteString($params['rfsell']['noteString']);
         $settings->setRfsellPays($params['rfsell']['pays']);
+        $settings->setRfSellPaper($params['rfsell']['paper']);
 
         $entityManager->persist($settings);
         $entityManager->flush();
