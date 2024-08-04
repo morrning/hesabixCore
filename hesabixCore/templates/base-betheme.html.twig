@@ -26,13 +26,13 @@
 		<!-- Stylesheets -->
 		<!-- Bootstrap core CSS -->
 		<link
-		href="betheme/css/bootstrap.min.css" rel="stylesheet"/> <!--CSS -->
-		<link rel="stylesheet" href="betheme/wallet2/css/structure.css"/>
+		href="{{asset('betheme/css/bootstrap.min.css') }}" rel="stylesheet"/> <!--CSS -->
+		<link rel="stylesheet" href="{{asset('betheme/wallet2/css/structure.css') }}"/>
 		<link
-		rel="stylesheet" href="betheme/wallet2/css/wallet2.css"/>
+		rel="stylesheet" href="{{asset('betheme/wallet2/css/wallet2.css') }}"/>
 		<!-- Revolution Slider -->
 		<link
-		rel="stylesheet" href="betheme/plugins/rs-plugin-6.custom/css/rs6.css"/>
+		rel="stylesheet" href="{{asset('betheme/plugins/rs-plugin-6.custom/css/rs6.css') }}"/>
 		{# Run `composer require symfony/webpack-encore-bundle` to start using Symfony UX #}
 		{% block stylesheets %}{% endblock %}
 		<script type="application/ld+json">
@@ -146,20 +146,7 @@
 						</div>
 					</div>
 					<div class="footer_copy">
-						<div class="container">
-							<div class="column one">
-								<div class="copyright">
-									<a href="https://parspack.com" target="_blank">
-										با خاطری آسوده استوار بر روی راهکارهای ابری پارسپک
-									</a>
-								</div>
-								<div class="text-left">
-									<a href="https://www.melipayamak.com/" target="_blank">
-										پیامک‌های حسابیکس از طریق ملی پیامک ارسال می‌شوند 
-									</a>
-								</div>
-							</div>
-						</div>
+						{{settings.footer | raw}}
 					</div>
 				</footer>
 			</div>
