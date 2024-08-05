@@ -14,8 +14,10 @@ use App\Service\Extractor;
 use App\Service\registryMGR;
 use App\Entity\PlugRepserviceOrder;
 use App\Entity\PlugRepserviceOrderState;
+use App\Entity\PrintOptions;
 use App\Service\Explore;
 use App\Service\Jdate;
+use App\Service\Printers;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -283,6 +285,58 @@ class PlugRepserviceController extends AbstractController
         $entityManager->remove($item);
         $log->insert('افزونه تعمیرکاران', 'درخواست با شماره قبض' . $code . 'حذف شد.', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/repservice/print/invoice', name: 'app_sell_print_invoice')]
+    public function app_sell_print_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $acc = $access->hasRole('plugRepservice');
+        if (!$acc) throw $this->createAccessDeniedException();
+
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'code' => $params['code']
+        ]);
+        if (!$doc) throw $this->createNotFoundException();
+        $person = null;
+        $discount = 0;
+        $transfer = 0;
+        foreach ($doc->getHesabdariRows() as $item) {
+            if ($item->getPerson()) {
+                $person = $item->getPerson();
+            } elseif ($item->getRef()->getCode() == 104) {
+                $discount = $item->getBd();
+            } elseif ($item->getRef()->getCode() == 61) {
+                $transfer = $item->getBs();
+            }
+        }
+        $pdfPid = 0;
+        $note = '';
+        $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
+        if($printSettings){$note = $printSettings->getSellNoteString();}
+        $pdfPid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/printers/sell.html.twig', [
+                'bid' => $acc['bid'],
+                'doc' => $doc,
+                'rows' => $doc->getHesabdariRows(),
+                'person' => $person,
+                'printInvoice' => $params['printers'],
+                'discount' => $discount,
+                'transfer' => $transfer,
+                'printOptions'=> $printOptions,
+                'note'=> $note
+            ]),
+            false,
+            $printOptions['paper']
+        );
+        return $this->json(['id' => $pdfPid]);
     }
 
     private function ExploreOrder(PlugRepserviceOrder $item)

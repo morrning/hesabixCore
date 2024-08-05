@@ -102,6 +102,15 @@ class PrintOptions
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $rfsellPaper = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $repserviceNoteString = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $paper = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $repservicePaper = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -451,6 +460,42 @@ class PrintOptions
     public function setRfsellPaper(?string $rfsellPaper): static
     {
         $this->rfsellPaper = $rfsellPaper;
+
+        return $this;
+    }
+
+    public function getRepserviceNoteString(): ?string
+    {
+        return $this->repserviceNoteString;
+    }
+
+    public function setRepserviceNoteString(?string $repserviceNoteString): static
+    {
+        $this->repserviceNoteString = $repserviceNoteString;
+
+        return $this;
+    }
+
+    public function getPaper(): ?string
+    {
+        return $this->paper;
+    }
+
+    public function setPaper(?string $paper): static
+    {
+        $this->paper = $paper;
+
+        return $this;
+    }
+
+    public function getRepservicePaper(): ?string
+    {
+        return $this->repservicePaper;
+    }
+
+    public function setRepservicePaper(?string $repservicePaper): static
+    {
+        $this->repservicePaper = $repservicePaper;
 
         return $this;
     }

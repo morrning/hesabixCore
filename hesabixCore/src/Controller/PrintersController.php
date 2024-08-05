@@ -83,6 +83,9 @@ class PrintersController extends AbstractController
         $temp['rfsell']['noteString'] = $settings->getRfsellNoteString();
         $temp['rfsell']['pays'] = $settings->isRfsellPays();
         $temp['rfsell']['paper'] = $settings->getRfsellPaper();
+
+        $temp['repservice']['noteString'] = $settings->getRepserviceNoteString();
+        $temp['repservice']['paper'] = $settings->getRepServicePaper();
         if(!$temp['rfsell']['paper']) { $temp['rfsell']['paper'] = 'A4-L'; }
 
         return $this->json($temp);
@@ -137,6 +140,9 @@ class PrintersController extends AbstractController
         $settings->setRfsellNoteString($params['rfsell']['noteString']);
         $settings->setRfsellPays($params['rfsell']['pays']);
         $settings->setRfSellPaper($params['rfsell']['paper']);
+
+        $settings->setRepserviceNoteString($params['repservice']['noteString']);
+        $settings->setRepServicePaper($params['repservice']['paper']);
 
         $entityManager->persist($settings);
         $entityManager->flush();
