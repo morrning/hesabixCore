@@ -36,6 +36,9 @@ class PrinterQueue
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $paperSize = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $footer = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -121,6 +124,18 @@ class PrinterQueue
     public function setPaperSize(?string $paperSize): static
     {
         $this->paperSize = $paperSize;
+
+        return $this;
+    }
+
+    public function isFooter(): ?bool
+    {
+        return $this->footer;
+    }
+
+    public function setFooter(?bool $footer): static
+    {
+        $this->footer = $footer;
 
         return $this;
     }

@@ -9,11 +9,13 @@ use App\Entity\ChangeReport;
 use App\Entity\HesabdariDoc;
 use App\Entity\PrinterQueue;
 use App\Entity\User;
+use App\Entity\Settings;
 use App\Service\pdfMGR;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Annotation\Route;
@@ -146,6 +148,15 @@ class UiGeneralController extends AbstractController
     public function general_apps_hesabixbox(EntityManagerInterface $entityManager): Response
     {
         return $this->render('general/hesabixbox.html.twig',);
+    }
+
+    #[Route('/api/system/get/data', name: 'general_apps_get_data')]
+    public function general_apps_get_data(EntityManagerInterface $entityManager): JsonResponse
+    {
+        $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
+        return $this->json([
+            'footer' => $settings->getFooter()
+        ]);
     }
 
 }

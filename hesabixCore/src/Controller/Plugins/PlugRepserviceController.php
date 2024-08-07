@@ -287,8 +287,8 @@ class PlugRepserviceController extends AbstractController
         return $this->json(['result' => 1]);
     }
 
-    #[Route('/api/repservice/print/invoice', name: 'app_sell_print_invoice')]
-    public function app_sell_print_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/repservice/print/invoice', name: 'app_repservice_print_invoice')]
+    public function app_repservice_print_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -298,43 +298,26 @@ class PlugRepserviceController extends AbstractController
         $acc = $access->hasRole('plugRepservice');
         if (!$acc) throw $this->createAccessDeniedException();
 
-        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+        $doc = $entityManager->getRepository(PlugRepserviceOrder::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code']
         ]);
         if (!$doc) throw $this->createNotFoundException();
-        $person = null;
-        $discount = 0;
-        $transfer = 0;
-        foreach ($doc->getHesabdariRows() as $item) {
-            if ($item->getPerson()) {
-                $person = $item->getPerson();
-            } elseif ($item->getRef()->getCode() == 104) {
-                $discount = $item->getBd();
-            } elseif ($item->getRef()->getCode() == 61) {
-                $transfer = $item->getBs();
-            }
-        }
+       
         $pdfPid = 0;
-        $note = '';
-        $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
-        if($printSettings){$note = $printSettings->getSellNoteString();}
+        
+        $printOptions = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
         $pdfPid = $provider->createPrint(
             $acc['bid'],
             $this->getUser(),
-            $this->renderView('pdf/printers/sell.html.twig', [
+            $this->renderView('pdf/printers/repservice/invoice.html.twig', [
                 'bid' => $acc['bid'],
                 'doc' => $doc,
-                'rows' => $doc->getHesabdariRows(),
-                'person' => $person,
-                'printInvoice' => $params['printers'],
-                'discount' => $discount,
-                'transfer' => $transfer,
                 'printOptions'=> $printOptions,
-                'note'=> $note
             ]),
             false,
-            $printOptions['paper']
+            $printOptions->getRepservicePaper(),
+            false
         );
         return $this->json(['id' => $pdfPid]);
     }

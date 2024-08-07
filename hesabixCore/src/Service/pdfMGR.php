@@ -48,10 +48,14 @@ class pdfMGR
             'tempDir' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf',
             'autoArabic' => true,
         ]);
-        $mpdf->SetHTMLFooter($footer);
+        if($printQueue->isFooter()){
+            $mpdf->SetHTMLFooter($footer);
+        }
+        
         $mpdf->WriteHTML($printQueue->getView());
         $mpdf->SetAutoPageBreak(true);
-        $mpdf->Output();
+        $mpdf->SetTitle('حسابیکس');
+        $mpdf->Output('Hesabix PrintOut.pdf', 'I');
     }
 
     public function streamTwig2PDFInvoiceType(PrinterQueue $printQueue, $configs = [])
