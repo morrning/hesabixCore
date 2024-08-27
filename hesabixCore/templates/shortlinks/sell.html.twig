@@ -135,39 +135,44 @@
 						<!-- Table -->
 						<div class="table-responsive push text-center">
 							<table class="table table-bordered">
-								<thead class="bg-body">
-									<tr>
-										<th class="text-center" style="width: 60px;"></th>
-										<th>کالا/خدمات</th>
-										<th>شرح</th>
-										<th class="text-center" style="width: 90px;">واحد</th>
-										<th class="text-center" style="width: 120px;">تعداد</th>
-										<th class="text-center" style="width: 120px;">جمع</th>
-									</tr>
-								</thead>
-								<tbody>
-									{% for row in rows %}
+							<thead>
+								<tr class="bg-body">
+									<th class="text-dark">ردیف</th>
+									<th class="text-dark">کالا/خدمات</th>
+									<th class="text-dark">شرح</th>
+									<th class="text-dark">تعداد / مقدار</th>
+									<th class="text-dark">مبلغ واحد</th>
+									<th class="text-dark">تخفیف</th>
+									<th class="text-dark">مالیات</th>
+									<th class="text-dark">مبلغ کل</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% set taxAll = 0 %}
+								{% set rowIndex = 0 %}
+								{% for item in rows%}
+									{% if item.commodity %}
+										{%  set taxAll = taxAll + item.tax %}
+										{% set rowIndex = rowIndex + 1 %}
 										<tr>
-											<td class="text-center">{{loop.index}}</td>
-											<td class="text-center">
-												<p class="fw-semibold">{{ row.commodity.name }}</p>
+											<td >{{rowIndex}}</td>
+											<td >
+												{{ item.commodity.code }}
+												-
+												{{ item.commodity.name }}</td>
+											<td >{{ item.des }}</td>
+											<td >
+												{{ item.commdityCount }}
+												{{ item.commodity.unit.name }}
 											</td>
-											<td class="text-center">
-												<div class="">{{ row.des }}</div>
-											</td>
-											<td class="text-center">
-												{{row.commdityCount}}
-											</td>
-											<td class="text-center">{{(row.bs / row.commdityCount) | number_format}}</td>
-											<td class="text-center">{{row.bs | number_format}}</td>
+											<td >{{ ((item.bs - item.tax + item.discount) / item.commdityCount) | number_format }}</td>
+											<td >{{ item.discount | number_format }}</td>
+											<td >{{ item.tax | number_format}}</td>
+											<td >{{ item.bs| number_format }}</td>
 										</tr>
-									{% endfor %}
-
-									<tr>
-										<td class="fw-bold text-uppercase text-end bg-body-light" colspan="5">جمع کل</td>
-										<td class="fw-bold text-end bg-body-light">{{doc.amount | number_format}}</td>
-									</tr>
-								</tbody>
+									{% endif %}
+								{% endfor %}
+							</tbody>
 							</table>
 						</div>
 						<!-- END Table -->

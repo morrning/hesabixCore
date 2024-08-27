@@ -19,7 +19,7 @@ class AvatarController extends AbstractController
     #[Route('/api/avatar/get', name: 'api_avatar_get')]
     public function api_avatar_get(Access $access): Response
     {
-        $acc = $access->hasRole('owner');
+        $acc = $access->hasRole('settings');
         if (!$acc) throw $this->createAccessDeniedException();
         if ($acc['bid']->getAvatar()) {
             return new Response($acc['bid']->getAvatar());
