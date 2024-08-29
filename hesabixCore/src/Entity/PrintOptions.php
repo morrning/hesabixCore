@@ -36,7 +36,7 @@ class PrintOptions
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $sellNoteString = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?bool $buyBidInfo = null;
 
     #[ORM\Column(nullable: true)]
