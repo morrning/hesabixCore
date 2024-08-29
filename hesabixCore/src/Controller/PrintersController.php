@@ -17,6 +17,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
+use function PHPUnit\Framework\isNull;
+
 class PrintersController extends AbstractController
 {
 
@@ -116,8 +118,13 @@ class PrintersController extends AbstractController
         $settings->setSellNoteString($params['sell']['noteString']);
         $settings->setSellPays($params['sell']['pays']);
         $settings->setSellPaper($params['sell']['paper']);
-
-        $settings->setBuyBidInfo($params['buy']['bidInfo']);
+        if($params['buy']['bidInfo'] == null){
+            $settings->setBuyBidInfo(false);
+        }
+        else{
+            $settings->setBuyBidInfo(true);
+        }
+        
         $settings->setBuyTaxInfo($params['buy']['taxInfo']);
         $settings->setBuyDiscountInfo($params['buy']['discountInfo']);
         $settings->setBuyNote($params['buy']['note']);
