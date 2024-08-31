@@ -17,6 +17,7 @@ use App\Entity\Hook;
 use App\Entity\Year;
 use App\Service\Access;
 use App\Service\Explore;
+use App\Service\Extractor;
 use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Provider;
@@ -33,6 +34,41 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class BusinessController extends AbstractController
 {
+    #[Route('/api/business/delete', name: 'api_business_delete')]
+    public function api_business_delete(Extractor $extractor, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $acc = $access->hasRole('owner');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $archiveUser = $entityManager->getRepository(User::class)->findOneBy([
+            'email'=>'archive@hesabix.ir'
+        ]);
+        if(! $archiveUser){
+            $archiveUser = new User();
+            $archiveUser->setEmail('archive@hesabix.ir');
+            $archiveUser->setFullName('کاربر آرشیو و بایگانی');
+            $archiveUser->setPassword(0);
+            $archiveUser->setDateRegister(time());
+            $archiveUser->setActive(false);
+            $entityManager->persist($archiveUser);
+            $entityManager->flush();
+        }
+        $acc['bid']->setOwner($archiveUser);
+        $acc['bid']->setArchiveEmail($this->getUser()->getEmail());
+        $entityManager->persist($acc['bid']);
+        $entityManager->flush();
+
+        //remove permissions
+        $permissions = $entityManager->getRepository(Permission::class)->findBy([
+            'bid'=>$acc['bid']
+        ]);
+        foreach($permissions as $perm){
+            $entityManager->remove($perm);
+            $entityManager->flush();
+        }
+        return $this->json($extractor->operationSuccess());
+    }
     #[Route('/api/business/list', name: 'api_bussiness_list')]
     public function api_bussiness_list(#[CurrentUser] ?User $user, EntityManagerInterface $entityManager, Provider $provider): Response
     {
@@ -270,6 +306,7 @@ class BusinessController extends AbstractController
         }
         return $this->json(['result' => 1]);
     }
+
 
     #[Route('/api/business/add/user', name: 'api_business_add_user')]
     public function api_business_add_user(Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): Response

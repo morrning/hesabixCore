@@ -234,6 +234,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PrintOptions::class, orphanRemoval: true)]
     private Collection $printOptions;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $archiveEmail = null;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -1687,6 +1690,18 @@ class Business
                 $printOption->setBid(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getArchiveEmail(): ?string
+    {
+        return $this->archiveEmail;
+    }
+
+    public function setArchiveEmail(?string $archiveEmail): static
+    {
+        $this->archiveEmail = $archiveEmail;
 
         return $this;
     }
