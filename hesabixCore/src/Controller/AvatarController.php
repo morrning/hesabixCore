@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Business;
 use App\Service\Access;
 use App\Service\Log;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,6 +17,18 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 
 class AvatarController extends AbstractController
 {
+    #[Route('/front/avatar/file/get/{id}', name: 'front_avatar_file_get')]
+    public function front_avatar_file_get(string $id,EntityManagerInterface $entityManager,$code = 0): BinaryFileResponse
+    {
+        $bid = $entityManager->getRepository(Business::class)->find($id);
+        if(! $bid)
+            throw $this->createNotFoundException();
+        $fileAdr = dirname(__DIR__,3) . '/hesabixArchive/avatars/'. $bid->getAvatar();
+        if(!$bid->getAvatar()) return new BinaryFileResponse(dirname(__DIR__,3) . '/hesabixArchive/avatars/default.png');
+        $response = new BinaryFileResponse($fileAdr);
+        return $response;
+    }
+
     #[Route('/api/avatar/get', name: 'api_avatar_get')]
     public function api_avatar_get(Access $access): Response
     {

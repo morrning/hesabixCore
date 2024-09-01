@@ -5,6 +5,8 @@ namespace App\Controller\Front;
 use App\Entity\Business;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
+use App\Entity\PrintOptions;
+use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -52,10 +54,63 @@ class ShortlinksController extends AbstractController
         return $this->render('shortlinks/sell.html.twig', [
             'bid' => $doc->getBid(),
             'doc' => $doc,
+            'link'=>$link,
             'rows' => $items,
             'person'=> $person,
             'totalPays'=>$totalPays,
             'msg'=>$msg
         ]);
+    }
+
+    #[Route('/slpdf/sell/{bid}/{link}', name: 'shortlinks_pdf')]
+    public function shortlinks_pdf(string $bid, string $link, EntityManagerInterface $entityManager, Provider $provider): Response
+    {
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+            'type' => 'sell',
+            'id' => $link
+        ]);
+        if (!$doc) throw $this->createNotFoundException();
+        $bid = $entityManager->getRepository(Business::class)->find($bid);
+        if (!$bid) throw $this->createNotFoundException();
+        $person = null;
+        $discount = 0;
+        $transfer = 0;
+        foreach ($doc->getHesabdariRows() as $item) {
+            if ($item->getPerson()) {
+                $person = $item->getPerson();
+            } elseif ($item->getRef()->getCode() == 104) {
+                $discount = $item->getBd();
+            } elseif ($item->getRef()->getCode() == 61) {
+                $transfer = $item->getBs();
+            }
+        }
+        $printOptions = [
+            'bidInfo' => true,
+            'pays'     =>true,
+            'taxInfo'   =>true,
+            'discountInfo'  =>true,
+            'note'  =>true,
+            'paper' =>'A4-L'
+        ];
+        $note = '';
+        $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$bid]);
+        if($printSettings){$note = $printSettings->getSellNoteString();}
+        $pdfPid = $provider->createPrint(
+            $bid,
+            $this->getUser(),
+            $this->renderView('pdf/printers/sell.html.twig', [
+                'bid' => $bid,
+                'doc' => $doc,
+                'rows' => $doc->getHesabdariRows(),
+                'person' => $person,
+                'discount' => $discount,
+                'transfer' => $transfer,
+                'printOptions'=> $printOptions,
+                'note'=> $note
+            ]),
+            false,
+            $printOptions['paper']
+        );
+        return $this->redirectToRoute('app_front_print',['id'=>$pdfPid]);
     }
 }

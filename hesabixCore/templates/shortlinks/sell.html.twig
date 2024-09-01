@@ -10,13 +10,10 @@
 		<div class="bg-body-light d-print-none">
 			<div class="content content-full">
 				<div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+					<img src="/front/avatar/file/get/{{bid.id}}" class="img-fluid" width="80">
 					<h2 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
 						مشاهده فاکتور
 					</h2>
-					<a class="btn btn-alt-primary my-2" href="https://hesabix.ir">
-						<i class="fa fa-fw fa-door-open me-1"></i>
-						ورود به حسابیکس
-					</a>
 				</div>
 			</div>
 		</div>
@@ -36,10 +33,10 @@
 					</h3>
 					<div class="block-options">
 						<!-- Print Page functionality is initialized dmPrint() -->
-						<button class="btn btn-sm btn-alt-secondary me-3" onclick="Dashmix.helpers('dm-print');" type="button">
+						<a class="btn btn-sm btn-alt-secondary me-3"  type="button" target="_blank" href="{{path('shortlinks_pdf',{bid:bid.id,link:link})}}">
 							<i class="si si-printer me-1"></i>
 							چاپ فاکتور
-						</button>
+						</a>
 						{% if (totalPays < doc.amount) and bid.walletEnable %}
 							<a href="{{ path('pay_sell',{'id':doc.id}) }}" class="btn btn-sm btn-success">
 								<i class="fa fa-credit-card"></i>
@@ -176,6 +173,10 @@
 							</table>
 						</div>
 						<!-- END Table -->
+						<div class="block block-rounded">
+						جمع کل فاکتور:
+						{{ doc.amount | number_format }}
+						</div>
 						<div class="block block-rounded">
 						توضیحات:
 						{{ doc.des }}
