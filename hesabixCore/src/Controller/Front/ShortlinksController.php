@@ -97,7 +97,7 @@ class ShortlinksController extends AbstractController
         if($printSettings){$note = $printSettings->getSellNoteString();}
         $pdfPid = $provider->createPrint(
             $bid,
-            $this->getUser(),
+            $bid->getOwner(),
             $this->renderView('pdf/printers/sell.html.twig', [
                 'bid' => $bid,
                 'doc' => $doc,
