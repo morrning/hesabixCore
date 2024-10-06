@@ -255,7 +255,7 @@ class SMSController extends AbstractController
             return $this->json([
                 'result' =>
                     $SMS->sendByBalance(
-                        [$customer->getnikename(), 'sell/' . $bid->getId() . '/' . $shortLink, $bid->getTel()],
+                        [$customer->getnikename(), 'sell/' . $bid->getId() . '/' . $shortLink, $bid->getName(), $bid->getTel()],
                         $registryMGR->get('sms', 'plugAccproSharefaktor'),
                         $num,
                         $bid,
