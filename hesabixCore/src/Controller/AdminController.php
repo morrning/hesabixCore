@@ -223,6 +223,9 @@ class AdminController extends AbstractController
             'creating' => $registryMGR->get('sms', 'plugRepserviceStateCreating'),
             'created' => $registryMGR->get('sms', 'plugRepserviceStateCreated')
         ];
+        $resp['plugAccpro'] = [
+            'sharefaktor' => $registryMGR->get('sms', 'plugAccproSharefaktor'),
+        ];
         return $this->json($resp);
     }
 
@@ -274,7 +277,10 @@ class AdminController extends AbstractController
             if (array_key_exists('created', $params['plugRepservice']))
                 $registryMGR->update('sms', 'plugRepserviceStateCreated', $params['plugRepservice']['created']);
         }
-
+        if (array_key_exists('plugAccpro', $params)) {
+            if (array_key_exists('sharefaktor', $params['plugAccpro']))
+                $registryMGR->update('sms', 'plugAccproSharefaktor', $params['plugAccpro']['sharefaktor']);
+        }
 
         return $this->json(JsonResp::success());
     }
@@ -520,5 +526,21 @@ class AdminController extends AbstractController
             $temps[] = $temp;
         }
         return $this->json(array_reverse($temps));
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/script', name: 'script')]
+    public function script(EntityManagerInterface $entitymanager): JsonResponse
+    {
+        $items = $entitymanager->getRepository(\App\Entity\HesabdariDoc::class)->findAll();
+        foreach($items as $item){
+            $item->setDate(str_replace("-","/",$item->getDate()));
+            $entitymanager->persist($item);
+            $entitymanager->flush();
+
+        }
+        echo str_replace("-","/","1403-02-06");
     }
 }

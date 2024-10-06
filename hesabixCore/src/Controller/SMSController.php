@@ -11,6 +11,7 @@ use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Notification;
+use App\Service\PluginService;
 use App\Service\Provider;
 use App\Service\registryMGR;
 use App\Service\SMS;
@@ -25,36 +26,36 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 class SMSController extends AbstractController
 {
     #[Route('/api/sms/save/settings', name: 'api_sms_save_settings')]
-    public function api_sms_save_settings(Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    public function api_sms_save_settings(Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): Response
     {
         $acc = $access->hasRole('owner');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(array_key_exists('settings',$params))
+        if (array_key_exists('settings', $params))
             $params = $params['settings'];
         $settings = $entityManager->getRepository(SMSSettings::class)->findOneBy([
-            'bid'=>$acc['bid']
+            'bid' => $acc['bid']
         ]);
-        if(!$settings)
+        if (!$settings)
             $settings = new SMSSettings();
         $settings->setBid($acc['bid']);
-        if(array_key_exists('sendAfterSell',$params))
+        if (array_key_exists('sendAfterSell', $params))
             $settings->setSendAfterSell($params['sendAfterSell']);
-        if(array_key_exists('sendAfterSellPayOnline',$params))
+        if (array_key_exists('sendAfterSellPayOnline', $params))
             $settings->setSendAfterSellPayOnline($params['sendAfterSellPayOnline']);
-        if(array_key_exists('sendAfterBuy',$params))
+        if (array_key_exists('sendAfterBuy', $params))
             $settings->setSendAfterBuy($params['sendAfterBuy']);
-        if(array_key_exists('sendAfterBuyToUser',$params))
+        if (array_key_exists('sendAfterBuyToUser', $params))
             $settings->setSendAfterBuyToUser($params['sendAfterBuyToUser']);
         $entityManager->persist($settings);
         $entityManager->flush();
-        $log->insert('سرویس پیامک','به روز رسانی تنظیمات' ,$this->getUser(),$acc['bid']);
+        $log->insert('سرویس پیامک', 'به روز رسانی تنظیمات', $this->getUser(), $acc['bid']);
 
-        return $this->json(['result'=>1]);
+        return $this->json(['result' => 1]);
 
     }
 
@@ -62,20 +63,20 @@ class SMSController extends AbstractController
      * @throws \ReflectionException
      */
     #[Route('/api/sms/load/pays', name: 'api_sms_load_pays')]
-    public function api_sms_load_pays(Jdate $jdate,Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    public function api_sms_load_pays(Jdate $jdate, Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): Response
     {
         $acc = $access->hasRole('owner');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $items = $entityManager->getRepository(SMSPays::class)->findBy([
-            'bid'=>$acc['bid']
-        ],['id'=>'DESC']);
+            'bid' => $acc['bid']
+        ], ['id' => 'DESC']);
         $res = [];
-        foreach ($items as $item){
+        foreach ($items as $item) {
             $temp = [];
-            $temp['des']=$item->getDes();
-            $temp['submitter']=$item->getSubmitter()->getFullName();
-            $temp['dateSubmit']=$jdate->jdate('Y/n/d H:i',$item->getDateSubmit());
+            $temp['des'] = $item->getDes();
+            $temp['submitter'] = $item->getSubmitter()->getFullName();
+            $temp['dateSubmit'] = $jdate->jdate('Y/n/d H:i', $item->getDateSubmit());
             $temp['status'] = $item->getStatus();
             $temp['price'] = number_format($item->getPrice());
             $res[] = $temp;
@@ -88,38 +89,39 @@ class SMSController extends AbstractController
      * @throws \ReflectionException
      */
     #[Route('/api/sms/load/settings', name: 'api_sms_load_settings')]
-    public function api_sms_load_settings(Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    public function api_sms_load_settings(Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): Response
     {
         $acc = $access->hasRole('owner');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $settings = $entityManager->getRepository(SMSSettings::class)->findOneBy([
-            'bid'=>$acc['bid']
+            'bid' => $acc['bid']
         ]);
-        if(!$settings)
+        if (!$settings)
             $settings = new SMSSettings();
 
-        return $this->json($provider->Entity2Array($settings,0));
+        return $this->json($provider->Entity2Array($settings, 0));
 
     }
     #[Route('/api/sms/charge', name: 'api_sms_charge')]
-    public function api_sms_charge(Log $log,Notification $notification,Request $request,Access $access,EntityManagerInterface $entityManager): JsonResponse
+    public function api_sms_charge(Log $log, Notification $notification, Request $request, Access $access, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('owner');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(!array_key_exists('price',$params))
+        if (!array_key_exists('price', $params))
             throw $this->createAccessDeniedException('price not set');
 
         //get system settings
         $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
-        $data = array("merchant_id" => $settings->getZarinpalMerchant(),
+        $data = array(
+            "merchant_id" => $settings->getZarinpalMerchant(),
             "amount" => $params['price'],
-            "callback_url" => $this->generateUrl('api_sms_buy_verify',[],UrlGeneratorInterface::ABSOLUTE_URL),
+            "callback_url" => $this->generateUrl('api_sms_buy_verify', [], UrlGeneratorInterface::ABSOLUTE_URL),
             "description" => 'افزایش اعتبار سرویس پیامک',
         );
         $jsonData = json_encode($data);
@@ -153,7 +155,7 @@ class SMSController extends AbstractController
                     $smsPay->setGatePay('zarinpal');
                     $entityManager->persist($smsPay);
                     $entityManager->flush();
-                    $log->insert('سرویس پیامک','صدور فاکتور شارژ سرویس پیامک' ,$this->getUser(),$acc['bid']);
+                    $log->insert('سرویس پیامک', 'صدور فاکتور شارژ سرویس پیامک', $this->getUser(), $acc['bid']);
                     return $this->json([
                         'authority' => $result['data']["authority"]
                     ]);
@@ -164,11 +166,11 @@ class SMSController extends AbstractController
     }
 
     #[Route('/api/sms/buy/verify', name: 'api_sms_buy_verify')]
-    public function api_sms_buy_verify(Notification $notification,Request $request,EntityManagerInterface $entityManager,Log $log): Response
+    public function api_sms_buy_verify(Notification $notification, Request $request, EntityManagerInterface $entityManager, Log $log): Response
     {
         $Authority = $request->get('Authority');
         $status = $request->get('Status');
-        $req = $entityManager->getRepository(SMSPays::class)->findOneBy(['verifyCode'=>$Authority]);
+        $req = $entityManager->getRepository(SMSPays::class)->findOneBy(['verifyCode' => $Authority]);
         //get system settings
         $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
         $data = array("merchant_id" => $settings->getZarinpalMerchant(), "authority" => $Authority, "amount" => $req->getPrice());
@@ -192,30 +194,30 @@ class SMSController extends AbstractController
 
         //-----------------------------------
         if ($err) {
-            $log->insert('سرویس پیامک','پرداخت ناموفق شارژ سرویس پیامک' ,$this->getUser(),$req->getBid());
-            return $this->render('buy/fail.html.twig', ['results'=>$result]);
+            $log->insert('سرویس پیامک', 'پرداخت ناموفق شارژ سرویس پیامک', $this->getUser(), $req->getBid());
+            return $this->render('buy/fail.html.twig', ['results' => $result]);
         } else {
-            if(array_key_exists('code',$result['data'])){
+            if (array_key_exists('code', $result['data'])) {
                 if ($result['data']['code'] == 100) {
                     $req->setStatus(100);
                     $req->setRefID($result['data']['ref_id']);
                     $req->setCardPan($result['data']['card_pan']);
-                    $req->getBid()->setSmsCharge($req->getBid()->getSmsCharge() + ($req->getPrice()/1.09));
+                    $req->getBid()->setSmsCharge($req->getBid()->getSmsCharge() + ($req->getPrice() / 1.09));
                     $entityManager->persist($req);
                     $entityManager->flush();
                     $log->insert(
                         'سرویس پیامک',
-                        'افزایش اعتبار سرویس پیامک به مبلغ: ' . $req->getPrice()  . ' ریال ',
+                        'افزایش اعتبار سرویس پیامک به مبلغ: ' . $req->getPrice() . ' ریال ',
                         $req->getSubmitter(),
                         $req->getBid()
                     );
-                    $notification->insert(' سرویس پیامک شارژ شد.','/acc/sms/panel',$req->getBid(),$req->getSubmitter());
-                    return $this->render('buy/success.html.twig',['req'=>$req]);
+                    $notification->insert(' سرویس پیامک شارژ شد.', '/acc/sms/panel', $req->getBid(), $req->getSubmitter());
+                    return $this->render('buy/success.html.twig', ['req' => $req]);
                 }
             }
-            $notification->insert('پرداخت فاکتور شارژ سرویس پیامک ناموفق بود','/',$req->getBid(),$req->getSubmitter());
-            $log->insert('سرویس پیامک','پرداخت ناموفق شارژ سرویس پیامک' ,$this->getUser(),$req->getBid());
-            return $this->render('buy/fail.html.twig', ['results'=>$result]);
+            $notification->insert('پرداخت فاکتور شارژ سرویس پیامک ناموفق بود', '/', $req->getBid(), $req->getSubmitter());
+            $log->insert('سرویس پیامک', 'پرداخت ناموفق شارژ سرویس پیامک', $this->getUser(), $req->getBid());
+            return $this->render('buy/fail.html.twig', ['results' => $result]);
         }
     }
 
@@ -223,32 +225,58 @@ class SMSController extends AbstractController
      * @throws \ReflectionException
      */
     #[Route('/api/sms/send/sell-invoice/{id}/{num}', name: 'api_sms_send_invoice')]
-    public function api_sms_send_invoice(registryMGR $registryMGR, SMS $SMS,String $id,String $num,Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): Response
+    public function api_sms_send_invoice(PluginService $pluginService, registryMGR $registryMGR, SMS $SMS, string $id, string $num, Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): Response
     {
         $acc = $access->hasRole('sell');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
 
         $bid = $acc['bid'];
-        if($bid->getSmsCharge()<530)
-            return $this->json(['result'=>'2']);
+        if ($bid->getSmsCharge() < 530)
+            return $this->json(['result' => '2']);
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-            'id'=>$id,
-            'bid'=>$bid,
-            'type'=>'sell'
+            'id' => $id,
+            'bid' => $bid,
+            'type' => 'sell'
         ]);
-        if(!$doc)
-            return $this->json(['result'=>3]);
+        if (!$doc)
+            return $this->json(['result' => 3]);
         $shortLink = $doc->getId();
-        if($doc->getShortlink())
+        if ($doc->getShortlink())
             $shortLink = $doc->getShortlink();
 
-        return $this->json(['result'=>
-            $SMS->sendByBalance(
-                [$bid->getName(),'sell/' . $bid->getId() . '/' . $shortLink],
-                $registryMGR->get('sms','sharefaktor'),
-                $num,$bid,$this->getUser(),3
-            )]);
+        //find custommer
+        $customer = null;
+        foreach ($doc->getHesabdariRows() as $row) {
+            if ($row->getPerson())
+                $customer = $row->getPerson();
+        }
+        if ($pluginService->isActive('accpro', $acc['bid']) && $customer && $bid->getTel()) {
+            return $this->json([
+                'result' =>
+                    $SMS->sendByBalance(
+                        [$customer->getnikename(), 'sell/' . $bid->getId() . '/' . $shortLink, $bid->getTel()],
+                        $registryMGR->get('sms', 'plugAccproSharefaktor'),
+                        $num,
+                        $bid,
+                        $this->getUser(),
+                        3
+                    )
+            ]);
+        } else {
+            return $this->json([
+                'result' =>
+                    $SMS->sendByBalance(
+                        [$bid->getName(), 'sell/' . $bid->getId() . '/' . $shortLink],
+                        $registryMGR->get('sms', 'sharefaktor'),
+                        $num,
+                        $bid,
+                        $this->getUser(),
+                        3
+                    )
+            ]);
+        }
+
 
     }
 }
