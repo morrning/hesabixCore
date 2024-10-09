@@ -42,9 +42,9 @@ class BusinessController extends AbstractController
             throw $this->createAccessDeniedException();
 
         $archiveUser = $entityManager->getRepository(User::class)->findOneBy([
-            'email'=>'archive@hesabix.ir'
+            'email' => 'archive@hesabix.ir'
         ]);
-        if(! $archiveUser){
+        if (!$archiveUser) {
             $archiveUser = new User();
             $archiveUser->setEmail('archive@hesabix.ir');
             $archiveUser->setFullName('کاربر آرشیو و بایگانی');
@@ -61,17 +61,18 @@ class BusinessController extends AbstractController
 
         //remove permissions
         $permissions = $entityManager->getRepository(Permission::class)->findBy([
-            'bid'=>$acc['bid']
+            'bid' => $acc['bid']
         ]);
-        foreach($permissions as $perm){
+        foreach ($permissions as $perm) {
             $entityManager->remove($perm);
             $entityManager->flush();
         }
         return $this->json($extractor->operationSuccess());
     }
     #[Route('/api/business/list', name: 'api_bussiness_list')]
-    public function api_bussiness_list(#[CurrentUser] ?User $user, EntityManagerInterface $entityManager, Provider $provider): Response
+    public function api_bussiness_list(#[CurrentUser] ?User $user, Access $access, EntityManagerInterface $entityManager, Provider $provider): Response
     {
+
         $buss = $entityManager->getRepository(Permission::class)->findBy(['user' => $user]);
         $response = [];
         foreach ($buss as $bus) {
@@ -90,9 +91,17 @@ class BusinessController extends AbstractController
      * @throws ReflectionException
      */
     #[Route('/api/business/get/info/{bid}', name: 'api_business_get_info')]
-    public function api_business_get_info($bid, #[CurrentUser] ?User $user, Provider $provider, EntityManagerInterface $entityManager): Response
+    public function api_business_get_info($bid, #[CurrentUser] ?User $user, Access $access, Provider $provider, EntityManagerInterface $entityManager): Response
     {
         $bus = $entityManager->getRepository(Business::class)->findOneBy(['id' => $bid]);
+        if(! $bus)
+            throw $this->createNotFoundException();
+        $perms = $entityManager->getRepository(Permission::class)->findOneBy([
+            'bid' => $bus,
+            'user'=>$user
+        ]);
+        if(!$perms)
+            throw $this->createAccessDeniedException();
         $response = [];
         $response['id'] = $bus->getId();
         $response['name'] = $bus->getName();
@@ -237,7 +246,8 @@ class BusinessController extends AbstractController
                     return $this->json(['result' => 2]);
             } else
                 return $this->json(['result' => 2]);
-            if (!$business->getDateSubmit())  $business->setDateSubmit(time());
+            if (!$business->getDateSubmit())
+                $business->setDateSubmit(time());
             $entityManager->persist($business);
             $entityManager->flush();
             if ($isNew) {
@@ -272,11 +282,13 @@ class BusinessController extends AbstractController
                 $year->setBid($business);
                 $year->setHead(true);
                 $startYearArray = explode('-', $params['year']['start']);
-                if(count($startYearArray) == 1)  $startYearArray = explode('/', $params['year']['start']);
+                if (count($startYearArray) == 1)
+                    $startYearArray = explode('/', $params['year']['start']);
 
                 $year->setStart($jdate->jmktime(0, 0, 0, $startYearArray[1], $startYearArray[2], $startYearArray[0]));
                 $endYearArray = explode('-', $params['year']['end']);
-                if(count($endYearArray) == 1)  $endYearArray = explode('/', $params['year']['end']);
+                if (count($endYearArray) == 1)
+                    $endYearArray = explode('/', $params['year']['end']);
                 $year->setEnd($jdate->jmktime(0, 0, 0, $endYearArray[1], $endYearArray[2], $endYearArray[0]));
                 $year->setLabel($params['year']['label']);
                 $entityManager->persist($year);
@@ -287,15 +299,17 @@ class BusinessController extends AbstractController
                     'bid' => $business,
                     'head' => true
                 ]);
-                if(!$year){
+                if (!$year) {
                     $year = new Year;
                 }
                 $startYearArray = explode('-', $params['year']['startShamsi']);
-                if(count($startYearArray) == 1)  $startYearArray = explode('/', $params['year']['startShamsi']);
+                if (count($startYearArray) == 1)
+                    $startYearArray = explode('/', $params['year']['startShamsi']);
 
                 $year->setStart($jdate->jmktime(0, 0, 0, $startYearArray[1], $startYearArray[2], $startYearArray[0]));
                 $endYearArray = explode('-', $params['year']['endShamsi']);
-                if(count($endYearArray) == 1)  $endYearArray = explode('/', $params['year']['endShamsi']);
+                if (count($endYearArray) == 1)
+                    $endYearArray = explode('/', $params['year']['endShamsi']);
                 $year->setEnd($jdate->jmktime(0, 0, 0, $endYearArray[1], $endYearArray[2], $endYearArray[0]));
                 $year->setLabel($params['year']['label']);
                 $entityManager->persist($year);
@@ -626,9 +640,9 @@ class BusinessController extends AbstractController
     }
 
     #[Route('/api/business/stat', name: 'api_business_stat')]
-    public function api_business_stat(Jdate $jdate,Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
+    public function api_business_stat(Jdate $jdate, Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
     {
-        $dateNow = $jdate->jdate('Y/m/d',time());
+        $dateNow = $jdate->jdate('Y/m/d', time());
         $buss = $entityManager->getRepository(Business::class)->find(
             $request->headers->get('activeBid')
         );
@@ -674,7 +688,7 @@ class BusinessController extends AbstractController
             }
             if ($canAdd) {
                 $buysTotal += $item->getAmount();
-                if($item->getDate() == $dateNow){
+                if ($item->getDate() == $dateNow) {
                     $buysToday += $item->getAmount();
                 }
             }
@@ -695,7 +709,7 @@ class BusinessController extends AbstractController
             }
             if ($canAdd) {
                 $sellsTotal += $item->getAmount();
-                if($item->getDate() == $dateNow){
+                if ($item->getDate() == $dateNow) {
                     $sellsToday += $item->getAmount();
                 }
             }
@@ -716,7 +730,7 @@ class BusinessController extends AbstractController
             }
             if ($canAdd) {
                 $sendsTotal += $item->getAmount();
-                if($item->getDate() == $dateNow){
+                if ($item->getDate() == $dateNow) {
                     $sendsToday += $item->getAmount();
                 }
             }
@@ -737,7 +751,7 @@ class BusinessController extends AbstractController
             }
             if ($canAdd) {
                 $recsTotal += $item->getAmount();
-                if($item->getDate() == $dateNow){
+                if ($item->getDate() == $dateNow) {
                     $recsToday += $item->getAmount();
                 }
             }
