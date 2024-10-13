@@ -225,6 +225,8 @@ class AdminController extends AbstractController
         ];
         $resp['plugAccpro'] = [
             'sharefaktor' => $registryMGR->get('sms', 'plugAccproSharefaktor'),
+            'storeroomSmsOther' => $registryMGR->get('sms', 'plugAccproStoreroomSmsOther'),
+            'storeroomSmsBarbari' => $registryMGR->get('sms', 'plugAccproStoreroomSmsBarbari'),
         ];
         return $this->json($resp);
     }
@@ -280,6 +282,10 @@ class AdminController extends AbstractController
         if (array_key_exists('plugAccpro', $params)) {
             if (array_key_exists('sharefaktor', $params['plugAccpro']))
                 $registryMGR->update('sms', 'plugAccproSharefaktor', $params['plugAccpro']['sharefaktor']);
+            if (array_key_exists('storeroomSmsBarbari', $params['plugAccpro']))
+                $registryMGR->update('sms', 'plugAccproStoreroomSmsBarbari', $params['plugAccpro']['storeroomSmsBarbari']);
+            if (array_key_exists('storeroomSmsOther', $params['plugAccpro']))
+                $registryMGR->update('sms', 'plugAccproStoreroomSmsOther', $params['plugAccpro']['storeroomSmsOther']);
         }
 
         return $this->json(JsonResp::success());
@@ -535,12 +541,12 @@ class AdminController extends AbstractController
     public function script(EntityManagerInterface $entitymanager): JsonResponse
     {
         $items = $entitymanager->getRepository(\App\Entity\HesabdariDoc::class)->findAll();
-        foreach($items as $item){
-            $item->setDate(str_replace("-","/",$item->getDate()));
+        foreach ($items as $item) {
+            $item->setDate(str_replace("-", "/", $item->getDate()));
             $entitymanager->persist($item);
             $entitymanager->flush();
 
         }
-        echo str_replace("-","/","1403-02-06");
+        echo str_replace("-", "/", "1403-02-06");
     }
 }
