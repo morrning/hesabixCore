@@ -1,0 +1,145 @@
+{% extends 'blank.html.twig' %}
+
+{% block title %}مشاهده حواله خروج از انبار
+{% endblock %}
+
+{% block body %}
+	<main
+		id="main-container">
+		<!-- Hero -->
+		<div class="bg-body-light d-print-none">
+			<div class="content content-full">
+				<div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-sm-center">
+					<img src="/front/avatar/file/get/{{bid.id}}" class="img-fluid" width="80">
+					<h2 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3 mx-2">
+					 حوله خروج از انبار
+					</h2>
+				</div>
+			</div>
+		</div>
+		<!-- END Hero -->
+
+		<!-- Page Content -->
+		<div
+			class="content content-boxed">
+			<!-- Invoice -->
+			<div class="block block-rounded">
+				<div class="block-header block-header-default">
+					<h3 class="block-title">
+						شماره حواله انبار:
+						<span class="text-primary">
+							{{doc.code}}
+						</span>
+					</h3>
+					<div class="block-options"></div>
+				</div>
+				<div class="block-content">
+					<div
+						class="p-sm-2 p-xl-1">
+						<!-- Invoice Info -->
+						<div
+							class="row mb-5">
+							<!-- Company Info -->
+							<div class="col-6">
+								<p class="h3">
+									{{bid.type}}
+									:
+									{{bid.name}}
+								</p>
+								<address>آدرس :
+																																				استان
+									{{bid.ostan}}
+									شهرستان
+									{{bid.shahrestan}}
+									{{bid.address}}
+
+								</address>
+								<div>
+									کد پستی:
+									{{bid.postalcode}}
+								</div>
+								<div>
+									تلفن :
+									{{bid.tel}}
+								</div>
+								<div>
+									موبایل :
+									{{bid.mobile}}
+								</div>
+							</div>
+							<!-- END Company Info -->
+
+							<!-- Client Info -->
+							<div class="col-6 text-end">
+								<p class="h3">نحوه ارسال:
+									{{ doc.transferType.name }}
+								</p>
+								<div>کد پیگیری/شماره قبض :
+									{{doc.referral}}
+								</div>
+								<div>
+									واحد تحویل/باربری  :
+									{{doc.transfer}}
+								</div>
+								<div>
+									تلفن تحویل دهنده :
+									{{doc.senderTel}}
+								</div>
+								<div>
+									تحویل گیرنده :
+									{{doc.receiver}}
+								</div>
+							</div>
+							<!-- END Client Info -->
+						</div>
+						<!-- END Invoice Info -->
+
+						<!-- Table -->
+						<div class="table-responsive push text-center">
+							<table class="table table-bordered">
+								<thead>
+									<tr class="bg-body">
+										<th class="text-dark">ردیف</th>
+										<th class="text-dark">کالا/خدمات</th>
+										<th class="text-dark">شرح</th>
+										<th class="text-dark">تعداد / مقدار</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for item in doc.storeroomItems%}
+										<tr>
+											<td>{{loop.index}}</td>
+											<td>
+												{{ item.commodity.code }}
+												-
+												{{ item.commodity.name }}</td>
+											<td>{{ item.des }}</td>
+											<td>
+												{{ item.count }}
+												{{ item.commodity.unit.name }}
+											</td>
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+						<!-- END Table -->
+						
+						<div class="block block-rounded">
+							توضیحات:
+							{{ doc.des }}
+						</div>
+						<!-- Footer -->
+						<a href="https://hesabix.ir" class="p-4 mb-3text-primary text-center my-5">
+							حسابیکس
+							<label class="text-muted">سامانه جامع مالی رایگان ، ابری و متن باز</label>
+						</a>
+						<!-- END Footer -->
+					</div>
+				</div>
+			</div>
+			<!-- END Invoice -->
+		</div>
+		<!-- END Page Content -->
+	</main>
+{% endblock %}

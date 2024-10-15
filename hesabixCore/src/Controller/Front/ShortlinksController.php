@@ -6,6 +6,7 @@ use App\Entity\Business;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
 use App\Entity\PrintOptions;
+use App\Entity\StoreroomTicket;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,8 +15,37 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ShortlinksController extends AbstractController
 {
+    #[Route('/st/{bid}/{id}', name: 'shortlinks_storeroom_show')]
+    public function shortlinks_storeroom_show(string $bid, string $id, EntityManagerInterface $entityManager): Response
+    {
+        $bus = $entityManager->getRepository(Business::class)->find($bid);
+        if (!$bus)
+            throw $this->createNotFoundException();
+        $ticket = $entityManager->getRepository(StoreroomTicket::class)->findOneBy([
+            'bid' => $bid,
+            'id' => $id
+        ]);
+        if (!$ticket)
+            throw $this->createNotFoundException();
+        if(!$ticket->isCanShare())
+            throw $this->createAccessDeniedException();
+
+        $person = null;
+        
+        foreach ($ticket->getDoc()->getHesabdariRows() as $item) {
+            if ($item->getPerson()) {
+                $person = $item->getPerson();
+            }
+        }
+        return $this->render('shortlinks/storeroom.html.twig', [
+            'bid' => $bus,
+            'doc' => $ticket,
+            'person'=>$person
+        ]);
+    }
+
     #[Route('/sl/{type}/{bid}/{link}/{msg}', name: 'shortlinks_show')]
-    public function shortlinks_show(string $bid, string $type, string $link, EntityManagerInterface $entityManager, String $msg = 'default'): Response
+    public function shortlinks_show(string $bid, string $type, string $link, EntityManagerInterface $entityManager, string $msg = 'default'): Response
     {
         $bus = $entityManager->getRepository(Business::class)->find($bid);
         if (!$bus)
@@ -31,12 +61,12 @@ class ShortlinksController extends AbstractController
                 $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                     'type' => 'sell',
                     'id' => $link,
-                    'bid'=>$bus
+                    'bid' => $bus
                 ]);
                 if (!$doc)
                     throw $this->createNotFoundException();
             }
-            
+
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $doc]);
             $items = [];
             $person = null;
@@ -54,11 +84,11 @@ class ShortlinksController extends AbstractController
         return $this->render('shortlinks/sell.html.twig', [
             'bid' => $doc->getBid(),
             'doc' => $doc,
-            'link'=>$link,
+            'link' => $link,
             'rows' => $items,
-            'person'=> $person,
-            'totalPays'=>$totalPays,
-            'msg'=>$msg
+            'person' => $person,
+            'totalPays' => $totalPays,
+            'msg' => $msg
         ]);
     }
 
@@ -69,9 +99,11 @@ class ShortlinksController extends AbstractController
             'type' => 'sell',
             'id' => $link
         ]);
-        if (!$doc) throw $this->createNotFoundException();
+        if (!$doc)
+            throw $this->createNotFoundException();
         $bid = $entityManager->getRepository(Business::class)->find($bid);
-        if (!$bid) throw $this->createNotFoundException();
+        if (!$bid)
+            throw $this->createNotFoundException();
         $person = null;
         $discount = 0;
         $transfer = 0;
@@ -86,15 +118,17 @@ class ShortlinksController extends AbstractController
         }
         $printOptions = [
             'bidInfo' => true,
-            'pays'     =>true,
-            'taxInfo'   =>true,
-            'discountInfo'  =>true,
-            'note'  =>true,
-            'paper' =>'A4-L'
+            'pays' => true,
+            'taxInfo' => true,
+            'discountInfo' => true,
+            'note' => true,
+            'paper' => 'A4-L'
         ];
         $note = '';
-        $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$bid]);
-        if($printSettings){$note = $printSettings->getSellNoteString();}
+        $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $bid]);
+        if ($printSettings) {
+            $note = $printSettings->getSellNoteString();
+        }
         $pdfPid = $provider->createPrint(
             $bid,
             $bid->getOwner(),
@@ -105,12 +139,12 @@ class ShortlinksController extends AbstractController
                 'person' => $person,
                 'discount' => $discount,
                 'transfer' => $transfer,
-                'printOptions'=> $printOptions,
-                'note'=> $note
+                'printOptions' => $printOptions,
+                'note' => $note
             ]),
             false,
             $printOptions['paper']
         );
-        return $this->redirectToRoute('app_front_print',['id'=>$pdfPid]);
+        return $this->redirectToRoute('app_front_print', ['id' => $pdfPid]);
     }
 }

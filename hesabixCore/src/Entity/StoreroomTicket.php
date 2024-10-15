@@ -71,6 +71,12 @@ class StoreroomTicket
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $des = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $senderTel = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $canShare = null;
+
     public function __construct()
     {
         $this->storeroomItems = new ArrayCollection();
@@ -299,6 +305,30 @@ class StoreroomTicket
     public function setDes(?string $des): static
     {
         $this->des = $des;
+
+        return $this;
+    }
+
+    public function getSenderTel(): ?string
+    {
+        return $this->senderTel;
+    }
+
+    public function setSenderTel(?string $senderTel): static
+    {
+        $this->senderTel = $senderTel;
+
+        return $this;
+    }
+
+    public function isCanShare(): ?bool
+    {
+        return $this->canShare;
+    }
+
+    public function setCanShare(?bool $canShare): static
+    {
+        $this->canShare = $canShare;
 
         return $this;
     }

@@ -14,6 +14,9 @@ use App\Entity\StoreroomTicket;
 use App\Entity\StoreroomTransferType;
 use App\Service\Access;
 use App\Service\Log;
+use App\Service\PluginService;
+use App\Service\registryMGR;
+use App\Service\SMS;
 use Doctrine\ORM\EntityManagerInterface;
 use ReflectionException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,7 +28,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class StoreroomController extends AbstractController
 {
     #[Route('/api/storeroom/list/{type}', name: 'app_storeroom_list')]
-    public function app_storeroom_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, String $type = 'active'): JsonResponse
+    public function app_storeroom_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $type = 'active'): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -201,7 +204,7 @@ class StoreroomController extends AbstractController
         ]);
     }
 
-    private function getPerson(HesabdariDoc $doc): Person | bool
+    private function getPerson(HesabdariDoc $doc): Person|bool
     {
         foreach ($doc->getHesabdariRows() as $row) {
             if ($row->getPerson())
@@ -226,7 +229,7 @@ class StoreroomController extends AbstractController
      * @throws ReflectionException
      */
     #[Route('/api/storeroom/doc/get/info/{id}', name: 'app_storeroom_get_doc_info')]
-    public function app_storeroom_get_doc_info(String $id, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_get_doc_info(string $id, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -322,7 +325,7 @@ class StoreroomController extends AbstractController
         }
     }
     #[Route('/api/storeroom/transfertype/list', name: 'app_storeroom_get_transfertype_list')]
-    public function app_storeroom_get_transfertype_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_get_transfertype_list(PluginService $pluginService, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -331,7 +334,7 @@ class StoreroomController extends AbstractController
     }
 
     #[Route('/api/storeroom/ticket/insert', name: 'app_storeroom_ticket_insert')]
-    public function app_storeroom_ticket_insert(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_ticket_insert(PluginService $pluginService,registryMGR $registryMGR, SMS $sms, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -382,6 +385,7 @@ class StoreroomController extends AbstractController
         $ticket->setBid($acc['bid']);
         $ticket->setDateSubmit(time());
         $ticket->setDoc($doc);
+        $ticket->setSenderTel($params['ticket']['senderTel']);
         $ticket->setTransfer($params['ticket']['transfer']);
         $ticket->setYear($acc['year']);
         $ticket->setCode($provider->getAccountingCode($acc['bid'], 'storeroom'));
@@ -427,13 +431,65 @@ class StoreroomController extends AbstractController
         $entityManager->flush();
         //save logs
         $log->insert('انبارداری', 'حواله انبار با شماره ' . $ticket->getCode() . ' اضافه / ویرایش شد.', $this->getUser(), $acc['bid']);
+        if ($pluginService->isActive('accpro', $acc['bid'])) {
+            //notification to person
+            if ($params['ticket']['sms'] == true) {
+                $ticket->setCanShare(true);
+                $entityManager->persist($ticket);
+                $entityManager->flush();
+                if ($transferType->getName() == 'باربری') {
+                    if($ticket->getTransfer() == null) $ticket->setTransfer(0);
+                    if($ticket->getReferral() == null) $ticket->setReferral(0);
+                    if($ticket->getSenderTel() == null) $ticket->setSenderTel(0);
+                    $smsres = $sms->sendByBalance(
+                        [
+                            $person->getNikename(),
+                            $ticket->getTransfer(),
+                            $ticket->getReferral(),
+                            $ticket->getSenderTel(),
+                            $acc['bid']->getName(),
+                            $acc['bid']->getId() . '/' . $ticket->getId()
+                        ],
+                        $registryMGR->get('sms', 'plugAccproStoreroomSmsBarbari'),
+                        $person->getMobile(),
+                        $acc['bid'],
+                        $this->getUser(),
+                        3
+                    );
+                } else {
+                    $smsres = $sms->sendByBalance(
+                        [
+                            $person->getNikename(),
+                            $ticket->getReferral(),
+                            $transferType->getName(),
+                            $acc['bid']->getName(),
+                            $acc['bid']->getId() . '/' . $ticket->getId()
+                        ],
+                        $registryMGR->get('sms', 'plugAccproStoreroomSmsOther'),
+                        $person->getMobile(),
+                        $acc['bid'],
+                        $this->getUser(),
+                        3
+                    );
+                }
+
+                if ($smsres == 2) {
+                    return $this->json([
+                        'code' => 11,
+                        'data' => '',
+                        'message' => 'operation success but sms not send'
+                    ]);
+                }
+            }
+        }
+
         return $this->json([
             'result' => 0
         ]);
     }
 
     #[Route('/api/storeroom/tickets/list/{type}', name: 'app_storeroom_tickets_list')]
-    public function app_storeroom_tickets_list(String $type, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_tickets_list(string $type, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -442,8 +498,8 @@ class StoreroomController extends AbstractController
             'bid' => $acc['bid'],
             'year' => $acc['year'],
             'type' => $type
-        ],[
-            'date'=>'DESC'
+        ], [
+            'date' => 'DESC'
         ]);
         return $this->json($provider->ArrayEntity2ArrayJustIncludes($tickets, [
             'getDes',
@@ -457,7 +513,7 @@ class StoreroomController extends AbstractController
     }
 
     #[Route('/api/storeroom/tickets/info/{code}', name: 'app_storeroom_ticket_view')]
-    public function app_storeroom_ticket_view(String $code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_ticket_view(string $code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -476,14 +532,14 @@ class StoreroomController extends AbstractController
         $res['person'] = $provider->Entity2ArrayJustIncludes($ticket->getPerson(), ['getKeshvar', 'getOstan', 'getShahr', 'getAddress', 'getNikename', 'getCodeeghtesadi', 'getPostalcode', 'getName', 'getTel', 'getSabt'], 0);
         //get rows
         $rows = $entityManager->getRepository(StoreroomItem::class)->findBy(['ticket' => $ticket]);
-        $res['commodities'] = $provider->ArrayEntity2ArrayJustIncludes($rows, ['getId', 'getDes', 'getCode', 'getName', 'getCommodity', 'getUnit', 'getCount','getReferal'], 2);
+        $res['commodities'] = $provider->ArrayEntity2ArrayJustIncludes($rows, ['getId', 'getDes', 'getCode', 'getName', 'getCommodity', 'getUnit', 'getCount', 'getReferal'], 2);
 
         //calculate rows data
         $this->calcStoreRemaining($res, $ticket->getDoc(), $entityManager);
         return $this->json($res);
     }
     #[Route('/api/storeroom/commodity/list/{sid}', name: 'app_storeroom_commodity_list')]
-    public function app_storeroom_commodity_list(String $sid, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_commodity_list(string $sid, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -542,7 +598,7 @@ class StoreroomController extends AbstractController
         return $items;
     }
     #[Route('/api/storeroom/ticket/remove/{id}', name: 'app_storeroom_ticket_remove')]
-    public function app_storeroom_ticket_remove(String $id, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_ticket_remove(string $id, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -574,17 +630,18 @@ class StoreroomController extends AbstractController
         }
 
         $acc = $access->hasRole('store');
-        if (!$acc) throw $this->createAccessDeniedException();
+        if (!$acc)
+            throw $this->createAccessDeniedException();
 
         $doc = $entityManager->getRepository(StoreroomTicket::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code']
         ]);
-        if (!$doc) throw $this->createNotFoundException();
-        if($params['type'] == 'input'){
+        if (!$doc)
+            throw $this->createNotFoundException();
+        if ($params['type'] == 'input') {
             $title = 'حواله ورود به انبار';
-        }
-        else{
+        } else {
             $title = 'حواله خروج از انبار';
         }
         $pdfPid = 0;
@@ -592,7 +649,7 @@ class StoreroomController extends AbstractController
             $acc['bid'],
             $this->getUser(),
             $this->renderView('pdf/printers/storeroom/input.html.twig', [
-                'title'=> $title,
+                'title' => $title,
                 'bid' => $acc['bid'],
                 'doc' => $doc,
                 'rows' => $doc->getStoreroomItems(),
