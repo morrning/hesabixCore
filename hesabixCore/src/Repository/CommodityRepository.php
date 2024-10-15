@@ -62,8 +62,7 @@ class CommodityRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('p')
             ->where('p.bid = :val')
-            ->andWhere("p.name LIKE :search")
-            ->orWhere("p.barcodes LIKE :search")
+            ->andWhere("p.name LIKE :search OR p.barcodes LIKE :search")
             ->setParameter('val', $bid)
             ->setParameter('search', '%' . $search . '%')
             ->setMaxResults($maxResults)
