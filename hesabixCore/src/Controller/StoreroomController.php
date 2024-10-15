@@ -475,9 +475,7 @@ class StoreroomController extends AbstractController
 
                 if ($smsres == 2) {
                     return $this->json([
-                        'code' => 11,
-                        'data' => '',
-                        'message' => 'operation success but sms not send'
+                        'result' => 2
                     ]);
                 }
             }

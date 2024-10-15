@@ -48,7 +48,7 @@ class ArchiveController extends AbstractController
     #[Route('/api/archive/info', name: 'app_archive_info')]
     public function app_archive_info(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
     {
-        $acc = $access->hasRole('archiveInfo');
+        $acc = $access->hasRole('join');
         if(!$acc)
             throw $this->createAccessDeniedException();
         $resp = $this->getArchiveInfo($entityManager,$acc);
@@ -58,7 +58,7 @@ class ArchiveController extends AbstractController
     #[Route('/api/archive/order/settings', name: 'app_archive_order_settings')]
     public function app_archive_order_settings(twigFunctions $functions,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
     {
-        $acc = $access->hasRole('archiveInfo');
+        $acc = $access->hasRole('join');
         if(!$acc)
             throw $this->createAccessDeniedException();
         $settings = $functions->systemSettings();
@@ -70,7 +70,7 @@ class ArchiveController extends AbstractController
     #[Route('/api/archive/order/submit', name: 'app_archive_order_submit')]
     public function app_archive_order_submit(twigFunctions $functions,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
     {
-        $acc = $access->hasRole('archiveInfo');
+        $acc = $access->hasRole('join');
         if(!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
@@ -221,7 +221,7 @@ class ArchiveController extends AbstractController
     #[Route('/api/archive/orders/list', name: 'app_archive_orders_list')]
     public function app_archive_orders_list(Jdate $jdate, Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager,$code = 0): JsonResponse
     {
-        $acc = $access->hasRole('archiveInfo');
+        $acc = $access->hasRole('join');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $orders = $entityManager->getRepository(ArchiveOrders::class)->findBy([
