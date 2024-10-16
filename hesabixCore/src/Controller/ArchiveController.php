@@ -165,7 +165,7 @@ class ArchiveController extends AbstractController
         } else {
             if(array_key_exists('code',$result['data'])){
                 if ($result['data']['code'] == 100) {
-                    $req->setStatus($request->get('Status'));
+                    $req->setStatus(100);
                     $req->setRefID($result['data']['ref_id']);
                     $req->setCardPan($result['data']['card_pan']);
                     $req->setExpireDate(time() + ($req->getMonth() * 30 * 24 * 60 * 60));

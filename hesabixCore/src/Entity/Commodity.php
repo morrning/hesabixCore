@@ -86,6 +86,12 @@ class Commodity
     #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: PriceListDetail::class, orphanRemoval: true)]
     private Collection $priceListDetails;
 
+    /**
+     * @var Collection<int, PreInvoiceItem>
+     */
+    #[ORM\OneToMany(mappedBy: 'commodity', targetEntity: PreInvoiceItem::class, orphanRemoval: true)]
+    private Collection $preInvoiceItems;
+
     public function __construct()
     {
         $this->setPriceBuy(0);
@@ -95,6 +101,7 @@ class Commodity
         $this->storeroomItems = new ArrayCollection();
         $this->plugRepserviceOrders = new ArrayCollection();
         $this->priceListDetails = new ArrayCollection();
+        $this->preInvoiceItems = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -438,6 +445,36 @@ class Commodity
             // set the owning side to null (unless already changed)
             if ($priceListDetail->getCommodity() === $this) {
                 $priceListDetail->setCommodity(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceItem>
+     */
+    public function getPreInvoiceItems(): Collection
+    {
+        return $this->preInvoiceItems;
+    }
+
+    public function addPreInvoiceItem(PreInvoiceItem $preInvoiceItem): static
+    {
+        if (!$this->preInvoiceItems->contains($preInvoiceItem)) {
+            $this->preInvoiceItems->add($preInvoiceItem);
+            $preInvoiceItem->setCommodity($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreInvoiceItem(PreInvoiceItem $preInvoiceItem): static
+    {
+        if ($this->preInvoiceItems->removeElement($preInvoiceItem)) {
+            // set the owning side to null (unless already changed)
+            if ($preInvoiceItem->getCommodity() === $this) {
+                $preInvoiceItem->setCommodity(null);
             }
         }
 
