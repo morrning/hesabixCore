@@ -237,6 +237,12 @@ class Business
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $archiveEmail = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $CommodityUpdateSellPriceAuto = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $CommodityUpdateBuyPriceAuto = null;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -1702,6 +1708,30 @@ class Business
     public function setArchiveEmail(?string $archiveEmail): static
     {
         $this->archiveEmail = $archiveEmail;
+
+        return $this;
+    }
+
+    public function isCommodityUpdateSellPriceAuto(): ?bool
+    {
+        return $this->CommodityUpdateSellPriceAuto;
+    }
+
+    public function setCommodityUpdateSellPriceAuto(?bool $CommodityUpdateSellPriceAuto): static
+    {
+        $this->CommodityUpdateSellPriceAuto = $CommodityUpdateSellPriceAuto;
+
+        return $this;
+    }
+
+    public function isCommodityUpdateBuyPriceAuto(): ?bool
+    {
+        return $this->CommodityUpdateBuyPriceAuto;
+    }
+
+    public function setCommodityUpdateBuyPriceAuto(?bool $CommodityUpdateBuyPriceAuto): static
+    {
+        $this->CommodityUpdateBuyPriceAuto = $CommodityUpdateBuyPriceAuto;
 
         return $this;
     }

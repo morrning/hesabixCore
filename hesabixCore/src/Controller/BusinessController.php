@@ -94,13 +94,13 @@ class BusinessController extends AbstractController
     public function api_business_get_info($bid, #[CurrentUser] ?User $user, Access $access, Provider $provider, EntityManagerInterface $entityManager): Response
     {
         $bus = $entityManager->getRepository(Business::class)->findOneBy(['id' => $bid]);
-        if(! $bus)
+        if (!$bus)
             throw $this->createNotFoundException();
         $perms = $entityManager->getRepository(Permission::class)->findOneBy([
             'bid' => $bus,
-            'user'=>$user
+            'user' => $user
         ]);
-        if(!$perms)
+        if (!$perms)
             throw $this->createAccessDeniedException();
         $response = [];
         $response['id'] = $bus->getId();
@@ -128,6 +128,8 @@ class BusinessController extends AbstractController
         $response['shortlinks'] = $bus->isShortLinks();
         $response['walletEnabled'] = $bus->isWalletEnable();
         $response['walletMatchBank'] = null;
+        $response['updateSellPrice'] = $bus->isCommodityUpdateSellPriceAuto();
+        $response['updateBuyPrice'] = $bus->isCommodityUpdateBuyPriceAuto();
         if ($bus->isWalletEnable())
             $response['walletMatchBank'] = $provider->Entity2Array($bus->getWalletMatchBank(), 0);
         $year = $entityManager->getRepository(Year::class)->findOneBy([
@@ -219,7 +221,10 @@ class BusinessController extends AbstractController
                 $business->setWesite($params['website']);
             if ($params['email'])
                 $business->setEmail($params['email']);
-
+            if ($params['commodityUpdateBuyPriceAuto'])
+                $business->setCommodityUpdateBuyPriceAuto($params['commodityUpdateBuyPriceAuto']);
+            if ($params['commodityUpdateSellPriceAuto'])
+                $business->setCommodityUpdateSellPriceAuto($params['commodityUpdateSellPriceAuto']);
             if (array_key_exists('walletEnabled', $params)) {
                 if ($params['walletEnabled']) {
                     if (array_key_exists('walletMatchBank', $params)) {
