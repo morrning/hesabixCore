@@ -221,10 +221,21 @@ class BusinessController extends AbstractController
                 $business->setWesite($params['website']);
             if ($params['email'])
                 $business->setEmail($params['email']);
-            if ($params['commodityUpdateBuyPriceAuto'])
-                $business->setCommodityUpdateBuyPriceAuto($params['commodityUpdateBuyPriceAuto']);
-            if ($params['commodityUpdateSellPriceAuto'])
-                $business->setCommodityUpdateSellPriceAuto($params['commodityUpdateSellPriceAuto']);
+            if (array_key_exists('commodityUpdateBuyPriceAuto', $params)) {
+                if ($params['commodityUpdateBuyPriceAuto'] == true) {
+                    $business->setCommodityUpdateBuyPriceAuto(true);
+                } else {
+                    $business->setCommodityUpdateBuyPriceAuto(false);
+                }
+            }
+            if (array_key_exists('commodityUpdateSellPriceAuto', $params)) {
+                if ($params['commodityUpdateSellPriceAuto'] == true) {
+                    $business->setCommodityUpdateSellPriceAuto(true);
+                } else {
+                    $business->setCommodityUpdateSellPriceAuto(false);
+                }
+            }
+            $business->setCommodityUpdateSellPriceAuto($params['commodityUpdateSellPriceAuto']);
             if (array_key_exists('walletEnabled', $params)) {
                 if ($params['walletEnabled']) {
                     if (array_key_exists('walletMatchBank', $params)) {

@@ -6,6 +6,7 @@ use App\Service\Log;
 use App\Service\Access;
 use App\Service\Explore;
 use App\Entity\Commodity;
+use App\Service\PluginService;
 use App\Service\Provider;
 use App\Service\Extractor;
 use App\Entity\HesabdariDoc;
@@ -16,6 +17,8 @@ use App\Entity\Person;
 use App\Entity\PrintOptions;
 use App\Entity\StoreroomTicket;
 use App\Service\Printers;
+use App\Service\registryMGR;
+use App\Service\SMS;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -67,7 +70,7 @@ class SellController extends AbstractController
     }
 
     #[Route('/api/sell/mod', name: 'app_sell_mod')]
-    public function app_sell_mod(Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_sell_mod(registryMGR $registryMGR,PluginService $pluginService,SMS $SMS,Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -87,7 +90,8 @@ class SellController extends AbstractController
                 'year' => $acc['year'],
                 'code' => $params['update']
             ]);
-            if (!$doc) return $this->json($extractor->notFound());
+            if (!$doc)
+                return $this->json($extractor->notFound());
 
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
                 'doc' => $doc
@@ -104,7 +108,7 @@ class SellController extends AbstractController
             $doc->setMoney($acc['bid']->getMoney());
             $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
         }
-        if($params['transferCost'] != 0){
+        if ($params['transferCost'] != 0) {
             $hesabdariRow = new HesabdariRow();
             $hesabdariRow->setDes('حمل و نقل کالا');
             $hesabdariRow->setBid($acc['bid']);
@@ -118,7 +122,7 @@ class SellController extends AbstractController
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
         }
-        if($params['discountAll'] != 0){
+        if ($params['discountAll'] != 0) {
             $hesabdariRow = new HesabdariRow();
             $hesabdariRow->setDes('تخفیف فاکتور');
             $hesabdariRow->setBid($acc['bid']);
@@ -162,6 +166,12 @@ class SellController extends AbstractController
             $hesabdariRow->setCommodity($commodity);
             $hesabdariRow->setCommdityCount($row['count']);
             $entityManager->persist($hesabdariRow);
+
+            //update commodity price for auto update price option
+            if ($acc['bid']->isCommodityUpdateSellPriceAuto() == true && $commodity->getPriceSell() != $row['price']) {
+                $commodity->setPriceSell($row['price']);
+                $entityManager->persist($commodity);
+            }
         }
         //set amount of document
         $doc->setAmount($sumTax + $sumTotal - $params['discountAll'] + $params['transferCost']);
@@ -197,6 +207,36 @@ class SellController extends AbstractController
             $request->headers->get('activeBid'),
             $doc
         );
+        //send sms to customer
+        if (array_key_exists('sms', $params)) {
+            if ($params['sms'] == true) {
+                if ($pluginService->isActive('accpro', $acc['bid']) && $person->getMobile() != '' && $acc['bid']->getTel()) {
+                    return $this->json([
+                        'result' =>
+                            $SMS->sendByBalance(
+                                [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortLink() , $acc['bid']->getName(), $acc['bid']->getTel()],
+                                $registryMGR->get('sms', 'plugAccproSharefaktor'),
+                                $person->getMobile(),
+                                $acc['bid'],
+                                $this->getUser(),
+                                3
+                            )
+                    ]);
+                } else {
+                    return $this->json([
+                        'result' =>
+                            $SMS->sendByBalance(
+                                [$acc['bid']->getName(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortLink()],
+                                $registryMGR->get('sms', 'sharefaktor'),
+                                $person->getMobile(),
+                                $acc['bid'],
+                                $this->getUser(),
+                                3
+                            )
+                    ]);
+                }
+            }
+        }
         return $this->json($extractor->operationSuccess());
     }
 
@@ -216,7 +256,8 @@ class SellController extends AbstractController
                 'code' => $params['label']['code'],
                 'type' => 'sell'
             ]);
-            if (!$label) return $this->json($extractor->notFound());
+            if (!$label)
+                return $this->json($extractor->notFound());
         }
         foreach ($params['items'] as $item) {
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
@@ -224,7 +265,8 @@ class SellController extends AbstractController
                 'year' => $acc['year'],
                 'code' => $item['code']
             ]);
-            if (!$doc) return $this->json($extractor->notFound());
+            if (!$doc)
+                return $this->json($extractor->notFound());
             if ($params['label'] != 'clear') {
                 $doc->setInvoiceLabel($label);
                 $entityManager->persist($doc);
@@ -309,8 +351,10 @@ class SellController extends AbstractController
                     $temp['transferCost'] = $item->getBs();
                 }
             }
-            if(!array_key_exists('discountAll',$temp)) $temp['discountAll'] = 0;
-            if(!array_key_exists('transferCost',$temp)) $temp['transferCost'] = 0;
+            if (!array_key_exists('discountAll', $temp))
+                $temp['discountAll'] = 0;
+            if (!array_key_exists('transferCost', $temp))
+                $temp['transferCost'] = 0;
             $dataTemp[] = $temp;
         }
         return $this->json($dataTemp);
@@ -325,25 +369,27 @@ class SellController extends AbstractController
         }
 
         $acc = $access->hasRole('sell');
-        if (!$acc) throw $this->createAccessDeniedException();
+        if (!$acc)
+            throw $this->createAccessDeniedException();
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code']
         ]);
-        if (!$doc) throw $this->createNotFoundException();
+        if (!$doc)
+            throw $this->createNotFoundException();
         $pdfPid = 0;
         if ($params['pdf']) {
             $pdfPid = $provider->createPrint(
-            $acc['bid'],
-            $this->getUser(),
-            $this->renderView('pdf/posPrinters/sell.html.twig', [
-                'bid' => $acc['bid'],
-                'doc'=>$doc,
-                'rows'=>$doc->getHesabdariRows(),
-                'printInvoice'=>$params['posPrint'],
-                'printcashdeskRecp'=>$params['posPrintRecp'],
-            ]),
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/posPrinters/sell.html.twig', [
+                    'bid' => $acc['bid'],
+                    'doc' => $doc,
+                    'rows' => $doc->getHesabdariRows(),
+                    'printInvoice' => $params['posPrint'],
+                    'printcashdeskRecp' => $params['posPrintRecp'],
+                ]),
                 true
             );
         }
@@ -388,13 +434,15 @@ class SellController extends AbstractController
         }
 
         $acc = $access->hasRole('sell');
-        if (!$acc) throw $this->createAccessDeniedException();
+        if (!$acc)
+            throw $this->createAccessDeniedException();
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code']
         ]);
-        if (!$doc) throw $this->createNotFoundException();
+        if (!$doc)
+            throw $this->createNotFoundException();
         $person = null;
         $discount = 0;
         $transfer = 0;
@@ -411,35 +459,37 @@ class SellController extends AbstractController
         if ($params['pdf']) {
             $printOptions = [
                 'bidInfo' => true,
-                'pays'     =>true,
-                'taxInfo'   =>true,
-                'discountInfo'  =>true,
-                'note'  =>true,
-                'paper' =>'A4-L'
+                'pays' => true,
+                'taxInfo' => true,
+                'discountInfo' => true,
+                'note' => true,
+                'paper' => 'A4-L'
             ];
-            if(array_key_exists('printOptions',$params)){
-                if(array_key_exists('bidInfo',$params['printOptions'])){
+            if (array_key_exists('printOptions', $params)) {
+                if (array_key_exists('bidInfo', $params['printOptions'])) {
                     $printOptions['bidInfo'] = $params['printOptions']['bidInfo'];
                 }
-                if(array_key_exists('pays',$params['printOptions'])){
+                if (array_key_exists('pays', $params['printOptions'])) {
                     $printOptions['pays'] = $params['printOptions']['pays'];
                 }
-                if(array_key_exists('taxInfo',$params['printOptions'])){
+                if (array_key_exists('taxInfo', $params['printOptions'])) {
                     $printOptions['taxInfo'] = $params['printOptions']['taxInfo'];
                 }
-                if(array_key_exists('discountInfo',$params['printOptions'])){
+                if (array_key_exists('discountInfo', $params['printOptions'])) {
                     $printOptions['discountInfo'] = $params['printOptions']['discountInfo'];
                 }
-                if(array_key_exists('note',$params['printOptions'])){
+                if (array_key_exists('note', $params['printOptions'])) {
                     $printOptions['note'] = $params['printOptions']['note'];
                 }
-                if(array_key_exists('paper',$params['printOptions'])){
+                if (array_key_exists('paper', $params['printOptions'])) {
                     $printOptions['paper'] = $params['printOptions']['paper'];
                 }
             }
             $note = '';
-            $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
-            if($printSettings){$note = $printSettings->getSellNoteString();}
+            $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
+            if ($printSettings) {
+                $note = $printSettings->getSellNoteString();
+            }
             $pdfPid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
@@ -451,8 +501,8 @@ class SellController extends AbstractController
                     'printInvoice' => $params['printers'],
                     'discount' => $discount,
                     'transfer' => $transfer,
-                    'printOptions'=> $printOptions,
-                    'note'=> $note
+                    'printOptions' => $printOptions,
+                    'note' => $note
                 ]),
                 false,
                 $printOptions['paper']

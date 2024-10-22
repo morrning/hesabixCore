@@ -177,6 +177,12 @@ class BuyController extends AbstractController
             $hesabdariRow->setCommodity($commodity);
             $hesabdariRow->setCommdityCount($row['count']);
             $entityManager->persist($hesabdariRow);
+            
+            //update commodity price for auto update price option
+            if($acc['bid']->isCommodityUpdateBuyPriceAuto() == true && $commodity->getPriceBuy() != $row['price']){
+                $commodity->setPriceBuy($row['price']);
+                $entityManager->persist($commodity);
+            }
         }
         //set amount of document
         $doc->setAmount($sumTax + $sumTotal - $params['discountAll'] + $params['transferCost']);
