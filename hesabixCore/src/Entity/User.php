@@ -113,6 +113,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: Note::class, orphanRemoval: true)]
     private Collection $notes;
 
+    /**
+     * @var Collection<int, PreInvoiceDoc>
+     */
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: PreInvoiceDoc::class, orphanRemoval: true)]
+    private Collection $preInvoiceDocs;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -137,6 +143,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->mostDes = new ArrayCollection();
         $this->plugRepserviceOrders = new ArrayCollection();
         $this->notes = new ArrayCollection();
+        $this->preInvoiceDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -935,6 +942,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($note->getSubmitter() === $this) {
                 $note->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceDoc>
+     */
+    public function getPreInvoiceDocs(): Collection
+    {
+        return $this->preInvoiceDocs;
+    }
+
+    public function addPreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if (!$this->preInvoiceDocs->contains($preInvoiceDoc)) {
+            $this->preInvoiceDocs->add($preInvoiceDoc);
+            $preInvoiceDoc->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if ($this->preInvoiceDocs->removeElement($preInvoiceDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($preInvoiceDoc->getSubmitter() === $this) {
+                $preInvoiceDoc->setSubmitter(null);
             }
         }
 
