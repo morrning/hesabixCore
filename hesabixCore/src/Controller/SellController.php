@@ -70,7 +70,7 @@ class SellController extends AbstractController
     }
 
     #[Route('/api/sell/mod', name: 'app_sell_mod')]
-    public function app_sell_mod(registryMGR $registryMGR,PluginService $pluginService,SMS $SMS,Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_sell_mod(registryMGR $registryMGR, PluginService $pluginService, SMS $SMS, Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -214,7 +214,7 @@ class SellController extends AbstractController
                     return $this->json([
                         'result' =>
                             $SMS->sendByBalance(
-                                [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortLink() , $acc['bid']->getName(), $acc['bid']->getTel()],
+                                [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortLink(), $acc['bid']->getName(), $acc['bid']->getTel()],
                                 $registryMGR->get('sms', 'plugAccproSharefaktor'),
                                 $person->getMobile(),
                                 $acc['bid'],
@@ -343,13 +343,33 @@ class SellController extends AbstractController
                 $pays += $relatedDoc->getAmount();
             }
             $temp['relatedDocsPays'] = $pays;
-
+            // this variable is for store profit of invoice
+            $temp['profit'] = 0;
             foreach ($item->getHesabdariRows() as $item) {
                 if ($item->getRef()->getCode() == '104') {
                     $temp['discountAll'] = $item->getBd();
                 } elseif ($item->getRef()->getCode() == '61') {
                     $temp['transferCost'] = $item->getBs();
                 }
+
+                //calculate profit
+                if ($item->getCommodity()) {
+                    if ($acc['bid']->getProfitCalctype() == 'lis') {
+                        $last = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
+                            'commodity' => $item->getCommodity(),
+                            'bs' => 0
+                        ], [
+                            'id' => 'DESC'
+                        ]);
+                        if ($last) {
+                            $price = $last->getBd() / $last->getCommdityCount();
+                            $temp['profit'] = $temp['profit'] + (($item->getBs() / $last->getCommdityCount()) - $price);
+                        }
+                    } else {
+
+                    }
+                }
+
             }
             if (!array_key_exists('discountAll', $temp))
                 $temp['discountAll'] = 0;

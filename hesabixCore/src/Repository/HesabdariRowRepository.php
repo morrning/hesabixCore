@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Commodity;
 use App\Entity\HesabdariRow;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\NonUniqueResultException;
@@ -40,20 +41,6 @@ class HesabdariRowRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
-//     * @return HesabdariRow[] Returns an array of HesabdariRow objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('h')
-//            ->andWhere('h.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('h.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
 
     /**
      * @throws NonUniqueResultException

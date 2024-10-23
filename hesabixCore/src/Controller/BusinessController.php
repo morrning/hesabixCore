@@ -130,6 +130,11 @@ class BusinessController extends AbstractController
         $response['walletMatchBank'] = null;
         $response['updateSellPrice'] = $bus->isCommodityUpdateSellPriceAuto();
         $response['updateBuyPrice'] = $bus->isCommodityUpdateBuyPriceAuto();
+        if (!$bus->getProfitCalctype()) {
+            $response['profitCalcType'] = 'lis';
+        } else {
+            $response['profitCalcType'] = $bus->getProfitCalctype();
+        }
         if ($bus->isWalletEnable())
             $response['walletMatchBank'] = $provider->Entity2Array($bus->getWalletMatchBank(), 0);
         $year = $entityManager->getRepository(Year::class)->findOneBy([
@@ -234,6 +239,14 @@ class BusinessController extends AbstractController
                 } else {
                     $business->setCommodityUpdateSellPriceAuto(false);
                 }
+            }
+            if (array_key_exists('profitCalcType', $params)) {
+                if ($params['profitCalcType'] == 'lis' || $params['profitCalcType'] == 'avgis') {
+                    $business->setProfitCalcType($params['profitCalcType']);
+                }
+            }
+            else{
+                $business->setProfitCalcType('lis');
             }
             $business->setCommodityUpdateSellPriceAuto($params['commodityUpdateSellPriceAuto']);
             if (array_key_exists('walletEnabled', $params)) {

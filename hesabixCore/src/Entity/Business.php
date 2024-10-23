@@ -243,6 +243,9 @@ class Business
     #[ORM\Column(nullable: true)]
     private ?bool $CommodityUpdateBuyPriceAuto = null;
 
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $profitCalcType = null;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -1732,6 +1735,18 @@ class Business
     public function setCommodityUpdateBuyPriceAuto(?bool $CommodityUpdateBuyPriceAuto): static
     {
         $this->CommodityUpdateBuyPriceAuto = $CommodityUpdateBuyPriceAuto;
+
+        return $this;
+    }
+
+    public function getProfitCalcType(): ?string
+    {
+        return $this->profitCalcType;
+    }
+
+    public function setProfitCalcType(?string $profitCalcType): static
+    {
+        $this->profitCalcType = $profitCalcType;
 
         return $this;
     }
