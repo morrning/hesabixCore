@@ -363,11 +363,29 @@ class SellController extends AbstractController
                         ]);
                         if ($last) {
                             $price = $last->getBd() / $last->getCommdityCount();
-                            $temp['profit'] = $temp['profit'] + (($item->getBs() / $last->getCommdityCount()) - $price);
+                            $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                        } else {
+                            $temp['profit'] = $temp['profit'] + $item->getBs();
                         }
                     } else {
-
+                        $lasts = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                            'commodity' => $item->getCommodity(),
+                            'bs' => 0
+                        ], [
+                            'id' => 'DESC'
+                        ]);
+                        $avg = 0;
+                        $count = 0;
+                        foreach ($lasts as $last) {
+                            $avg = $avg + $last->getBd();
+                            $count = $count + $last->getCommdityCount();
+                        }
+                        $price = $avg / $count;
+                        $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
                     }
+
+                    //round output
+                    $temp['profit'] = round($temp['profit']);
                 }
 
             }
