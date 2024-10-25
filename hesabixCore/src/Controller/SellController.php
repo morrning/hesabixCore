@@ -65,8 +65,47 @@ class SellController extends AbstractController
         ]);
         if (!$doc)
             throw $this->createNotFoundException();
+        $result = Explore::ExploreSellDoc($doc);
+        $profit = 0;
+        //calculate profit
+        foreach ($doc->getHesabdariRows() as $item) {
+            if ($item->getCommodity()) {
+                if ($acc['bid']->getProfitCalctype() == 'lis') {
+                    $last = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
+                        'commodity' => $item->getCommodity(),
+                        'bs' => 0
+                    ], [
+                        'id' => 'DESC'
+                    ]);
+                    if ($last) {
+                        $price = $last->getBd() / $last->getCommdityCount();
+                        $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                    } else {
+                        $profit = $profit + $item->getBs();
+                    }
+                } else {
+                    $lasts = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                        'commodity' => $item->getCommodity(),
+                        'bs' => 0
+                    ], [
+                        'id' => 'DESC'
+                    ]);
+                    $avg = 0;
+                    $count = 0;
+                    foreach ($lasts as $last) {
+                        $avg = $avg + $last->getBd();
+                        $count = $count + $last->getCommdityCount();
+                    }
+                    $price = $avg / $count;
+                    $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                }
 
-        return $this->json(Explore::ExploreSellDoc($doc));
+                //round output
+                $profit = round($profit);
+            }
+        }
+        $result['profit'] = $profit;
+        return $this->json($result);
     }
 
     #[Route('/api/sell/mod', name: 'app_sell_mod')]
