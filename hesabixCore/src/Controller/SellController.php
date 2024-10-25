@@ -96,8 +96,14 @@ class SellController extends AbstractController
                         $avg = $avg + $last->getBd();
                         $count = $count + $last->getCommdityCount();
                     }
-                    $price = $avg / $count;
-                    $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                    if ($count != 0) {
+                        $price = $avg / $count;
+                        $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                    }
+                    else{
+                        $profit = $profit + $item->getBs();
+                    }
+
                 }
 
                 //round output
@@ -419,8 +425,13 @@ class SellController extends AbstractController
                             $avg = $avg + $last->getBd();
                             $count = $count + $last->getCommdityCount();
                         }
-                        $price = $avg / $count;
-                        $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                        if ($count != 0) {
+                            $price = $avg / $count;
+                            $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                        }
+                        else{
+                            $temp['profit'] = $temp['profit'] + $item->getBs();
+                        }
                     }
 
                     //round output
