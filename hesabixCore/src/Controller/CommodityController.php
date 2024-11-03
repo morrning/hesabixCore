@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\PriceListDetail;
 use App\Service\Explore;
+use App\Service\Extractor;
 use App\Service\Log;
 use App\Service\Jdate;
 use App\Service\Access;
@@ -28,6 +29,58 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class CommodityController extends AbstractController
 {
+    #[Route('/api/commodity/search/extra', name: 'app_commodity_search_extra')]
+    public function app_commodity_search_extra(Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        $take = 10;
+        if (array_key_exists('Take', $params['queryInfo']))
+            $take = $params['queryInfo']['Take'];
+
+        $items = $entityManager->getRepository(Commodity::class)->search([
+            'bid' => $acc['bid'],
+            'Take' => $take,
+            'Filters' => $params['queryInfo']['Filters']
+        ]);
+        $res = [];
+        foreach ($items as $item) {
+            $res[] = Explore::ExploreCommodity($item);
+        }
+        return $this->json($extractor->operationSuccess([
+            'List' => $res,
+            'FilteredCount' => count($res)
+        ]));
+    }
+    #[Route('/api/commodity/search/bycodes', name: 'app_commodity_search')]
+    public function app_commodity_search(Provider $provider, Explore $explore, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        $items = $entityManager->getRepository(Commodity::class)->findBy([
+            'bid' => $request->headers->get('activeBid'),
+            'code' => $params['values']
+        ]);
+        $res = [];
+        foreach ($items as $item) {
+            $res[] = Explore::ExploreCommodity($item);
+        }
+        return $this->json([
+            'Success' => true,
+            'result' => $res
+        ]);
+    }
+
     #[Route('/api/commodity/list', name: 'app_commodity_list')]
     public function app_commodity_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -163,10 +216,9 @@ class CommodityController extends AbstractController
             $pricesAll = $entityManager->getRepository(PriceList::class)->findBy([
                 'bid' => $acc['bid']
             ]);
-            if(count($pricesAll) == 0){
+            if (count($pricesAll) == 0) {
                 $temp['prices'] = [];
-            }
-            else{
+            } else {
                 foreach ($pricesAll as $list) {
                     $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
                         'list' => $list,
@@ -187,7 +239,7 @@ class CommodityController extends AbstractController
                     }
                 }
             }
-            
+
             $res[] = $temp;
         }
         return $this->json($res);
@@ -196,7 +248,7 @@ class CommodityController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/commodity/list/excel', name: 'app_commodity_list_excel')]
-    public function app_commodity_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    public function app_commodity_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse|JsonResponse|StreamedResponse
     {
         $acc = $access->hasRole('commodity');
         if (!$acc)
@@ -302,13 +354,12 @@ class CommodityController extends AbstractController
         } else {
             foreach ($pricesAll as $item) {
                 $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
-                    'list'=> $item,
+                    'list' => $item,
                     'commodity' => $data
                 ]);
-                if($priceDetails){
+                if ($priceDetails) {
                     $res['prices'][] = Explore::ExploreCommodityPriceListDetail($priceDetails);
-                }
-                else{
+                } else {
                     $spd = new PriceListDetail;
                     $spd->setList($item);
                     $spd->setMoney($acc['bid']->getMoney());
@@ -319,11 +370,146 @@ class CommodityController extends AbstractController
                 }
             }
         }
-        
-        
+
+
         return $this->json($res);
     }
 
+    #[Route('/api/commodity/group/mod', name: 'app_commodity_group_mod')]
+    public function app_commodity_group_mod(Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $paramsAll = [];
+        if ($content = $request->getContent()) {
+            $paramsAll = json_decode($content, true);
+        }
+        if (!array_key_exists('items', $paramsAll))
+            return $this->json($extractor->paramsNotSend());
+        foreach ($paramsAll['items'] as $params) {
+            if (!array_key_exists('name', $params))
+                return $this->json(['result' => -1]);
+            if (count_chars(trim($params['name'])) == 0)
+                return $this->json(['result' => 3]);
+            if ($code == 0) {
+                $data = $entityManager->getRepository(Commodity::class)->findOneBy([
+                    'name' => $params['name'],
+                    'bid' => $acc['bid']
+                ]);
+                //check exist before
+                if (!$data) {
+                    $data = new Commodity();
+                    $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'Commodity'));
+                }
+            } else {
+                $data = $entityManager->getRepository(Commodity::class)->findOneBy([
+                    'bid' => $acc['bid'],
+                    'code' => $code
+                ]);
+                if (!$data)
+                    throw $this->createNotFoundException();
+            }
+            if (!array_key_exists('unit', $params))
+                $unit = $entityManager->getRepository(CommodityUnit::class)->findAll()[0];
+            else
+                $unit = $entityManager->getRepository(CommodityUnit::class)->findOneBy(['name' => $params['unit']]);
+            if (!$unit)
+                throw $this->createNotFoundException('unit not fount!');
+            $data->setUnit($unit);
+            $data->setBid($acc['bid']);
+            $data->setname($params['name']);
+            if ($params['khadamat'] == 'true')
+                $data->setKhadamat(true);
+            else
+                $data->setKhadamat(false);
+
+            if (!array_key_exists('withoutTax', $params))
+                $data->setWithoutTax(false);
+            else {
+                if ($params['withoutTax'] == 'true')
+                    $data->setWithoutTax(true);
+                else
+                    $data->setWithoutTax(false);
+            }
+
+            if (array_key_exists('des', $params))
+                $data->setDes($params['des']);
+
+            if (array_key_exists('priceSell', $params))
+                $data->setPriceSell($params['priceSell']);
+
+            if (array_key_exists('priceBuy', $params))
+                $data->setPriceBuy($params['priceBuy']);
+
+            if (array_key_exists('commodityCountCheck', $params)) {
+                $data->setCommodityCountCheck($params['commodityCountCheck']);
+            }
+            if (array_key_exists('barcodes', $params)) {
+                $data->setBarcodes($params['barcodes']);
+            }
+
+            if (array_key_exists('minOrderCount', $params)) {
+                $data->setMinOrderCount($params['minOrderCount']);
+            }
+            if (array_key_exists('speedAccess', $params)) {
+                $data->setSpeedAccess($params['speedAccess']);
+            }
+            if (array_key_exists('dayLoading', $params)) {
+                $data->setDayLoading($params['dayLoading']);
+            }
+            if (array_key_exists('orderPoint', $params)) {
+                $data->setOrderPoint($params['orderPoint']);
+            }
+            //set cat
+            if (array_key_exists('cat', $params)) {
+                if ($params['cat'] != '') {
+                    if (is_int($params['cat']))
+                        $cat = $entityManager->getRepository(CommodityCat::class)->find($params['cat']);
+                    else
+                        $cat = $entityManager->getRepository(CommodityCat::class)->find($params['cat']['id']);
+                    if ($cat) {
+                        if ($cat->getBid() == $acc['bid']) {
+                            $data->setCat($cat);
+                        }
+                    }
+                }
+            }
+            $entityManager->persist($data);
+
+            //save prices list
+            if (array_key_exists('prices', $params)) {
+                foreach ($params['prices'] as $item) {
+                    $priceList = $entityManager->getRepository(PriceList::class)->findOneBy([
+                        'bid' => $acc['bid'],
+                        'id' => $item['list']['id']
+                    ]);
+                    if ($priceList) {
+                        $detail = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
+                            'list' => $priceList,
+                            'commodity' => $data
+                        ]);
+                        if (!$detail) {
+                            $detail = new PriceListDetail;
+                        }
+                        $detail->setList($priceList);
+                        $detail->setCommodity($data);
+                        $detail->setPriceSell($item['priceSell']);
+                        $detail->setPriceBuy(0);
+                        $detail->setMoney($acc['bid']->getMoney());
+                        $entityManager->persist($detail);
+                    }
+                }
+            }
+            $entityManager->flush();
+            $log->insert('کالا و خدمات', 'کالا / خدمات با نام  ' . $params['name'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
+        }
+        return $this->json([
+            'Success' => true,
+            'result' => 1,
+        ]);
+
+    }
     #[Route('/api/commodity/mod/{code}', name: 'app_commodity_mod')]
     public function app_commodity_mod(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
@@ -341,13 +527,13 @@ class CommodityController extends AbstractController
         if ($code == 0) {
             $data = $entityManager->getRepository(Commodity::class)->findOneBy([
                 'name' => $params['name'],
-                'bid'=> $acc['bid']
+                'bid' => $acc['bid']
             ]);
             //check exist before
-            if ($data)
-                return $this->json(['result' => 2]);
-            $data = new Commodity();
-            $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'Commodity'));
+            if (!$data) {
+                $data = new Commodity();
+                $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'Commodity'));
+            }
         } else {
             $data = $entityManager->getRepository(Commodity::class)->findOneBy([
                 'bid' => $acc['bid'],
@@ -356,29 +542,57 @@ class CommodityController extends AbstractController
             if (!$data)
                 throw $this->createNotFoundException();
         }
-        $unit = $entityManager->getRepository(CommodityUnit::class)->findOneBy(['name' => $params['unit']]);
+        if (!array_key_exists('unit', $params))
+            $unit = $entityManager->getRepository(CommodityUnit::class)->findAll()[0];
+        else
+            $unit = $entityManager->getRepository(CommodityUnit::class)->findOneBy(['name' => $params['unit']]);
         if (!$unit)
             throw $this->createNotFoundException('unit not fount!');
         $data->setUnit($unit);
         $data->setBid($acc['bid']);
         $data->setname($params['name']);
-        if ($params['khadamat'] == 'true') $data->setKhadamat(true);
-        else $data->setKhadamat(false);
-        if ($params['withoutTax'] == 'true') $data->setWithoutTax(true);
-        else $data->setWithoutTax(false);
-        $data->setDes($params['des']);
-        $data->setPriceSell($params['priceSell']);
-        $data->setPriceBuy($params['priceBuy']);
+        if ($params['khadamat'] == 'true')
+            $data->setKhadamat(true);
+        else
+            $data->setKhadamat(false);
+
+        if (!array_key_exists('withoutTax', $params))
+            $data->setWithoutTax(false);
+        else {
+            if ($params['withoutTax'] == 'true')
+                $data->setWithoutTax(true);
+            else
+                $data->setWithoutTax(false);
+        }
+
+        if (array_key_exists('des', $params))
+            $data->setDes($params['des']);
+
+        if (array_key_exists('priceSell', $params))
+            $data->setPriceSell($params['priceSell']);
+
+        if (array_key_exists('priceBuy', $params))
+            $data->setPriceBuy($params['priceBuy']);
+
         if (array_key_exists('commodityCountCheck', $params)) {
             $data->setCommodityCountCheck($params['commodityCountCheck']);
         }
         if (array_key_exists('barcodes', $params)) {
             $data->setBarcodes($params['barcodes']);
         }
-        $data->setMinOrderCount($params['minOrderCount']);
-        $data->setSpeedAccess($params['speedAccess']);
-        $data->setDayLoading($params['dayLoading']);
-        $data->setOrderPoint($params['orderPoint']);
+
+        if (array_key_exists('minOrderCount', $params)) {
+            $data->setMinOrderCount($params['minOrderCount']);
+        }
+        if (array_key_exists('speedAccess', $params)) {
+            $data->setSpeedAccess($params['speedAccess']);
+        }
+        if (array_key_exists('dayLoading', $params)) {
+            $data->setDayLoading($params['dayLoading']);
+        }
+        if (array_key_exists('orderPoint', $params)) {
+            $data->setOrderPoint($params['orderPoint']);
+        }
         //set cat
         if (array_key_exists('cat', $params)) {
             if ($params['cat'] != '') {
@@ -421,7 +635,11 @@ class CommodityController extends AbstractController
         }
         $entityManager->flush();
         $log->insert('کالا و خدمات', 'کالا / خدمات با نام  ' . $params['name'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
-        return $this->json(['result' => 1]);
+        return $this->json([
+            'Success' => true,
+            'result' => 1,
+            'code' => $data->getId()
+        ]);
     }
 
     #[Route('/api/commodity/units', name: 'app_commodity_units')]
@@ -615,7 +833,7 @@ class CommodityController extends AbstractController
     }
     private function getChildsLabel(EntityManagerInterface $entityManager, mixed $node)
     {
-        $childs =  $entityManager->getRepository(CommodityCat::class)->findBy([
+        $childs = $entityManager->getRepository(CommodityCat::class)->findBy([
             'upper' => $node
         ]);
         $temp = [];
@@ -627,16 +845,18 @@ class CommodityController extends AbstractController
 
     private function hasChild(EntityManagerInterface $entityManager, mixed $node)
     {
-        if (count($entityManager->getRepository(CommodityCat::class)->findBy([
-            'upper' => $node
-        ])) != 0)
+        if (
+            count($entityManager->getRepository(CommodityCat::class)->findBy([
+                'upper' => $node
+            ])) != 0
+        )
             return true;
         return false;
     }
 
     private function getChilds(EntityManagerInterface $entityManager, mixed $node)
     {
-        $childs =  $entityManager->getRepository(CommodityCat::class)->findBy([
+        $childs = $entityManager->getRepository(CommodityCat::class)->findBy([
             'upper' => $node
         ]);
         $temp = [];
@@ -795,7 +1015,7 @@ class CommodityController extends AbstractController
     }
 
     #[Route('/api/commodity/pricelist/view/{id}', name: 'app_commodity_pricelist_view')]
-    public function app_commodity_pricelist_view($id,Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_pricelist_view($id, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
         if (!$acc)
@@ -808,12 +1028,12 @@ class CommodityController extends AbstractController
             'list' => $price
         ]);
         $res = [];
-        foreach($items as $item){
+        foreach ($items as $item) {
             $temp = [];
             $temp['id'] = $item->getId();
             $temp['commodity'] = Explore::ExploreCommodity($item->getCommodity());
             $temp['priceSell'] = $item->getPriceSell();
-            $res[] = $temp; 
+            $res[] = $temp;
         }
         return $this->json($res);
     }

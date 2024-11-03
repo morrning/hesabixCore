@@ -6,6 +6,8 @@ use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariRow;
 use App\Entity\Person;
+use App\Service\Explore;
+use App\Service\Extractor;
 use App\Service\Printers;
 use App\Service\Provider;
 use App\Entity\Storeroom;
@@ -28,7 +30,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class StoreroomController extends AbstractController
 {
     #[Route('/api/storeroom/list/{type}', name: 'app_storeroom_list')]
-    public function app_storeroom_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $type = 'active'): JsonResponse
+    public function app_storeroom_list(Extractor $extractor,Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $type = 'active'): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -43,7 +45,7 @@ class StoreroomController extends AbstractController
                 'bid' => $acc['bid'],
             ]);
 
-        return $this->json($provider->ArrayEntity2Array($items, 0));
+        return $this->json($extractor->operationSuccess(Explore::ExploreStoreRooms($items)));
     }
 
     #[Route('/api/storeroom/mod/{code}', name: 'app_storeroom_mod')]

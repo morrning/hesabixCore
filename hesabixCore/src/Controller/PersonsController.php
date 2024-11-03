@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\Extractor;
 use App\Service\Log;
 use App\Entity\Person;
 use App\Service\Access;
@@ -83,6 +84,145 @@ class PersonsController extends AbstractController
         $response['balance'] = $bs - $bd;
         return $this->json($response);
     }
+
+    #[Route('/api/person/group/mod', name: 'app_persons_group_mod')]
+    public function app_persons_group_mod(Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('person');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $paramsAll = [];
+        if ($content = $request->getContent()) {
+            $paramsAll = json_decode($content, true);
+        }
+        if (!array_key_exists('items', $paramsAll))
+            return $this->json($extractor->paramsNotSend());
+        foreach ($paramsAll['items'] as $params) {
+            if (!array_key_exists('nikename', $params))
+                return $this->json(['result' => -1]);
+            if (count_chars(trim($params['nikename'])) == 0)
+                return $this->json(['result' => 3]);
+            if ($code == 0) {
+                $person = $entityManager->getRepository(Person::class)->findOneBy([
+                    'nikename' => $params['nikename'],
+                    'bid' => $acc['bid']
+                ]);
+                //check exist before
+                if (!$person) {
+                    $person = new Person();
+                    $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
+                }
+
+            } else {
+                $person = $entityManager->getRepository(Person::class)->findOneBy([
+                    'bid' => $acc['bid'],
+                    'code' => $code
+                ]);
+                if (!$person)
+                    throw $this->createNotFoundException();
+            }
+            $person->setBid($acc['bid']);
+            $person->setNikename($params['nikename']);
+            if (array_key_exists('name', $params))
+                $person->setName($params['name']);
+            if (array_key_exists('birthday', $params))
+                $person->setBirthday($params['birthday']);
+            if (array_key_exists('tel', $params))
+                $person->setTel($params['tel']);
+            if (array_key_exists('speedAccess', $params))
+                $person->setSpeedAccess($params['speedAccess']);
+            if (array_key_exists('address', $params))
+                $person->setAddress($params['address']);
+            if (array_key_exists('des', $params))
+                $person->setDes($params['des']);
+            if (array_key_exists('mobile', $params))
+                $person->setMobile($params['mobile']);
+            if (array_key_exists('mobile2', $params))
+                $person->setMobile2($params['mobile2']);
+            if (array_key_exists('fax', $params))
+                $person->setFax($params['fax']);
+            if (array_key_exists('website', $params))
+                $person->setWebsite($params['website']);
+            if (array_key_exists('email', $params))
+                $person->setEmail($params['email']);
+            if (array_key_exists('postalcode', $params))
+                $person->setPostalcode($params['postalcode']);
+            if (array_key_exists('shahr', $params))
+                $person->setShahr($params['shahr']);
+            if (array_key_exists('ostan', $params))
+                $person->setOstan($params['ostan']);
+            if (array_key_exists('keshvar', $params))
+                $person->setKeshvar($params['keshvar']);
+            if (array_key_exists('sabt', $params))
+                $person->setSabt($params['sabt']);
+            if (array_key_exists('codeeghtesadi', $params))
+                $person->setCodeeghtesadi($params['codeeghtesadi']);
+            if (array_key_exists('shenasemeli', $params))
+                $person->setShenasemeli($params['shenasemeli']);
+            if (array_key_exists('company', $params))
+                $person->setCompany($params['company']);
+
+            //inset cards
+            if (array_key_exists('accounts', $params)) {
+                foreach ($params['accounts'] as $item) {
+                    $card = $entityManager->getRepository(PersonCard::class)->findOneBy([
+                        'bid' => $acc['bid'],
+                        'person' => $person,
+                        'bank' => $item['bank']
+                    ]);
+                    if (!$card)
+                        $card = new PersonCard();
+
+                    $card->setPerson($person);
+                    $card->setBid($acc['bid']);
+                    $card->setShabaNum($item['shabaNum']);
+                    $card->setCardNum($item['cardNum']);
+                    $card->setAccountNum($item['accountNum']);
+                    $card->setBank($item['bank']);
+                    $entityManager->persist($card);
+                }
+            }
+            //remove not sended accounts
+            $accounts = $entityManager->getRepository(PersonCard::class)->findBy([
+                'bid' => $acc['bid'],
+                'person' => $person,
+            ]);
+            foreach ($accounts as $item) {
+                $deleted = true;
+                foreach ($params['accounts'] as $param) {
+                    if ($item->getBank() == $param['bank']) {
+                        $deleted = false;
+                    }
+                }
+                if ($deleted) {
+                    $entityManager->remove($item);
+                }
+            }
+            $entityManager->persist($person);
+
+            //insert new types
+            $types = $entityManager->getRepository(PersonType::class)->findAll();
+            foreach ($params['types'] as $item) {
+                if ($item['checked'] == true)
+                    $person->addType($entityManager->getRepository(PersonType::class)->findOneBy([
+                        'code' => $item['code']
+                    ]));
+                elseif ($item['checked'] == false) {
+                    $person->removeType($entityManager->getRepository(PersonType::class)->findOneBy([
+                        'code' => $item['code']
+                    ]));
+                }
+            }
+            $entityManager->flush();
+            $log->insert('اشخاص', 'شخص با نام مستعار ' . $params['nikename'] . ' افزوده/ویرایش شد.', $this->getUser(), $acc['bid']);
+        }
+
+        return $this->json([
+            'Success' => true,
+            'result' => 1,
+        ]);
+    }
+
     #[Route('/api/person/mod/{code}', name: 'app_persons_mod')]
     public function app_persons_mod(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
@@ -103,10 +243,11 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid']
             ]);
             //check exist before
-            if ($person)
-                return $this->json(['result' => 2]);
-            $person = new Person();
-            $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
+            if (!$person) {
+                $person = new Person();
+                $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
+            }
+
         } else {
             $person = $entityManager->getRepository(Person::class)->findOneBy([
                 'bid' => $acc['bid'],
@@ -209,7 +350,10 @@ class PersonsController extends AbstractController
         }
         $entityManager->flush();
         $log->insert('اشخاص', 'شخص با نام مستعار ' . $params['nikename'] . ' افزوده/ویرایش شد.', $this->getUser(), $acc['bid']);
-        return $this->json(['result' => 1]);
+        return $this->json([
+            'Success' => true,
+            'result' => 1,
+        ]);
     }
 
     #[Route('/api/person/list/search', name: 'app_persons_list_search')]
@@ -229,9 +373,9 @@ class PersonsController extends AbstractController
         $response = [];
         foreach ($persons as $key => $person) {
             $temp = [
-                'id'    => $person->getId(),
+                'id' => $person->getId(),
                 'nikename' => $person->getNikename(),
-                'code'  => $person->getCode(),
+                'code' => $person->getCode(),
                 'mobile' => $person->getMobile()
             ];
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
@@ -274,9 +418,9 @@ class PersonsController extends AbstractController
         $response = [];
         foreach ($persons as $key => $person) {
             $temp = [
-                'id'    => $person->getId(),
+                'id' => $person->getId(),
                 'nikename' => $person->getNikename(),
-                'code'  => $person->getCode(),
+                'code' => $person->getCode(),
                 'mobile' => $person->getMobile()
             ];
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
@@ -300,7 +444,7 @@ class PersonsController extends AbstractController
     public function app_persons_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): Response
     {
         $acc = $access->hasRole('person');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
@@ -466,6 +610,48 @@ class PersonsController extends AbstractController
         return $this->json($result);
     }
 
+    #[Route('/api/person/list/salesmen', name: 'app_persons_list_salesmen')]
+    public function app_persons_list_salesmen(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): Response
+    {
+        $acc = $access->hasRole('person');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        
+        $personType = $entityManager->getRepository(PersonType::class)->findOneBy([
+            'code' => 'salesman',
+        ]);
+        $persons = $entityManager->getRepository(Person::class)->findBy([
+            'bid' => $acc['bid'],
+        ]);
+        $res = [];
+        foreach ($persons as $key => $person) {
+            foreach($person->getType() as $type){
+                if($type->getCode() == $personType->getCode()){
+                    $res[] = $person;
+                }
+            }
+        }
+        $response = Explore::ExplorePersons($res, $entityManager->getRepository(PersonType::class)->findAll());
+        foreach ($res as $key => $person) {
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'person' => $person
+            ]);
+            $bs = 0;
+            $bd = 0;
+            foreach ($rows as $row) {
+                $bs += $row->getBs();
+                $bd += $row->getBd();
+            }
+            $response[$key]['bs'] = $bs;
+            $response[$key]['bd'] = $bd;
+            $response[$key]['balance'] = $bs - $bd;
+        }
+        return new Response(json_encode([
+            'Success' => true,
+            'result' => $response
+        ]));
+    }
+
     #[Route('/api/person/list/depositors/print/{amount}', name: 'app_persons_depositors_list_print')]
     public function app_persons_depositors_list_print(string $amount, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -550,7 +736,7 @@ class PersonsController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/person/list/excel', name: 'app_persons_list_excel')]
-    public function app_persons_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    public function app_persons_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse|JsonResponse|StreamedResponse
     {
         $acc = $access->hasRole('person');
         if (!$acc)
@@ -581,7 +767,7 @@ class PersonsController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/person/card/list/excel', name: 'app_persons_card_list_excel')]
-    public function app_persons_card_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    public function app_persons_card_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse|JsonResponse|StreamedResponse
     {
         $acc = $access->hasRole('person');
         if (!$acc)
@@ -615,15 +801,17 @@ class PersonsController extends AbstractController
         }
         $spreadsheet = new Spreadsheet();
         $activeWorksheet = $spreadsheet->getActiveSheet();
-        $arrayEntity = [[
-            'شماره تراکنش',
-            'تاریخ',
-            'توضیحات',
-            'تفضیل',
-            'بستانکار',
-            'بدهکار',
-            'سال مالی',
-        ]];
+        $arrayEntity = [
+            [
+                'شماره تراکنش',
+                'تاریخ',
+                'توضیحات',
+                'تفضیل',
+                'بستانکار',
+                'بدهکار',
+                'سال مالی',
+            ]
+        ];
         foreach ($transactions as $transaction) {
             $arrayEntity[] = [
                 $transaction->getId(),
@@ -681,7 +869,7 @@ class PersonsController extends AbstractController
             $acc['bid'],
             $this->getUser(),
             $this->renderView('pdf/person_card.html.twig', [
-                'page_title' => 'کارت حساب'  . ' ' . $person->getNikename(),
+                'page_title' => 'کارت حساب' . ' ' . $person->getNikename(),
                 'bid' => $acc['bid'],
                 'items' => $transactions,
                 'person' => $person
@@ -746,29 +934,29 @@ class PersonsController extends AbstractController
             [
                 'bid' => $acc['bid'],
                 'type' => 'person_receive',
-                'year'=>$acc['year']
+                'year' => $acc['year']
             ],
             ['id' => 'DESC']
         );
         $res = [];
-        foreach($items as $item){
+        foreach ($items as $item) {
             $temp = [
-                'id'=>$item->getId(),
-                'date'=>$item->getDate(),
-                'code'=>$item->getCode(),
-                'des'=>$item->getDes(),
-                'amount'=>$item->getAmount()
+                'id' => $item->getId(),
+                'date' => $item->getDate(),
+                'code' => $item->getCode(),
+                'des' => $item->getDes(),
+                'amount' => $item->getAmount()
             ];
             $persons = [];
-            foreach($item->getHesabdariRows() as $row){
-                if($row->getPerson()){
+            foreach ($item->getHesabdariRows() as $row) {
+                if ($row->getPerson()) {
                     $persons[] = Explore::ExplorePerson($row->getPerson());
                 }
             }
             $temp['persons'] = $persons;
             $res[] = $temp;
         }
-        
+
         return $this->json($res);
     }
 
@@ -776,7 +964,7 @@ class PersonsController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/person/receive/list/excel', name: 'app_persons_receive_list_excel')]
-    public function app_persons_receive_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    public function app_persons_receive_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse|JsonResponse|StreamedResponse
     {
         $acc = $access->hasRole('getpay');
         if (!$acc)
@@ -863,29 +1051,29 @@ class PersonsController extends AbstractController
             [
                 'bid' => $acc['bid'],
                 'type' => 'person_send',
-                'year'=>$acc['year']
+                'year' => $acc['year']
             ],
             ['id' => 'DESC']
         );
         $res = [];
-        foreach($items as $item){
+        foreach ($items as $item) {
             $temp = [
-                'id'=>$item->getId(),
-                'date'=>$item->getDate(),
-                'code'=>$item->getCode(),
-                'des'=>$item->getDes(),
-                'amount'=>$item->getAmount()
+                'id' => $item->getId(),
+                'date' => $item->getDate(),
+                'code' => $item->getCode(),
+                'des' => $item->getDes(),
+                'amount' => $item->getAmount()
             ];
             $persons = [];
-            foreach($item->getHesabdariRows() as $row){
-                if($row->getPerson()){
+            foreach ($item->getHesabdariRows() as $row) {
+                if ($row->getPerson()) {
                     $persons[] = Explore::ExplorePerson($row->getPerson());
                 }
             }
             $temp['persons'] = $persons;
             $res[] = $temp;
         }
-        
+
         return $this->json($res);
     }
 
@@ -893,7 +1081,7 @@ class PersonsController extends AbstractController
      * @throws Exception
      */
     #[Route('/api/person/send/list/excel', name: 'app_persons_send_list_excel')]
-    public function app_persons_send_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse | JsonResponse | StreamedResponse
+    public function app_persons_send_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse|JsonResponse|StreamedResponse
     {
         $acc = $access->hasRole('getpay');
         if (!$acc)

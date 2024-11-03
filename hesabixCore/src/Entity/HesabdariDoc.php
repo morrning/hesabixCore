@@ -101,6 +101,12 @@ class HesabdariDoc
     #[ORM\OneToMany(mappedBy: 'doc', targetEntity: Note::class)]
     private Collection $notes;
 
+    #[ORM\ManyToOne(inversedBy: 'hesabdariDocs')]
+    private ?Project $project = null;
+
+    #[ORM\ManyToOne(inversedBy: 'hesabdariDocs')]
+    private ?Person $salesman = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -502,6 +508,30 @@ class HesabdariDoc
                 $note->setDoc(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getProject(): ?Project
+    {
+        return $this->project;
+    }
+
+    public function setProject(?Project $project): static
+    {
+        $this->project = $project;
+
+        return $this;
+    }
+
+    public function getSalesman(): ?Person
+    {
+        return $this->salesman;
+    }
+
+    public function setSalesman(?Person $salesman): static
+    {
+        $this->salesman = $salesman;
 
         return $this;
     }

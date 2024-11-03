@@ -36,23 +36,23 @@ use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 class HookController extends AbstractController
 {
     #[Route('hooks/setting/SetChangeHook', name: 'api_hook_SetChangeHook')]
-    public function api_hook_SetChangeHook(Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
-    { 
+    public function api_hook_SetChangeHook(Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
         $api = $entityManager->getRepository(APIToken::class)->findOneBy([
             'token' => $request->headers->get('api-key'),
         ]);
-       
+
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
         $hook = $entityManager->getRepository(Hook::class)->findOneBy([
-            'url'=> $params['url'],
-            'password'=> $params['hookPassword'],
+            'url' => $params['url'],
+            'password' => $params['hookPassword'],
             'bid' => $api->getBid(),
-            'submitter'=>$this->getUser()
+            'submitter' => $this->getUser()
         ]);
-        if(!$hook){
+        if (!$hook) {
             $hook = new Hook();
             $hook->setBid($api->getBid());
             $hook->setSubmitter($this->getUser());
@@ -61,10 +61,10 @@ class HookController extends AbstractController
             $entityManager->persist($hook);
             $entityManager->flush();
         }
-        
-        $year = $entityManager->getRepository(Year::class)->findOneBy(['bid'=>$api->getBid(),'head'=>true])->getId();
+
+        $year = $entityManager->getRepository(Year::class)->findOneBy(['bid' => $api->getBid(), 'head' => true])->getId();
         return $this->json([
-            'Success'=>true,
+            'Success' => true,
             'bid' => $api->getBid()->getId(),
             'year' => $year,
             'money' => $api->getBid()->getMoney()->getId()
@@ -72,53 +72,52 @@ class HookController extends AbstractController
     }
 
     #[Route('hooks/setting/getCurrency', name: 'api_hooks_getcurrency')]
-    public function api_hooks_getcurrency(Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
+    public function api_hooks_getcurrency(Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $api = $entityManager->getRepository(APIToken::class)->findOneBy([
             'token' => $request->headers->get('api-key'),
         ]);
-        if(!$api)
+        if (!$api)
             throw $this->createNotFoundException();
 
-            return $this->json([
-                'Success'=>true,
-                'ErrorCode' => 0,
-                'ErrorMessage' => '',
-                'Result' =>[
-                    'moneyId' =>  $api->getBid()->getMoney()->getId(),
-                    'moneyName' => $api->getBid()->getMoney()->getName(),
-                    'moneylabel' => $api->getBid()->getMoney()->getLabel()
-                ]
-            ]);
+        return $this->json([
+            'Success' => true,
+            'ErrorCode' => 0,
+            'ErrorMessage' => '',
+            'Result' => [
+                'moneyId' => $api->getBid()->getMoney()->getId(),
+                'moneyName' => $api->getBid()->getMoney()->getName(),
+                'moneylabel' => $api->getBid()->getMoney()->getLabel()
+            ]
+        ]);
     }
 
     #[Route('hooks/setting/getAccounts', name: 'api_hooks_getAccounts')]
-    public function api_hooks_getAccounts(Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
+    public function api_hooks_getAccounts(Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if(array_key_exists('speedAccess',$params)){
+        if (array_key_exists('speedAccess', $params)) {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid'=>$request->headers->get('activeBid'),
-                'speedAccess'=>true
+                'bid' => $request->headers->get('activeBid'),
+                'speedAccess' => true
             ]);
-        }
-        else{
+        } else {
             $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid'=>$request->headers->get('activeBid')
+                'bid' => $request->headers->get('activeBid')
             ]);
         }
 
-        $response = $provider->ArrayEntity2Array($persons,0);
-        foreach ($persons as $key =>$person){
+        $response = $provider->ArrayEntity2Array($persons, 0);
+        foreach ($persons as $key => $person) {
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person'=>$person
+                'person' => $person
             ]);
             $bs = 0;
             $bd = 0;
-            foreach ($rows as $row){
+            foreach ($rows as $row) {
                 $bs += $row->getBs();
                 $bd += $row->getBd();
             }
@@ -127,48 +126,48 @@ class HookController extends AbstractController
             $response[$key]['balance'] = $bs - $bd;
         }
         return $this->json([
-            'Success'=>true,
+            'Success' => true,
             'ErrorCode' => 0,
             'ErrorMessage' => '',
-            'Result' =>$response
+            'Result' => $response
         ]);
     }
 
     #[Route('hooks/setting/getBanks', name: 'api_hooks_getBanks')]
-    public function api_hooks_getBanks(Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
+    public function api_hooks_getBanks(Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $datas = $entityManager->getRepository(BankAccount::class)->findBy([
-            'bid'=>$request->headers->get('activeBid')
+            'bid' => $request->headers->get('activeBid')
         ]);
-        foreach($datas as $data){
+        foreach ($datas as $data) {
             $bs = 0;
             $bd = 0;
             $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'bank'=>$data
+                'bank' => $data
             ]);
-            foreach ($items as $item){
+            foreach ($items as $item) {
                 $bs += $item->getBs();
                 $bd += $item->getBd();
             }
             $data->setBalance($bd - $bs);
         }
         return $this->json([
-            'Success'=>true,
+            'Success' => true,
             'ErrorCode' => 0,
             'ErrorMessage' => '',
-            'Result' =>$provider->ArrayEntity2Array($datas,0)
+            'Result' => $provider->ArrayEntity2Array($datas, 0)
         ]);
     }
 
 
     #[Route('hooks/item/getitems', name: 'api_hooks_item_getitems')]
-    public function api_hooks_item_getitems(Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
+    public function api_hooks_item_getitems(Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $items = $entityManager->getRepository(Commodity::class)->findBy([
-            'bid'=>$request->headers->get('activeBid')
+            'bid' => $request->headers->get('activeBid')
         ]);
         $res = [];
-        foreach ($items as $item){
+        foreach ($items as $item) {
             $temp = [];
             $temp['id'] = $item->getId();
             $temp['name'] = $item->getName();
@@ -179,10 +178,10 @@ class HookController extends AbstractController
             $temp['priceSell'] = $item->getPriceSell();
             $temp['code'] = $item->getCode();
             $temp['cat'] = null;
-            if($item->getCat())
+            if ($item->getCat())
                 $temp['cat'] = $item->getCat()->getName();
             $temp['khadamat'] = false;
-            if($item->isKhadamat())
+            if ($item->isKhadamat())
                 $temp['khadamat'] = true;
 
             $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
@@ -192,17 +191,17 @@ class HookController extends AbstractController
             $res[] = $temp;
         }
         return $this->json([
-            'Success'=>true,
+            'Success' => true,
             'ErrorCode' => 0,
             'ErrorMessage' => '',
-            'Result' =>$res
+            'Result' => $res
         ]);
     }
 
     #[Route('hooks/setting/getBusinessInfo ', name: 'api_hooks_setting_getBusinessInfo')]
-    public function api_hooks_setting_getBusinessInfo(Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
+    public function api_hooks_setting_getBusinessInfo(Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
-        $bus = $entityManager->getRepository(Business::class)->findOneBy(['id'=>$request->headers->get('activeBid')]);
+        $bus = $entityManager->getRepository(Business::class)->findOneBy(['id' => $request->headers->get('activeBid')]);
         $response = [];
         $response['id'] = $bus->getId();
         $response['name'] = $bus->getName();
@@ -229,39 +228,39 @@ class HookController extends AbstractController
         $response['shortlinks'] = $bus->isShortLinks();
         $response['walletEnabled'] = $bus->isWalletEnable();
         $response['walletMatchBank'] = null;
-        if($bus->isWalletEnable())
-            $response['walletMatchBank'] = $provider->Entity2Array($bus->getWalletMatchBank(),0);
+        if ($bus->isWalletEnable())
+            $response['walletMatchBank'] = $provider->Entity2Array($bus->getWalletMatchBank(), 0);
         return $this->json([
-            'Success'=>true,
+            'Success' => true,
             'ErrorCode' => 0,
             'ErrorMessage' => '',
-            'Result' =>$response
+            'Result' => $response
         ]);
     }
 
     #[Route('hooks/commodity/import ', name: 'api_hooks_products_import')]
-    public function api_hooks_products_import(Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
+    public function api_hooks_products_import(Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        foreach($params['data'] as $item){
-            
+        foreach ($params['data'] as $item) {
+
             $data = $entityManager->getRepository(Commodity::class)->findOneBy([
-                'name'=>$item['post_title'],
-                'bid'=>$acc['bid']
+                'name' => $item['post_title'],
+                'bid' => $acc['bid']
             ]);
             //check exist before
-            if($data)
+            if ($data)
                 continue;
             $data = new Commodity();
-            $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'Commodity'));
+            $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'Commodity'));
             $unit = $entityManager->getRepository(CommodityUnit::class)->find(1);
-            if(!$unit)
+            if (!$unit)
                 throw $this->createNotFoundException('unit not fount!');
             $data->setUnit($unit);
             $data->setBid($acc['bid']);
@@ -277,49 +276,70 @@ class HookController extends AbstractController
             $data->setOrderPoint(0);
             $entityManager->persist($data);
             $entityManager->flush();
-            $log->insert('کالا و خدمات','کالا / خدمات  از طریق hook با نام  ' . $item['name'] . ' افزوده/ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));
-        
+            $log->insert('کالا و خدمات', 'کالا / خدمات  از طریق hook با نام  ' . $item['name'] . ' افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
+
         }
         return $this->json([
-            'Success'=>true,
+            'Success' => true,
             'ErrorCode' => 0,
             'ErrorMessage' => '',
-            'Result' =>'ok'
+            'Result' => 'ok'
         ]);
     }
 
     #[Route('hooks/person/import ', name: 'api_hooks_person_import')]
-    public function api_hooks_person_import(Provider $provider,Access $access,Log $log,Request $request,EntityManagerInterface $entityManager): JsonResponse
+    public function api_hooks_person_import(Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('person');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        
-        foreach($params['data'] as $item){
+
+        foreach ($params['data'] as $item) {
             $person = $entityManager->getRepository(Person::class)->findOneBy([
-                'nikename'=>$item['nickname'],
-                'bid'=>$acc['bid']
+                'nikename' => $item['nickname'],
+                'bid' => $acc['bid']
             ]);
-            if($person)
+            if ($person)
                 continue;
             $person = new Person();
-            $person->setCode($provider->getAccountingCode($request->headers->get('activeBid'),'person'));
+            $person->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'person'));
             $person->setName($item['nickname']);
             $person->setNikename($item['nickname']);
             $person->setBid($acc['bid']);
             $entityManager->persist($person);
             $entityManager->flush();
-            $log->insert('اشخاص','شخص با نام مستعار ' . $item['nickname'] . '  از طریق hook افزوده/ویرایش شد.',$this->getUser(),$request->headers->get('activeBid'));            
+            $log->insert('اشخاص', 'شخص با نام مستعار ' . $item['nickname'] . '  از طریق hook افزوده/ویرایش شد.', $this->getUser(), $request->headers->get('activeBid'));
         }
         return $this->json([
-            'Success'=>true,
+            'Success' => true,
             'ErrorCode' => 0,
             'ErrorMessage' => '',
-            'Result' =>'ok'
+            'Result' => 'ok'
+        ]);
+    }
+
+    #[Route('hooks/setting/GetFiscalYear', name: 'api_hooks_fiscal_year')]
+    public function api_hooks_fiscal_year(Provider $provider, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+
+        $bus = $entityManager->getRepository(Business::class)->findOneBy(['id' => $request->headers->get('activeBid')]);
+        $year = $entityManager->getRepository(Year::class)->findOneBy(['bid' => $bus, 'head' => true]);
+
+        $response = [
+            'Name' => $year->getLabel(),
+            'StartDate' => date(DATE_ATOM, $year->getStart()),
+            'EndDate' => date(DATE_ATOM, $year->getEnd()),
+        ];
+
+        return $this->json([
+            'Success' => true,
+            'ErrorCode' => 0,
+            'ErrorMessage' => '',
+            'Result' => $response
         ]);
     }
 }

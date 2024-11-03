@@ -3,6 +3,8 @@
 namespace App\Service;
 
 use App\Entity\BankAccount;
+use App\Entity\Project;
+use App\Entity\Storeroom;
 use App\Entity\User;
 use App\Entity\Year;
 use App\Entity\Business;
@@ -57,15 +59,16 @@ class Explore
         foreach ($hesabdariDoc->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = self::ExplorePerson($item->getPerson());
-            }
-            elseif($item->getRef()->getCode() == '104'){
+            } elseif ($item->getRef()->getCode() == '104') {
                 $result['discountAll'] = $item->getBd();
             } elseif ($item->getRef()->getCode() == '61') {
                 $result['transferCost'] = $item->getBs();
             }
         }
-        if (!array_key_exists('discountAll', $result)) $result['discountAll'] = 0;
-        if (!array_key_exists('transferCost', $result)) $result['transferCost'] = 0;
+        if (!array_key_exists('discountAll', $result))
+            $result['discountAll'] = 0;
+        if (!array_key_exists('transferCost', $result))
+            $result['transferCost'] = 0;
         $result['person'] = $person;
         return $result;
     }
@@ -93,15 +96,16 @@ class Explore
         foreach ($hesabdariDoc->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = self::ExplorePerson($item->getPerson());
-            }
-            elseif($item->getRef()->getCode() == '104'){
+            } elseif ($item->getRef()->getCode() == '104') {
                 $result['discountAll'] = $item->getBs();
             } elseif ($item->getRef()->getCode() == '90') {
                 $result['transferCost'] = $item->getBd();
             }
         }
-        if (!array_key_exists('discountAll', $result)) $result['discountAll'] = 0;
-        if (!array_key_exists('transferCost', $result)) $result['transferCost'] = 0;
+        if (!array_key_exists('discountAll', $result))
+            $result['discountAll'] = 0;
+        if (!array_key_exists('transferCost', $result))
+            $result['transferCost'] = 0;
         $result['person'] = $person;
         return $result;
     }
@@ -123,20 +127,20 @@ class Explore
     public static function ExploreHesabdariDoc(HesabdariDoc $doc)
     {
         return [
-            'id'            => $doc->getId(),
-            'update'        => $doc->getCode(),
-            'rows'          => self::ExploreHesabdariRows($doc->getHesabdariRows()),
-            'submiter'      => self::ExploreUser($doc->getSubmitter()),
-            'year'          => self::ExploreYear($doc->getYear()),
-            'money'         => self::ExploreMoney($doc->getMoney()),
-            'date_submit'   => $doc->getDateSubmit(),
-            'date'          => $doc->getDate(),
-            'type'          => $doc->getType(),
-            'code'          => $doc->getCode(),
-            'des'           => $doc->getDes(),
-            'amount'        => $doc->getAmount(),
-            'mdate'         => '',
-            'plugin'        => $doc->getPlugin(),
+            'id' => $doc->getId(),
+            'update' => $doc->getCode(),
+            'rows' => self::ExploreHesabdariRows($doc->getHesabdariRows()),
+            'submiter' => self::ExploreUser($doc->getSubmitter()),
+            'year' => self::ExploreYear($doc->getYear()),
+            'money' => self::ExploreMoney($doc->getMoney()),
+            'date_submit' => $doc->getDateSubmit(),
+            'date' => $doc->getDate(),
+            'type' => $doc->getType(),
+            'code' => $doc->getCode(),
+            'des' => $doc->getDes(),
+            'amount' => $doc->getAmount(),
+            'mdate' => '',
+            'plugin' => $doc->getPlugin(),
         ];
     }
 
@@ -151,20 +155,20 @@ class Explore
     public static function ExploreHesabdariRow(HesabdariRow $row)
     {
         $temp = [
-            'id'                => $row->getId(),
-            'bid'               => self::ExploreBid($row->getBid()),
-            'year'              => self::ExploreYear($row->getYear()),
-            'ref'               => self::ExploreHesabdariTable($row->getRef()),
-            'person'            => self::ExplorePerson($row->getPerson()),
-            'bank'              => self::ExploreBank($row->getBank()),
-            'cashdesk'          => self::ExploreCashdesk($row->getCashdesk()),
-            'salary'            => self::ExploreSalary($row->getSalary()),
-            'bs'                => $row->getBs(),
-            'bd'                => $row->getBd(),
-            'des'               => $row->getDes(),
-            'plugin'            => $row->getPlugin(),
-            'commodity_count'   => $row->getCommdityCount(),
-            'commodity'         => self::ExploreCommodity($row->getCommodity(), $row->getCommdityCount(), $row->getDes()),
+            'id' => $row->getId(),
+            'bid' => self::ExploreBid($row->getBid()),
+            'year' => self::ExploreYear($row->getYear()),
+            'ref' => self::ExploreHesabdariTable($row->getRef()),
+            'person' => self::ExplorePerson($row->getPerson()),
+            'bank' => self::ExploreBank($row->getBank()),
+            'cashdesk' => self::ExploreCashdesk($row->getCashdesk()),
+            'salary' => self::ExploreSalary($row->getSalary()),
+            'bs' => $row->getBs(),
+            'bd' => $row->getBd(),
+            'des' => $row->getDes(),
+            'plugin' => $row->getPlugin(),
+            'commodity_count' => $row->getCommdityCount(),
+            'commodity' => self::ExploreCommodity($row->getCommodity(), $row->getCommdityCount(), $row->getDes()),
         ];
         if (!$row->getTax())
             $row->setTax(0);
@@ -175,45 +179,47 @@ class Explore
         return $temp;
     }
 
-    public static function ExploreCommodity(Commodity | null $item, int | null $count = 0, string | null $des = '')
+    public static function ExploreCommodity(Commodity|null $item, int|null $count = 0, string|null $des = '')
     {
-        if ($item){
-             $result =  [
-                'id'            => $item->getId(),
-                'code'          => $item->getCode(),
-                'name'          => $item->getName(),
-                'des'           => $item->getDes(),
-                'priceBuy'     => $item->getPriceBuy(),
-                'priceSell'    => $item->getPriceSell(),
-                'khadamat'      => $item->isKhadamat(),
-                'count'         => $count,
-                'unit'          => $item->getUnit()->getName(),
-                'withoutTax'    => $item->isWithoutTax(),
-                'barcodes'      => $item->getBarcodes(),
+        if ($item) {
+            $result = [
+                'id' => $item->getId(),
+                'code' => $item->getCode(),
+                'name' => $item->getName(),
+                'des' => $item->getDes(),
+                'priceBuy' => $item->getPriceBuy(),
+                'priceSell' => $item->getPriceSell(),
+                'khadamat' => $item->isKhadamat(),
+                'count' => $count,
+                'unit' => $item->getUnit()->getName(),
+                'withoutTax' => $item->isWithoutTax(),
+                'barcodes' => $item->getBarcodes(),
                 'commodityCountCheck' => $item->isCommodityCountCheck(),
-                'speedAccess'  => $item->isSpeedAccess(),
-                'orderPoint'    =>$item->getOrderPoint(),
-                'dayLoading'    =>$item->getDayLoading(),
-                'minOrderCount' =>$item->getMinOrderCount(),
+                'speedAccess' => $item->isSpeedAccess(),
+                'orderPoint' => $item->getOrderPoint(),
+                'dayLoading' => $item->getDayLoading(),
+                'minOrderCount' => $item->getMinOrderCount(),
                 'unitData' => [
                     'name' => $item->getUnit()->getName(),
                     'floatNumber' => $item->getUnit()->getFloatNumber(),
                 ],
             ];
-            if($des){ $result['des'] = $des;}
+            if ($des) {
+                $result['des'] = $des;
+            }
             return $result;
         }
-           
+
         return null;
     }
 
-    public static function ExploreCommodityPriceListDetail(PriceListDetail | null $item)
+    public static function ExploreCommodityPriceListDetail(PriceListDetail|null $item)
     {
         return [
-            'id'            => $item->getId(),
-            'list'         => self::ExploreCommodityPriceListOne($item->getList()),
-            'priceBuy'     => $item->getPriceBuy(),
-            'priceSell'    => $item->getPriceSell(),
+            'id' => $item->getId(),
+            'list' => self::ExploreCommodityPriceListOne($item->getList()),
+            'priceBuy' => $item->getPriceBuy(),
+            'priceSell' => $item->getPriceSell(),
         ];
     }
     public static function ExploreCommodityPriceListDetails($items)
@@ -223,58 +229,58 @@ class Explore
             $result[] = self::ExploreCommodityPriceListDetail($item);
         return $result;
     }
-    public static function ExploreBank(BankAccount | null $item)
+    public static function ExploreBank(BankAccount|null $item)
     {
         if ($item)
             return [
-                'id'         => $item->getId(),
-                'code'       => $item->getCode(),
-                'name'       => $item->getName(),
+                'id' => $item->getId(),
+                'code' => $item->getCode(),
+                'name' => $item->getName(),
             ];
         return null;
     }
 
-    public static function ExploreCashdesk(Cashdesk | null $item)
+    public static function ExploreCashdesk(Cashdesk|null $item)
     {
         if ($item)
             return [
-                'id'         => $item->getId(),
-                'code'       => $item->getCode(),
-                'name'       => $item->getName(),
-                'des'        => $item->getDes()
+                'id' => $item->getId(),
+                'code' => $item->getCode(),
+                'name' => $item->getName(),
+                'des' => $item->getDes()
             ];
         return null;
     }
-    public static function ExploreSalary(Salary | null $item)
+    public static function ExploreSalary(Salary|null $item)
     {
         if ($item)
             return [
-                'id'         => $item->getId(),
-                'code'       => $item->getCode(),
-                'name'       => $item->getName(),
-                'des'        => $item->getDes()
+                'id' => $item->getId(),
+                'code' => $item->getCode(),
+                'name' => $item->getName(),
+                'des' => $item->getDes()
             ];
         return null;
     }
-    public static function ExplorePerson(Person | null $person, array $typesAll = [])
+    public static function ExplorePerson(Person|null $person, array $typesAll = [])
     {
         if ($person) {
             $res = [
-                'id'         => $person->getId(),
-                'code'       => $person->getCode(),
-                'nikename'  => $person->getNikename(),
-                'name'       => $person->getName(),
-                'tel'       => $person->getTel(),
-                'mobile'       => $person->getmobile(),
-                'mobile2'       => $person->getMobile2(),
-                'des'           => $person->getDes(),
-                'company'       => $person->getCompany(),
-                'shenasemeli'       => $person->getShenasemeli(),
-                'sabt'       => $person->getSabt(),
-                'shahr'       => $person->getShahr(),
-                'keshvar'     => $person->getKeshvar(),
-                'ostan'       => $person->getOstan(),
-                'postalcode'       => $person->getPostalcode(),
+                'id' => $person->getId(),
+                'code' => $person->getCode(),
+                'nikename' => $person->getNikename(),
+                'name' => $person->getName(),
+                'tel' => $person->getTel(),
+                'mobile' => $person->getmobile(),
+                'mobile2' => $person->getMobile2(),
+                'des' => $person->getDes(),
+                'company' => $person->getCompany(),
+                'shenasemeli' => $person->getShenasemeli(),
+                'sabt' => $person->getSabt(),
+                'shahr' => $person->getShahr(),
+                'keshvar' => $person->getKeshvar(),
+                'ostan' => $person->getOstan(),
+                'postalcode' => $person->getPostalcode(),
                 'codeeghtesadi' => $person->getCodeeghtesadi(),
                 'email' => $person->getEmail(),
                 'website' => $person->getWebsite(),
@@ -322,25 +328,25 @@ class Explore
     public static function ExploreHesabdariTable(HesabdariTable $table)
     {
         return [
-            'id'        => $table->getId(),
-            'upper_id'  => $table->getUpper()->getId(),
-            'name'      => $table->getName(),
-            'type'      => $table->getType(),
-            'code'      => $table->getCode()
+            'id' => $table->getId(),
+            'upper_id' => $table->getUpper()->getId(),
+            'name' => $table->getName(),
+            'type' => $table->getType(),
+            'code' => $table->getCode()
         ];
     }
     public static function ExploreMoney(Money $money)
     {
         return [
-            'id'     => $money->getId(),
-            'label'  => $money->getLabel(),
-            'name'   => $money->getName(),
+            'id' => $money->getId(),
+            'label' => $money->getLabel(),
+            'name' => $money->getName(),
         ];
     }
-    public static function ExploreYear(Year | null $year)
+    public static function ExploreYear(Year|null $year)
     {
         $jdate = new Jdate();
-        if(!$year){
+        if (!$year) {
             $year = new Year();
             $year->setHead(true);
             $year->setLabel('سال مالی اول');
@@ -348,12 +354,12 @@ class Explore
             $year->setEnd(time() + 31536000);
         }
         return [
-            'id'    => $year->getId(),
+            'id' => $year->getId(),
             'label' => $year->getLabel(),
-            'head'  => $year->isHead(),
+            'head' => $year->isHead(),
             'start' => $year->getStart(),
-            'end'   => $year->getEnd(),
-            'now'   => time(),
+            'end' => $year->getEnd(),
+            'now' => time(),
             'startShamsi' => $jdate->jdate('Y/n/d', $year->getStart()),
             'endShamsi' => $jdate->jdate('Y/n/d', $year->getEnd()),
         ];
@@ -362,16 +368,16 @@ class Explore
     public static function ExploreUser(User $user)
     {
         return [
-            'id'    => $user->getId(),
-            'name'  => $user->getFullName()
+            'id' => $user->getId(),
+            'name' => $user->getFullName()
         ];
     }
 
     public static function ExploreBid(Business $bid)
     {
         return [
-            'id'    => $bid->getId(),
-            'name'  => $bid->getName(),
+            'id' => $bid->getId(),
+            'name' => $bid->getName(),
             'legal_name' => $bid->getLegalName()
         ];
     }
@@ -389,7 +395,7 @@ class Explore
         return $result;
     }
 
-    public static function SerializeCheque(Cheque | null $cheque)
+    public static function SerializeCheque(Cheque|null $cheque)
     {
         if (!$cheque)
             return null;
@@ -398,7 +404,7 @@ class Explore
         if ($cheque->getType() == 'input')
             $label = 'چک شماره ' . $cheque->getNumber() . ' مربوط به ' . $cheque->getPerson()->getNikename() . ' با مبلغ ' . $cheque->getAmount();
         return [
-            'id'  => $cheque->getId(),
+            'id' => $cheque->getId(),
             'number' => $cheque->getNumber(),
             'sayadNum' => $cheque->getSayadNum(),
             'chequeBank' => $cheque->getBankOncheque(),
@@ -421,6 +427,44 @@ class Explore
         $result = [];
         foreach ($cheques as $cheque)
             $result[] = self::SerializeCheque($cheque);
+        return $result;
+    }
+
+    public static function ExploreProject(Project $item)
+    {
+        return [
+            'id' => $item->getId(),
+            'name' => $item->getName()
+        ];
+    }
+
+    public static function ExploreProjects(array $items)
+    {
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = self::ExploreProject($item);
+        }
+        return $result;
+    }
+
+    public static function ExploreStoreroom(Storeroom $item)
+    {
+        return [
+            'id' => $item->getId(),
+            'code' => $item->getId(),
+            'name' => $item->getName(),
+            'tel' => $item->getTel(),
+            'address' => $item->getAdr(),
+            'manager' => $item->getManager()
+        ];
+    }
+
+    public static function ExploreStorerooms(array $items)
+    {
+        $result = [];
+        foreach ($items as $item) {
+            $result[] = self::ExploreStoreroom($item);
+        }
         return $result;
     }
 }

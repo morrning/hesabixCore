@@ -53,12 +53,12 @@ class CommodityRepository extends ServiceEntityRepository
             ->orderBy('p.id', 'ASC')
             ->getQuery()
             ->getResult()
-            ;
+        ;
     }
     /**
      * @return Person[] Returns an array of Person objects
      */
-    public function searchByName(Business $bid,string $search,int $maxResults = 10): array
+    public function searchByName(Business $bid, string $search, int $maxResults = 10): array
     {
         return $this->createQueryBuilder('p')
             ->where('p.bid = :val')
@@ -74,7 +74,7 @@ class CommodityRepository extends ServiceEntityRepository
     /**
      * @return Person[] Returns an array of Person objects
      */
-    public function getLasts(Business $bid,int $maxResults = 10): array
+    public function getLasts(Business $bid, int $maxResults = 10): array
     {
         return $this->createQueryBuilder('p')
             ->andWhere('p.bid = :val')
@@ -112,4 +112,25 @@ class CommodityRepository extends ServiceEntityRepository
         ;
     }
     */
+
+    /**
+     * @return Commodity[] Returns an array of Commodity objects
+     */
+    public function search(array $params): array
+    {
+        $query = $this->createQueryBuilder('p');
+        $query->where('p.bid = :val')
+            ->setParameter('val', $params['bid']);
+        foreach ($params['Filters'] as $filter) {
+            if ($filter['Operator'] == '=') {
+                $query->andWhere('p.' . $filter['Property'] . '=:' . $filter['Property'])
+                    ->setParameter($filter['Property'], $filter['Value']);
+            }
+        }
+
+        $query->setMaxResults($params['Take'])
+            ->orderBy('p.id', 'ASC');
+
+        return $query->getQuery()->getResult();
+    }
 }

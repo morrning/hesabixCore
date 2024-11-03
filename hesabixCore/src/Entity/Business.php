@@ -246,6 +246,12 @@ class Business
     #[ORM\Column(length: 30, nullable: true)]
     private ?string $profitCalcType = null;
 
+    /**
+     * @var Collection<int, Project>
+     */
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Project::class, orphanRemoval: true)]
+    private Collection $projects;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -280,6 +286,7 @@ class Business
         $this->notes = new ArrayCollection();
         $this->priceLists = new ArrayCollection();
         $this->printOptions = new ArrayCollection();
+        $this->projects = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1747,6 +1754,36 @@ class Business
     public function setProfitCalcType(?string $profitCalcType): static
     {
         $this->profitCalcType = $profitCalcType;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getProjects(): Collection
+    {
+        return $this->projects;
+    }
+
+    public function addProject(Project $project): static
+    {
+        if (!$this->projects->contains($project)) {
+            $this->projects->add($project);
+            $project->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProject(Project $project): static
+    {
+        if ($this->projects->removeElement($project)) {
+            // set the owning side to null (unless already changed)
+            if ($project->getBid() === $this) {
+                $project->setBid(null);
+            }
+        }
 
         return $this;
     }

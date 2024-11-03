@@ -21,9 +21,11 @@ class Extractor
 {
    public function operationSuccess($data = ''){
     return [
+        'Success'=>true,
         'code' => 0,
         'data' =>$data,
-        'message'=>'operation success'
+        'message'=>'operation success',
+        
     ];
    }
    public function notFound($data = ''){
