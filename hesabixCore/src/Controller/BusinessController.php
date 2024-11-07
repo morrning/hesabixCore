@@ -70,19 +70,13 @@ class BusinessController extends AbstractController
         return $this->json($extractor->operationSuccess());
     }
     #[Route('/api/business/list', name: 'api_bussiness_list')]
-    public function api_bussiness_list(#[CurrentUser] ?User $user, Access $access, EntityManagerInterface $entityManager, Provider $provider): Response
+    public function api_bussiness_list(#[CurrentUser] ?User $user, Access $access,Explore $explore, EntityManagerInterface $entityManager, Provider $provider): Response
     {
 
         $buss = $entityManager->getRepository(Permission::class)->findBy(['user' => $user]);
         $response = [];
         foreach ($buss as $bus) {
-            //echo $bus->getBid()->getId();
-            $temp = [];
-            $temp['id'] = $bus->getBid()->getId();
-            $temp['owner'] = $bus->getBid()->getOwner()->getFullName();
-            $temp['name'] = $bus->getBid()->getName();
-            $temp['legal_name'] = $bus->getBid()->getLegalName();
-            $response[] = $temp;
+            $response[] = Explore::ExploreBusiness($bus->getBid());
         }
         return $this->json($response);
     }
@@ -102,48 +96,7 @@ class BusinessController extends AbstractController
         ]);
         if (!$perms)
             throw $this->createAccessDeniedException();
-        $response = [];
-        $response['id'] = $bus->getId();
-        $response['name'] = $bus->getName();
-        $response['owner'] = $bus->getOwner()->getFullName();
-        $response['legal_name'] = $bus->getLegalName();
-        $response['field'] = $bus->getField();
-        $response['shenasemeli'] = $bus->getShenasemeli();
-        $response['codeeqtesadi'] = $bus->getCodeeghtesadi();
-        $response['shomaresabt'] = $bus->getShomaresabt();
-        $response['country'] = $bus->getCountry();
-        $response['ostan'] = $bus->getOstan();
-        $response['shahrestan'] = $bus->getShahrestan();
-        $response['postalcode'] = $bus->getPostalcode();
-        $response['tel'] = $bus->getTel();
-        $response['mobile'] = $bus->getMobile();
-        $response['address'] = $bus->getAddress();
-        $response['website'] = $bus->getWesite();
-        $response['email'] = $bus->getEmail();
-        $response['maliyatafzode'] = $bus->getMaliyatafzode();
-        $response['arzmain'] = Explore::ExploreMoney($bus->getMoney());
-        $response['type'] = $bus->getType();
-        $response['zarinpalCode'] = $bus->getZarinpalCode();
-        $response['smsCharge'] = $bus->getSmsCharge();
-        $response['shortlinks'] = $bus->isShortLinks();
-        $response['walletEnabled'] = $bus->isWalletEnable();
-        $response['walletMatchBank'] = null;
-        $response['updateSellPrice'] = $bus->isCommodityUpdateSellPriceAuto();
-        $response['updateBuyPrice'] = $bus->isCommodityUpdateBuyPriceAuto();
-        if (!$bus->getProfitCalctype()) {
-            $response['profitCalcType'] = 'lis';
-        } else {
-            $response['profitCalcType'] = $bus->getProfitCalctype();
-        }
-        if ($bus->isWalletEnable())
-            $response['walletMatchBank'] = $provider->Entity2Array($bus->getWalletMatchBank(), 0);
-        $year = $entityManager->getRepository(Year::class)->findOneBy([
-            'bid' => $bus,
-            'head' => true
-        ]);
-        $response['year'] = Explore::ExploreYear($year);
-
-        return $this->json($response);
+        return $this->json(Explore::ExploreBusiness($bus));
     }
 
     #[Route('/api/business/list/count', name: 'api_bussiness_list_count')]
@@ -669,8 +622,12 @@ class BusinessController extends AbstractController
     }
 
     #[Route('/api/business/stat', name: 'api_business_stat')]
-    public function api_business_stat(Jdate $jdate, Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
+    public function api_business_stat(Access $access,Jdate $jdate, Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
     {
+        $acc = $access->hasRole('join');
+        if(!$acc)
+            throw $this->createAccessDeniedException();
+
         $dateNow = $jdate->jdate('Y/m/d', time());
         $buss = $entityManager->getRepository(Business::class)->find(
             $request->headers->get('activeBid')
@@ -693,6 +650,7 @@ class BusinessController extends AbstractController
         $docs = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $buss,
             'year' => $year,
+            'money'=> $acc['money']
         ]);
 
         $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
@@ -706,6 +664,8 @@ class BusinessController extends AbstractController
             'bid' => $buss,
             'year' => $year,
             'type' => 'buy',
+            'money'=> $acc['money']
+            
         ]);
         $buysTotal = 0;
         $buysToday = 0;
@@ -727,6 +687,7 @@ class BusinessController extends AbstractController
             'bid' => $buss,
             'year' => $year,
             'type' => 'sell',
+            'money'=> $acc['money']
         ]);
         $sellsTotal = 0;
         $sellsToday = 0;
@@ -748,6 +709,7 @@ class BusinessController extends AbstractController
             'bid' => $buss,
             'year' => $year,
             'type' => 'person_send',
+            'money'=> $acc['money']
         ]);
         $sendsTotal = 0;
         $sendsToday = 0;
@@ -769,6 +731,7 @@ class BusinessController extends AbstractController
             'bid' => $buss,
             'year' => $year,
             'type' => 'person_receive',
+            'money'=> $acc['money']
         ]);
         $recsTotal = 0;
         $recsToday = 0;

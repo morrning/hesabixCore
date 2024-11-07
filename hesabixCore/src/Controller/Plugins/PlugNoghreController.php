@@ -114,7 +114,8 @@ class PlugNoghreController extends AbstractController
             throw $this->createAccessDeniedException();
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'code'=>$id,
-            'bid'=>$acc['bid']
+            'bid'=>$acc['bid'],
+            'money'=> $acc['money']
         ]);
         if(!$doc)
             throw $this->createNotFoundException();
@@ -267,7 +268,7 @@ class PlugNoghreController extends AbstractController
         $doc->setDes('سفارش ساخت منسوجات نقره: ' . $params['des']);
         $doc->setBid($acc['bid']);
         $doc->setPlugin('plugNoghreOrder');
-        $doc->setMoney($acc['bid']->getMoney());
+        $doc->setMoney($acc['money']);
         $doc->setDate($params['dateSubmit']);
         $doc->setYear($acc['year']);
         $doc->setType('plug_noghre_order');
@@ -561,7 +562,8 @@ class PlugNoghreController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'code'=>$code,
             'plugin'=>'plugNoghrePay',
-            'bid'=>$acc['bid']
+            'bid'=>$acc['bid'],
+            'money'=> $acc['money']
         ]);
         if(!$doc)
             throw $this->createNotFoundException();

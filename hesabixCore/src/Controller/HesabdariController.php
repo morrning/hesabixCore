@@ -49,9 +49,11 @@ class HesabdariController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'year' => $acc['year'],
-            'code' => $params['code']
+            'code' => $params['code'],
+            'money' => $acc['money']
         ]);
-        if (!$doc) throw $this->createNotFoundException();
+        if (!$doc)
+            throw $this->createNotFoundException();
         $rows = [];
         $rowsObj = $entityManager->getRepository(HesabdariRow::class)->findBy(
             ['doc' => $doc]
@@ -176,15 +178,24 @@ class HesabdariController extends AbstractController
         if (!array_key_exists('type', $params))
             $this->createNotFoundException();
         $roll = '';
-        if ($params['type'] == 'person_receive' || $params['type'] == 'person_send') $roll = 'person';
-        elseif ($params['type'] == 'cost') $roll = 'cost';
-        elseif ($params['type'] == 'income') $roll = 'income';
-        elseif ($params['type'] == 'buy') $roll = 'buy';
-        elseif ($params['type'] == 'rfbuy') $roll = 'plugAccproRfbuy';
-        elseif ($params['type'] == 'transfer') $roll = 'transfer';
-        elseif ($params['type'] == 'sell') $roll = 'sell';
-        elseif ($params['type'] == 'rfsell') $roll = 'plugAccproRfsell';
-        elseif ($params['type'] == 'all') $roll = 'accounting';
+        if ($params['type'] == 'person_receive' || $params['type'] == 'person_send')
+            $roll = 'person';
+        elseif ($params['type'] == 'cost')
+            $roll = 'cost';
+        elseif ($params['type'] == 'income')
+            $roll = 'income';
+        elseif ($params['type'] == 'buy')
+            $roll = 'buy';
+        elseif ($params['type'] == 'rfbuy')
+            $roll = 'plugAccproRfbuy';
+        elseif ($params['type'] == 'transfer')
+            $roll = 'transfer';
+        elseif ($params['type'] == 'sell')
+            $roll = 'sell';
+        elseif ($params['type'] == 'rfsell')
+            $roll = 'plugAccproRfsell';
+        elseif ($params['type'] == 'all')
+            $roll = 'accounting';
         else
             $this->createNotFoundException();
 
@@ -195,6 +206,7 @@ class HesabdariController extends AbstractController
             $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
+                'money' => $acc['money']
             ], [
                 'id' => 'DESC'
             ]);
@@ -202,7 +214,8 @@ class HesabdariController extends AbstractController
             $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
-                'type' => $params['type']
+                'type' => $params['type'],
+                'money' => $acc['money']
             ], [
                 'id' => 'DESC'
             ]);
@@ -260,9 +273,12 @@ class HesabdariController extends AbstractController
         if (!array_key_exists('type', $params))
             $this->createNotFoundException();
         $roll = '';
-        if ($params['type'] == 'person_receive' || $params['type'] == 'person_send') $roll = 'person';
-        elseif ($params['type'] == 'sell_receive') $roll = 'sell';
-        elseif ($params['type'] == 'buy_send') $roll = 'buy';
+        if ($params['type'] == 'person_receive' || $params['type'] == 'person_send')
+            $roll = 'person';
+        elseif ($params['type'] == 'sell_receive')
+            $roll = 'sell';
+        elseif ($params['type'] == 'buy_send')
+            $roll = 'buy';
         else
             $roll = $params['type'];
 
@@ -278,12 +294,14 @@ class HesabdariController extends AbstractController
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
-                'code' => $params['update']
+                'code' => $params['update'],
+                'money' => $acc['money']
             ]);
-            if (!$doc) throw $this->createNotFoundException('document not found.');
+            if (!$doc)
+                throw $this->createNotFoundException('document not found.');
             $doc->setDes($params['des']);
             $doc->setDate($params['date']);
-            $doc->setMoney($acc['bid']->getMoney());
+            $doc->setMoney($acc['money']);
             if (array_key_exists('refData', $params))
                 $doc->setRefData($params['refData']);
             if (array_key_exists('plugin', $params))
@@ -305,7 +323,7 @@ class HesabdariController extends AbstractController
             $doc->setType($params['type']);
             $doc->setDate($params['date']);
             $doc->setSubmitter($this->getUser());
-            $doc->setMoney($acc['bid']->getMoney());
+            $doc->setMoney($acc['money']);
             $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
             if (array_key_exists('refData', $params))
                 $doc->setRefData($params['refData']);
@@ -317,7 +335,11 @@ class HesabdariController extends AbstractController
 
         //add document to related docs
         if (array_key_exists('related', $params)) {
-            $relatedDoc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy(['code' => $params['related'], 'bid' => $doc->getBid()]);
+            $relatedDoc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                'code' => $params['related'],
+                'bid' => $doc->getBid(),
+                'money' => $acc['money']
+            ]);
             if ($relatedDoc) {
                 $relatedDoc->addRelatedDoc($doc);
                 $entityManager->persist($relatedDoc);
@@ -349,8 +371,10 @@ class HesabdariController extends AbstractController
             //check is type is person
             if ($row['type'] == 'person') {
                 $person = $entityManager->getRepository(Person::class)->find($row['id']);
-                if (!$person) throw $this->createNotFoundException('person not found');
-                elseif ($person->getBid()->getId() != $acc['bid']->getId()) throw $this->createAccessDeniedException('person is not in this business');
+                if (!$person)
+                    throw $this->createNotFoundException('person not found');
+                elseif ($person->getBid()->getId() != $acc['bid']->getId())
+                    throw $this->createAccessDeniedException('person is not in this business');
                 $hesabdariRow->setPerson($person);
             } elseif ($row['type'] == 'cheque') {
                 $person = $entityManager->getRepository(Person::class)->findOneBy([
@@ -386,24 +410,32 @@ class HesabdariController extends AbstractController
                 $hesabdariRow->setCheque($cheque);
             } elseif ($row['type'] == 'bank') {
                 $bank = $entityManager->getRepository(BankAccount::class)->find($row['id']);
-                if (!$bank) throw $this->createNotFoundException('bank not found');
-                elseif ($bank->getBid()->getId() != $acc['bid']->getId()) throw $this->createAccessDeniedException('bank is not in this business');
+                if (!$bank)
+                    throw $this->createNotFoundException('bank not found');
+                elseif ($bank->getBid()->getId() != $acc['bid']->getId())
+                    throw $this->createAccessDeniedException('bank is not in this business');
                 $hesabdariRow->setBank($bank);
             } elseif ($row['type'] == 'salary') {
                 $salary = $entityManager->getRepository(Salary::class)->find($row['id']);
-                if (!$salary) throw $this->createNotFoundException('salary not found');
-                elseif ($salary->getBid()->getId() != $acc['bid']->getId()) throw $this->createAccessDeniedException('bank is not in this business');
+                if (!$salary)
+                    throw $this->createNotFoundException('salary not found');
+                elseif ($salary->getBid()->getId() != $acc['bid']->getId())
+                    throw $this->createAccessDeniedException('bank is not in this business');
                 $hesabdariRow->setSalary($salary);
             } elseif ($row['type'] == 'cashdesk') {
                 $cashdesk = $entityManager->getRepository(Cashdesk::class)->find($row['id']);
-                if (!$cashdesk) throw $this->createNotFoundException('cashdesk not found');
-                elseif ($cashdesk->getBid()->getId() != $acc['bid']->getId()) throw $this->createAccessDeniedException('bank is not in this business');
+                if (!$cashdesk)
+                    throw $this->createNotFoundException('cashdesk not found');
+                elseif ($cashdesk->getBid()->getId() != $acc['bid']->getId())
+                    throw $this->createAccessDeniedException('bank is not in this business');
                 $hesabdariRow->setCashdesk($cashdesk);
             } elseif ($row['type'] == 'commodity') {
                 $row['count'] = str_replace(',', '', $row['count']);
                 $commodity = $entityManager->getRepository(Commodity::class)->find($row['commodity']['id']);
-                if (!$commodity) throw $this->createNotFoundException('commodity not found');
-                elseif ($commodity->getBid()->getId() != $acc['bid']->getId()) throw $this->createAccessDeniedException('$commodity is not in this business');
+                if (!$commodity)
+                    throw $this->createNotFoundException('commodity not found');
+                elseif ($commodity->getBid()->getId() != $acc['bid']->getId())
+                    throw $this->createAccessDeniedException('$commodity is not in this business');
                 $hesabdariRow->setCommodity($commodity);
                 $hesabdariRow->setCommdityCount($row['count']);
             }
@@ -448,11 +480,15 @@ class HesabdariController extends AbstractController
             'code' => $params['code'],
             'bid' => $request->headers->get('activeBid')
         ]);
-        if (!$doc) throw $this->createNotFoundException();
+        if (!$doc)
+            throw $this->createNotFoundException();
         $roll = '';
-        if ($doc->getType() == 'person_receive' || $doc->getType() == 'person_send') $roll = 'person';
-        elseif ($doc->getType() == 'sell_receive') $roll = 'sell';
-        elseif ($doc->getType() == 'buy_send') $roll = 'buy';
+        if ($doc->getType() == 'person_receive' || $doc->getType() == 'person_send')
+            $roll = 'person';
+        elseif ($doc->getType() == 'sell_receive')
+            $roll = 'sell';
+        elseif ($doc->getType() == 'buy_send')
+            $roll = 'buy';
         else
             $roll = $doc->getType();
         $acc = $access->hasRole($roll);
@@ -523,7 +559,9 @@ class HesabdariController extends AbstractController
             $entityManager->flush();
         }
         $code = $doc->getCode();
-        foreach($doc->getNotes() as $note){ $entityManager->remove($note);}
+        foreach ($doc->getNotes() as $note) {
+            $entityManager->remove($note);
+        }
         $entityManager->remove($doc);
         $entityManager->flush();
         $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
@@ -539,16 +577,20 @@ class HesabdariController extends AbstractController
         }
         if (!array_key_exists('items', $params))
             $this->createNotFoundException();
-        foreach($params['items'] as $item){
+        foreach ($params['items'] as $item) {
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'code' => $item['code'],
                 'bid' => $request->headers->get('activeBid')
             ]);
-            if (!$doc) throw $this->createNotFoundException();
+            if (!$doc)
+                throw $this->createNotFoundException();
             $roll = '';
-            if ($doc->getType() == 'person_receive' || $doc->getType() == 'person_send') $roll = 'person';
-            elseif ($doc->getType() == 'sell_receive') $roll = 'sell';
-            elseif ($doc->getType() == 'buy_send') $roll = 'buy';
+            if ($doc->getType() == 'person_receive' || $doc->getType() == 'person_send')
+                $roll = 'person';
+            elseif ($doc->getType() == 'sell_receive')
+                $roll = 'sell';
+            elseif ($doc->getType() == 'buy_send')
+                $roll = 'buy';
             else
                 $roll = $doc->getType();
             $acc = $access->hasRole($roll);
@@ -592,7 +634,7 @@ class HesabdariController extends AbstractController
                 }
                 $entityManager->remove($row);
             }
-    
+
             foreach ($doc->getRelatedDocs() as $relatedDoc) {
                 if ($relatedDoc->getType() != 'walletPay') {
                     $items = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $relatedDoc]);
@@ -610,7 +652,7 @@ class HesabdariController extends AbstractController
                     $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
                 }
             }
-    
+
             //delete logs from documents
             $logs = $entityManager->getRepository(EntityLog::class)->findBy(['doc' => $doc]);
             foreach ($logs as $item) {
@@ -619,11 +661,13 @@ class HesabdariController extends AbstractController
                 $entityManager->flush();
             }
             $code = $doc->getCode();
-            foreach($doc->getNotes() as $note){ $entityManager->remove($note);}
+            foreach ($doc->getNotes() as $note) {
+                $entityManager->remove($note);
+            }
             $entityManager->remove($doc);
             $entityManager->flush();
             $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
-            
+
         }
         return $this->json(['result' => 1]);
     }
@@ -638,8 +682,10 @@ class HesabdariController extends AbstractController
         if (!array_key_exists('type', $params))
             $this->createNotFoundException();
         $roll = '';
-        if ($params['type'] == 'person') $roll = 'person';
-        elseif ($params['type'] == 'all') $roll = 'accounting';
+        if ($params['type'] == 'person')
+            $roll = 'person';
+        elseif ($params['type'] == 'all')
+            $roll = 'accounting';
         else
             $this->createNotFoundException();
 
@@ -762,7 +808,7 @@ class HesabdariController extends AbstractController
 
     private function getChildsLabel(EntityManagerInterface $entityManager, mixed $node)
     {
-        $childs =  $entityManager->getRepository(HesabdariTable::class)->findBy([
+        $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
             'upper' => $node
         ]);
         $temp = [];
@@ -774,16 +820,18 @@ class HesabdariController extends AbstractController
 
     private function hasChild(EntityManagerInterface $entityManager, mixed $node)
     {
-        if (count($entityManager->getRepository(HesabdariTable::class)->findBy([
-            'upper' => $node
-        ])) != 0)
+        if (
+            count($entityManager->getRepository(HesabdariTable::class)->findBy([
+                'upper' => $node
+            ])) != 0
+        )
             return true;
         return false;
     }
 
     private function getChilds(EntityManagerInterface $entityManager, mixed $node)
     {
-        $childs =  $entityManager->getRepository(HesabdariTable::class)->findBy([
+        $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
             'upper' => $node
         ]);
         $temp = [];

@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Cashdesk;
 use App\Entity\HesabdariRow;
 use App\Service\Access;
+use App\Service\Explore;
 use App\Service\Log;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,11 +20,26 @@ class CashdeskController extends AbstractController
     #[Route('/api/cashdesk/list', name: 'app_cashdesk_list')]
     public function app_cashdesk_list(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if (!$access->hasRole('cashdesk'))
+        $acc = $access->hasRole('cashdesk');
+        if (!$acc)
             throw $this->createAccessDeniedException();
+        //bug fix for bank with no money type
         $datas = $entityManager->getRepository(Cashdesk::class)->findBy([
-            'bid' => $request->headers->get('activeBid')
+            'bid' => $request->headers->get('activeBid'),
+            'money' => null
         ]);
+        foreach ($datas as $data) {
+            $data->setMoney($acc['bid']->getMoney());
+            $entityManager->persist($data);
+        }
+        $entityManager->flush();
+        //end of bug fix
+
+        $datas = $entityManager->getRepository(Cashdesk::class)->findBy([
+            'bid' => $request->headers->get('activeBid'),
+            'money' => $acc['money']
+        ]);
+        $resp = [];
         foreach ($datas as $data) {
             $bs = 0;
             $bd = 0;
@@ -35,8 +51,9 @@ class CashdeskController extends AbstractController
                 $bd += $item->getBd();
             }
             $data->setBalance($bd - $bs);
+            $resp[] = Explore::ExploreCashdesk($data);
         }
-        return $this->json($datas);
+        return $this->json($resp);
     }
 
     #[Route('/api/cashdesk/info/{code}', name: 'app_cashdesk_info')]
@@ -47,9 +64,10 @@ class CashdeskController extends AbstractController
             throw $this->createAccessDeniedException();
         $data = $entityManager->getRepository(Cashdesk::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $code
+            'code' => $code,
+            'money' => $acc['money']
         ]);
-        return $this->json($data);
+        return $this->json(Explore::ExploreCashdesk($data));
     }
 
     #[Route('/api/cashdesk/mod/{code}', name: 'app_cashdesk_mod')]
@@ -76,6 +94,7 @@ class CashdeskController extends AbstractController
                 return $this->json(['result' => 2]);
             $data = new Cashdesk();
             $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'cashdesk'));
+            $data->setMoney($acc['money']);
         } else {
             $data = $entityManager->getRepository(Cashdesk::class)->findOneBy([
                 'bid' => $acc['bid'],
@@ -83,6 +102,9 @@ class CashdeskController extends AbstractController
             ]);
             if (!$data)
                 throw $this->createNotFoundException();
+            if (!$data->getMoney()) {
+                $data->setMoney($acc['money']);
+            }
         }
         $data->setBid($acc['bid']);
         $data->setname($params['name']);

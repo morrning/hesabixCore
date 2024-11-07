@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\BankAccount;
 use App\Entity\HesabdariRow;
 use App\Service\Access;
+use App\Service\Explore;
 use App\Service\Log;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,10 +19,25 @@ class BankController extends AbstractController
     #[Route('/api/bank/list', name: 'app_bank_list')]
     public function app_bank_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        if (!$access->hasRole('banks'))
+        $acc = $access->hasRole('banks');
+        if (!$acc)
             throw $this->createAccessDeniedException();
+
+        //bug fix for bank with no money type
         $datas = $entityManager->getRepository(BankAccount::class)->findBy([
-            'bid' => $request->headers->get('activeBid')
+            'bid' => $request->headers->get('activeBid'),
+            'money'=>null
+        ]);
+        foreach ($datas as $data) {
+            $data->setMoney($acc['bid']->getMoney());
+            $entityManager->persist($data);
+        }
+        $entityManager->flush();
+        //end of bug fix
+
+        $datas = $entityManager->getRepository(BankAccount::class)->findBy([
+            'bid' => $request->headers->get('activeBid'),
+            'money'=>$acc['money']
         ]);
         foreach ($datas as $data) {
             $bs = 0;
@@ -46,9 +62,10 @@ class BankController extends AbstractController
             throw $this->createAccessDeniedException();
         $data = $entityManager->getRepository(BankAccount::class)->findOneBy([
             'bid' => $acc['bid'],
+            'money'=>$acc['money'],
             'code' => $code
         ]);
-        return $this->json($provider->Entity2Array($data, 0));
+        return $this->json(data: Explore::ExploreBank($data));
     }
 
     #[Route('/api/bank/mod/{code}', name: 'app_bank_mod')]
@@ -75,6 +92,7 @@ class BankController extends AbstractController
                 return $this->json(['result' => 2]);
             $data = new BankAccount();
             $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'bank'));
+            $data->setMoney($acc['money']);
         } else {
             $data = $entityManager->getRepository(BankAccount::class)->findOneBy([
                 'bid' => $acc['bid'],

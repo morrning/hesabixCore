@@ -76,7 +76,8 @@ class BuyController extends AbstractController
         $invoices = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid'=>$acc['bid'],
             'year'=>$acc['year'],
-            'type'=>'buy'
+            'type'=>'buy',
+            'money'=> $acc['money']
         ]);
         return $this->json(Explore::ExploreBuyDocsList($invoices));
     }
@@ -100,7 +101,8 @@ class BuyController extends AbstractController
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
-                'code' => $params['update']
+                'code' => $params['update'],
+                'money'=> $acc['money']
             ]);
             if (!$doc) return $this->json($extractor->notFound());
 
@@ -116,7 +118,7 @@ class BuyController extends AbstractController
             $doc->setDateSubmit(time());
             $doc->setType('buy');
             $doc->setSubmitter($this->getUser());
-            $doc->setMoney($acc['bid']->getMoney());
+            $doc->setMoney($acc['money']);
             $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
         }
         if($params['transferCost'] != 0){
@@ -243,7 +245,8 @@ class BuyController extends AbstractController
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
-                'code' => $item['code']
+                'code' => $item['code'],
+                'money'=> $acc['money']
             ]);
             if (!$doc) return $this->json($extractor->notFound());
             if ($params['label'] != 'clear') {
@@ -286,7 +289,8 @@ class BuyController extends AbstractController
         $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
             'year' => $acc['year'],
-            'type' => 'buy'
+            'type' => 'buy',
+            'money'=> $acc['money']
         ], [
             'id' => 'DESC'
         ]);
@@ -350,7 +354,8 @@ class BuyController extends AbstractController
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $params['code']
+            'code' => $params['code'],
+            'money'=> $acc['money']
         ]);
         if (!$doc) throw $this->createNotFoundException();
         $pdfPid = 0;
@@ -413,7 +418,8 @@ class BuyController extends AbstractController
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $params['code']
+            'code' => $params['code'],
+            'money'=> $acc['money']
         ]);
         if (!$doc) throw $this->createNotFoundException();
         $person = null;

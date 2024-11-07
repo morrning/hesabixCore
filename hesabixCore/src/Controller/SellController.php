@@ -38,7 +38,8 @@ class SellController extends AbstractController
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $code
+            'code' => $code,
+            'money'=> $acc['money']
         ]);
         //check related documents
         if (count($doc->getRelatedDocs()) != 0)
@@ -61,7 +62,8 @@ class SellController extends AbstractController
             throw $this->createAccessDeniedException();
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $code
+            'code' => $code,
+            'money'=> $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException();
@@ -133,14 +135,13 @@ class SellController extends AbstractController
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
-                'code' => $params['update']
+                'code' => $params['update'],
+                'money'=> $acc['money']
             ]);
             if (!$doc)
                 return $this->json($extractor->notFound());
-
-            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'doc' => $doc
-            ]);
+            
+            $rows = $doc->getHesabdariRows();
             foreach ($rows as $row)
                 $entityManager->remove($row);
         } else {
@@ -150,7 +151,7 @@ class SellController extends AbstractController
             $doc->setDateSubmit(time());
             $doc->setType('sell');
             $doc->setSubmitter($this->getUser());
-            $doc->setMoney($acc['bid']->getMoney());
+            $doc->setMoney($acc['money']);
             $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
         }
         if ($params['transferCost'] != 0) {
@@ -245,6 +246,12 @@ class SellController extends AbstractController
 
         $entityManager->persist($doc);
         $entityManager->flush();
+        if(!$doc->getShortlink()){
+            $doc->setShortlink($doc->getId());
+        }
+        $entityManager->persist($doc);
+        $entityManager->flush();
+
         $log->insert(
             'حسابداری',
             'سند حسابداری شماره ' . $doc->getCode() . ' ثبت / ویرایش شد.',
@@ -259,7 +266,7 @@ class SellController extends AbstractController
                     return $this->json([
                         'result' =>
                             $SMS->sendByBalance(
-                                [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortLink(), $acc['bid']->getName(), $acc['bid']->getTel()],
+                                [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getId(), $acc['bid']->getName(), $acc['bid']->getTel()],
                                 $registryMGR->get('sms', 'plugAccproSharefaktor'),
                                 $person->getMobile(),
                                 $acc['bid'],
@@ -271,7 +278,7 @@ class SellController extends AbstractController
                     return $this->json([
                         'result' =>
                             $SMS->sendByBalance(
-                                [$acc['bid']->getName(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortLink()],
+                                [$acc['bid']->getName(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getId()],
                                 $registryMGR->get('sms', 'sharefaktor'),
                                 $person->getMobile(),
                                 $acc['bid'],
@@ -308,7 +315,8 @@ class SellController extends AbstractController
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
-                'code' => $item['code']
+                'code' => $item['code'],
+                'money'=> $acc['money']
             ]);
             if (!$doc)
                 return $this->json($extractor->notFound());
@@ -352,7 +360,8 @@ class SellController extends AbstractController
         $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
             'year' => $acc['year'],
-            'type' => 'sell'
+            'type' => 'sell',
+            'money'=> $acc['money']
         ], [
             'id' => 'DESC'
         ]);
@@ -462,7 +471,8 @@ class SellController extends AbstractController
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $params['code']
+            'code' => $params['code'],
+            'money'=> $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException();
@@ -527,7 +537,8 @@ class SellController extends AbstractController
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $params['code']
+            'code' => $params['code'],
+            'money'=> $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException();

@@ -27,10 +27,37 @@ class Money
     #[ORM\OneToMany(mappedBy: 'money', targetEntity: PriceListDetail::class, orphanRemoval: true)]
     private Collection $priceListDetails;
 
+    /**
+     * @var Collection<int, Business>
+     */
+    #[ORM\ManyToMany(targetEntity: Business::class, mappedBy: 'extraMoney')]
+    private Collection $bids;
+
+    #[ORM\Column(length: 255)]
+    private ?string $symbol = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $shortName = null;
+
+    /**
+     * @var Collection<int, Cashdesk>
+     */
+    #[ORM\OneToMany(mappedBy: 'money', targetEntity: Cashdesk::class)]
+    private Collection $cashdesks;
+
+    /**
+     * @var Collection<int, Salary>
+     */
+    #[ORM\OneToMany(mappedBy: 'money', targetEntity: Salary::class)]
+    private Collection $salaries;
+
     public function __construct()
     {
         $this->businesses = new ArrayCollection();
         $this->priceListDetails = new ArrayCollection();
+        $this->bids = new ArrayCollection();
+        $this->cashdesks = new ArrayCollection();
+        $this->salaries = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -116,6 +143,117 @@ class Money
             // set the owning side to null (unless already changed)
             if ($priceListDetail->getMoney() === $this) {
                 $priceListDetail->setMoney(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Business>
+     */
+    public function getBids(): Collection
+    {
+        return $this->bids;
+    }
+
+    public function addBid(Business $bid): static
+    {
+        if (!$this->bids->contains($bid)) {
+            $this->bids->add($bid);
+            $bid->addExtraMoney($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBid(Business $bid): static
+    {
+        if ($this->bids->removeElement($bid)) {
+            $bid->removeExtraMoney($this);
+        }
+
+        return $this;
+    }
+
+    public function getSymbol(): ?string
+    {
+        return $this->symbol;
+    }
+
+    public function setSymbol(string $symbol): static
+    {
+        $this->symbol = $symbol;
+
+        return $this;
+    }
+
+    public function getShortName(): ?string
+    {
+        return $this->shortName;
+    }
+
+    public function setShortName(string $shortName): static
+    {
+        $this->shortName = $shortName;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Cashdesk>
+     */
+    public function getCashdesks(): Collection
+    {
+        return $this->cashdesks;
+    }
+
+    public function addCashdesk(Cashdesk $cashdesk): static
+    {
+        if (!$this->cashdesks->contains($cashdesk)) {
+            $this->cashdesks->add($cashdesk);
+            $cashdesk->setMoney($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCashdesk(Cashdesk $cashdesk): static
+    {
+        if ($this->cashdesks->removeElement($cashdesk)) {
+            // set the owning side to null (unless already changed)
+            if ($cashdesk->getMoney() === $this) {
+                $cashdesk->setMoney(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Salary>
+     */
+    public function getSalaries(): Collection
+    {
+        return $this->salaries;
+    }
+
+    public function addSalary(Salary $salary): static
+    {
+        if (!$this->salaries->contains($salary)) {
+            $this->salaries->add($salary);
+            $salary->setMoney($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSalary(Salary $salary): static
+    {
+        if ($this->salaries->removeElement($salary)) {
+            // set the owning side to null (unless already changed)
+            if ($salary->getMoney() === $this) {
+                $salary->setMoney(null);
             }
         }
 

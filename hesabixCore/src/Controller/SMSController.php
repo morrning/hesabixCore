@@ -237,7 +237,8 @@ class SMSController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'id' => $id,
             'bid' => $bid,
-            'type' => 'sell'
+            'type' => 'sell',
+            'money'=> $acc['money']
         ]);
         if (!$doc)
             return $this->json(['result' => 3]);

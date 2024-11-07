@@ -36,13 +36,15 @@ class ReportController extends AbstractController
         if ($params['type'] == 'all') {
             $docs = $entityManagerInterface->getRepository(HesabdariDoc::class)->findBy([
                 'year' => $acc['year'],
-                'bid'  => $acc['bid'],
+                'bid' => $acc['bid'],
+                'money' => $acc['money']
             ]);
         } else {
             $docs = $entityManagerInterface->getRepository(HesabdariDoc::class)->findBy([
                 'year' => $acc['year'],
-                'bid'  => $acc['bid'],
+                'bid' => $acc['bid'],
                 'type' => $params['type'],
+                'money'=> $acc['money']
             ]);
         }
         //filter docs by date
@@ -52,18 +54,21 @@ class ReportController extends AbstractController
         foreach ($docs as $doc) {
             $canAdd = true;
             if ($dateStart) {
-                if ($provider->shamsiDateToTimestamp($doc->getDate()) < $dateStart) $canAdd = false;
+                if ($provider->shamsiDateToTimestamp($doc->getDate()) < $dateStart)
+                    $canAdd = false;
             }
             if ($dateEnd) {
-                if ($provider->shamsiDateToTimestamp($doc->getDate()) > $dateEnd) $canAdd = false;
+                if ($provider->shamsiDateToTimestamp($doc->getDate()) > $dateEnd)
+                    $canAdd = false;
             }
 
-            if ($canAdd) $result[] = $doc;
+            if ($canAdd)
+                $result[] = $doc;
         }
         $docs = $result;
 
         $person = $entityManagerInterface->getRepository(Person::class)->findOneBy([
-            'bid'  => $acc['bid']->getId(),
+            'bid' => $acc['bid']->getId(),
             'code' => $params['person'],
         ]);
         $result = [];
@@ -119,7 +124,7 @@ class ReportController extends AbstractController
     }
 
     #[Route('/api/report/person/buysell/export/excel', name: 'app_report_person_buysell_export_excell')]
-    public function app_report_person_buysell_export_excell(Provider $provider, Access $access, Request $request, EntityManagerInterface $entityManagerInterface): BinaryFileResponse | JsonResponse | StreamedResponse
+    public function app_report_person_buysell_export_excell(Provider $provider, Access $access, Request $request, EntityManagerInterface $entityManagerInterface): BinaryFileResponse|JsonResponse|StreamedResponse
     {
         $acc = $access->hasRole('report');
         if (!$acc)
@@ -186,19 +191,21 @@ class ReportController extends AbstractController
         if ($params['type'] == 'all') {
             $docs = $entityManagerInterface->getRepository(HesabdariDoc::class)->findBy([
                 'year' => $acc['year'],
-                'bid'  => $acc['bid'],
+                'bid' => $acc['bid'],
+                'money'=> $acc['money']
             ]);
         } else {
             $docs = $entityManagerInterface->getRepository(HesabdariDoc::class)->findBy([
                 'year' => $acc['year'],
-                'bid'  => $acc['bid'],
+                'bid' => $acc['bid'],
                 'type' => $params['type'],
+                'money'=> $acc['money']
             ]);
         }
 
 
         $commodity = $entityManagerInterface->getRepository(Commodity::class)->findOneBy([
-            'bid'  => $acc['bid']->getId(),
+            'bid' => $acc['bid']->getId(),
             'code' => $params['commodity'],
         ]);
         //filter docs by date
@@ -208,13 +215,16 @@ class ReportController extends AbstractController
         foreach ($docs as $doc) {
             $canAdd = true;
             if ($dateStart) {
-                if ($provider->shamsiDateToTimestamp($doc->getDate()) < $dateStart) $canAdd = false;
+                if ($provider->shamsiDateToTimestamp($doc->getDate()) < $dateStart)
+                    $canAdd = false;
             }
             if ($dateEnd) {
-                if ($provider->shamsiDateToTimestamp($doc->getDate()) > $dateEnd) $canAdd = false;
+                if ($provider->shamsiDateToTimestamp($doc->getDate()) > $dateEnd)
+                    $canAdd = false;
             }
 
-            if ($canAdd) $result[] = $doc;
+            if ($canAdd)
+                $result[] = $doc;
         }
         $docs = $result;
         $result = [];

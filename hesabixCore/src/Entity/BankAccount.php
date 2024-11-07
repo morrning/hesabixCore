@@ -61,6 +61,9 @@ class BankAccount
     #[ORM\OneToMany(mappedBy: 'bank', targetEntity: Cheque::class)]
     private Collection $cheques;
 
+    #[ORM\ManyToOne]
+    private ?Money $money = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -272,6 +275,18 @@ class BankAccount
                 $cheque->setBank(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getMoney(): ?Money
+    {
+        return $this->money;
+    }
+
+    public function setMoney(?Money $money): static
+    {
+        $this->money = $money;
 
         return $this;
     }

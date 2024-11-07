@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\HesabdariRow;
 use App\Entity\Salary;
 use App\Service\Access;
+use App\Service\Explore;
 use App\Service\Log;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,12 +20,26 @@ class SalaryController extends AbstractController
     #[Route('/api/salary/list', name: 'app_salary_list')]
     public function app_salary_list(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        //باگ دارد تمام سال مالی برگشت داده می شود
-        if (!$access->hasRole('salary'))
+        $acc = $access->hasRole('salary');
+        if (!$acc)
             throw $this->createAccessDeniedException();
+        //bug fix for bank with no money type
         $datas = $entityManager->getRepository(Salary::class)->findBy([
-            'bid' => $request->headers->get('activeBid')
+            'bid' => $request->headers->get('activeBid'),
+            'money' => null
         ]);
+        foreach ($datas as $data) {
+            $data->setMoney($acc['bid']->getMoney());
+            $entityManager->persist($data);
+        }
+        $entityManager->flush();
+        //end of bug fix
+
+        $datas = $entityManager->getRepository(Salary::class)->findBy([
+            'bid' => $request->headers->get('activeBid'),
+            'money' => $acc['money']
+        ]);
+        $resp = [];
         foreach ($datas as $data) {
             $bs = 0;
             $bd = 0;
@@ -36,8 +51,9 @@ class SalaryController extends AbstractController
                 $bd += $item->getBd();
             }
             $data->setBalance($bd - $bs);
+            $resp[] = Explore::ExploreSalary($data);
         }
-        return $this->json($datas);
+        return $this->json($resp);
     }
 
     #[Route('/api/salary/info/{code}', name: 'app_salary_info')]
@@ -50,7 +66,7 @@ class SalaryController extends AbstractController
             'bid' => $acc['bid'],
             'code' => $code
         ]);
-        return $this->json($data);
+        return $this->json(Explore::ExploreSalary($data));
     }
 
     #[Route('/api/salary/mod/{code}', name: 'app_salary_mod')]
@@ -77,6 +93,7 @@ class SalaryController extends AbstractController
                 return $this->json(['result' => 2]);
             $data = new Salary();
             $data->setCode($provider->getAccountingCode($request->headers->get('activeBid'), 'salary'));
+            $data->setMoney($acc['money']);
         } else {
             $data = $entityManager->getRepository(Salary::class)->findOneBy([
                 'bid' => $acc['bid'],
@@ -84,6 +101,9 @@ class SalaryController extends AbstractController
             ]);
             if (!$data)
                 throw $this->createNotFoundException();
+            if (!$data->getMoney()) {
+                $data->setMoney($acc['money']);
+            }
         }
         $data->setBid($acc['bid']);
         $data->setname($params['name']);

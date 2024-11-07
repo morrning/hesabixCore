@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 class NotesController extends AbstractController
 {
     #[Route('/api/notes/list', name: 'api_notes_list')]
-    public function api_notes_list(Extractor $extractor,Request $request, Access $access, Jdate $jdate, EntityManagerInterface $entityManager, Log $log): JsonResponse
+    public function api_notes_list(Extractor $extractor, Request $request, Access $access, Jdate $jdate, EntityManagerInterface $entityManager, Log $log): JsonResponse
     {
         $acc = $access->hasRole('join');
         if (!$acc)
@@ -25,13 +25,14 @@ class NotesController extends AbstractController
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if($params['code'] != 0){
+        if ($params['code'] != 0) {
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'bid' => $acc['bid'],
                 'code' => $params['code'],
-    
+                'money' => $acc['money']
             ]);
-            if(!$doc) return $this->json($extractor->notFound());
+            if (!$doc)
+                return $this->json($extractor->notFound());
         }
         $items = $entityManager->getRepository(Note::class)->findBy([
             'bid' => $acc['bid'],
@@ -41,17 +42,17 @@ class NotesController extends AbstractController
         $result = [];
         foreach ($items as $item) {
             $result[] = [
-                'id'=>$item->getId(),
-                'des'=>$item->getDes(),
-                'submitter'=>$item->getSubmitter()->getFullName(),
-                'date' => $jdate->jdate('Y/n/d',$item->getDate())
+                'id' => $item->getId(),
+                'des' => $item->getDes(),
+                'submitter' => $item->getSubmitter()->getFullName(),
+                'date' => $jdate->jdate('Y/n/d', $item->getDate())
             ];
         }
         return $this->json($result);
     }
 
     #[Route('/api/notes/count', name: 'api_notes_count')]
-    public function api_notes_count(Extractor $extractor,Request $request, Access $access, Jdate $jdate, EntityManagerInterface $entityManager, Log $log): JsonResponse
+    public function api_notes_count(Extractor $extractor, Request $request, Access $access, Jdate $jdate, EntityManagerInterface $entityManager, Log $log): JsonResponse
     {
         $acc = $access->hasRole('join');
         if (!$acc)
@@ -60,13 +61,14 @@ class NotesController extends AbstractController
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if($params['code'] != 0){
+        if ($params['code'] != 0) {
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'bid' => $acc['bid'],
                 'code' => $params['code'],
-    
+                'money' => $acc['money']
             ]);
-            if(!$doc) return $this->json($extractor->notFound());
+            if (!$doc)
+                return $this->json($extractor->notFound());
         }
         $items = $entityManager->getRepository(Note::class)->findBy([
             'bid' => $acc['bid'],
@@ -89,9 +91,10 @@ class NotesController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code'],
-
+            'money' => $acc['money']
         ]);
-        if(!$doc) return $this->json($extractor->notFound());
+        if (!$doc)
+            return $this->json($extractor->notFound());
         $note = new Note();
         $note->setDoc($doc);
         $note->setBid($acc['bid']);

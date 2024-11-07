@@ -38,6 +38,9 @@ class Salary
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $balance = null;
 
+    #[ORM\ManyToOne(inversedBy: 'salaries')]
+    private ?Money $money = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -134,6 +137,18 @@ class Salary
     public function setBalance(?string $balance): static
     {
         $this->balance = $balance;
+
+        return $this;
+    }
+
+    public function getMoney(): ?Money
+    {
+        return $this->money;
+    }
+
+    public function setMoney(?Money $money): static
+    {
+        $this->money = $money;
 
         return $this;
     }

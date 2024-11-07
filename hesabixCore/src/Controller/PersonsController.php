@@ -892,7 +892,8 @@ class PersonsController extends AbstractController
             $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
                 'bid' => $acc['bid'],
                 'type' => 'person_receive',
-                'year' => $acc['year']
+                'year' => $acc['year'],
+                'money'=> $acc['money']
             ]);
         } else {
             $items = [];
@@ -901,7 +902,8 @@ class PersonsController extends AbstractController
                     'id' => $param['id'],
                     'bid' => $acc['bid'],
                     'type' => 'person_receive',
-                    'year' => $acc['year']
+                    'year' => $acc['year'],
+                    'money'=> $acc['money']
                 ]);
                 if ($prs)
                     $items[] = $prs;
@@ -934,7 +936,8 @@ class PersonsController extends AbstractController
             [
                 'bid' => $acc['bid'],
                 'type' => 'person_receive',
-                'year' => $acc['year']
+                'year' => $acc['year'],
+                'money'=> $acc['money']
             ],
             ['id' => 'DESC']
         );
@@ -977,7 +980,8 @@ class PersonsController extends AbstractController
             $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
                 'bid' => $acc['bid'],
                 'type' => 'person_receive',
-                'year' => $acc['year']
+                'year' => $acc['year'],
+                'money'=> $acc['money']
             ]);
         } else {
             $items = [];
@@ -986,7 +990,8 @@ class PersonsController extends AbstractController
                     'id' => $param['id'],
                     'bid' => $acc['bid'],
                     'type' => 'person_receive',
-                    'year' => $acc['year']
+                    'year' => $acc['year'],
+                    'money'=> $acc['money']
                 ]);
                 if ($prs)
                     $items[] = $prs;
@@ -1009,7 +1014,8 @@ class PersonsController extends AbstractController
             $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
                 'bid' => $acc['bid'],
                 'type' => 'person_send',
-                'year' => $acc['year']
+                'year' => $acc['year'],
+                'money'=> $acc['money']
             ]);
         } else {
             $items = [];
@@ -1018,7 +1024,8 @@ class PersonsController extends AbstractController
                     'id' => $param['id'],
                     'bid' => $acc['bid'],
                     'type' => 'person_send',
-                    'year' => $acc['year']
+                    'year' => $acc['year'],
+                    'money'=> $acc['money']
                 ]);
                 if ($prs)
                     $items[] = $prs;
@@ -1051,7 +1058,8 @@ class PersonsController extends AbstractController
             [
                 'bid' => $acc['bid'],
                 'type' => 'person_send',
-                'year' => $acc['year']
+                'year' => $acc['year'],
+                'money'=> $acc['money']
             ],
             ['id' => 'DESC']
         );
@@ -1094,7 +1102,8 @@ class PersonsController extends AbstractController
             $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
                 'bid' => $acc['bid'],
                 'type' => 'person_send',
-                'year' => $acc['year']
+                'year' => $acc['year'],
+                'money'=> $acc['money']
             ]);
         } else {
             $items = [];
@@ -1103,7 +1112,8 @@ class PersonsController extends AbstractController
                     'id' => $param['id'],
                     'bid' => $acc['bid'],
                     'type' => 'person_send',
-                    'year' => $acc['year']
+                    'year' => $acc['year'],
+                    'money'=> $acc['money']
                 ]);
                 if ($prs)
                     $items[] = $prs;

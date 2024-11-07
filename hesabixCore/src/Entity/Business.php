@@ -252,6 +252,12 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: Project::class, orphanRemoval: true)]
     private Collection $projects;
 
+    /**
+     * @var Collection<int, Money>
+     */
+    #[ORM\ManyToMany(targetEntity: Money::class, inversedBy: 'bids')]
+    private Collection $extraMoney;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -287,6 +293,7 @@ class Business
         $this->priceLists = new ArrayCollection();
         $this->printOptions = new ArrayCollection();
         $this->projects = new ArrayCollection();
+        $this->extraMoney = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1784,6 +1791,30 @@ class Business
                 $project->setBid(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Money>
+     */
+    public function getExtraMoney(): Collection
+    {
+        return $this->extraMoney;
+    }
+
+    public function addExtraMoney(Money $extraMoney): static
+    {
+        if (!$this->extraMoney->contains($extraMoney)) {
+            $this->extraMoney->add($extraMoney);
+        }
+
+        return $this;
+    }
+
+    public function removeExtraMoney(Money $extraMoney): static
+    {
+        $this->extraMoney->removeElement($extraMoney);
 
         return $this;
     }

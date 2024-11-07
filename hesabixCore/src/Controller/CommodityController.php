@@ -229,7 +229,7 @@ class CommodityController extends AbstractController
                     } else {
                         $spd = new PriceListDetail;
                         $spd->setList($list);
-                        $spd->setMoney($acc['bid']->getMoney());
+                        $spd->setMoney($acc['money']);
                         $spd->setCommodity($item);
                         $spd->setPriceBuy(0);
                         $spd->setPriceSell(0);
@@ -362,7 +362,7 @@ class CommodityController extends AbstractController
                 } else {
                     $spd = new PriceListDetail;
                     $spd->setList($item);
-                    $spd->setMoney($acc['bid']->getMoney());
+                    $spd->setMoney($acc['money']);
                     $spd->setCommodity($data);
                     $spd->setPriceBuy(0);
                     $spd->setPriceSell(0);
@@ -496,7 +496,7 @@ class CommodityController extends AbstractController
                         $detail->setCommodity($data);
                         $detail->setPriceSell($item['priceSell']);
                         $detail->setPriceBuy(0);
-                        $detail->setMoney($acc['bid']->getMoney());
+                        $detail->setMoney($acc['money']);
                         $entityManager->persist($detail);
                     }
                 }
@@ -628,7 +628,7 @@ class CommodityController extends AbstractController
                     $detail->setCommodity($data);
                     $detail->setPriceSell($item['priceSell']);
                     $detail->setPriceBuy(0);
-                    $detail->setMoney($acc['bid']->getMoney());
+                    $detail->setMoney($acc['money']);
                     $entityManager->persist($detail);
                 }
             }

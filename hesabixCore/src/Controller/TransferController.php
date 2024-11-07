@@ -25,7 +25,8 @@ class TransferController extends AbstractController
         $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid'=>$acc['bid'],
             'type'=>'transfer',
-            'year'=>$acc['year']
+            'year'=>$acc['year'],
+            'money'=> $acc['money']
         ]);
         $resp = [];
         foreach ($items as $item){

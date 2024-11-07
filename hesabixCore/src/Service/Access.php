@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\APIToken;
 use App\Entity\Business;
+use App\Entity\Money;
 use App\Entity\Permission;
 use App\Entity\UserToken;
 use App\Entity\Year;
@@ -69,12 +70,27 @@ class Access
             ]);
         }
         
+        if ($this->request->headers->get('activeMoney')) {
+            $money = $this->em->getRepository(Money::class)->findOneBy([
+                'name' => $this->request->headers->get('activeMoney'),
+            ]);
+            if (!$money) { return false; }
+        }
+        else{
+            $money = $this->em->getRepository(Money::class)->findOneBy([
+                'name' => $bid->getMoney(),
+            ]);
+            if (!$money) { return false; }
+        }
+
         $accessArray = [
             'bid'=>$bid,
             'user'=>$this->user,
             'year'=>$year,
-            'access'=>true
+            'access'=>true,
+            'money'=>$money
         ];
+        
         if($bid->getOwner()->getEmail() === $this->user->getUserIdentifier()){
             //user is owner
             return $accessArray;

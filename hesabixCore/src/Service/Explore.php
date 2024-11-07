@@ -236,6 +236,16 @@ class Explore
                 'id' => $item->getId(),
                 'code' => $item->getCode(),
                 'name' => $item->getName(),
+                'cardNum' => $item->getCardNum(),
+                'shaba' => $item->getShaba(),
+                'accountNum' => $item->getAccountNum(),
+                'owner' => $item->getOwner(),
+                'shobe' => $item->getShobe(),
+                'posNum' => $item->getPosNum(),
+                'des' => $item->getDes(),
+                'mobileInternetBank' => $item->getMobileInternetBank(),
+                'balance' => null,
+                'money' => self::ExploreMoney($item->getMoney())
             ];
         return null;
     }
@@ -247,7 +257,9 @@ class Explore
                 'id' => $item->getId(),
                 'code' => $item->getCode(),
                 'name' => $item->getName(),
-                'des' => $item->getDes()
+                'des' => $item->getDes(),
+                'balance' => $item->getBalance(),
+                'money' => self::ExploreMoney($item->getMoney())
             ];
         return null;
     }
@@ -258,7 +270,9 @@ class Explore
                 'id' => $item->getId(),
                 'code' => $item->getCode(),
                 'name' => $item->getName(),
-                'des' => $item->getDes()
+                'des' => $item->getDes(),
+                'balance' => $item->getBalance(),
+                'money' => self::ExploreMoney($item->getMoney())
             ];
         return null;
     }
@@ -341,6 +355,8 @@ class Explore
             'id' => $money->getId(),
             'label' => $money->getLabel(),
             'name' => $money->getName(),
+            'shortName' => $money->getShortName(),
+            'symbol' => $money->getSymbol()
         ];
     }
     public static function ExploreYear(Year|null $year)
@@ -466,5 +482,56 @@ class Explore
             $result[] = self::ExploreStoreroom($item);
         }
         return $result;
+    }
+
+    public static function ExploreBusiness(Business $item)
+    {
+        $res = [
+            'id' => $item->getId(),
+            'owner' => $item->getOwner()->getFullName(),
+            'name' => $item->getName(),
+            'legal_name' => $item->getLegalName(),
+            'field' => $item->getField(),
+            'shenasemeli' => $item->getShenasemeli(),
+            'codeeqtesadi' => $item->getCodeeghtesadi(),
+            'shomaresabt' => $item->getShomaresabt(),
+            'country' => $item->getCountry(),
+            'ostan' => $item->getOstan(),
+            'shahrestan' => $item->getShahrestan(),
+            'postalcode' => $item->getPostalcode(),
+            'tel' => $item->getTel(),
+            'mobile' => $item->getMobile(),
+            'address' => $item->getAddress(),
+            'website' => $item->getWesite(),
+            'maliyatafzode' => $item->getMaliyatafzode(),
+            'arzmain' => self::ExploreMoney($item->getMoney()),
+            'zarinpalCode' => $item->getZarinpalCode(),
+            'smsCharge' => $item->getSmsCharge(),
+            'shortlinks' => $item->isShortlinks(),
+            'walletEnabled' => $item->isWalletEnable(),
+            'walletMatchBank' => null,
+            'updateSellPrice' => $item->isCommodityUpdateSellPriceAuto(),
+            'updateBuyPrice' => $item->isCommodityUpdateBuyPriceAuto(),
+        ];
+        if (!$item->getProfitCalctype()) {
+            $res['profitCalcType'] = 'lis';
+        } else {
+            $res['profitCalcType'] = $item->getProfitCalctype();
+        }
+
+        foreach ($item->getYears() as $year) {
+            if ($year->isHead()) {
+                $res['year'] = Explore::ExploreYear($year);
+            }
+        }
+
+        $res['moneys'] = [
+            self::ExploreMoney($item->getMoney())
+        ];
+        foreach ($item->getExtraMoney() as $money) {
+            $res['moneys'][] = self::ExploreMoney($money);
+        }
+
+        return $res;
     }
 }

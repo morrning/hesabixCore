@@ -28,6 +28,15 @@ class Extractor
         
     ];
    }
+   public function operationFail($message='operaition fail',$code=404, $data = ''){
+    return [
+        'Success'=>false,
+        'code' => $code,
+        'data' =>$data,
+        'message'=>$message,
+        
+    ];
+   }
    public function notFound($data = ''){
     return [
         'code' => 404,

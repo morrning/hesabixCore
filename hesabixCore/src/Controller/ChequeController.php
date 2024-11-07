@@ -132,7 +132,7 @@ class ChequeController extends AbstractController
         $hesabdariDoc->setBid($acc['bid']);
         $hesabdariDoc->setSubmitter($this->getUser());
         $hesabdariDoc->setYear($acc['year']);
-        $hesabdariDoc->setMoney($acc['bid']->getMoney());
+        $hesabdariDoc->setMoney($acc['money']);
         $hesabdariDoc->setDateSubmit(time());
         $hesabdariDoc->setDate($params['date']);
         $hesabdariDoc->setType('pass_cheque');

@@ -121,7 +121,8 @@ class StoreroomController extends AbstractController
             throw $this->createAccessDeniedException();
         $buys = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
-            'type' => 'buy'
+            'type' => 'buy',
+            'money'=> $acc['money']
         ]);
         $buysForExport = [];
         foreach ($buys as $buy) {
@@ -141,7 +142,8 @@ class StoreroomController extends AbstractController
 
         $sells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
-            'type' => 'sell'
+            'type' => 'sell',
+            'money'=> $acc['money']
         ]);
         $sellsForExport = [];
         foreach ($sells as $sell) {
@@ -161,7 +163,8 @@ class StoreroomController extends AbstractController
 
         $rfsells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
-            'type' => 'rfsell'
+            'type' => 'rfsell',
+            'money'=> $acc['money']
         ]);
         $rfsellsForExport = [];
         foreach ($rfsells as $sell) {
@@ -181,7 +184,8 @@ class StoreroomController extends AbstractController
 
         $rfbuys = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
-            'type' => 'rfbuy'
+            'type' => 'rfbuy',
+            'money'=> $acc['money']
         ]);
         $rfbuysForExport = [];
         foreach ($rfbuys as $buy) {
@@ -238,7 +242,8 @@ class StoreroomController extends AbstractController
             throw $this->createAccessDeniedException();
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $id
+            'code' => $id,
+            'money'=> $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException('سند یافت نشد.');
@@ -351,7 +356,8 @@ class StoreroomController extends AbstractController
         //going to save
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'id' => $params['doc']['id'],
-            'bid' => $acc['bid']
+            'bid' => $acc['bid'],
+            'money'=> $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException('سند یافت نشد');
