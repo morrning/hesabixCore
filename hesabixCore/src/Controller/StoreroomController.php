@@ -30,7 +30,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class StoreroomController extends AbstractController
 {
     #[Route('/api/storeroom/list/{type}', name: 'app_storeroom_list')]
-    public function app_storeroom_list(Extractor $extractor,Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $type = 'active'): JsonResponse
+    public function app_storeroom_list(Extractor $extractor, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $type = 'active'): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -45,7 +45,13 @@ class StoreroomController extends AbstractController
                 'bid' => $acc['bid'],
             ]);
 
-        return $this->json($extractor->operationSuccess(Explore::ExploreStoreRooms($items)));
+        return $this->json(
+            $extractor->operationSuccess(
+                Explore::ExploreStoreRooms(
+                    $items
+                )
+            )
+        );
     }
 
     #[Route('/api/storeroom/mod/{code}', name: 'app_storeroom_mod')]
@@ -122,7 +128,7 @@ class StoreroomController extends AbstractController
         $buys = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
             'type' => 'buy',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         $buysForExport = [];
         foreach ($buys as $buy) {
@@ -143,7 +149,7 @@ class StoreroomController extends AbstractController
         $sells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
             'type' => 'sell',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         $sellsForExport = [];
         foreach ($sells as $sell) {
@@ -164,7 +170,7 @@ class StoreroomController extends AbstractController
         $rfsells = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
             'type' => 'rfsell',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         $rfsellsForExport = [];
         foreach ($rfsells as $sell) {
@@ -185,7 +191,7 @@ class StoreroomController extends AbstractController
         $rfbuys = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $acc['bid'],
             'type' => 'rfbuy',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         $rfbuysForExport = [];
         foreach ($rfbuys as $buy) {
@@ -243,7 +249,7 @@ class StoreroomController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $id,
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException('سند یافت نشد.');
@@ -341,7 +347,7 @@ class StoreroomController extends AbstractController
     }
 
     #[Route('/api/storeroom/ticket/insert', name: 'app_storeroom_ticket_insert')]
-    public function app_storeroom_ticket_insert(PluginService $pluginService,registryMGR $registryMGR, SMS $sms, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_ticket_insert(PluginService $pluginService, registryMGR $registryMGR, SMS $sms, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -357,7 +363,7 @@ class StoreroomController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'id' => $params['doc']['id'],
             'bid' => $acc['bid'],
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException('سند یافت نشد');
@@ -446,9 +452,12 @@ class StoreroomController extends AbstractController
                 $entityManager->persist($ticket);
                 $entityManager->flush();
                 if ($transferType->getName() == 'باربری') {
-                    if($ticket->getTransfer() == null) $ticket->setTransfer(0);
-                    if($ticket->getReferral() == null) $ticket->setReferral(0);
-                    if($ticket->getSenderTel() == null) $ticket->setSenderTel(0);
+                    if ($ticket->getTransfer() == null)
+                        $ticket->setTransfer(0);
+                    if ($ticket->getReferral() == null)
+                        $ticket->setReferral(0);
+                    if ($ticket->getSenderTel() == null)
+                        $ticket->setSenderTel(0);
                     $smsres = $sms->sendByBalance(
                         [
                             $person->getNikename(),

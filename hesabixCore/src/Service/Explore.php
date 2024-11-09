@@ -471,7 +471,8 @@ class Explore
             'name' => $item->getName(),
             'tel' => $item->getTel(),
             'address' => $item->getAdr(),
-            'manager' => $item->getManager()
+            'manager' => $item->getManager(),
+            'active'=>$item->isActive()
         ];
     }
 
