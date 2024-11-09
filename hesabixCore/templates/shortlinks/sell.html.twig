@@ -31,31 +31,32 @@
 							{{doc.code}}
 						</span>
 					</h3>
-					<div class="block-options">
+					<div
+						class="block-options">
 						<!-- Print Page functionality is initialized dmPrint() -->
-						<a class="btn btn-sm btn-alt-secondary me-3"  type="button" target="_blank" href="{{path('shortlinks_pdf',{bid:bid.id,link:link})}}">
+						<a class="btn btn-sm btn-alt-secondary me-3" type="button" target="_blank" href="{{path('shortlinks_pdf',{bid:bid.id,link:link})}}">
 							<i class="si si-printer me-1"></i>
 							چاپ فاکتور
 						</a>
-						{% if (totalPays < doc.amount) and bid.walletEnable %}
+						{% if (totalPays < doc.amount) and bid.walletEnable and doc.money.name == 'IRR' %}
 							<a href="{{ path('pay_sell',{'id':doc.id}) }}" class="btn btn-sm btn-success">
 								<i class="fa fa-credit-card"></i>
 								پرداخت آنلاین مبلغ
 								{{ (doc.amount - totalPays) | number_format }}
-								ریال
+								{{doc.money.shortName}}
 							</a>
 						{% endif %}
 					</div>
 				</div>
 				<div class="block-content">
 					{% if msg == 'success' %}
-					<div class="alert alert-success alert-dismissible" role="alert">
-						<h3 class="alert-heading fs-4 my-2">
-							<i class="fa fa-check"></i>
-							نتیجه پرداخت آنلاین</h3>
-						<button aria-label="Close" class="btn-close" data-bs-dismiss="alert" type="button"></button>
-						<p class="mb-0">پرداخت فاکتور با موفقیت انجام شد. هم‌اکنون می‌توانید شماره پیگیری را از بخش پرداخت‌ها مشاهده نمایید</p>
-					</div>
+						<div class="alert alert-success alert-dismissible" role="alert">
+							<h3 class="alert-heading fs-4 my-2">
+								<i class="fa fa-check"></i>
+								نتیجه پرداخت آنلاین</h3>
+							<button aria-label="Close" class="btn-close" data-bs-dismiss="alert" type="button"></button>
+							<p class="mb-0">پرداخت فاکتور با موفقیت انجام شد. هم‌اکنون می‌توانید شماره پیگیری را از بخش پرداخت‌ها مشاهده نمایید</p>
+						</div>
 					{% elseif msg == 'fail' %}
 						<div class="alert alert-danger alert-dismissible" role="alert">
 							<h3 class="alert-heading fs-4 my-2">
@@ -65,7 +66,8 @@
 							<p class="mb-0">پرداخت فاکتور ناموفق بود. برای پرداخت مجدد می‌توانید دوباره سعی نمایید.</p>
 						</div>
 					{% endif %}
-					<div class="p-sm-2 p-xl-1">
+					<div
+						class="p-sm-2 p-xl-1">
 						<!-- Invoice Info -->
 						<div
 							class="row mb-5">
@@ -77,7 +79,7 @@
 									{{bid.name}}
 								</p>
 								<address>آدرس :
-																											استان
+																																				استان
 									{{bid.ostan}}
 									شهرستان
 									{{bid.shahrestan}}
@@ -105,7 +107,7 @@
 									{{ person.nikename }}
 								</p>
 								<address>آدرس :
-									استان
+																		استان
 									{{person.ostan}}
 									شهرستان
 									{{person.shahr}}
@@ -132,54 +134,54 @@
 						<!-- Table -->
 						<div class="table-responsive push text-center">
 							<table class="table table-bordered">
-							<thead>
-								<tr class="bg-body">
-									<th class="text-dark">ردیف</th>
-									<th class="text-dark">کالا/خدمات</th>
-									<th class="text-dark">شرح</th>
-									<th class="text-dark">تعداد / مقدار</th>
-									<th class="text-dark">مبلغ واحد</th>
-									<th class="text-dark">تخفیف</th>
-									<th class="text-dark">مالیات</th>
-									<th class="text-dark">مبلغ کل</th>
-								</tr>
-							</thead>
-							<tbody>
-								{% set taxAll = 0 %}
-								{% set rowIndex = 0 %}
-								{% for item in rows%}
-									{% if item.commodity %}
-										{%  set taxAll = taxAll + item.tax %}
-										{% set rowIndex = rowIndex + 1 %}
-										<tr>
-											<td >{{rowIndex}}</td>
-											<td >
-												{{ item.commodity.code }}
-												-
-												{{ item.commodity.name }}</td>
-											<td >{{ item.des }}</td>
-											<td >
-												{{ item.commdityCount }}
-												{{ item.commodity.unit.name }}
-											</td>
-											<td >{{ ((item.bs - item.tax + item.discount) / item.commdityCount) | number_format }}</td>
-											<td >{{ item.discount | number_format }}</td>
-											<td >{{ item.tax | number_format}}</td>
-											<td >{{ item.bs| number_format }}</td>
-										</tr>
-									{% endif %}
-								{% endfor %}
-							</tbody>
+								<thead>
+									<tr class="bg-body">
+										<th class="text-dark">ردیف</th>
+										<th class="text-dark">کالا/خدمات</th>
+										<th class="text-dark">شرح</th>
+										<th class="text-dark">تعداد / مقدار</th>
+										<th class="text-dark">مبلغ واحد</th>
+										<th class="text-dark">تخفیف</th>
+										<th class="text-dark">مالیات</th>
+										<th class="text-dark">مبلغ کل</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% set taxAll = 0 %}
+									{% set rowIndex = 0 %}
+									{% for item in rows%}
+										{% if item.commodity %}
+											{%  set taxAll = taxAll + item.tax %}
+											{% set rowIndex = rowIndex + 1 %}
+											<tr>
+												<td>{{rowIndex}}</td>
+												<td>
+													{{ item.commodity.code }}
+													-
+													{{ item.commodity.name }}</td>
+												<td>{{ item.des }}</td>
+												<td>
+													{{ item.commdityCount }}
+													{{ item.commodity.unit.name }}
+												</td>
+												<td>{{ ((item.bs - item.tax + item.discount) / item.commdityCount) | number_format }}</td>
+												<td>{{ item.discount | number_format }}</td>
+												<td>{{ item.tax | number_format}}</td>
+												<td>{{ item.bs| number_format }}</td>
+											</tr>
+										{% endif %}
+									{% endfor %}
+								</tbody>
 							</table>
 						</div>
 						<!-- END Table -->
 						<div class="block block-rounded">
-						جمع کل فاکتور:
-						{{ doc.amount | number_format }}
+							جمع کل فاکتور:
+							{{ doc.amount | number_format }}
 						</div>
 						<div class="block block-rounded">
-						توضیحات:
-						{{ doc.des }}
+							توضیحات:
+							{{ doc.des }}
 						</div>
 						<div class="block block-rounded">
 							<div class="block-header block-header-default">
@@ -199,36 +201,38 @@
 								<div class="table-responsive push text-center">
 									<table class="table table-bordered">
 										<thead class="bg-body">
-										<tr>
-											<th class="text-center" style="width: 60px;">ردیف</th>
-											<th>روش پرداخت</th>
-											<th>تاریخ</th>
-											<th class="text-center">مبلغ</th>
-											<th class="text-center">شماره پیگیری/سند</th>
-											<th class="text-center">توضیحات</th>
-										</tr>
+											<tr>
+												<th class="text-center" style="width: 60px;">ردیف</th>
+												<th>روش پرداخت</th>
+												<th>تاریخ</th>
+												<th class="text-center">مبلغ</th>
+												<th class="text-center">شماره پیگیری/سند</th>
+												<th class="text-center">توضیحات</th>
+											</tr>
 										</thead>
 										<tbody>
-										{% for item in doc.relatedDocs %}
-											<tr>
-												<td>{{ loop.index }}</td>
-												{% if item.type == 'walletPay' %}
-													<td class="text-success"><i class="fa fa-wallet"></i>پرداخت آنلاین</td>
-												{% else %}
-													<td class="text-primary"><i class="fa fa-file"></i>سند حسابداری</td>
-												{% endif %}
-												<td>{{ item.date}}</td>
-												<td>{{ item.amount | number_format }}</td>
-												<td>{{ item.code }}</td>
-												<td>{{ item.des }}</td>
+											{% for item in doc.relatedDocs %}
+												<tr>
+													<td>{{ loop.index }}</td>
+													{% if item.type == 'walletPay' %}
+														<td class="text-success">
+															<i class="fa fa-wallet"></i>پرداخت آنلاین</td>
+													{% else %}
+														<td class="text-primary">
+															<i class="fa fa-file"></i>سند حسابداری</td>
+													{% endif %}
+													<td>{{ item.date}}</td>
+													<td>{{ item.amount | number_format }}</td>
+													<td>{{ item.code }}</td>
+													<td>{{ item.des }}</td>
+												</tr>
+											{% endfor %}
+											<tr class="">
+												<td class="fw-bold text-uppercase text-end bg-body-light" colspan="5">جمع کل</td>
+												<td class="fw-bold text-end bg-body-light">{{ totalPays | number_format }}
+													{{doc.money.shortName}}
+												</td>
 											</tr>
-										{% endfor %}
-										<tr class="">
-											<td class="fw-bold text-uppercase text-end bg-body-light" colspan="5">جمع کل</td>
-											<td class="fw-bold text-end bg-body-light">{{ totalPays | number_format }}
-											ریال
-											</td>
-										</tr>
 										</tbody>
 									</table>
 								</div>

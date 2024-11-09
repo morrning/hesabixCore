@@ -147,6 +147,37 @@ class AdminController extends AbstractController
         return $this->json($resp);
     }
 
+    #[Route('/api/admin/business/count', name: 'admin_business_count')]
+    public function admin_business_count(Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    {
+        return $this->json($entityManager->getRepository(Business::class)->countAll());
+    }
+    
+    #[Route('/api/admin/business/search', name: 'admin_business_list_search')]
+    public function admin_business_list_search(Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        $items = $entityManager->getRepository(Business::class)->findByPage($params['options']['page'],$params['options']['rowsPerPage'],$params['search']);
+        $resp = [];
+        foreach ($items as $item) {
+            $temp = [];
+            $temp['id'] = $item->getId();
+            $temp['name'] = $item->getName();
+            $temp['owner'] = $item->getOwner()->getFullName();
+            $temp['ownerMobile'] = $item->getOwner()->getMobile();
+            $temp['dateRegister'] = $jdate->jdate('Y/n/d', $item->getDateSubmit());
+            $temp['commodityCount'] = count($entityManager->getRepository(Commodity::class)->findBy(['bid' => $item]));
+            $temp['personsCount'] = count($entityManager->getRepository(Person::class)->findBy(['bid' => $item]));
+            $temp['hesabdariDocsCount'] = count($entityManager->getRepository(HesabdariDoc::class)->findBy(['bid' => $item]));
+            $temp['StoreroomDocsCount'] = count($entityManager->getRepository(StoreroomTicket::class)->findBy(['bid' => $item]));
+            $resp[] = $temp;
+        }
+        return $this->json($resp);
+    }
+
     #[Route('/api/admin/settings/sms/info', name: 'admin_settings_sms_info')]
     public function admin_settings_sms_info(Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {

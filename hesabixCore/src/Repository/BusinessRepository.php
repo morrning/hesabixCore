@@ -39,22 +39,36 @@ class BusinessRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
-//     * @return Business[] Returns an array of Business objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('b')
-//            ->andWhere('b.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('b.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+     * @return Business[] Returns an array of Business objects
+     */
+    public function findByPage($page = 0, $take = 25, $search = ''): array
+    {
+        $query = $this->createQueryBuilder('b')
+            ->setFirstResult($page * $take)
+            ->orderBy('b.id', 'DESC')
+            ->setMaxResults($take);
+            
+        if ($search != '') {
+            $query->andWhere("b.name LIKE :search")
+            ->setParameter('search', '%' . $search . '%');
+        }
+        return $query->getQuery()->getResult();
+    }
 
-//    public function findOneBySomeField($value): ?Business
+    /**
+     * @return  integer Returns an integer of Business objects
+     */
+    public function countAll(): int
+    {
+        return $this->createQueryBuilder('b')
+            ->select('count(b.id)')
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
+    }
+
+    //    public function findOneBySomeField($value): ?Business
 //    {
 //        return $this->createQueryBuilder('b')
 //            ->andWhere('b.exampleField = :val')
@@ -64,14 +78,15 @@ class BusinessRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-    public function findLast(){
-        $res =  $this->createQueryBuilder('p')
+    public function findLast()
+    {
+        $res = $this->createQueryBuilder('p')
             ->orderBy('p.id', 'ASC')
             ->getQuery()
             ->getResult()
         ;
-        if(count($res) > 0)
-            return $res[count($res) -1];
+        if (count($res) > 0)
+            return $res[count($res) - 1];
         return null;
     }
 }
