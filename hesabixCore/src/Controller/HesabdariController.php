@@ -382,7 +382,6 @@ class HesabdariController extends AbstractController
                     'id' => $row['chequeOwner']
                 ]);
                 $cheque = new Cheque();
-                echo $hesabdariRow->getRef();
                 $cheque->setBid($acc['bid']);
                 $cheque->setSubmitter($this->getUser());
                 $cheque->setPayDate($row['chequeDate']);
@@ -392,7 +391,7 @@ class HesabdariController extends AbstractController
                 $cheque->setSayadNum($row['chequeSayadNum']);
                 $cheque->setDateSubmit(time());
                 $cheque->setDes($row['des']);
-                $dateArray = explode('-', $row['chequeDate']);
+                $dateArray = explode('/', $row['chequeDate']);
                 $dateGre = strtotime($jdate->jalali_to_gregorian($dateArray['0'], $dateArray['1'], $dateArray['2'], '/'));
                 $cheque->setDateStamp($dateGre);
                 $cheque->setPerson($person);

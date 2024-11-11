@@ -70,7 +70,7 @@ class BusinessController extends AbstractController
         return $this->json($extractor->operationSuccess());
     }
     #[Route('/api/business/list', name: 'api_bussiness_list')]
-    public function api_bussiness_list(#[CurrentUser] ?User $user, Access $access,Explore $explore, EntityManagerInterface $entityManager, Provider $provider): Response
+    public function api_bussiness_list(#[CurrentUser] ?User $user, Access $access, Explore $explore, EntityManagerInterface $entityManager, Provider $provider): Response
     {
 
         $buss = $entityManager->getRepository(Permission::class)->findBy(['user' => $user]);
@@ -197,11 +197,15 @@ class BusinessController extends AbstractController
                 if ($params['profitCalcType'] == 'lis' || $params['profitCalcType'] == 'avgis') {
                     $business->setProfitCalcType($params['profitCalcType']);
                 }
-            }
-            else{
+            } else {
                 $business->setProfitCalcType('lis');
             }
-            $business->setCommodityUpdateSellPriceAuto($params['commodityUpdateSellPriceAuto']);
+            if (array_key_exists('commodityUpdateSellPriceAuto', $params)) {
+                $business->setCommodityUpdateSellPriceAuto($params['commodityUpdateSellPriceAuto']);
+            }
+            else{
+                $business->setCommodityUpdateSellPriceAuto(true);
+            }
             if (array_key_exists('walletEnabled', $params)) {
                 if ($params['walletEnabled']) {
                     if (array_key_exists('walletMatchBank', $params)) {
@@ -349,10 +353,10 @@ class BusinessController extends AbstractController
                 [
                     'result' => 2,
                     'data' => [
-                        'email' => $user->getEmail(),
-                        'name' => $user->getFullName(),
-                        'owner' => false
-                    ]
+                            'email' => $user->getEmail(),
+                            'name' => $user->getFullName(),
+                            'owner' => false
+                        ]
                 ]
             );
         }
@@ -622,10 +626,10 @@ class BusinessController extends AbstractController
     }
 
     #[Route('/api/business/stat', name: 'api_business_stat')]
-    public function api_business_stat(Access $access,Jdate $jdate, Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
+    public function api_business_stat(Access $access, Jdate $jdate, Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
     {
         $acc = $access->hasRole('join');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
 
         $dateNow = $jdate->jdate('Y/m/d', time());
@@ -650,7 +654,7 @@ class BusinessController extends AbstractController
         $docs = $entityManager->getRepository(HesabdariDoc::class)->findBy([
             'bid' => $buss,
             'year' => $year,
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
 
         $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
@@ -664,8 +668,8 @@ class BusinessController extends AbstractController
             'bid' => $buss,
             'year' => $year,
             'type' => 'buy',
-            'money'=> $acc['money']
-            
+            'money' => $acc['money']
+
         ]);
         $buysTotal = 0;
         $buysToday = 0;
@@ -687,7 +691,7 @@ class BusinessController extends AbstractController
             'bid' => $buss,
             'year' => $year,
             'type' => 'sell',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         $sellsTotal = 0;
         $sellsToday = 0;
@@ -709,7 +713,7 @@ class BusinessController extends AbstractController
             'bid' => $buss,
             'year' => $year,
             'type' => 'person_send',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         $sendsTotal = 0;
         $sendsToday = 0;
@@ -731,7 +735,7 @@ class BusinessController extends AbstractController
             'bid' => $buss,
             'year' => $year,
             'type' => 'person_receive',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         $recsTotal = 0;
         $recsToday = 0;
@@ -754,8 +758,8 @@ class BusinessController extends AbstractController
             'docCount' => count($docs),
             'income' => $bssum,
             'commodity' => count($entityManager->getRepository(Commodity::class)->findby([
-                'bid' => $buss
-            ])),
+                        'bid' => $buss
+                    ])),
             'buys_total' => $buysTotal,
             'buys_today' => $buysToday,
             'sells_total' => $sellsTotal,

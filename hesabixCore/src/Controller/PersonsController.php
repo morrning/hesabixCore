@@ -76,8 +76,10 @@ class PersonsController extends AbstractController
         $bs = 0;
         $bd = 0;
         foreach ($rows as $row) {
-            $bs += $row->getBs();
-            $bd += $row->getBd();
+            if ($row->getDoc()->getMoney() == $acc['money']) {
+                $bs += $row->getBs();
+                $bd += $row->getBd();
+            }
         }
         $response['bs'] = $bs;
         $response['bd'] = $bd;
@@ -379,13 +381,16 @@ class PersonsController extends AbstractController
                 'mobile' => $person->getMobile()
             ];
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person' => $person
+                'person' => $person,
             ]);
             $bs = 0;
             $bd = 0;
             foreach ($rows as $row) {
-                $bs += $row->getBs();
-                $bd += $row->getBd();
+                //check for that calulate is in match money type
+                if ($row->getDoc()->getMoney() == $acc['money']) {
+                    $bs += $row->getBs();
+                    $bd += $row->getBd();
+                }
             }
             $temp['bs'] = $bs;
             $temp['bd'] = $bd;
@@ -616,7 +621,7 @@ class PersonsController extends AbstractController
         $acc = $access->hasRole('person');
         if (!$acc)
             throw $this->createAccessDeniedException();
-        
+
         $personType = $entityManager->getRepository(PersonType::class)->findOneBy([
             'code' => 'salesman',
         ]);
@@ -625,8 +630,8 @@ class PersonsController extends AbstractController
         ]);
         $res = [];
         foreach ($persons as $key => $person) {
-            foreach($person->getType() as $type){
-                if($type->getCode() == $personType->getCode()){
+            foreach ($person->getType() as $type) {
+                if ($type->getCode() == $personType->getCode()) {
                     $res[] = $person;
                 }
             }
@@ -893,7 +898,7 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid'],
                 'type' => 'person_receive',
                 'year' => $acc['year'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ]);
         } else {
             $items = [];
@@ -903,7 +908,7 @@ class PersonsController extends AbstractController
                     'bid' => $acc['bid'],
                     'type' => 'person_receive',
                     'year' => $acc['year'],
-                    'money'=> $acc['money']
+                    'money' => $acc['money']
                 ]);
                 if ($prs)
                     $items[] = $prs;
@@ -937,7 +942,7 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid'],
                 'type' => 'person_receive',
                 'year' => $acc['year'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ],
             ['id' => 'DESC']
         );
@@ -981,7 +986,7 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid'],
                 'type' => 'person_receive',
                 'year' => $acc['year'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ]);
         } else {
             $items = [];
@@ -991,7 +996,7 @@ class PersonsController extends AbstractController
                     'bid' => $acc['bid'],
                     'type' => 'person_receive',
                     'year' => $acc['year'],
-                    'money'=> $acc['money']
+                    'money' => $acc['money']
                 ]);
                 if ($prs)
                     $items[] = $prs;
@@ -1015,7 +1020,7 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid'],
                 'type' => 'person_send',
                 'year' => $acc['year'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ]);
         } else {
             $items = [];
@@ -1025,7 +1030,7 @@ class PersonsController extends AbstractController
                     'bid' => $acc['bid'],
                     'type' => 'person_send',
                     'year' => $acc['year'],
-                    'money'=> $acc['money']
+                    'money' => $acc['money']
                 ]);
                 if ($prs)
                     $items[] = $prs;
@@ -1059,7 +1064,7 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid'],
                 'type' => 'person_send',
                 'year' => $acc['year'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ],
             ['id' => 'DESC']
         );
@@ -1103,7 +1108,7 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid'],
                 'type' => 'person_send',
                 'year' => $acc['year'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ]);
         } else {
             $items = [];
@@ -1113,7 +1118,7 @@ class PersonsController extends AbstractController
                     'bid' => $acc['bid'],
                     'type' => 'person_send',
                     'year' => $acc['year'],
-                    'money'=> $acc['money']
+                    'money' => $acc['money']
                 ]);
                 if ($prs)
                     $items[] = $prs;
