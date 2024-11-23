@@ -45,7 +45,7 @@ class BusinessRepository extends ServiceEntityRepository
     public function findByPage($page = 0, $take = 25, $search = ''): array
     {
         $query = $this->createQueryBuilder('b')
-            ->setFirstResult($page * $take)
+            ->setFirstResult(($page -1) * $take)
             ->orderBy('b.id', 'DESC')
             ->setMaxResults($take);
             

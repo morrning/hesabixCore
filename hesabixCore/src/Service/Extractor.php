@@ -19,37 +19,49 @@ use App\Entity\Salary;
 
 class Extractor
 {
-   public function operationSuccess($data = ''){
-    return [
-        'Success'=>true,
-        'code' => 0,
-        'data' =>$data,
-        'message'=>'operation success',
-        
-    ];
-   }
-   public function operationFail($message='operaition fail',$code=404, $data = ''){
-    return [
-        'Success'=>false,
-        'code' => $code,
-        'data' =>$data,
-        'message'=>$message,
-        
-    ];
-   }
-   public function notFound($data = ''){
-    return [
-        'code' => 404,
-        'data' =>$data,
-        'message'=>'item not found'
-    ];
-   }
-   
-   public function paramsNotSend(){
-    return [
-        'code' => 101,
-        'data' =>'',
-        'message'=>'parameters not send currectly'
-    ];
-   }
+    public function operationSuccess($data = '', $message = '')
+    {
+        if ($message == '') {
+            return [
+                'Success' => true,
+                'code' => 0,
+                'data' => $data,
+                'message' => 'operation success',
+
+            ];
+        }
+        return [
+            'Success' => true,
+            'code' => 0,
+            'data' => $data,
+            'message' => $message,
+        ];
+
+    }
+    public function operationFail($message = 'operaition fail', $code = 404, $data = '')
+    {
+        return [
+            'Success' => false,
+            'code' => $code,
+            'data' => $data,
+            'message' => $message,
+        ];
+    }
+    public function notFound($data = '')
+    {
+        return [
+            'code' => 404,
+            'data' => $data,
+            'message' => 'item not found'
+        ];
+    }
+
+    public function paramsNotSend()
+    {
+        return [
+            'code' => 101,
+            'data' => '',
+            'message' => 'parameters not send currectly'
+        ];
+    }
 }

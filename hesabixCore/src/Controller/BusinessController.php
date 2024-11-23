@@ -70,13 +70,19 @@ class BusinessController extends AbstractController
         return $this->json($extractor->operationSuccess());
     }
     #[Route('/api/business/list', name: 'api_bussiness_list')]
-    public function api_bussiness_list(#[CurrentUser] ?User $user, Access $access, Explore $explore, EntityManagerInterface $entityManager, Provider $provider): Response
+    public function api_bussiness_list(Extractor $extractor, Request $request, #[CurrentUser] ?User $user, Access $access, Explore $explore, EntityManagerInterface $entityManager, Provider $provider): Response
     {
 
-        $buss = $entityManager->getRepository(Permission::class)->findBy(['user' => $user]);
+        $buss = $entityManager->getRepository(Permission::class)->findBy([
+            'user' => $user
+        ]);
         $response = [];
         foreach ($buss as $bus) {
             $response[] = Explore::ExploreBusiness($bus->getBid());
+        }
+        $params = $request->getPayload()->all();
+        if (array_key_exists('standard', $params)) {
+            return $this->json($extractor->operationSuccess($response));
         }
         return $this->json($response);
     }
@@ -202,8 +208,7 @@ class BusinessController extends AbstractController
             }
             if (array_key_exists('commodityUpdateSellPriceAuto', $params)) {
                 $business->setCommodityUpdateSellPriceAuto($params['commodityUpdateSellPriceAuto']);
-            }
-            else{
+            } else {
                 $business->setCommodityUpdateSellPriceAuto(true);
             }
             if (array_key_exists('walletEnabled', $params)) {
@@ -353,10 +358,10 @@ class BusinessController extends AbstractController
                 [
                     'result' => 2,
                     'data' => [
-                            'email' => $user->getEmail(),
-                            'name' => $user->getFullName(),
-                            'owner' => false
-                        ]
+                        'email' => $user->getEmail(),
+                        'name' => $user->getFullName(),
+                        'owner' => false
+                    ]
                 ]
             );
         }
@@ -441,18 +446,18 @@ class BusinessController extends AbstractController
         return $this->json(['state' => false]);
     }
     #[Route('/api/business/get/user/permissions', name: 'api_business_get_user_permission')]
-    public function api_business_get_user_permission(Request $request, EntityManagerInterface $entityManager): Response
+    public function api_business_get_user_permission(Access $access, Request $request, EntityManagerInterface $entityManager): Response
     {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
 
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
         //check for that data is set
-        if (
-            trim($params['bid']) != '' &&
-            trim($params['email']) != ''
-        ) {
+        if (array_key_exists('bid', $params) && array_key_exists('email', $params)) {
             $business = $entityManager->getRepository(Business::class)->find($params['bid']);
             if (is_null($business)) {
                 return $this->json(['result' => -1]);
@@ -463,94 +468,100 @@ class BusinessController extends AbstractController
             if (is_null($user)) {
                 return $this->json(['result' => -1]);
             }
-            $perm = $entityManager->getRepository(Permission::class)->findOneBy([
-                'bid' => $business,
-                'user' => $user
-            ]);
-            $result = [];
-            if ($business->getOwner() == $user) {
-                $result = [
-                    'id' => $perm->getUser()->getId(),
-                    'user' => $perm->getUser()->getFullName(),
-                    'email' => $perm->getUser()->getEmail(),
-                    'settings' => true,
-                    'persons' => true,
-                    'commodity' => true,
-                    'cheque' => true,
-                    'getpay' => true,
-                    'store' => true,
-                    'bank' => true,
-                    'bankTransfer' => true,
-                    'cost' => true,
-                    'income' => true,
-                    'buy' => true,
-                    'sell' => true,
-                    'accounting' => true,
-                    'report' => true,
-                    'log' => true,
-                    'permission' => true,
-                    'salary' => true,
-                    'cashdesk' => true,
-                    'plugNoghreAdmin' => true,
-                    'plugNoghreSell' => true,
-                    'plugCCAdmin' => true,
-                    'wallet' => true,
-                    'owner' => true,
-                    'archiveUpload' => true,
-                    'archiveMod' => true,
-                    'archiveDelete' => true,
-                    'archiveView' => true,
-                    'active' => $perm->getUser()->isActive(),
-                    'shareholder' => true,
-                    'plugAccproAccounting' => true,
-                    'plugAccproRfsell' => true,
-                    'plugAccproRfbuy' => true,
-                    'plugAccproCloseYear' => true,
-                    'plugRepservice' => true,
-                ];
-            } elseif ($perm) {
-                $result = [
-                    'id' => $perm->getUser()->getId(),
-                    'user' => $perm->getUser()->getFullName(),
-                    'email' => $perm->getUser()->getEmail(),
-                    'settings' => $perm->isSettings(),
-                    'persons' => $perm->isPerson(),
-                    'commodity' => $perm->isCommodity(),
-                    'getpay' => $perm->isGetpay(),
-                    'bank' => $perm->isBanks(),
-                    'bankTransfer' => $perm->isBankTransfer(),
-                    'cost' => $perm->isCost(),
-                    'income' => $perm->isIncome(),
-                    'buy' => $perm->isBuy(),
-                    'cheque' => $perm->isCheque(),
-                    'sell' => $perm->isSell(),
-                    'accounting' => $perm->isAccounting(),
-                    'report' => $perm->isReport(),
-                    'log' => $perm->isLog(),
-                    'store' => $perm->isStore(),
-                    'permission' => $perm->isPermission(),
-                    'salary' => $perm->isSalary(),
-                    'cashdesk' => $perm->isCashdesk(),
-                    'plugNoghreAdmin' => $perm->isPlugNoghreAdmin(),
-                    'plugNoghreSell' => $perm->isPlugNoghreSell(),
-                    'plugCCAdmin' => $perm->isPlugCCAdmin(),
-                    'wallet' => $perm->isWallet(),
-                    'owner' => false,
-                    'archiveUpload' => $perm->isArchiveUpload(),
-                    'archiveMod' => $perm->isArchiveMod(),
-                    'archiveDelete' => $perm->isArchiveDelete(),
-                    'archiveView' => $perm->isArchiveView(),
-                    'active' => $perm->getUser()->isActive(),
-                    'shareholder' => $perm->isShareholder(),
-                    'plugAccproAccounting' => $perm->isPlugAccproAccounting(),
-                    'plugAccproRfsell' => $perm->isPlugAccproRfsell(),
-                    'plugAccproRfbuy' => $perm->isPlugAccproRfbuy(),
-                    'plugAccproCloseYear' => $perm->isPlugAccproCloseYear(),
-                    'plugRepservice' => $perm->isPlugRepservice(),
-                ];
+        } else {
+            $business = $entityManager->getRepository(Business::class)->find($acc['bid']);
+            if (is_null($business)) {
+                return $this->json(['result' => -1]);
             }
-            return $this->json($result);
+            $user = $this->getUser();
         }
+        $perm = $entityManager->getRepository(Permission::class)->findOneBy([
+            'bid' => $business,
+            'user' => $user
+        ]);
+        $result = [];
+        if ($business->getOwner() == $user) {
+            $result = [
+                'id' => $perm->getUser()->getId(),
+                'user' => $perm->getUser()->getFullName(),
+                'email' => $perm->getUser()->getEmail(),
+                'settings' => true,
+                'persons' => true,
+                'commodity' => true,
+                'cheque' => true,
+                'getpay' => true,
+                'store' => true,
+                'bank' => true,
+                'bankTransfer' => true,
+                'cost' => true,
+                'income' => true,
+                'buy' => true,
+                'sell' => true,
+                'accounting' => true,
+                'report' => true,
+                'log' => true,
+                'permission' => true,
+                'salary' => true,
+                'cashdesk' => true,
+                'plugNoghreAdmin' => true,
+                'plugNoghreSell' => true,
+                'plugCCAdmin' => true,
+                'wallet' => true,
+                'owner' => true,
+                'archiveUpload' => true,
+                'archiveMod' => true,
+                'archiveDelete' => true,
+                'archiveView' => true,
+                'active' => $perm->getUser()->isActive(),
+                'shareholder' => true,
+                'plugAccproAccounting' => true,
+                'plugAccproRfsell' => true,
+                'plugAccproRfbuy' => true,
+                'plugAccproCloseYear' => true,
+                'plugRepservice' => true,
+            ];
+        } elseif ($perm) {
+            $result = [
+                'id' => $perm->getUser()->getId(),
+                'user' => $perm->getUser()->getFullName(),
+                'email' => $perm->getUser()->getEmail(),
+                'settings' => $perm->isSettings(),
+                'persons' => $perm->isPerson(),
+                'commodity' => $perm->isCommodity(),
+                'getpay' => $perm->isGetpay(),
+                'bank' => $perm->isBanks(),
+                'bankTransfer' => $perm->isBankTransfer(),
+                'cost' => $perm->isCost(),
+                'income' => $perm->isIncome(),
+                'buy' => $perm->isBuy(),
+                'cheque' => $perm->isCheque(),
+                'sell' => $perm->isSell(),
+                'accounting' => $perm->isAccounting(),
+                'report' => $perm->isReport(),
+                'log' => $perm->isLog(),
+                'store' => $perm->isStore(),
+                'permission' => $perm->isPermission(),
+                'salary' => $perm->isSalary(),
+                'cashdesk' => $perm->isCashdesk(),
+                'plugNoghreAdmin' => $perm->isPlugNoghreAdmin(),
+                'plugNoghreSell' => $perm->isPlugNoghreSell(),
+                'plugCCAdmin' => $perm->isPlugCCAdmin(),
+                'wallet' => $perm->isWallet(),
+                'owner' => false,
+                'archiveUpload' => $perm->isArchiveUpload(),
+                'archiveMod' => $perm->isArchiveMod(),
+                'archiveDelete' => $perm->isArchiveDelete(),
+                'archiveView' => $perm->isArchiveView(),
+                'active' => $perm->getUser()->isActive(),
+                'shareholder' => $perm->isShareholder(),
+                'plugAccproAccounting' => $perm->isPlugAccproAccounting(),
+                'plugAccproRfsell' => $perm->isPlugAccproRfsell(),
+                'plugAccproRfbuy' => $perm->isPlugAccproRfbuy(),
+                'plugAccproCloseYear' => $perm->isPlugAccproCloseYear(),
+                'plugRepservice' => $perm->isPlugRepservice(),
+            ];
+        }
+        return $this->json($result);
         return $this->json(['result' => -1]);
     }
 

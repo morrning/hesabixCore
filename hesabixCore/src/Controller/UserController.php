@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Business;
 use App\Entity\EmailHistory;
 use App\Entity\Permission;
+use App\Service\Extractor;
 use App\Service\Provider;
 use App\Service\SMS;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
@@ -28,11 +29,12 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
 use Symfony\Component\EventDispatcher\EventDispatcher,
-    Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken,
-    Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
+Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken,
+Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
 use function PHPUnit\Framework\throwException;
 
 class UserController extends AbstractController
@@ -51,52 +53,92 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/user/login', name: 'api_login')]
-    public function api_login(#[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
+    public function api_login(TranslatorInterface $translatorInterface, Extractor $extractor, Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
     {
-        if (null === $user) {
+        $params = $request->getPayload()->all();
+        if (array_key_exists('standard', $params)) {
+            if (null === $user) {
+                return $this->json($extractor->operationFail(
+                    $translatorInterface->trans('login_fail'),
+                ));
+            }
+            $token = new UserToken();
+            $token->setUser($user);
+            $token->setToken($this->RandomString(254));
+            $token->setTokenID($this->RandomString(254));
+            $entityManager->persist($token);
+            $entityManager->flush();
+            return $this->json($extractor->operationSuccess([
+                'user' => $user->getUserIdentifier(),
+                'token' => $token->getToken(),
+                'tokenID' => $token->getTokenID()
+            ]));
+        } else {
+            if (null === $user) {
+                return $this->json([
+                    'message' => 'missing credentials',
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+            $token = new UserToken();
+            $token->setUser($user);
+            $token->setToken($this->RandomString(254));
+            $token->setTokenID($this->RandomString(254));
+            $entityManager->persist($token);
+            $entityManager->flush();
             return $this->json([
-                'message' => 'missing credentials',
-            ], Response::HTTP_UNAUTHORIZED);
+                'user' => $user->getUserIdentifier(),
+                'token' => $token->getToken(),
+                'tokenID' => $token->getTokenID()
+            ]);
         }
-        $token = new UserToken();
-        $token->setUser($user);
-        $token->setToken($this->RandomString(254));
-        $token->setTokenID($this->RandomString(254));
-        $entityManager->persist($token);
-        $entityManager->flush();
-        return $this->json([
-            'user'  => $user->getUserIdentifier(),
-            'token' => $token->getToken(),
-            'tokenID' => $token->getTokenID()
-        ]);
+
     }
 
     #[Route('/api/user/has/role/{id}', name: 'api_user_has_role')]
-    public function api_user_has_role(#[CurrentUser] ?User $user, EntityManagerInterface $entityManager, $id): Response
+    public function api_user_has_role(Extractor $extractor,#[CurrentUser] ?User $user, EntityManagerInterface $entityManager, $id): Response
     {
         if ($this->isGranted($id)) {
             return $this->json(
-                ['result' => true]
+                $extractor->operationSuccess()
             );
         }
         return $this->json(
-            ['result' => false]
+            $extractor->operationFail()
         );
     }
+    #[Route('/api2/user/check/login', name: 'api2_user_check_login')]
+    public function api2_user_check_login(Extractor $extractor, TranslatorInterface $translatorInterface, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
+    {
+        if (null === $user) {
+            return $this->json($extractor->operationFail(
+                $translatorInterface->trans('not_loged_in')
+            ));
+        }
+        return $this->json($extractor->operationSuccess([
+            [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'active' => $user->isActive(),
+                'name' => $user->getFullName(),
+                'mobile' => $user->getMobile()
+            ]
+        ]));
+    }
     #[Route('/api/user/check/login', name: 'api_user_check_login')]
-    public function api_user_check_login(#[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
+    public function api_user_check_login(Extractor $extractor, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
     {
         if (null === $user) {
             return $this->json(
-                ['result' => false]
+                $extractor->operationFail('user not loged in')
             );
         }
         return $this->json(
-            [
-                'result' => true,
-                'email' => $user->getEmail(),
-                'active' => $user->isActive()
-            ]
+            $extractor->operationSuccess(
+                [
+                    'email' => $user->getEmail(),
+                    'active' => $user->isActive()
+                ]
+            )
         );
     }
 
@@ -144,6 +186,21 @@ class UserController extends AbstractController
         ]);
     }
 
+    #[Route('/api2/user/current/info', name: 'api2_user_current_info')]
+    public function api2_user_current_info(#[CurrentUser] ?User $user, Extractor $extractor, Provider $provider, EntityManagerInterface $entityManager): Response
+    {
+        if ($user) {
+            return $this->json($extractor->operationSuccess([
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'name' => $user->getFullName(),
+                'businessCount' => count($user->getBusinesses()),
+                'hash_email' => $provider->gravatarHash($user->getEmail()),
+                'mobile' => $user->getMobile(),
+            ]));
+        }
+        return $this->json($extractor->operationFail('not loged in user'));
+    }
 
     #[Route('/api/user/logout', name: 'api_user_logout')]
     public function api_user_logout(Security $security, EntityManagerInterface $entityManager, Request $request): Response
@@ -187,7 +244,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/user/change/password', name: 'api_user_change_password')]
-    public function api_user_change_password(#[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    public function api_user_change_password(Extractor $extractor,#[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -202,13 +259,15 @@ class UserController extends AbstractController
             );
             $entityManager->persist($user);
             $entityManager->flush();
-            return $this->json(['result' => true]);
+            return $this->json($extractor->operationSuccess());
         }
-        return $this->json(['result' => false]);
+        return $this->json($extractor->operationFail(
+            'کلمات عبور یکسان نیست'
+        ));
     }
 
     #[Route('/api/user/register', name: 'api_user_register')]
-    public function api_user_register(registryMGR $registryMGR, SMS $SMS, MailerInterface $mailer, Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
+    public function api_user_register(Extractor $extractor, registryMGR $registryMGR, SMS $SMS, MailerInterface $mailer, Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -216,15 +275,13 @@ class UserController extends AbstractController
         }
         if (array_key_exists('name', $params) && array_key_exists('email', $params) && array_key_exists('mobile', $params) && array_key_exists('password', $params)) {
             if ($entityManager->getRepository(User::class)->findOneBy(['email' => trim($params['email'])])) {
-                return $this->json([
-                    'error' => 1,
-                    'message' => 'این پست الکترونیکی قبلا ثبت شده است.'
-                ]);
+                return $this->json($extractor->operationFail(
+                    'پست الکترونیکی وارد شده قبلا ثبت شده است'
+                ));
             } elseif ($entityManager->getRepository(User::class)->findOneBy(['mobile' => trim($params['mobile'])])) {
-                return $this->json([
-                    'error' => 2,
-                    'message' => 'این شماره تلفن قبلا ثبت شده است.'
-                ]);
+                return $this->json($extractor->operationFail(
+                    'شماره تلفن وارد شده قبلا ثبت شده است'
+                ));
             }
             $user = new User();
             $user->setEmail($params['email']);
@@ -262,22 +319,17 @@ class UserController extends AbstractController
                 $mailer->send($email);
             } catch (Exception $exception) {
             }
-            return $this->json([
-                'error' => 0,
-                'id' => $user->getId(),
-                'message' => 'ok',
-            ]);
+            return $this->json($extractor->operationSuccess([
+                'id' => $user->getId()
+            ]));
         }
-        return $this->json([
-            'error' => 999,
-            'message' => 'تمام موارد لازم را وارد کنید.'
-        ]);
-
-        return $this->json(['ok']);
+        return $this->json($extractor->operationFail(
+            'تمام موارد لازم را وارد کنید.'
+        ));
     }
 
     #[Route('/api/user/active/code/info/{id}', name: 'api_user_active_code_info')]
-    public function api_user_active_code_info(registryMGR $registryMGR, MailerInterface $mailer, SMS $SMS, String $id, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    public function api_user_active_code_info(registryMGR $registryMGR, MailerInterface $mailer, SMS $SMS, string $id, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $send = false;
         $user = $entityManager->getRepository(User::class)->find($id);
@@ -331,18 +383,18 @@ class UserController extends AbstractController
         return $this->json($res);
     }
 
-    #[Route('/api/user/reset/password/send-to-sms/{id}', name: 'api_user_forget_reset_password')]
-    public function api_user_forget_reset_password(registryMGR $registryMGR, MailerInterface $mailer, SMS $SMS, String $id, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    #[Route('/api/user/reset/password/send-to-sms', name: 'api_user_forget_reset_password')]
+    public function api_user_forget_reset_password(Extractor $extractor, registryMGR $registryMGR, MailerInterface $mailer, SMS $SMS, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if (array_key_exists('code', $params)) {
-            $obj = $entityManager->getRepository(User::class)->find($id);
+        if (array_key_exists('code', $params) && array_key_exists('id', $params)) {
+            $obj = $entityManager->getRepository(User::class)->find($params['id']);
             if ($obj) {
                 if ($obj->getVerifyCodeTime() > time()) {
-                    $obj = $entityManager->getRepository(User::class)->findOneBy(['id' => $id, 'verifyCode' => $params['code']]);
+                    $obj = $entityManager->getRepository(User::class)->findOneBy(['id' => $params['id'], 'verifyCode' => $params['code']]);
                     if ($obj) {
                         //reset password
                         $password = $this->RandomString(12, true);
@@ -370,58 +422,74 @@ class UserController extends AbstractController
                                 ])
                             );
                         $mailer->send($email);
-                        return $this->json(['result' => 'ok']);
+                        return $this->json($extractor->operationSuccess(
+                            [],
+                            'کلمه عبور جدید از طریق پیامک و پست الکترونیکی ارسال شد.'
+                        ));
                     }
                     //code is incorrect
-                    return $this->json(['result' => 'false']);
+                    return $this->json($extractor->operationFail('کد احزار هویت اشتباه است!', 1));
                 } else
-                    return $this->json(['result' => 'expired']);
+                    return $this->json($extractor->operationFail(
+                        'کد احراز هویت منقضی شده است لطفا مجددا درخواست خود را ارسال نمایید.',
+                        2
+                    ));
             }
         }
         throw $this->createAccessDeniedException();
     }
 
-    #[Route('/api/user/active/account/{id}', name: 'api_user_active_account')]
-    public function api_user_active_account(MailerInterface $mailer, SMS $SMS, String $id, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    #[Route('/api/user/active/account', name: 'api_user_active_account')]
+    public function api_user_active_account(Extractor $extractor, MailerInterface $mailer, SMS $SMS, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
-        $send = false;
-        $user = $entityManager->getRepository(User::class)->find($id);
-        if (!$user)
-            throw $this->createNotFoundException('user not exist');
-        if ($user->isActive())
-            return $this->json(['result' => 'active before', 'id' => $user->getId(), 'active' => true]);
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if (!array_key_exists('code', $params))
-            throw $this->createNotFoundException('code not exist');
+        if (!array_key_exists('code', $params) || !array_key_exists('mobile', $params))
+            return $this->json($extractor->paramsNotSend());
+
+        $user = $entityManager->getRepository(User::class)->findOneBy(['mobile' => $params['mobile']]);
+        if (!$user)
+            return $this->json($extractor->operationFail('کاربری با این شماره تلفن یافت نشد'));
+        if ($user->isActive())
+            return $this->json($extractor->operationFail('این کاربر قبلا تایید هویت شده است.'));
 
         if ($user->getVerifyCode() == $params['code']) {
             $user->setActive(true);
             $entityManager->persist($user);
             $entityManager->flush();
-            return $this->json(['result' => 'ok', 'id' => $user->getId(), 'active' => true]);
+            return $this->json($extractor->operationSuccess(
+                ['id'=>$user->getId()],
+                'حساب کاربری شما فعال شد.هماکنون می‌توانید با اطلاعات ثبت نام خود به حساب کاربری وارد شوید.'
+            ));
         }
-        return $this->json(['result' => 'not correct', 'id' => $user->getId(), 'active' => false]);
+        return $this->json($extractor->operationFail('کد ارسالی اشتباه است.'));
     }
     #[Route('/api/user/forget/password/send-code', name: 'api_user_forget_password_send_code')]
-    public function api_user_forget_password_send_code(registryMGR $registryMGR, #[CurrentUser] ?User $user, SMS $SMS, MailerInterface $mailer, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    public function api_user_forget_password_send_code(Extractor $extractor, registryMGR $registryMGR, #[CurrentUser] ?User $user, SMS $SMS, MailerInterface $mailer, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if (!array_key_exists('email', $params))
-            throw $this->createAccessDeniedException('email not send');
-        $user = $entityManager->getRepository(User::class)->findOneBy(['email' => $params['email']]);
-        if (!$user) {
-            $user = $entityManager->getRepository(User::class)->findOneBy(['mobile' => $params['email']]);
-            if (!$user)
-                return $this->json(['result' => 404]);
+        if (!array_key_exists('mobile', $params)) {
+            return $this->json($extractor->paramsNotSend());
         }
-        if ($user->getVerifyCodeTime() > time())
-            return $this->json(['result' => 'send before']);
+
+        $user = $entityManager->getRepository(User::class)->findOneBy(['mobile' => $params['mobile']]);
+        if (!$user) {
+            return $this->json(data: $extractor->operationFail(
+                'کاربری با شماره تلفن وارد شده یافت نشد.',
+                404
+            ));
+        }
+        if ($user->getVerifyCodeTime() > time()) {
+            return $this->json(data: $extractor->operationFail(
+                'کد بازیابی رمز عبور اخیرا ارسال شده است.لطفا چند دقیقه دیگر مجددا درخواست خود را ارسال نمایید.',
+                600
+            ));
+        }
         $user->setVerifyCode($this->RandomString(6, true));
         $user->setVerifyCodeTime(time() + 300);
         $entityManager->persist($user);
@@ -443,7 +511,9 @@ class UserController extends AbstractController
             );
 
         $mailer->send($email);
-        return $this->json(['result' => true, 'id' => $user->getId()]);
+        return $this->json($extractor->operationSuccess([
+            'id' => $user->getId(),
+        ]));
     }
     #[Route('/api/user/save/mobile-number', name: 'api_user_save_mobile_number')]
     public function api_user_save_mobile_number(MailerInterface $mailer, SMS $SMS, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
@@ -462,5 +532,64 @@ class UserController extends AbstractController
             return $this->json(['result' => 'ok']);
         }
         return $this->json(['result' => 'exist-before']);
+    }
+
+    #[Route('/api/user/register/resend-active-code', name: 'api_user_register_resend_code')]
+    public function api_user_register_resend_code(Extractor $extractor, registryMGR $registryMGR, #[CurrentUser] ?User $user, SMS $SMS, MailerInterface $mailer, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (!array_key_exists('mobile', $params)) {
+            return $this->json($extractor->paramsNotSend());
+        }
+
+        $user = $entityManager->getRepository(User::class)->findOneBy(['mobile' => $params['mobile']]);
+        if (!$user) {
+            return $this->json(data: $extractor->operationFail(
+                'کاربری با شماره تلفن وارد شده یافت نشد.',
+                404
+            ));
+        }
+        if (!$user->isActive()) {
+            return $this->json(data: $extractor->operationFail(
+                'حساب کاربری شما قبلا فعال شده است.می‌توانید به حساب کاربری خود وارد شوید.',
+                404
+            ));
+        }
+        if ($user->getVerifyCodeTime() > time()) {
+            return $this->json(data: $extractor->operationFail(
+                'کد بازیابی رمز عبور اخیرا ارسال شده است.لطفا دو دقیقه دیگر مجددا درخواست خود را ارسال نمایید.',
+                $user->getVerifyCodeTime()
+            ));
+        }
+        $user->setVerifyCode($this->RandomString(6, true));
+        $user->setVerifyCodeTime(time() + 300);
+        $entityManager->persist($user);
+        $entityManager->flush();
+        //send sms and email
+        $SMS->send(
+            [$user->getVerifyCode()],
+            $registryMGR->get('sms', 'f2a'),
+            $user->getMobile()
+        );
+        try {
+            $email = (new Email())
+                ->to($user->getEmail())
+                ->priority(Email::PRIORITY_HIGH)
+                ->subject('تایید ایمیل در حسابیکس')
+                ->html(
+                    $this->renderView('user/email/confrim-register.html.twig', [
+                        'code' => $user->getVerifyCode()
+                    ])
+                );
+
+            $mailer->send($email);
+        } catch (Exception $exception) {
+        }
+        return $this->json($extractor->operationSuccess([
+            'id' => $user->getId(),
+        ]));
     }
 }

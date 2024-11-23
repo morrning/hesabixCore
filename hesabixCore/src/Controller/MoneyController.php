@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class MoneyController extends AbstractController
 {
     #[Route('/api/money/get/all', name: 'app_money_get_all')]
-    public function app_money_get_all(EntityManagerInterface $entityManager): JsonResponse
+    public function app_money_get_all(Extractor $extractor,EntityManagerInterface $entityManager): JsonResponse
     {
         $result = $entityManager->getRepository(Money::class)->findAll();
         $out = [];
@@ -28,11 +28,11 @@ class MoneyController extends AbstractController
             $temp['label'] = $item->getLabel();
             $out[] = $temp;
         }
-        return $this->json($out);
+        return $this->json($extractor->operationSuccess($out));
     }
 
     #[Route('/api/money/get/info', name: 'app_money_get_info')]
-    public function app_money_get_info(Log $log, Request $request, Extractor $extractor, EntityManagerInterface $entityManager, Access $access): JsonResponse
+    public function app_money_get_info(Request $request, Extractor $extractor, EntityManagerInterface $entityManager, Access $access): JsonResponse
     {
         $acc = $access->hasRole('join');
         if (!$acc)
@@ -48,7 +48,7 @@ class MoneyController extends AbstractController
         ]);
         if (!$money)
             throw $this->createNotFoundException();
-        return $this->json(Explore::ExploreMoney($money));
+        return $this->json($extractor->operationSuccess(Explore::ExploreMoney($money)));
 
     }
     #[Route('/api/money/remove', name: 'app_money_remove')]

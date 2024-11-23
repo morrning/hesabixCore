@@ -70,6 +70,35 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getResult();
     }
 
+    /**
+     * @return User[] Returns an array of Business objects
+     */
+    public function findByPage($page = 0, $take = 25, $search = ''): array
+    {
+        $query = $this->createQueryBuilder('b')
+            ->setFirstResult(($page -1) * $take)
+            ->orderBy('b.id', 'DESC')
+            ->setMaxResults($take);
+            
+        if ($search != '') {
+            $query->andWhere("b.fullName LIKE :search ")
+            ->setParameter('search', '%' . $search . '%');
+        }
+        return $query->getQuery()->getResult();
+    }
+
+    /**
+     * @return  integer Returns an integer of Business objects
+     */
+    public function countAll(): int
+    {
+        return $this->createQueryBuilder('b')
+            ->select('count(b.id)')
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
+    }
+
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */

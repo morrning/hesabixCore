@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Settings;
 use App\Entity\Support;
 use App\Entity\User;
+use App\Service\Explore;
+use App\Service\Extractor;
 use App\Service\Jdate;
 use App\Service\Notification;
 use App\Service\Provider;
@@ -20,34 +22,47 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class SupportController extends AbstractController
 {
+    /**
+     * function to generate random strings
+     * @param 		int 	$length 	number of characters in the generated string
+     * @return 		string	a new string is created with random characters of the desired length
+     */
+    private function RandomString($length = 32)
+    {
+        return substr(str_shuffle(str_repeat($x = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
+    }
+
     #[Route('/api/admin/support/list', name: 'app_admin_support_list')]
-    public function app_admin_support_list(Provider $provider, Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
+    public function app_admin_support_list(Extractor $extractor, EntityManagerInterface $entityManager): JsonResponse
     {
         $items = $entityManager->getRepository(Support::class)->findBy(['main' => 0], ['id' => 'DESC']);
+        $res = [];
         foreach ($items as $item) {
-            $item->setDateSubmit($jdate->jdate('Y/n/d H:i', $item->getDateSubmit()));
+            $res[] = Explore::ExploreSupportTicket($item, $this->getUser());
         }
-        return $this->json($provider->ArrayEntity2Array($items, 1));
+        return $this->json($extractor->operationSuccess($res));
     }
     #[Route('/api/admin/support/view/{id}', name: 'app_admin_support_view')]
-    public function app_admin_support_view(Jdate $jdate, EntityManagerInterface $entityManager, string $id = ''): JsonResponse
+    public function app_admin_support_view(Extractor $extractor, Jdate $jdate, EntityManagerInterface $entityManager, string $id = ''): JsonResponse
     {
         $item = $entityManager->getRepository(Support::class)->find($id);
-        if (!$item) throw $this->createNotFoundException();
+        if (!$item)
+            throw $this->createNotFoundException();
         $replays = $entityManager->getRepository(Support::class)->findBy(['main' => $item->getId()]);
+        $res = [];
         foreach ($replays as $replay) {
-            $replay->setDateSubmit($jdate->jdate('Y/n/d H:i', $replay->getDateSubmit()));
-            $replay->setTitle($replay->getSubmitter()->getFullname());
             if ($replay->getSubmitter() == $this->getUser())
                 $replay->setState(1);
             else
                 $replay->setState(0);
+            $res[] = Explore::ExploreSupportTicket($replay, $this->getUser());
         }
-        $item->setDateSubmit($jdate->jdate('Y/n/d H:i', $item->getDateSubmit()));
-        return $this->json([
-            'item' => $item,
-            'replays' => $replays
-        ]);
+        return $this->json(
+            $extractor->operationSuccess([
+                'item' => Explore::ExploreSupportTicket($item, $this->getUser()),
+                'replays' => $res
+            ])
+        );
     }
     #[Route('/api/admin/support/mod/{id}', name: 'app_admin_support_mod')]
     public function app_admin_support_mod(registryMGR $registryMGR, SMS $SMS, Request $request, EntityManagerInterface $entityManager, Notification $notifi, string $id = ''): JsonResponse
@@ -58,7 +73,8 @@ class SupportController extends AbstractController
         }
 
         $item = $entityManager->getRepository(Support::class)->find($id);
-        if (!$item) $this->createNotFoundException();
+        if (!$item)
+            $this->createNotFoundException();
         if (array_key_exists('body', $params)) {
             $support = new Support();
             $support->setDateSubmit(time());
@@ -82,7 +98,7 @@ class SupportController extends AbstractController
             }
             //send notification to user
             $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
-            $url = $settings->getAppSite() . '/profile/support-view/' . $item->getId();
+            $url = '/profile/support-view/' . $item->getId();
             $notifi->insert("به درخواست پشتیبانی پاسخ داده شد", $url, null, $item->getSubmitter());
             return $this->json([
                 'error' => 0,
@@ -107,7 +123,7 @@ class SupportController extends AbstractController
             ]
         );
         foreach ($items as $item) {
-            $item->setDateSubmit($jdate->jdate('Y/n/d H:i', $item->getDateSubmit()));
+            $item->setDateSubmit($jdate->jdate('Y/n/d', $item->getDateSubmit()));
         }
         return $this->json($items);
     }
@@ -121,12 +137,13 @@ class SupportController extends AbstractController
         }
         if ($id == '') {
             if (array_key_exists('title', $params) && array_key_exists('body', $params)) {
-                $item  = new Support();
+                $item = new Support();
                 $item->setBody($params['body']);
                 $item->setTitle($params['title']);
                 $item->setDateSubmit(time());
                 $item->setSubmitter($this->getUser());
                 $item->setMain(0);
+                $item->setCode($this->RandomString(8));
                 $item->setState('در حال پیگیری');
                 $entityManager->persist($item);
                 $entityManager->flush();
@@ -145,10 +162,11 @@ class SupportController extends AbstractController
             }
         } else {
             if (array_key_exists('body', $params)) {
-                $item  = new Support();
+                $item = new Support();
                 $upper = $entityManager->getRepository(Support::class)->find($id);
                 if ($upper)
                     $item->setMain($upper->getid());
+
                 $item->setBody($params['body']);
                 $item->setTitle($upper->getTitle());
                 $item->setDateSubmit(time());
@@ -183,21 +201,18 @@ class SupportController extends AbstractController
     public function app_support_view(Jdate $jdate, EntityManagerInterface $entityManager, string $id = ''): JsonResponse
     {
         $item = $entityManager->getRepository(Support::class)->find($id);
-        if (!$item) throw $this->createNotFoundException();
-        if ($item->getSubmitter() != $this->getUser()) throw $this->createAccessDeniedException();
+        if (!$item)
+            throw $this->createNotFoundException();
+        if ($item->getSubmitter() != $this->getUser())
+            throw $this->createAccessDeniedException();
         $replays = $entityManager->getRepository(Support::class)->findBy(['main' => $item->getId()]);
+        $replaysArray = [];
         foreach ($replays as $replay) {
-            $replay->setDateSubmit($jdate->jdate('Y/n/d H:i', $replay->getDateSubmit()));
-            $replay->setTitle($replay->getSubmitter()->getFullname());
-            if ($replay->getSubmitter() == $this->getUser())
-                $replay->setState(1);
-            else
-                $replay->setState(0);
+            $replaysArray[] = Explore::ExploreSupportTicket($replay, $this->getUser());
         }
-        $item->setDateSubmit($jdate->jdate('Y/n/d H:i', $item->getDateSubmit()));
         return $this->json([
-            'item' => $item,
-            'replays' => $replays
+            'item' => Explore::ExploreSupportTicket($item, $this->getUser()),
+            'replays' => $replaysArray
         ]);
     }
 }

@@ -150,7 +150,7 @@ class UiGeneralController extends AbstractController
         return $this->render('general/hesabixbox.html.twig',);
     }
 
-    #[Route('/api/system/get/data', name: 'general_apps_get_data')]
+    #[Route('/front/system/get/data', name: 'general_apps_get_data')]
     public function general_apps_get_data(EntityManagerInterface $entityManager): JsonResponse
     {
         $settings = $entityManager->getRepository(Settings::class)->findAll()[0];

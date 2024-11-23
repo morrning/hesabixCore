@@ -18,13 +18,14 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 class AvatarController extends AbstractController
 {
     #[Route('/front/avatar/file/get/{id}', name: 'front_avatar_file_get')]
-    public function front_avatar_file_get(string $id,EntityManagerInterface $entityManager,$code = 0): BinaryFileResponse
+    public function front_avatar_file_get(EntityManagerInterface $entityManager, string $id = '0'): BinaryFileResponse
     {
         $bid = $entityManager->getRepository(Business::class)->find($id);
-        if(! $bid)
-            throw $this->createNotFoundException();
-        $fileAdr = dirname(__DIR__,3) . '/hesabixArchive/avatars/'. $bid->getAvatar();
-        if(!$bid->getAvatar()) return new BinaryFileResponse(dirname(__DIR__,3) . '/hesabixArchive/avatars/default.png');
+        if (!$bid)
+            return new BinaryFileResponse(dirname(__DIR__, 3) . '/hesabixArchive/avatars/default.png');
+        $fileAdr = dirname(__DIR__, 3) . '/hesabixArchive/avatars/' . $bid->getAvatar();
+        if (!$bid->getAvatar())
+            return new BinaryFileResponse(dirname(__DIR__, 3) . '/hesabixArchive/avatars/default.png');
         $response = new BinaryFileResponse($fileAdr);
         return $response;
     }
@@ -33,7 +34,8 @@ class AvatarController extends AbstractController
     public function api_avatar_get(Access $access): Response
     {
         $acc = $access->hasRole('settings');
-        if (!$acc) throw $this->createAccessDeniedException();
+        if (!$acc)
+            throw $this->createAccessDeniedException();
         if ($acc['bid']->getAvatar()) {
             return new Response($acc['bid']->getAvatar());
         }
@@ -44,7 +46,7 @@ class AvatarController extends AbstractController
     public function api_avatar_get_file(string $id): BinaryFileResponse
     {
         $fileAdr = __DIR__ . '/../../../hesabixArchive/avatars/' . $id;
-        if(!file_exists($fileAdr))
+        if (!file_exists($fileAdr))
             throw $this->createNotFoundException();
         $response = new BinaryFileResponse($fileAdr);
         return $response;
@@ -54,7 +56,8 @@ class AvatarController extends AbstractController
     public function api_avatar_post(Log $log, SluggerInterface $slugger, Request $request, Access $access, EntityManagerInterface $entityManagerInterface): Response
     {
         $acc = $access->hasRole('owner');
-        if (!$acc) throw $this->createAccessDeniedException();
+        if (!$acc)
+            throw $this->createAccessDeniedException();
 
         $uploadedFile = $request->files->get('bytes');
         if ($uploadedFile) {
@@ -62,19 +65,17 @@ class AvatarController extends AbstractController
             // this is needed to safely include the file name as part of the URL
             $safeFilename = $slugger->slug($originalFilename);
             $newFilename = $safeFilename . '-' . uniqid() . '.' . $uploadedFile->guessExtension();
-            $ext =  $uploadedFile->getClientOriginalExtension();
+            $ext = $uploadedFile->getClientOriginalExtension();
             $extOK = false;
             if ($ext == 'png' || $ext == 'jpg' || $ext == 'jpeg') {
                 $extOK = true;
-            }
-            else{
+            } else {
                 return new Response('e');
             }
             $sizeOK = false;
             if ($uploadedFile->getSize() < 1000000) {
                 $sizeOK = true;
-            }
-            else{
+            } else {
                 return new Response('s');
             }
             $imgSizeOK = false;
@@ -82,8 +83,7 @@ class AvatarController extends AbstractController
             list($x, $y) = $info;
             if ($x < 513 && $y < 513) {
                 $imgSizeOK = true;
-            }
-            else{
+            } else {
                 return new Response('is');
             }
             if ($extOK && $sizeOK && $imgSizeOK) {
@@ -101,7 +101,7 @@ class AvatarController extends AbstractController
                 $entityManagerInterface->persist($acc['bid']);
                 $entityManagerInterface->flush();
                 //save log
-                $log->insert('تنظیمات پایه','نمایه کسب و کار تغییر یافت',$this->getUser(),$acc['bid']);
+                $log->insert('تنظیمات پایه', 'نمایه کسب و کار تغییر یافت', $this->getUser(), $acc['bid']);
 
                 return new Response($acc['bid']->getAvatar());
             }

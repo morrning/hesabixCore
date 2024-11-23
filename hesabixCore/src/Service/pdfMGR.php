@@ -60,9 +60,16 @@ class pdfMGR
 
     public function streamTwig2PDFInvoiceType(PrinterQueue $printQueue, $configs = [])
     {
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $fontDirs = $defaultConfig['fontDir'];
 
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $fontData = $defaultFontConfig['fontdata'];
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8', 'format' => [80, 300],
+            'fontDir' => array_merge($fontDirs, [
+                dirname(__DIR__) . '/Fonts',
+            ]),
             'fontdata' => [
                 'vazirmatn' => [
                     'R' => 'Vazir-Regular-FD.ttf',
@@ -83,7 +90,6 @@ class pdfMGR
             'margin-top' => 0,
             'margin-bottom' => 0,
         ]);
-        $mpdf->AddFontDirectory(__DIR__ . '../Fonts');
         $mpdf->WriteHTML($printQueue->getView());
 
         $mpdf->Output();

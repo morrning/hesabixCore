@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Entity\BankAccount;
 use App\Entity\Project;
 use App\Entity\Storeroom;
+use App\Entity\Support;
 use App\Entity\User;
 use App\Entity\Year;
 use App\Entity\Business;
@@ -385,7 +386,8 @@ class Explore
     {
         return [
             'id' => $user->getId(),
-            'name' => $user->getFullName()
+            'name' => $user->getFullName(),
+            'fullName'=>$user->getFullName()
         ];
     }
 
@@ -533,6 +535,23 @@ class Explore
             $res['moneys'][] = self::ExploreMoney($money);
         }
 
+        return $res;
+    }
+
+    public static function ExploreSupportTicket(Support $support,User | null $user):array{
+        $jdate = new Jdate();
+        $res = [];
+        $res['id'] = $support->getId();
+        $res['title'] = $support->getTitle();
+        $res['body'] = $support->getBody();
+        $res['state'] = $support->getState();
+        $res['dateSubmit'] = $jdate->jdate('Y/n/d H:i',$support->getDateSubmit());
+        $res['submitter'] = self::ExploreUser($support->getSubmitter());
+        $res['main'] = $support->getMain();
+        $res['owner'] = true;
+        if($user->getId() != $support->getSubmitter()->getId()){
+            $res['owner'] = false;
+        }
         return $res;
     }
 }

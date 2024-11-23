@@ -13,6 +13,7 @@ use App\Entity\Settings;
 use App\Entity\StoreroomTicket;
 use App\Entity\User;
 use App\Entity\WalletTransaction;
+use App\Service\Extractor;
 use App\Service\Jdate;
 use App\Service\JsonResp;
 use App\Service\Notification;
@@ -60,22 +61,6 @@ class AdminController extends AbstractController
         $content = $output->fetch();
         return $this->json([
             'message' => $content,
-        ]);
-    }
-
-    /**
-     * @throws Exception
-     */
-    #[Route('/api/admin/has/role/{role}', name: 'app_admin_has_role')]
-    public function app_admin_has_role($role): JsonResponse
-    {
-        if (!is_bool(array_search($role, $this->getUser()->getRoles()))) {
-            return $this->json([
-                'result' => true,
-            ]);
-        }
-        return $this->json([
-            'result' => false,
         ]);
     }
 
@@ -153,8 +138,14 @@ class AdminController extends AbstractController
         return $this->json($entityManager->getRepository(Business::class)->countAll());
     }
     
+    #[Route('/api/admin/users/count', name: 'admin_users_count')]
+    public function admin_users_count(Extractor $extractor, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    {
+        return $this->json($extractor->operationSuccess($entityManager->getRepository(User::class)->countAll()));
+    }
+
     #[Route('/api/admin/business/search', name: 'admin_business_list_search')]
-    public function admin_business_list_search(Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    public function admin_business_list_search(Extractor $extractor,Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -175,7 +166,30 @@ class AdminController extends AbstractController
             $temp['StoreroomDocsCount'] = count($entityManager->getRepository(StoreroomTicket::class)->findBy(['bid' => $item]));
             $resp[] = $temp;
         }
-        return $this->json($resp);
+        return $this->json($extractor->operationSuccess($resp));
+    }
+
+    #[Route('/api/admin/users/search', name: 'admin_users_list_search')]
+    public function admin_users_list_search(Extractor $extractor,Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        $items = $entityManager->getRepository(User::class)->findByPage($params['options']['page'],$params['options']['rowsPerPage'],$params['search']);
+        $resp = [];
+        foreach ($items as $item) {
+            $temp = [];
+            $temp['id'] = $item->getId();
+            $temp['email'] = $item->getEmail();
+            $temp['mobile'] = $item->getMobile();
+            $temp['fullname'] = $item->getFullName();
+            $temp['status'] = $item->isActive();
+            $temp['dateRegister'] = $jdate->jdate('Y/n/d', $item->getDateRegister());
+            $temp['bidCount'] = count($entityManager->getRepository(Business::class)->findBy(['owner' => $item]));
+            $resp[] = $temp;
+        }
+        return $this->json($extractor->operationSuccess($resp));
     }
 
     #[Route('/api/admin/settings/sms/info', name: 'admin_settings_sms_info')]
@@ -544,7 +558,7 @@ class AdminController extends AbstractController
         ]);
     }
     #[Route('/api/admin/logs/last', name: 'api_admin_logs_last')]
-    public function api_admin_logs_last(Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
+    public function api_admin_logs_last(Extractor $extractor,Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
     {
         $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy([], ['id' => 'DESC'], 250);
         $temps = [];
@@ -562,7 +576,7 @@ class AdminController extends AbstractController
             $temp['ipaddress'] = $log->getIpaddress();
             $temps[] = $temp;
         }
-        return $this->json(array_reverse($temps));
+        return $this->json($extractor->operationSuccess(array_reverse($temps)));
     }
 
     /**
