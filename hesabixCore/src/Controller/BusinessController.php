@@ -153,7 +153,7 @@ class BusinessController extends AbstractController
             $business->setOwner($this->getUser());
             $business->setLegalName($params['legal_name']);
             $business->setMaliyatafzode($params['maliyatafzode']);
-            
+
             if (array_key_exists(key: 'field', array: $params)) {
                 $business->setField($params['field']);
             }
@@ -247,14 +247,15 @@ class BusinessController extends AbstractController
             }
 
             //get Money type
-            if ($params['arzmain']) {
+            if (!array_key_exists('arzmain', $params) && $isNew) {
+                return $this->json(['result' => 2]);
+            } elseif (array_key_exists('arzmain', $params) && $isNew) {
                 $Arzmain = $entityManager->getRepository(Money::class)->findOneBy(['name' => $params['arzmain']]);
                 if ($Arzmain)
                     $business->setMoney($Arzmain);
                 else
                     return $this->json(['result' => 2]);
-            } else
-                return $this->json(['result' => 2]);
+            } 
             if (!$business->getDateSubmit())
                 $business->setDateSubmit(time());
             $entityManager->persist($business);
