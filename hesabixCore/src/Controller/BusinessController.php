@@ -153,38 +153,56 @@ class BusinessController extends AbstractController
             $business->setOwner($this->getUser());
             $business->setLegalName($params['legal_name']);
             $business->setMaliyatafzode($params['maliyatafzode']);
-            if ($params['field'])
+            
+            if (array_key_exists(key: 'field', array: $params)) {
                 $business->setField($params['field']);
-            if ($params['type'])
+            }
+
+            if (array_key_exists(key: 'type', array: $params)) {
                 $business->setType($params['type']);
-            if ($params['shenasemeli'])
+            }
+            if (array_key_exists(key: 'shenasemeli', array: $params)) {
                 $business->setShenasemeli($params['shenasemeli']);
-            if ($params['codeeqtesadi'])
+            }
+            if (array_key_exists(key: 'codeeqtesadi', array: $params)) {
                 $business->setCodeeghtesadi($params['codeeqtesadi']);
-            if ($params['shomaresabt'])
+            }
+            if (array_key_exists(key: 'shomaresabt', array: $params)) {
                 $business->setShomaresabt($params['shomaresabt']);
-            if ($params['country'])
+            }
+            if (array_key_exists(key: 'country', array: $params)) {
                 $business->setCountry($params['country']);
-            if ($params['ostan'])
+            }
+            if (array_key_exists(key: 'ostan', array: $params)) {
                 $business->setOstan($params['ostan']);
-            if ($params['shahrestan'])
+            }
+            if (array_key_exists(key: 'shahrestan', array: $params)) {
                 $business->setShahrestan($params['shahrestan']);
-            if ($params['postalcode'])
+            }
+            if (array_key_exists(key: 'postalcode', array: $params)) {
                 $business->setPostalcode($params['postalcode']);
-            if (array_key_exists('zarinpalCode', $params))
+            }
+            if (array_key_exists(key: 'zarinpalCode', array: $params)) {
                 $business->setZarinpalCode($params['zarinpalCode']);
-            if (array_key_exists('shortlinks', $params))
+            }
+            if (array_key_exists(key: 'shortlinks', array: $params)) {
                 $business->setShortlinks($params['shortlinks']);
-            if ($params['tel'])
+            }
+            if (array_key_exists(key: 'tel', array: $params)) {
                 $business->setTel($params['tel']);
-            if ($params['mobile'])
+            }
+            if (array_key_exists(key: 'mobile', array: $params)) {
                 $business->setMobile($params['mobile']);
-            if ($params['address'])
+            }
+            if (array_key_exists(key: 'address', array: $params)) {
                 $business->setAddress($params['address']);
-            if ($params['website'])
+            }
+            if (array_key_exists(key: 'website', array: $params)) {
                 $business->setWesite($params['website']);
-            if ($params['email'])
+            }
+            if (array_key_exists(key: 'email', array: $params)) {
                 $business->setEmail($params['email']);
+            }
             if (array_key_exists('commodityUpdateBuyPriceAuto', $params)) {
                 if ($params['commodityUpdateBuyPriceAuto'] == true) {
                     $business->setCommodityUpdateBuyPriceAuto(true);
@@ -769,8 +787,8 @@ class BusinessController extends AbstractController
             'docCount' => count($docs),
             'income' => $bssum,
             'commodity' => count($entityManager->getRepository(Commodity::class)->findby([
-                        'bid' => $buss
-                    ])),
+                'bid' => $buss
+            ])),
             'buys_total' => $buysTotal,
             'buys_today' => $buysToday,
             'sells_total' => $sellsTotal,
