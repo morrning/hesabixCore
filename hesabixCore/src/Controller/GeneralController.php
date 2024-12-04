@@ -23,10 +23,7 @@ class GeneralController extends AbstractController
     #[Route('/api/general/stat', name: 'general_stat')]
     public function general_stat(EntityManagerInterface $entityManager,Jdate $jdate): JsonResponse
     {
-        $busCount = count($entityManager->getRepository(Business::class)->findAll());
-        $users = count($entityManager->getRepository(User::class)->findAll());
-        $docs = count($entityManager->getRepository(HesabdariDoc::class)->findAll());
-        $lastBusiness = $entityManager->getRepository(Business::class)->findLast();
+        
         //get last version number
         $version = '0.0.1';
         $lastUpdateDate = '1399';
@@ -39,14 +36,9 @@ class GeneralController extends AbstractController
         }
 
         return $this->json([
-            'business' => $busCount,
-            'users'=> $users,
-            'docs'=> $docs,
             'version'=>$version,
             'lastUpdateDate'=>$lastUpdateDate,
             'lastUpdateDes'=>$lastUpdateDes,
-            'lastBusinessName'=> $lastBusiness->getname(),
-            'lastBusinessOwner'=>$lastBusiness->getOwner()->getFullName()
         ]);
     }
 

@@ -934,6 +934,15 @@ class CommodityController extends AbstractController
                 'root' => '1',
                 'upper' => null
             ]);
+            if(!$rootcat){
+                $rootcat = new CommodityCat();
+                $rootcat->setBid($acc['bid']);
+                $rootcat->setName('دسته بندی ها');
+                $rootcat->setUpper(null);
+                $rootcat->setRoot(1);
+                $entityManager->persist($rootcat);
+                $entityManager->flush();
+            }
             if (!$cat) {
                 $cat = new CommodityCat();
                 $cat->setBid($acc['bid']);

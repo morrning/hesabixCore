@@ -120,7 +120,7 @@ class StoreroomController extends AbstractController
      * @throws ReflectionException
      */
     #[Route('/api/storeroom/docs/get', name: 'app_storeroom_get_docs')]
-    public function app_storeroom_get_docs(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_storeroom_get_docs(Provider $provider,Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('store');
         if (!$acc)
@@ -134,7 +134,7 @@ class StoreroomController extends AbstractController
         foreach ($buys as $buy) {
             $temp = $provider->Entity2Array($buy, 0);
             $person = $this->getPerson($buy);
-            $temp['person'] = $provider->Entity2ArrayJustIncludes($person, ['getCode', 'getNikename', 'getDes']);
+            $temp['person'] = Explore::ExplorePerson($person);
             $temp['person']['des'] = ' # ' . $person->getCode() . ' ' . $person->getNikename();
             $temp['commodities'] = $this->getCommodities($buy, $provider);
             //check storeroom exist
@@ -155,7 +155,7 @@ class StoreroomController extends AbstractController
         foreach ($sells as $sell) {
             $temp = $provider->Entity2Array($sell, 0);
             $person = $this->getPerson($sell);
-            $temp['person'] = $provider->Entity2ArrayJustIncludes($person, ['getCode', 'getNikename', 'getDes']);
+            $temp['person'] = Explore::ExplorePerson($person);
             $temp['person']['des'] = ' # ' . $person->getCode() . ' ' . $person->getNikename();
             $temp['commodities'] = $this->getCommodities($sell, $provider);
             //check storeroom exist
@@ -176,7 +176,7 @@ class StoreroomController extends AbstractController
         foreach ($rfsells as $sell) {
             $temp = $provider->Entity2Array($sell, 0);
             $person = $this->getPerson($sell);
-            $temp['person'] = $provider->Entity2ArrayJustIncludes($person, ['getCode', 'getNikename', 'getDes']);
+            $temp['person'] = Explore::ExplorePerson($person);
             $temp['person']['des'] = ' # ' . $person->getCode() . ' ' . $person->getNikename();
             $temp['commodities'] = $this->getCommodities($sell, $provider);
             //check storeroom exist
@@ -197,7 +197,7 @@ class StoreroomController extends AbstractController
         foreach ($rfbuys as $buy) {
             $temp = $provider->Entity2Array($buy, 0);
             $person = $this->getPerson($buy);
-            $temp['person'] = $provider->Entity2ArrayJustIncludes($person, ['getCode', 'getNikename', 'getDes']);
+            $temp['person'] = Explore::ExplorePerson($person);
             $temp['person']['des'] = ' # ' . $person->getCode() . ' ' . $person->getNikename();
             $temp['commodities'] = $this->getCommodities($buy, $provider);
             //check storeroom exist
