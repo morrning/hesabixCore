@@ -26,7 +26,7 @@ class BankController extends AbstractController
         //bug fix for bank with no money type
         $datas = $entityManager->getRepository(BankAccount::class)->findBy([
             'bid' => $request->headers->get('activeBid'),
-            'money'=>null
+            'money' => null
         ]);
         foreach ($datas as $data) {
             $data->setMoney($acc['bid']->getMoney());
@@ -37,7 +37,7 @@ class BankController extends AbstractController
 
         $datas = $entityManager->getRepository(BankAccount::class)->findBy([
             'bid' => $request->headers->get('activeBid'),
-            'money'=>$acc['money']
+            'money' => $acc['money']
         ]);
         foreach ($datas as $data) {
             $bs = 0;
@@ -62,7 +62,7 @@ class BankController extends AbstractController
             throw $this->createAccessDeniedException();
         $data = $entityManager->getRepository(BankAccount::class)->findOneBy([
             'bid' => $acc['bid'],
-            'money'=>$acc['money'],
+            'money' => $acc['money'],
             'code' => $code
         ]);
         return $this->json(data: Explore::ExploreBank($data));
@@ -131,8 +131,11 @@ class BankController extends AbstractController
         $rows = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'bank' => $bank]);
         if (count($rows) > 0)
             return $this->json(['result' => 2]);
-        if ($acc['bid']->getWalletMatchBank()->getId() == $bank->getId())
-            return $this->json(['result' => 3]);
+        if (!$acc['bid']->getWalletMatchBank()) {
+            if ($acc['bid']->getWalletMatchBank()->getId() == $bank->getId())
+                return $this->json(['result' => 3]);
+        }
+
         $name = $bank->getName();
         $entityManager->remove($bank);
         $log->insert('بانکداری', ' حساب بانکی  با نام ' . $name . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
