@@ -111,6 +111,15 @@ class PrintOptions
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $repservicePaper = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $fastsellInvoice = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $fastsellPdf = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $fastsellCashdeskTicket = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -496,6 +505,42 @@ class PrintOptions
     public function setRepservicePaper(?string $repservicePaper): static
     {
         $this->repservicePaper = $repservicePaper;
+
+        return $this;
+    }
+
+    public function isFastsellInvoice(): ?bool
+    {
+        return $this->fastsellInvoice;
+    }
+
+    public function setFastsellInvoice(?bool $fastsellInvoice): static
+    {
+        $this->fastsellInvoice = $fastsellInvoice;
+
+        return $this;
+    }
+
+    public function isFastsellPdf(): ?bool
+    {
+        return $this->fastsellPdf;
+    }
+
+    public function setFastsellPdf(?bool $fastsellPdf): static
+    {
+        $this->fastsellPdf = $fastsellPdf;
+
+        return $this;
+    }
+
+    public function isFastsellCashdeskTicket(): ?bool
+    {
+        return $this->fastsellCashdeskTicket;
+    }
+
+    public function setFastsellCashdeskTicket(?bool $fastsellCashdeskTicket): static
+    {
+        $this->fastsellCashdeskTicket = $fastsellCashdeskTicket;
 
         return $this;
     }

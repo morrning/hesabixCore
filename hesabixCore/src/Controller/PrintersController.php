@@ -86,6 +86,10 @@ class PrintersController extends AbstractController
         $temp['rfsell']['pays'] = $settings->isRfsellPays();
         $temp['rfsell']['paper'] = $settings->getRfsellPaper();
 
+        $temp['fastsell']['cashdeskTicket'] = $settings->isFastsellCashdeskTicket();
+        $temp['fastsell']['invoice'] = $settings->isFastsellInvoice();
+        $temp['fastsell']['pdf'] = $settings->isFastsellPdf();
+
         $temp['repservice']['noteString'] = $settings->getRepserviceNoteString();
         $temp['repservice']['paper'] = $settings->getRepServicePaper();
         if(!$temp['rfsell']['paper']) { $temp['rfsell']['paper'] = 'A4-L'; }
@@ -150,6 +154,10 @@ class PrintersController extends AbstractController
 
         $settings->setRepserviceNoteString($params['repservice']['noteString']);
         $settings->setRepServicePaper($params['repservice']['paper']);
+
+        $settings->setFastsellCashdeskTicket($params['fastsell']['cashdeskTicket']);
+        $settings->setFastsellInvoice($params['fastsell']['invoice']);
+        $settings->setFastsellPdf($params['fastsell']['pdf']);
 
         $entityManager->persist($settings);
         $entityManager->flush();
@@ -221,7 +229,7 @@ class PrintersController extends AbstractController
     #[Route('/api/print/last', name: 'app_print_last')]
     public function app_print_last(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): Response
     {
-        $acc = $access->hasRole('owner');
+        $acc = $access->hasRole('join');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $printer = $entityManager->getRepository(Printer::class)->findBy([

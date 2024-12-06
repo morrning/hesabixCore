@@ -129,6 +129,7 @@ class CommodityController extends AbstractController
                 'name' => $item->getUnit()->getName(),
                 'floatNumber' => $item->getUnit()->getFloatNumber(),
             ];
+            $temp['barcodes'] = $item->getBarcodes();
             //calculate count
             if ($item->isKhadamat()) {
                 $temp['count'] = 0;
