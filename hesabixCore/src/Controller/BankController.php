@@ -131,7 +131,7 @@ class BankController extends AbstractController
         $rows = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'bank' => $bank]);
         if (count($rows) > 0)
             return $this->json(['result' => 2]);
-        if (!$acc['bid']->getWalletMatchBank()) {
+        if ($acc['bid']->getWalletMatchBank()) {
             if ($acc['bid']->getWalletMatchBank()->getId() == $bank->getId())
                 return $this->json(['result' => 3]);
         }
