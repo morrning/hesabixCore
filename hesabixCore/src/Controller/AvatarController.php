@@ -24,7 +24,7 @@ class AvatarController extends AbstractController
         if (!$bid)
             return new BinaryFileResponse(dirname(__DIR__, 3) . '/hesabixArchive/avatars/default.png');
         $fileAdr = dirname(__DIR__, 3) . '/hesabixArchive/avatars/' . $bid->getAvatar();
-        if (!$bid->getAvatar())
+        if (!$bid->getAvatar() || !file_exists($fileAdr))
             return new BinaryFileResponse(dirname(__DIR__, 3) . '/hesabixArchive/avatars/default.png');
         $response = new BinaryFileResponse($fileAdr);
         return $response;

@@ -229,7 +229,7 @@ class PrintersController extends AbstractController
     #[Route('/api/print/last', name: 'app_print_last')]
     public function app_print_last(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): Response
     {
-        $acc = $access->hasRole('join');
+        $acc = $access->hasRole('owner');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $printer = $entityManager->getRepository(Printer::class)->findBy([

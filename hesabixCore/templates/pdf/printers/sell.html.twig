@@ -274,12 +274,14 @@
 									حمل و نقل:
 									{{transfer | number_format}}
 								</h4>
+								{% if doc.amount != (doc.amount + discount) %}
+									<h4>
+										مبلغ کل بدون تخفیف:
+										{{ (doc.amount + discount) | number_format}}
+									</h4>
+								{% endif %}
 								<h4>
-									مبلغ کل بدون تخفیف:
-									{{ (doc.amount + discount) | number_format}}
-								</h4>
-								<h4>
-									جمع کل قابل پرداخت:
+									جمع کل:
 									{{ doc.amount | number_format }}
 								</h4>
 							</td>
