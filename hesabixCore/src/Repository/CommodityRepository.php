@@ -56,7 +56,7 @@ class CommodityRepository extends ServiceEntityRepository
         ;
     }
     /**
-     * @return Person[] Returns an array of Person objects
+     * @return Commodity[] Returns an array of Commodity objects
      */
     public function searchByName(Business $bid, string $search, int $maxResults = 10): array
     {
@@ -72,7 +72,21 @@ class CommodityRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return Person[] Returns an array of Person objects
+     * @return Commodity[] Returns an array of Commodity objects
+     */
+    public function searchBarcode(Business $bid, string $search): array
+    {
+        return $this->createQueryBuilder('p')
+            ->where('p.bid = :val')
+            ->andWhere("p.barcodes LIKE :search")
+            ->setParameter('val', $bid)
+            ->setParameter('search', '%' . $search . '%')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return Commodity[] Returns an array of Commodity objects
      */
     public function getLasts(Business $bid, int $maxResults = 10): array
     {

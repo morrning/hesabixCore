@@ -245,6 +245,97 @@ class CommodityController extends AbstractController
         }
         return $this->json($res);
     }
+
+    #[Route('/api/commodity/list/search/barcode', name: 'app_commodity_list_search_barcode')]
+    public function app_commodity_list_search_barcode(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, Extractor $extractor): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        $items = $entityManager->getRepository(Commodity::class)->searchBarcode($acc['bid'], $params['barcode']);
+        if (count($items) == 0)
+            return $this->json($extractor->operationFail());
+        $item = $items['0'];
+        $temp = [];
+        $temp['id'] = $item->getId();
+        $temp['name'] = $item->getName();
+        $temp['unit'] = $item->getUnit()->getName();
+        $temp['unitData'] = [
+            'name' => $item->getUnit()->getName(),
+            'floatNumber' => $item->getUnit()->getFloatNumber(),
+        ];
+        $temp['des'] = $item->getDes();
+        $temp['priceBuy'] = $item->getPriceBuy();
+        $temp['speedAccess'] = $item->isSpeedAccess();
+        $temp['priceSell'] = $item->getPriceSell();
+        $temp['code'] = $item->getCode();
+        $temp['cat'] = null;
+        if ($item->getCat())
+            $temp['cat'] = $item->getCat()->getName();
+        $temp['khadamat'] = false;
+        if ($item->isKhadamat())
+            $temp['khadamat'] = true;
+        $temp['withoutTax'] = false;
+        if ($item->isWithoutTax())
+            $temp['withoutTax'] = true;
+        $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
+        $temp['minOrderCount'] = $item->getMinOrderCount();
+        $temp['dayLoading'] = $item->getDayLoading();
+        $temp['orderPoint'] = $item->getOrderPoint();
+        //calculate count
+        if ($item->isKhadamat()) {
+            $temp['count'] = 0;
+        } else {
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bid' => $acc['bid'],
+                'commodity' => $item
+            ]);
+            $count = 0;
+            foreach ($rows as $row) {
+                if ($row->getDoc()->getType() == 'buy') {
+                    $count += $row->getCommdityCount();
+                } elseif ($row->getDoc()->getType() == 'sell') {
+                    $count -= $row->getCommdityCount();
+                }
+            }
+            $temp['count'] = $count;
+        }
+
+        //calculate other prices
+        $pricesAll = $entityManager->getRepository(PriceList::class)->findBy([
+            'bid' => $acc['bid']
+        ]);
+        if (count($pricesAll) == 0) {
+            $temp['prices'] = [];
+        } else {
+            foreach ($pricesAll as $list) {
+                $priceDetails = $entityManager->getRepository(PriceListDetail::class)->findOneBy([
+                    'list' => $list,
+                    'commodity' => $item
+                ]);
+                if ($priceDetails) {
+                    $temp['prices'][] = Explore::ExploreCommodityPriceListDetail($priceDetails);
+                } else {
+                    $spd = new PriceListDetail;
+                    $spd->setList($list);
+                    $spd->setMoney($acc['money']);
+                    $spd->setCommodity($item);
+                    $spd->setPriceBuy(0);
+                    $spd->setPriceSell(0);
+                    $entityManager->persist($spd);
+                    $entityManager->flush();
+                    $temp['prices'][] = Explore::ExploreCommodityPriceListDetail($spd);
+                }
+            }
+        }
+
+        return $this->json($extractor->operationSuccess($temp));
+    }
+
     /**
      * @throws Exception
      */
@@ -935,7 +1026,7 @@ class CommodityController extends AbstractController
                 'root' => '1',
                 'upper' => null
             ]);
-            if(!$rootcat){
+            if (!$rootcat) {
                 $rootcat = new CommodityCat();
                 $rootcat->setBid($acc['bid']);
                 $rootcat->setName('دسته بندی ها');
