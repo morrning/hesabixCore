@@ -107,6 +107,13 @@ class HesabdariDoc
     #[ORM\ManyToOne(inversedBy: 'hesabdariDocs')]
     private ?Person $salesman = null;
 
+    /**
+     * @var Collection<int, self>
+     */
+    #[ORM\ManyToMany(targetEntity: self::class)]
+    #[ORM\JoinTable(name: 'pairDoc')]
+    private Collection $pairDoc;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -115,6 +122,7 @@ class HesabdariDoc
         $this->storeroomTickets = new ArrayCollection();
         $this->logs = new ArrayCollection();
         $this->notes = new ArrayCollection();
+        $this->pairDoc = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -532,6 +540,30 @@ class HesabdariDoc
     public function setSalesman(?Person $salesman): static
     {
         $this->salesman = $salesman;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getPairDoc(): Collection
+    {
+        return $this->pairDoc;
+    }
+
+    public function addPairDoc(self $pairDoc): static
+    {
+        if (!$this->pairDoc->contains($pairDoc)) {
+            $this->pairDoc->add($pairDoc);
+        }
+
+        return $this;
+    }
+
+    public function removePairDoc(self $pairDoc): static
+    {
+        $this->pairDoc->removeElement($pairDoc);
 
         return $this;
     }
