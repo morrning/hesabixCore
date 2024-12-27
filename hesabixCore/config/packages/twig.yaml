@@ -6,7 +6,6 @@ twig:
     ]
     globals:
         Jdate: "@Jdate"
-        Blog: "@Blog"
         twigFunctions: "@twigFunctions"
 when@test:
     twig:

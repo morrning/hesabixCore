@@ -41,17 +41,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Business::class, orphanRemoval: true)]
     private Collection $businesses;
 
-    #[ORM\OneToMany(mappedBy: 'submiter', targetEntity: GuideContent::class, orphanRemoval: true)]
-    private Collection $guideContents;
-
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: StackContent::class, orphanRemoval: true)]
     private Collection $stackContents;
-
-    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: BlogPost::class, orphanRemoval: true)]
-    private Collection $blogPosts;
-
-    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: BlogComment::class, orphanRemoval: true)]
-    private Collection $blogComments;
 
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Log::class)]
     private Collection $logs;
@@ -123,10 +114,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->userTokens = new ArrayCollection();
         $this->businesses = new ArrayCollection();
-        $this->guideContents = new ArrayCollection();
         $this->stackContents = new ArrayCollection();
-        $this->blogPosts = new ArrayCollection();
-        $this->blogComments = new ArrayCollection();
         $this->logs = new ArrayCollection();
         $this->permissions = new ArrayCollection();
         $this->hesabdariDocs = new ArrayCollection();
@@ -301,36 +289,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @return Collection<int, GuideContent>
-     */
-    public function getGuideContents(): Collection
-    {
-        return $this->guideContents;
-    }
-
-    public function addGuideContent(GuideContent $guideContent): self
-    {
-        if (!$this->guideContents->contains($guideContent)) {
-            $this->guideContents->add($guideContent);
-            $guideContent->setSubmiter($this);
-        }
-
-        return $this;
-    }
-
-    public function removeGuideContent(GuideContent $guideContent): self
-    {
-        if ($this->guideContents->removeElement($guideContent)) {
-            // set the owning side to null (unless already changed)
-            if ($guideContent->getSubmiter() === $this) {
-                $guideContent->setSubmiter(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
      * @return Collection<int, StackContent>
      */
     public function getStackContents(): Collection
@@ -354,66 +312,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($stackContent->getSubmitter() === $this) {
                 $stackContent->setSubmitter(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, BlogPost>
-     */
-    public function getBlogPosts(): Collection
-    {
-        return $this->blogPosts;
-    }
-
-    public function addBlogPost(BlogPost $blogPost): self
-    {
-        if (!$this->blogPosts->contains($blogPost)) {
-            $this->blogPosts->add($blogPost);
-            $blogPost->setSubmitter($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBlogPost(BlogPost $blogPost): self
-    {
-        if ($this->blogPosts->removeElement($blogPost)) {
-            // set the owning side to null (unless already changed)
-            if ($blogPost->getSubmitter() === $this) {
-                $blogPost->setSubmitter(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, BlogComment>
-     */
-    public function getBlogComments(): Collection
-    {
-        return $this->blogComments;
-    }
-
-    public function addBlogComment(BlogComment $blogComment): self
-    {
-        if (!$this->blogComments->contains($blogComment)) {
-            $this->blogComments->add($blogComment);
-            $blogComment->setSubmitter($this);
-        }
-
-        return $this;
-    }
-
-    public function removeBlogComment(BlogComment $blogComment): self
-    {
-        if ($this->blogComments->removeElement($blogComment)) {
-            // set the owning side to null (unless already changed)
-            if ($blogComment->getSubmitter() === $this) {
-                $blogComment->setSubmitter(null);
             }
         }
 
@@ -516,28 +414,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getSupports(): Collection
     {
         return $this->supports;
-    }
-
-    public function addSupport(Support $support): self
-    {
-        if (!$this->supports->contains($support)) {
-            $this->supports->add($support);
-            $support->setSubmitter($this);
-        }
-
-        return $this;
-    }
-
-    public function removeSupport(Support $support): self
-    {
-        if ($this->supports->removeElement($support)) {
-            // set the owning side to null (unless already changed)
-            if ($support->getSubmitter() === $this) {
-                $support->setSubmitter(null);
-            }
-        }
-
-        return $this;
     }
 
     /**

@@ -4,7 +4,6 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
-    blogMediaDir: '%kernel.project_dir%/../public_html/blog/media'
     archiveMediaDir: '%kernel.project_dir%/../hesabixArchive'
     archiveTempMediaDir: '%kernel.project_dir%/../hesabixArchive/temp'
     avatarDir: '%kernel.project_dir%/../hesabixArchive/avatars'
@@ -38,9 +37,6 @@ services:
             $entityManager: "@doctrine.orm.entity_manager"
     Provider:
         class: App\Service\Provider
-        arguments: [ "@doctrine.orm.entity_manager" ]
-    Blog:
-        class: App\Service\Blog
         arguments: [ "@doctrine.orm.entity_manager" ]
     twigFunctions:
         class: App\Service\twigFunctions
