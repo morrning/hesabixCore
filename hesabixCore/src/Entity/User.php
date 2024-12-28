@@ -41,9 +41,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Business::class, orphanRemoval: true)]
     private Collection $businesses;
 
-    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: StackContent::class, orphanRemoval: true)]
-    private Collection $stackContents;
-
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Log::class)]
     private Collection $logs;
 
@@ -114,7 +111,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->userTokens = new ArrayCollection();
         $this->businesses = new ArrayCollection();
-        $this->stackContents = new ArrayCollection();
         $this->logs = new ArrayCollection();
         $this->permissions = new ArrayCollection();
         $this->hesabdariDocs = new ArrayCollection();
@@ -282,36 +278,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($business->getOwner() === $this) {
                 $business->setOwner(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, StackContent>
-     */
-    public function getStackContents(): Collection
-    {
-        return $this->stackContents;
-    }
-
-    public function addStackContent(StackContent $stackContent): self
-    {
-        if (!$this->stackContents->contains($stackContent)) {
-            $this->stackContents->add($stackContent);
-            $stackContent->setSubmitter($this);
-        }
-
-        return $this;
-    }
-
-    public function removeStackContent(StackContent $stackContent): self
-    {
-        if ($this->stackContents->removeElement($stackContent)) {
-            // set the owning side to null (unless already changed)
-            if ($stackContent->getSubmitter() === $this) {
-                $stackContent->setSubmitter(null);
             }
         }
 
