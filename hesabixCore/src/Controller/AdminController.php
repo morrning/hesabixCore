@@ -4,9 +4,11 @@ namespace App\Controller;
 
 use App\Entity\BankAccount;
 use App\Entity\Business;
+use App\Entity\Cashdesk;
 use App\Entity\ChangeReport;
 use App\Entity\Commodity;
 use App\Entity\HesabdariDoc;
+use App\Entity\Money;
 use App\Entity\Person;
 use App\Entity\Registry;
 use App\Entity\Settings;
@@ -593,5 +595,28 @@ class AdminController extends AbstractController
 
         }
         echo str_replace("-", "/", "1403-02-06");
+    }
+    /**
+     * @throws Exception
+     */
+    #[Route('/script2', name: 'script2')]
+    public function script2(EntityManagerInterface $entitymanager): JsonResponse
+    {
+        $banks = $entitymanager->getRepository(BankAccount::class)->findAll();
+        foreach( $banks as $bank ){
+            if($bank->getMoney() == null){
+                $bank->setMoney($bank->getBid()->getMoney());
+                $entitymanager->persist($bank);
+            }
+        }
+
+        $items = $entitymanager->getRepository(Cashdesk::class)->findAll();
+        foreach( $items as $item ){
+            if($item->getMoney() == null){
+                $item->setMoney($item->getBid()->getMoney());
+                $entitymanager->persist($bank);
+            }
+        }
+        $entitymanager->flush();
     }
 }

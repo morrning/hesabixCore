@@ -35,11 +35,6 @@ security:
                 path: front_user_logout
                 # where to redirect after logout
                 target: general_home
-            form_login:
-                # "app_login" is the name of the route created previously
-                login_path: front_user_login
-                check_path: front_user_login
-                enable_csrf: true
             custom_authenticator: App\Security\BackAuthAuthenticator
             remember_me:
                 secret: '%kernel.secret%' # required
