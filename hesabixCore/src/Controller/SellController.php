@@ -249,6 +249,20 @@ class SellController extends AbstractController
         if(!$doc->getShortlink()){
             $doc->setShortlink($doc->getId());
         }
+
+        //add pair docs
+        if(array_key_exists('pair_docs',$params)){
+            foreach($params['pair_docs'] as $pairCode){
+                $pair = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                    'bid'=>$acc['bid'],
+                    'code'=>$pairCode,
+                    'type'=>'buy'
+                ]);
+                if($pair){
+                    $doc->addPairDoc($pair);
+                }
+            }
+        }
         $entityManager->persist($doc);
         $entityManager->flush();
 

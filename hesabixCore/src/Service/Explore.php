@@ -71,6 +71,10 @@ class Explore
         if (!array_key_exists('transferCost', $result))
             $result['transferCost'] = 0;
         $result['person'] = $person;
+        $result['pair_docs'] = [];
+        foreach($hesabdariDoc->getPairDoc() as $pair){
+            $result['pair_docs'][] = $pair->getCode();
+        }
         return $result;
     }
 
