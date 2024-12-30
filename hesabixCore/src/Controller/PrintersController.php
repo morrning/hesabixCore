@@ -35,7 +35,7 @@ class PrintersController extends AbstractController
     #[Route('/api/printers/options/info', name: 'app_printers_options_info')]
     public function app_printers_options_info(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-        $acc = $access->hasRole('settings');
+        $acc = $access->hasRole('join');
         if (!$acc)
             throw $this->createAccessDeniedException();
         $settings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);

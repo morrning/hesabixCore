@@ -27,57 +27,57 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 class BuyController extends AbstractController
 {
     #[Route('/api/buy/edit/can/{code}', name: 'app_buy_can_edit')]
-    public function app_buy_can_edit(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager, string $code): JsonResponse
+    public function app_buy_can_edit(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $code): JsonResponse
     {
         $canEdit = true;
         $acc = $access->hasRole('buy');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-            'bid'=>$acc['bid'],
-            'code'=>$code
+            'bid' => $acc['bid'],
+            'code' => $code
         ]);
         //check related documents
-        if(count($doc->getRelatedDocs()) != 0)
+        if (count($doc->getRelatedDocs()) != 0)
             $canEdit = false;
 
         //check storeroom tickets
-        $tickets = $entityManager->getRepository(StoreroomTicket::class)->findBy(['doc'=>$doc]);
-        if(count($tickets) != 0)
+        $tickets = $entityManager->getRepository(StoreroomTicket::class)->findBy(['doc' => $doc]);
+        if (count($tickets) != 0)
             $canEdit = false;
         return $this->json([
-            'result'=> $canEdit
+            'result' => $canEdit
         ]);
     }
 
     #[Route('/api/buy/get/info/{code}', name: 'app_buy_get_info')]
-    public function app_buy_get_info(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager, string $code): JsonResponse
+    public function app_buy_get_info(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $code): JsonResponse
     {
         $acc = $access->hasRole('buy');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-            'bid'=>$acc['bid'],
-            'code'=>$code
+            'bid' => $acc['bid'],
+            'code' => $code
         ]);
-        if(!$doc)
+        if (!$doc)
             throw $this->createNotFoundException();
-        
+
         return $this->json(Explore::ExploreBuyDoc($doc));
     }
 
     #[Route('/api/buy/get/invoices/list', name: 'app_buy_get_invoices_list')]
-    public function app_buy_get_invoices_list(Request $request,Access $access,Log $log,EntityManagerInterface $entityManager, string $code): JsonResponse
+    public function app_buy_get_invoices_list(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $code): JsonResponse
     {
         $acc = $access->hasRole('buy');
-        if(!$acc)
+        if (!$acc)
             throw $this->createAccessDeniedException();
         $invoices = $entityManager->getRepository(HesabdariDoc::class)->findBy([
-            'bid'=>$acc['bid'],
-            'year'=>$acc['year'],
-            'type'=>'buy',
-            'money'=> $acc['money']
+            'bid' => $acc['bid'],
+            'year' => $acc['year'],
+            'type' => 'buy',
+            'money' => $acc['money']
         ]);
         return $this->json(Explore::ExploreBuyDocsList($invoices));
     }
@@ -102,9 +102,10 @@ class BuyController extends AbstractController
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
                 'code' => $params['update'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ]);
-            if (!$doc) return $this->json($extractor->notFound());
+            if (!$doc)
+                return $this->json($extractor->notFound());
 
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
                 'doc' => $doc
@@ -121,7 +122,7 @@ class BuyController extends AbstractController
             $doc->setMoney($acc['money']);
             $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
         }
-        if($params['transferCost'] != 0){
+        if ($params['transferCost'] != 0) {
             $hesabdariRow = new HesabdariRow();
             $hesabdariRow->setDes('حمل و نقل کالا');
             $hesabdariRow->setBid($acc['bid']);
@@ -135,7 +136,7 @@ class BuyController extends AbstractController
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
         }
-        if($params['discountAll'] != 0){
+        if ($params['discountAll'] != 0) {
             $hesabdariRow = new HesabdariRow();
             $hesabdariRow->setDes('تخفیف فاکتور');
             $hesabdariRow->setBid($acc['bid']);
@@ -179,9 +180,9 @@ class BuyController extends AbstractController
             $hesabdariRow->setCommodity($commodity);
             $hesabdariRow->setCommdityCount($row['count']);
             $entityManager->persist($hesabdariRow);
-            
+
             //update commodity price for auto update price option
-            if($acc['bid']->isCommodityUpdateBuyPriceAuto() == true && $commodity->getPriceBuy() != $row['price']){
+            if ($acc['bid']->isCommodityUpdateBuyPriceAuto() == true && $commodity->getPriceBuy() != $row['price']) {
                 $commodity->setPriceBuy($row['price']);
                 $entityManager->persist($commodity);
             }
@@ -239,16 +240,18 @@ class BuyController extends AbstractController
                 'code' => $params['label']['code'],
                 'type' => 'buy'
             ]);
-            if (!$label) return $this->json($extractor->notFound());
+            if (!$label)
+                return $this->json($extractor->notFound());
         }
         foreach ($params['items'] as $item) {
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
                 'code' => $item['code'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ]);
-            if (!$doc) return $this->json($extractor->notFound());
+            if (!$doc)
+                return $this->json($extractor->notFound());
             if ($params['label'] != 'clear') {
                 $doc->setInvoiceLabel($label);
                 $entityManager->persist($doc);
@@ -290,7 +293,7 @@ class BuyController extends AbstractController
             'bid' => $acc['bid'],
             'year' => $acc['year'],
             'type' => 'buy',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ], [
             'id' => 'DESC'
         ]);
@@ -327,15 +330,22 @@ class BuyController extends AbstractController
             }
             $temp['relatedDocsPays'] = $pays;
 
+            $temp['commodities'] = [];
             foreach ($item->getHesabdariRows() as $item) {
                 if ($item->getRef()->getCode() == '104') {
                     $temp['discountAll'] = $item->getBd();
                 } elseif ($item->getRef()->getCode() == '90') {
                     $temp['transferCost'] = $item->getBs();
                 }
+                if ($item->getCommodity()) {
+                    $temp['commodities'][] = Explore::ExploreCommodity($item->getCommodity(), $item->getCommdityCount());
+                }
             }
-            if(!array_key_exists('discountAll',$temp)) $temp['discountAll'] = 0;
-            if(!array_key_exists('transferCost',$temp)) $temp['transferCost'] = 0;
+            if (!array_key_exists('discountAll', $temp))
+                $temp['discountAll'] = 0;
+            if (!array_key_exists('transferCost', $temp))
+                $temp['transferCost'] = 0;
+
             $dataTemp[] = $temp;
         }
         return $this->json($dataTemp);
@@ -350,26 +360,28 @@ class BuyController extends AbstractController
         }
 
         $acc = $access->hasRole('buy');
-        if (!$acc) throw $this->createAccessDeniedException();
+        if (!$acc)
+            throw $this->createAccessDeniedException();
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code'],
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
-        if (!$doc) throw $this->createNotFoundException();
+        if (!$doc)
+            throw $this->createNotFoundException();
         $pdfPid = 0;
         if ($params['pdf']) {
             $pdfPid = $provider->createPrint(
-            $acc['bid'],
-            $this->getUser(),
-            $this->renderView('pdf/posPrinters/buy.html.twig', [
-                'bid' => $acc['bid'],
-                'doc'=>$doc,
-                'rows'=>$doc->getHesabdariRows(),
-                'printInvoice'=>$params['posPrint'],
-                'printcashdeskRecp'=>$params['posPrintRecp'],
-            ]),
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/posPrinters/buy.html.twig', [
+                    'bid' => $acc['bid'],
+                    'doc' => $doc,
+                    'rows' => $doc->getHesabdariRows(),
+                    'printInvoice' => $params['posPrint'],
+                    'printcashdeskRecp' => $params['posPrintRecp'],
+                ]),
                 true
             );
         }
@@ -414,14 +426,16 @@ class BuyController extends AbstractController
         }
 
         $acc = $access->hasRole('buy');
-        if (!$acc) throw $this->createAccessDeniedException();
+        if (!$acc)
+            throw $this->createAccessDeniedException();
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code'],
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
-        if (!$doc) throw $this->createNotFoundException();
+        if (!$doc)
+            throw $this->createNotFoundException();
         $person = null;
         $discount = 0;
         $transfer = 0;
@@ -438,35 +452,37 @@ class BuyController extends AbstractController
         if ($params['pdf']) {
             $printOptions = [
                 'bidInfo' => true,
-                'pays'     =>true,
-                'taxInfo'   =>true,
-                'discountInfo'  =>true,
-                'note'  =>true,
-                'paper' =>'A4-L'
+                'pays' => true,
+                'taxInfo' => true,
+                'discountInfo' => true,
+                'note' => true,
+                'paper' => 'A4-L'
             ];
-            if(array_key_exists('printOptions',$params)){
-                if(array_key_exists('bidInfo',$params['printOptions'])){
+            if (array_key_exists('printOptions', $params)) {
+                if (array_key_exists('bidInfo', $params['printOptions'])) {
                     $printOptions['bidInfo'] = $params['printOptions']['bidInfo'];
                 }
-                if(array_key_exists('pays',$params['printOptions'])){
+                if (array_key_exists('pays', $params['printOptions'])) {
                     $printOptions['pays'] = $params['printOptions']['pays'];
                 }
-                if(array_key_exists('taxInfo',$params['printOptions'])){
+                if (array_key_exists('taxInfo', $params['printOptions'])) {
                     $printOptions['taxInfo'] = $params['printOptions']['taxInfo'];
                 }
-                if(array_key_exists('discountInfo',$params['printOptions'])){
+                if (array_key_exists('discountInfo', $params['printOptions'])) {
                     $printOptions['discountInfo'] = $params['printOptions']['discountInfo'];
                 }
-                if(array_key_exists('note',$params['printOptions'])){
+                if (array_key_exists('note', $params['printOptions'])) {
                     $printOptions['note'] = $params['printOptions']['note'];
                 }
-                if(array_key_exists('paper',$params['printOptions'])){
+                if (array_key_exists('paper', $params['printOptions'])) {
                     $printOptions['paper'] = $params['printOptions']['paper'];
                 }
             }
             $note = '';
-            $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid'=>$acc['bid']]);
-            if($printSettings){$note = $printSettings->getBuyNoteString();}
+            $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
+            if ($printSettings) {
+                $note = $printSettings->getBuyNoteString();
+            }
             $pdfPid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
@@ -478,8 +494,8 @@ class BuyController extends AbstractController
                     'printInvoice' => $params['printers'],
                     'discount' => $discount,
                     'transfer' => $transfer,
-                    'printOptions'=> $printOptions,
-                    'note'=> $note
+                    'printOptions' => $printOptions,
+                    'note' => $note
                 ]),
                 false,
                 $printOptions['paper']

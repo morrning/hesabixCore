@@ -65,8 +65,8 @@ class SMS
             $password = $this->registryMGR->get('sms', 'password');
             $from = $this->registryMGR->get('sms', 'fromNum');
             $input_data = [];
-            foreach ($params as $param) {
-                $input_data['%p' . strval(array_search($param, $params)) . '%'] = $param;
+            foreach ($params as $key=>$param) {
+                $input_data['p' . strval(array_search($param, $params))] = $param;
             }
             $url = "https://ippanel.com/patterns/pattern?username=" . $username . "&password=" . urlencode($password) . "&from=$from&to=" . json_encode($toArray) . "&input_data=" . urlencode(json_encode($input_data)) . "&pattern_code=$bodyID";
             $handler = curl_init($url);
