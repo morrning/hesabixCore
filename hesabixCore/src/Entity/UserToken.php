@@ -23,6 +23,9 @@ class UserToken
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $tokenID = null;
 
+    #[ORM\Column(length: 40, nullable: true)]
+    private ?string $lastActive = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +63,18 @@ class UserToken
     public function setTokenID(?string $tokenID): static
     {
         $this->tokenID = $tokenID;
+
+        return $this;
+    }
+
+    public function getLastActive(): ?string
+    {
+        return $this->lastActive;
+    }
+
+    public function setLastActive(?string $lastActive): static
+    {
+        $this->lastActive = $lastActive;
 
         return $this;
     }

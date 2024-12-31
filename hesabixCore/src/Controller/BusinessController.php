@@ -218,7 +218,7 @@ class BusinessController extends AbstractController
                 }
             }
             if (array_key_exists('profitCalcType', $params)) {
-                if ($params['profitCalcType'] == 'lis' || $params['profitCalcType'] == 'avgis') {
+                if ($params['profitCalcType'] == 'lis' || $params['profitCalcType'] == 'avgis' || $params['profitCalcType'] == 'simple') {
                     $business->setProfitCalcType($params['profitCalcType']);
                 }
             } else {

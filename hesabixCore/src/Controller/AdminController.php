@@ -14,6 +14,7 @@ use App\Entity\Registry;
 use App\Entity\Settings;
 use App\Entity\StoreroomTicket;
 use App\Entity\User;
+use App\Entity\UserToken;
 use App\Entity\WalletTransaction;
 use App\Service\Extractor;
 use App\Service\Jdate;
@@ -580,6 +581,23 @@ class AdminController extends AbstractController
         }
         return $this->json($extractor->operationSuccess(array_reverse($temps)));
     }
+
+    #[Route('/api/admin/onlineusers/list', name: 'api_admin_online_users_list')]
+    public function api_admin_online_users_list(Extractor $extractor,Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $tokens = $entityManager->getRepository(UserToken::class)->getOnlines(120);
+        $res = [];
+        foreach($tokens as $token){
+            $res[] = [
+                'name' => $token->getUser()->getFullName(),
+                'email'=>$token->getUser()->getEmail(),
+                'mobile'=>$token->getUser()->getMobile(),
+                'lastActive'=>$token->getLastActive() - time(),
+            ];
+        }
+        return $this->json($res);
+    }
+
 
     /**
      * @throws Exception

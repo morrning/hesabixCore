@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Business;
 use App\Entity\Notification;
+use App\Entity\UserToken;
 use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
@@ -11,13 +12,14 @@ use App\Service\twigFunctions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class NotificationsController extends AbstractController
 {
     #[Route('/api/notifications/list/{type}', name: 'api_notification_list')]
-    public function api_notification_list(twigFunctions $twigFunctions,Access $access, Jdate $jdate, EntityManagerInterface $entityManager,String $type = 'all'): JsonResponse
+    public function api_notification_list(twigFunctions $twigFunctions,Access $access,Request $request, Jdate $jdate, EntityManagerInterface $entityManager,String $type = 'all'): JsonResponse
     {
         if(!$this->getUser())
             throw $this->createAccessDeniedException('lot loged in');
@@ -61,6 +63,15 @@ class NotificationsController extends AbstractController
             $temp['url'] = $item->getUrl();
             $temp['id'] = $item->getId();
             $temps[] = $temp;
+        }
+
+        $userToken = $entityManager->getRepository(UserToken::class)->findOneBy([
+            'token'=> $request->headers->get('X-AUTH-TOKEN')
+        ]);
+        if($userToken){
+            $userToken->setLastActive(time());
+            $entityManager->persist($userToken);
+            $entityManager->flush();
         }
         return $this->json($temps);
     }

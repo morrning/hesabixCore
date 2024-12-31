@@ -43,7 +43,7 @@ class UserTokenRepository extends ServiceEntityRepository
     /**
      * @throws NonUniqueResultException
      */
-    public function findByApiToken($value): UserToken | null
+    public function findByApiToken($value): UserToken|null
     {
         return $this->createQueryBuilder('u')
             ->andWhere('u.token = :val')
@@ -52,13 +52,13 @@ class UserTokenRepository extends ServiceEntityRepository
             ->setMaxResults(10)
             ->getQuery()
             ->getOneOrNullResult()
-            ;
+        ;
     }
 
     /**
      * @throws NonUniqueResultException
      */
-    public function findByApiTokenID($value): UserToken | null
+    public function findByApiTokenID($value): UserToken|null
     {
         return $this->createQueryBuilder('u')
             ->andWhere('u.tokenID = :val')
@@ -67,13 +67,14 @@ class UserTokenRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
-//    public function findOneBySomeField($value): ?UserToken
-//    {
-//        return $this->createQueryBuilder('u')
-//            ->andWhere('u.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+
+    public function getOnlines($maxTime = 120): ?array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.lastActive > :maxTime')
+            ->setParameter('maxTime', time() - $maxTime)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 }
