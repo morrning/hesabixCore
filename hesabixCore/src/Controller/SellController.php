@@ -72,7 +72,10 @@ class SellController extends AbstractController
         //calculate profit
         foreach ($doc->getHesabdariRows() as $item) {
             if ($item->getCommodity() && $item->getCommdityCount()) {
-                if ($acc['bid']->getProfitCalctype() == 'lis') {
+                if ($acc['bid']->getProfitCalctype() == 'simple') {
+                    $profit = $profit + (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceSell()) * $item->getCommdityCount());
+                }
+                elseif ($acc['bid']->getProfitCalctype() == 'lis') {
                     $last = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
                         'commodity' => $item->getCommodity(),
                         'bs' => 0
