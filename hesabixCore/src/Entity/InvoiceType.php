@@ -30,9 +30,16 @@ class InvoiceType
     #[ORM\OneToMany(mappedBy: 'InvoiceLabel', targetEntity: HesabdariDoc::class)]
     private Collection $hesabdariDocs;
 
+    /**
+     * @var Collection<int, PreInvoiceDoc>
+     */
+    #[ORM\OneToMany(mappedBy: 'invoiceLabel', targetEntity: PreInvoiceDoc::class)]
+    private Collection $preInvoiceDocs;
+
     public function __construct()
     {
         $this->hesabdariDocs = new ArrayCollection();
+        $this->preInvoiceDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -112,6 +119,36 @@ class InvoiceType
             // set the owning side to null (unless already changed)
             if ($hesabdariDoc->getInvoiceLabel() === $this) {
                 $hesabdariDoc->setInvoiceLabel(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceDoc>
+     */
+    public function getPreInvoiceDocs(): Collection
+    {
+        return $this->preInvoiceDocs;
+    }
+
+    public function addPreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if (!$this->preInvoiceDocs->contains($preInvoiceDoc)) {
+            $this->preInvoiceDocs->add($preInvoiceDoc);
+            $preInvoiceDoc->setInvoiceLabel($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if ($this->preInvoiceDocs->removeElement($preInvoiceDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($preInvoiceDoc->getInvoiceLabel() === $this) {
+                $preInvoiceDoc->setInvoiceLabel(null);
             }
         }
 

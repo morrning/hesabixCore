@@ -51,6 +51,12 @@ class Money
     #[ORM\OneToMany(mappedBy: 'money', targetEntity: Salary::class)]
     private Collection $salaries;
 
+    /**
+     * @var Collection<int, PreInvoiceDoc>
+     */
+    #[ORM\OneToMany(mappedBy: 'money', targetEntity: PreInvoiceDoc::class, orphanRemoval: true)]
+    private Collection $preInvoiceDocs;
+
     public function __construct()
     {
         $this->businesses = new ArrayCollection();
@@ -58,6 +64,7 @@ class Money
         $this->bids = new ArrayCollection();
         $this->cashdesks = new ArrayCollection();
         $this->salaries = new ArrayCollection();
+        $this->preInvoiceDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -254,6 +261,36 @@ class Money
             // set the owning side to null (unless already changed)
             if ($salary->getMoney() === $this) {
                 $salary->setMoney(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceDoc>
+     */
+    public function getPreInvoiceDocs(): Collection
+    {
+        return $this->preInvoiceDocs;
+    }
+
+    public function addPreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if (!$this->preInvoiceDocs->contains($preInvoiceDoc)) {
+            $this->preInvoiceDocs->add($preInvoiceDoc);
+            $preInvoiceDoc->setMoney($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if ($this->preInvoiceDocs->removeElement($preInvoiceDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($preInvoiceDoc->getMoney() === $this) {
+                $preInvoiceDoc->setMoney(null);
             }
         }
 

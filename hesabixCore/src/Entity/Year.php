@@ -48,11 +48,18 @@ class Year
     #[Ignore]
     private Collection $storeroomTickets;
 
+    /**
+     * @var Collection<int, PreInvoiceDoc>
+     */
+    #[ORM\OneToMany(mappedBy: 'year', targetEntity: PreInvoiceDoc::class, orphanRemoval: true)]
+    private Collection $preInvoiceDocs;
+
     public function __construct()
     {
         $this->hesabdariDocs = new ArrayCollection();
         $this->hesabdariRows = new ArrayCollection();
         $this->storeroomTickets = new ArrayCollection();
+        $this->preInvoiceDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -216,6 +223,36 @@ class Year
             // set the owning side to null (unless already changed)
             if ($storeroomTicket->getYear() === $this) {
                 $storeroomTicket->setYear(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceDoc>
+     */
+    public function getPreInvoiceDocs(): Collection
+    {
+        return $this->preInvoiceDocs;
+    }
+
+    public function addPreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if (!$this->preInvoiceDocs->contains($preInvoiceDoc)) {
+            $this->preInvoiceDocs->add($preInvoiceDoc);
+            $preInvoiceDoc->setYear($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if ($this->preInvoiceDocs->removeElement($preInvoiceDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($preInvoiceDoc->getYear() === $this) {
+                $preInvoiceDoc->setYear(null);
             }
         }
 

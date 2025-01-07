@@ -143,6 +143,12 @@ class Person
     #[ORM\OneToMany(mappedBy: 'salesman', targetEntity: HesabdariDoc::class)]
     private Collection $hesabdariDocs;
 
+    /**
+     * @var Collection<int, PreInvoiceDoc>
+     */
+    #[ORM\OneToMany(mappedBy: 'salesman', targetEntity: PreInvoiceDoc::class)]
+    private Collection $preinvoiceDocsSalemans;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -156,6 +162,7 @@ class Person
         $this->plugRepserviceOrders = new ArrayCollection();
         $this->preInvoiceDocs = new ArrayCollection();
         $this->hesabdariDocs = new ArrayCollection();
+        $this->preinvoiceDocsSalemans = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -805,6 +812,36 @@ class Person
             // set the owning side to null (unless already changed)
             if ($hesabdariDoc->getSalesman() === $this) {
                 $hesabdariDoc->setSalesman(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceDoc>
+     */
+    public function getPreinvoiceDocsSalemans(): Collection
+    {
+        return $this->preinvoiceDocsSalemans;
+    }
+
+    public function addPreinvoiceDocsSaleman(PreInvoiceDoc $preinvoiceDocsSaleman): static
+    {
+        if (!$this->preinvoiceDocsSalemans->contains($preinvoiceDocsSaleman)) {
+            $this->preinvoiceDocsSalemans->add($preinvoiceDocsSaleman);
+            $preinvoiceDocsSaleman->setSalesman($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreinvoiceDocsSaleman(PreInvoiceDoc $preinvoiceDocsSaleman): static
+    {
+        if ($this->preinvoiceDocsSalemans->removeElement($preinvoiceDocsSaleman)) {
+            // set the owning side to null (unless already changed)
+            if ($preinvoiceDocsSaleman->getSalesman() === $this) {
+                $preinvoiceDocsSaleman->setSalesman(null);
             }
         }
 

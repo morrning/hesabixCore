@@ -258,6 +258,18 @@ class Business
     #[ORM\ManyToMany(targetEntity: Money::class, inversedBy: 'bids')]
     private Collection $extraMoney;
 
+    /**
+     * @var Collection<int, PreInvoiceDoc>
+     */
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PreInvoiceDoc::class, orphanRemoval: true)]
+    private Collection $preInvoiceDocs;
+
+    /**
+     * @var Collection<int, PreInvoiceItem>
+     */
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PreInvoiceItem::class, orphanRemoval: true)]
+    private Collection $preInvoiceItems;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -294,6 +306,8 @@ class Business
         $this->printOptions = new ArrayCollection();
         $this->projects = new ArrayCollection();
         $this->extraMoney = new ArrayCollection();
+        $this->preInvoiceDocs = new ArrayCollection();
+        $this->preInvoiceItems = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1815,6 +1829,66 @@ class Business
     public function removeExtraMoney(Money $extraMoney): static
     {
         $this->extraMoney->removeElement($extraMoney);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceDoc>
+     */
+    public function getPreInvoiceDocs(): Collection
+    {
+        return $this->preInvoiceDocs;
+    }
+
+    public function addPreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if (!$this->preInvoiceDocs->contains($preInvoiceDoc)) {
+            $this->preInvoiceDocs->add($preInvoiceDoc);
+            $preInvoiceDoc->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreInvoiceDoc(PreInvoiceDoc $preInvoiceDoc): static
+    {
+        if ($this->preInvoiceDocs->removeElement($preInvoiceDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($preInvoiceDoc->getBid() === $this) {
+                $preInvoiceDoc->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceItem>
+     */
+    public function getPreInvoiceItems(): Collection
+    {
+        return $this->preInvoiceItems;
+    }
+
+    public function addPreInvoiceItem(PreInvoiceItem $preInvoiceItem): static
+    {
+        if (!$this->preInvoiceItems->contains($preInvoiceItem)) {
+            $this->preInvoiceItems->add($preInvoiceItem);
+            $preInvoiceItem->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreInvoiceItem(PreInvoiceItem $preInvoiceItem): static
+    {
+        if ($this->preInvoiceItems->removeElement($preInvoiceItem)) {
+            // set the owning side to null (unless already changed)
+            if ($preInvoiceItem->getBid() === $this) {
+                $preInvoiceItem->setBid(null);
+            }
+        }
 
         return $this;
     }
