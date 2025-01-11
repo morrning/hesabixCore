@@ -120,6 +120,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $plugRepservice = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $Transfer = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -541,6 +544,18 @@ class Permission
     public function setPlugRepservice(?bool $plugRepservice): static
     {
         $this->plugRepservice = $plugRepservice;
+
+        return $this;
+    }
+
+    public function isTransfer(): ?bool
+    {
+        return $this->Transfer;
+    }
+
+    public function setTransfer(?bool $Transfer): static
+    {
+        $this->Transfer = $Transfer;
 
         return $this;
     }
