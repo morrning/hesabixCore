@@ -19,7 +19,7 @@ class TransferController extends AbstractController
     #[Route('/api/transfer/search', name: 'app_transfer_search')]
     public function app_transfer_search(Provider $provider,Request $request,Access $access,Log $log,EntityManagerInterface $entityManager): JsonResponse
     {
-        $acc = $access->hasRole('transfer');
+        $acc = $access->hasRole('bankTransfer');
         if(!$acc)
             throw $this->createAccessDeniedException();
         $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
