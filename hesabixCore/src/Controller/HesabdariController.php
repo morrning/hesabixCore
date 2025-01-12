@@ -693,6 +693,8 @@ class HesabdariController extends AbstractController
             $roll = 'person';
         elseif ($params['type'] == 'sell_receive')
             $roll = 'sell';
+        elseif ($params['type'] == 'bank')
+            $roll = 'banks';
         elseif ($params['type'] == 'buy_send')
             $roll = 'buy';
         elseif ($params['type'] == 'transfer')
