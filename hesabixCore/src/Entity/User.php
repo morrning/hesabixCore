@@ -107,6 +107,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: PreInvoiceDoc::class, orphanRemoval: true)]
     private Collection $preInvoiceDocs;
 
+    /**
+     * @var Collection<int, DashboardSettings>
+     */
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: DashboardSettings::class, orphanRemoval: true)]
+    private Collection $dashboardSettings;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -128,6 +134,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->plugRepserviceOrders = new ArrayCollection();
         $this->notes = new ArrayCollection();
         $this->preInvoiceDocs = new ArrayCollection();
+        $this->dashboardSettings = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -814,6 +821,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($preInvoiceDoc->getSubmitter() === $this) {
                 $preInvoiceDoc->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, DashboardSettings>
+     */
+    public function getDashboardSettings(): Collection
+    {
+        return $this->dashboardSettings;
+    }
+
+    public function addDashboardSetting(DashboardSettings $dashboardSetting): static
+    {
+        if (!$this->dashboardSettings->contains($dashboardSetting)) {
+            $this->dashboardSettings->add($dashboardSetting);
+            $dashboardSetting->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDashboardSetting(DashboardSettings $dashboardSetting): static
+    {
+        if ($this->dashboardSettings->removeElement($dashboardSetting)) {
+            // set the owning side to null (unless already changed)
+            if ($dashboardSetting->getSubmitter() === $this) {
+                $dashboardSetting->setSubmitter(null);
             }
         }
 

@@ -213,14 +213,14 @@
 										{{ item.commdityCount }}
 										{{ item.commodity.unit.name }}
 									</td>
-									<td class="center item">{{ ((item.bs - item.tax + item.discount) / item.commdityCount) | number_format }}</td>
+									<td class="center item">{{ ((item.bd - item.tax + item.discount) / item.commdityCount) | number_format }}</td>
 									{% if printOptions.discountInfo %}
 										<td class="center item">{{ item.discount | number_format }}</td>
 									{% endif %}
 									{% if printOptions.taxInfo %}
 										<td class="center item">{{ item.tax | number_format}}</td>
 									{% endif %}
-									<td class="center item">{{ item.bs| number_format }}</td>
+									<td class="center item">{{ item.bd| number_format }}</td>
 								</tr>
 							{% endif %}
 						{% endfor %}

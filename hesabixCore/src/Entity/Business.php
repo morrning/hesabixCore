@@ -270,6 +270,12 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: PreInvoiceItem::class, orphanRemoval: true)]
     private Collection $preInvoiceItems;
 
+    /**
+     * @var Collection<int, DashboardSettings>
+     */
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: DashboardSettings::class, orphanRemoval: true)]
+    private Collection $dashboardSettings;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -308,6 +314,7 @@ class Business
         $this->extraMoney = new ArrayCollection();
         $this->preInvoiceDocs = new ArrayCollection();
         $this->preInvoiceItems = new ArrayCollection();
+        $this->dashboardSettings = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1887,6 +1894,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($preInvoiceItem->getBid() === $this) {
                 $preInvoiceItem->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, DashboardSettings>
+     */
+    public function getDashboardSettings(): Collection
+    {
+        return $this->dashboardSettings;
+    }
+
+    public function addDashboardSetting(DashboardSettings $dashboardSetting): static
+    {
+        if (!$this->dashboardSettings->contains($dashboardSetting)) {
+            $this->dashboardSettings->add($dashboardSetting);
+            $dashboardSetting->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDashboardSetting(DashboardSettings $dashboardSetting): static
+    {
+        if ($this->dashboardSettings->removeElement($dashboardSetting)) {
+            // set the owning side to null (unless already changed)
+            if ($dashboardSetting->getBid() === $this) {
+                $dashboardSetting->setBid(null);
             }
         }
 
