@@ -689,10 +689,18 @@ class HesabdariController extends AbstractController
         $roll = '';
         if ($params['type'] == 'person')
             $roll = 'person';
+        if ($params['type'] == 'person_receive' || $params['type'] == 'person_send')
+            $roll = 'person';
+        elseif ($params['type'] == 'sell_receive')
+            $roll = 'sell';
+        elseif ($params['type'] == 'buy_send')
+            $roll = 'buy';
+        elseif ($params['type'] == 'transfer')
+            $roll = 'bankTransfer';
         elseif ($params['type'] == 'all')
             $roll = 'accounting';
         else
-            $this->createNotFoundException();
+            $roll = $params['type'];
 
         $acc = $access->hasRole($roll);
         if (!$acc)
