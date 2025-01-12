@@ -189,7 +189,7 @@ class HesabdariController extends AbstractController
         elseif ($params['type'] == 'rfbuy')
             $roll = 'plugAccproRfbuy';
         elseif ($params['type'] == 'transfer')
-            $roll = 'transfer';
+            $roll = 'bankTransfer';
         elseif ($params['type'] == 'sell')
             $roll = 'sell';
         elseif ($params['type'] == 'rfsell')
