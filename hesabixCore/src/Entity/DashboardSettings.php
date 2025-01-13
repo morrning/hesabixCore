@@ -45,6 +45,9 @@ class DashboardSettings
     #[ORM\Column(nullable: true)]
     private ?bool $accountingTotal = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $notif = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -166,6 +169,18 @@ class DashboardSettings
     public function setAccountingTotal(?bool $accountingTotal): static
     {
         $this->accountingTotal = $accountingTotal;
+
+        return $this;
+    }
+
+    public function isNotif(): ?bool
+    {
+        return $this->notif;
+    }
+
+    public function setNotif(?bool $notif): static
+    {
+        $this->notif = $notif;
 
         return $this;
     }

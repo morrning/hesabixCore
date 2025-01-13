@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\BankAccount;
+use App\Entity\DashboardSettings;
 use App\Entity\Project;
 use App\Entity\Storeroom;
 use App\Entity\Support;
@@ -72,7 +73,7 @@ class Explore
             $result['transferCost'] = 0;
         $result['person'] = $person;
         $result['pair_docs'] = [];
-        foreach($hesabdariDoc->getPairDoc() as $pair){
+        foreach ($hesabdariDoc->getPairDoc() as $pair) {
             $result['pair_docs'][] = $pair->getCode();
         }
         return $result;
@@ -391,7 +392,7 @@ class Explore
         return [
             'id' => $user->getId(),
             'name' => $user->getFullName(),
-            'fullName'=>$user->getFullName()
+            'fullName' => $user->getFullName()
         ];
     }
 
@@ -478,7 +479,7 @@ class Explore
             'tel' => $item->getTel(),
             'address' => $item->getAdr(),
             'manager' => $item->getManager(),
-            'active'=>$item->isActive()
+            'active' => $item->isActive()
         ];
     }
 
@@ -542,20 +543,47 @@ class Explore
         return $res;
     }
 
-    public static function ExploreSupportTicket(Support $support,User | null $user):array{
+    public static function ExploreSupportTicket(Support $support, User|null $user): array
+    {
         $jdate = new Jdate();
         $res = [];
         $res['id'] = $support->getId();
         $res['title'] = $support->getTitle();
         $res['body'] = $support->getBody();
         $res['state'] = $support->getState();
-        $res['dateSubmit'] = $jdate->jdate('Y/n/d H:i',$support->getDateSubmit());
+        $res['dateSubmit'] = $jdate->jdate('Y/n/d H:i', $support->getDateSubmit());
         $res['submitter'] = self::ExploreUser($support->getSubmitter());
         $res['main'] = $support->getMain();
         $res['owner'] = true;
-        if($user->getId() != $support->getSubmitter()->getId()){
+        if ($user->getId() != $support->getSubmitter()->getId()) {
             $res['owner'] = false;
         }
         return $res;
+    }
+
+    public static function ExploreDashboardSettings(DashboardSettings $item)
+    {
+        $result =  [
+            'banks' => $item->isBanks(),
+            'buys' => $item->isBuys(),
+            'sells' => $item->isSells(),
+            'wallet' => $item->isWallet(),
+            'acc_docs'=> $item->isAccDocs(),
+            'accounting_total'=>$item->isAccountingTotal(),
+            'commodities'=>$item->isCommodities(),
+            'persons'=>$item->isPersons(),
+            'notif'=>$item->isNotif(),
+        ];
+        if($result['banks'] === null) $result['banks'] = true;
+        if($result['buys'] === null) $result['buys'] = true;
+        if($result['sells'] === null) $result['sells'] = true;
+        if($result['wallet'] === null) $result['wallet'] = true;
+        if($result['acc_docs'] === null) $result['acc_docs'] = true;
+        if($result['accounting_total'] ===null) $result['accounting_total'] = true;
+        if($result['commodities'] === null) $result['commodities'] = true;
+        if($result['persons'] === null) $result['persons'] = true;
+        if($result['notif'] === null) $result['notif'] = true;
+
+        return $result;
     }
 }
