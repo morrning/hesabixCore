@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Business;
+use App\Entity\HesabdariTable;
 use App\Entity\PlugNoghreOrder;
 use App\Entity\PrinterQueue;
 use App\Entity\User;
@@ -65,13 +66,13 @@ class Provider
 
     public function maxPages($params, $rowsAllCount)
     {
-        $res =  $rowsAllCount / $params['count'];
-        return is_float($res) ? (int)$res + 1 : $res;
+        $res = $rowsAllCount / $params['count'];
+        return is_float($res) ? (int) $res + 1 : $res;
     }
     public function maxPagesWithPageCount($count, $rowsAllCount)
     {
-        $res =  $rowsAllCount / $count;
-        return is_float($res) ? (int)$res + 1 : $res;
+        $res = $rowsAllCount / $count;
+        return is_float($res) ? (int) $res + 1 : $res;
     }
     public function gravatarHash($email)
     {
@@ -100,7 +101,8 @@ class Provider
      */
     public function Entity2Array($entity, int $deep = 1, array $ignores = []): null|array
     {
-        if (is_null($entity)) return [];
+        if (is_null($entity))
+            return [];
         $result = [];
         $methods = get_class_methods($entity);
         $getMethods = [];
@@ -139,7 +141,8 @@ class Provider
 
     public function ArrayEntity2Array(array $entity, int $deep = 1, array $ignores = []): null|array
     {
-        if (count($entity) == 0) return [];
+        if (count($entity) == 0)
+            return [];
         $result = [];
         foreach ($entity as $item) {
             $result[] = $this->Entity2Array($item, $deep, $ignores);
@@ -147,7 +150,7 @@ class Provider
         return $result;
     }
 
-    public function createPrint(Business $bid, User $user, String $data,$posPrint = false,$paperSize = 'A4-L',$footer = true)
+    public function createPrint(Business $bid, User $user, string $data, $posPrint = false, $paperSize = 'A4-L', $footer = true)
     {
         $print = new PrinterQueue();
         $print->setDateSubmit(time());
@@ -213,7 +216,8 @@ class Provider
      */
     public function Entity2ArrayJustIncludes($entity, array $includes, int $deep = 1): null|array
     {
-        if (is_null($entity)) return [];
+        if (is_null($entity))
+            return [];
         $result = [];
         foreach ($includes as $method) {
             if (method_exists($entity, $method)) {
@@ -236,7 +240,8 @@ class Provider
      */
     public function ArrayEntity2ArrayJustIncludes(array $entity, array $includes, int $deep = 1): null|array
     {
-        if (count($entity) == 0) return [];
+        if (count($entity) == 0)
+            return [];
         $result = [];
         foreach ($entity as $item) {
             $result[] = $this->Entity2ArrayJustIncludes($item, $includes, $deep);
@@ -244,7 +249,7 @@ class Provider
         return $result;
     }
 
-    public function shamsiDateToTimestamp(string $stringDate): string | bool
+    public function shamsiDateToTimestamp(string $stringDate): string|bool
     {
         $jdate = new Jdate();
         $timeArray = explode('-', $stringDate);
@@ -258,6 +263,31 @@ class Provider
                 $result = false;
         }
 
+        return $result;
+    }
+
+    public function tree2flat(HesabdariTable $table): array
+    {
+        $result = [];
+        $nodes = $this->entityManager->getRepository(HesabdariTable::class)->findBy([
+            'upper' => $table
+        ]);
+        foreach ($nodes as $node) {
+            $childeNode = $this->entityManager->getRepository(HesabdariTable::class)->findBy([
+                'upper' => $node
+            ]);
+
+            if (count($childeNode) == 0) {
+                $result[$node->getId()] = [
+                    'id' => $node->getId(),
+                    'code' => $node->getCode(),
+                    'name' => $node->getName(),
+                    'type' => $node->getType(),
+                ];
+            } else {
+                $result[$node->getId()] = $this->tree2flat($node);
+            }
+        }
         return $result;
     }
 }
