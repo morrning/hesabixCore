@@ -667,7 +667,7 @@ class ReportController extends AbstractController
         return $this->json(Explore::ExploreHesabdariRows($items));
     }
 
-    private function tree2flat(Person|HesabdariTable|BankAccount|Cashdesk $item, array $acc): array
+    private function tree2flat(Person|HesabdariTable|BankAccount|Cashdesk|Salary $item, array $acc): array
     {
         $res = [];
         if ($this->getEntityName($item) == 'App\Entity\HesabdariTable') {
