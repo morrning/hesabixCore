@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use OpenApi\Annotations as OA;
 use App\Entity\BankAccount;
 use App\Entity\Cashdesk;
 use App\Entity\Commodity;
@@ -344,6 +345,7 @@ class ReportController extends AbstractController
                 $temp = [
                     'id' => $item->getId(),
                     'account' => $item->getName(),
+                    'type' => $item->getType(),
                     'code' => $item->getCode(),
                 ];
                 $childs = $entityManagerInterface->getRepository(HesabdariTable::class)->findBy([
@@ -353,7 +355,7 @@ class ReportController extends AbstractController
                 if (count($childs) > 0 || $item->getType() != 'calc') {
                     $temp['hasChild'] = true;
                 }
-                $temp = array_merge($temp, $this->getBalance($acc, $item->getCode(), $rootNode->getType()));
+                $temp = array_merge($temp, $this->getBalaceTree($acc, $item));
                 $response[] = $temp;
             }
         } elseif ($rootNode->getType() == 'bank') {
@@ -361,6 +363,7 @@ class ReportController extends AbstractController
                 $temp = [
                     'id' => $item->getId(),
                     'account' => $item->getName(),
+                    'type' => 'bank',
                     'code' => $item->getCode(),
                 ];
                 $temp = array_merge($temp, $this->getBalance($acc, $item->getCode(), $rootNode->getType()));
@@ -372,6 +375,7 @@ class ReportController extends AbstractController
                 $temp = [
                     'id' => $item->getId(),
                     'account' => $item->getName(),
+                    'type' => 'cashdesk',
                     'code' => $item->getCode(),
                 ];
                 $temp = array_merge($temp, $this->getBalance($acc, $item->getCode(), $rootNode->getType()));
@@ -383,6 +387,7 @@ class ReportController extends AbstractController
                 $temp = [
                     'id' => $item->getId(),
                     'account' => $item->getName(),
+                    'type' => 'salary',
                     'code' => $item->getCode(),
                 ];
                 $temp = array_merge($temp, $this->getBalance($acc, $item->getCode(), $rootNode->getType()));
@@ -394,6 +399,19 @@ class ReportController extends AbstractController
                 $temp = [
                     'id' => $item->getId(),
                     'account' => $item->getNikename(),
+                    'type' => 'person',
+                    'code' => $item->getCode(),
+                ];
+                $temp = array_merge($temp, $this->getBalance($acc, $item->getCode(), $rootNode->getType()));
+                $temp['hasChild'] = false;
+                $response[] = $temp;
+            }
+        } elseif ($rootNode->getType() == 'commodity') {
+            foreach ($tableItems as $item) {
+                $temp = [
+                    'id' => $item->getId(),
+                    'account' => $item->getName(),
+                    'type' => 'commodity',
                     'code' => $item->getCode(),
                 ];
                 $temp = array_merge($temp, $this->getBalance($acc, $item->getCode(), $rootNode->getType()));
@@ -445,18 +463,17 @@ class ReportController extends AbstractController
             $bd = 0;
 
             foreach ($faltItemsArray as $item) {
-                if ($item['type'] == 'calc') {
+                if ($item['type'] == 'commodity') {
                     $items = $this->em->getRepository(HesabdariRow::class)->findBy([
                         'money' => $acc['money'],
                         'bid' => $acc['bid'],
-                        'hesabdariTable' => $item['id']
+                        'commodity' => $item['id']
                     ]);
                     foreach ($items as $objItem) {
                         $bs += $objItem->getBs();
                         $bd += $objItem->getBd();
                     }
-                }
-                elseif ($item['type'] == 'person') {
+                } elseif ($item['type'] == 'person') {
                     $items = $this->em->getRepository(HesabdariRow::class)->findBy([
                         'money' => $acc['money'],
                         'bid' => $acc['bid'],
@@ -466,8 +483,7 @@ class ReportController extends AbstractController
                         $bs += $objItem->getBs();
                         $bd += $objItem->getBd();
                     }
-                }
-                elseif ($item['type'] == 'cashdesk') {
+                } elseif ($item['type'] == 'cashdesk') {
                     $items = $this->em->getRepository(HesabdariRow::class)->findBy([
                         'money' => $acc['money'],
                         'bid' => $acc['bid'],
@@ -477,8 +493,7 @@ class ReportController extends AbstractController
                         $bs += $objItem->getBs();
                         $bd += $objItem->getBd();
                     }
-                }
-                elseif ($item['type'] == 'salary') {
+                } elseif ($item['type'] == 'salary') {
                     $items = $this->em->getRepository(HesabdariRow::class)->findBy([
                         'money' => $acc['money'],
                         'bid' => $acc['bid'],
@@ -541,5 +556,180 @@ class ReportController extends AbstractController
             $res['bal_bd'] = 0;
         }
         return $res;
+    }
+
+    private function getBalaceTree(array $acc, HesabdariTable $table): array
+    {
+        $res = [
+            'bal_bd' => 0,
+            'bal_bs' => 0,
+            'his_bd' => 0,
+            'his_bs' => 0,
+        ];
+        if ($this->hasChild($table)) {
+            foreach ($this->getChilds($table) as $child) {
+                if ($this->hasChild($child)) {
+                    $temp = $this->getBalaceTree($acc, $child);
+                    $res['his_bd'] += $temp['his_bd'];
+                    $res['his_bs'] += $temp['his_bs'];
+                } else {
+                    $temp = $this->calcBalance($acc, $child);
+                    $res['his_bd'] += $temp['his_bd'];
+                    $res['his_bs'] += $temp['his_bs'];
+                }
+            }
+        } else {
+            $temp = $this->calcBalance($acc, $table);
+            $res['his_bd'] += $temp['his_bd'];
+            $res['his_bs'] += $temp['his_bs'];
+        }
+
+        if ($res['his_bd'] > $res['his_bs']) {
+            $res['bal_bd'] = $res['his_bd'] - $res['his_bs'];
+            $res['bal_bs'] = 0;
+        } else {
+            $res['bal_bs'] = $res['his_bs'] - $res['his_bd'];
+            $res['bal_bd'] = 0;
+        }
+        return $res;
+    }
+
+    private function calcBalance(array $acc, HesabdariTable $table): array
+    {
+        $res = [
+            'his_bd' => 0,
+            'his_bs' => 0,
+        ];
+
+        $items = $this->em->getRepository(HesabdariRow::class)->findByJoinMoney([
+            'bid' => $acc['bid'],
+            'ref' => $table
+        ], $acc['money']);
+
+        foreach ($items as $objItem) {
+            $res['his_bs'] += $objItem->getBs();
+            $res['his_bd'] += $objItem->getBd();
+        }
+        return $res;
+    }
+    private function hasChild(HesabdariTable $table): bool
+    {
+        if ($this->em->getRepository(HesabdariTable::class)->findOneBy(['upper' => $table]))
+            return true;
+        return false;
+    }
+
+    private function getChilds(HesabdariTable $table): array
+    {
+        return $this->em->getRepository(HesabdariTable::class)->findBy(['upper' => $table]);
+    }
+
+    #[Route('/api/report/acc/get_details', name: 'app_report_acc_get_details')]
+    public function app_report_acc_get_details(Provider $provider, Jdate $jdate, Access $access, Request $request, EntityManagerInterface $entityManagerInterface): JsonResponse
+    {
+        $acc = $access->hasRole('report');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (!array_key_exists('node', $params))
+            throw $this->createNotFoundException();
+        if ($params['type'] == 'calc') {
+            $rootNode = $entityManagerInterface->getRepository(HesabdariTable::class)->find($params['node']);
+            if (!$rootNode)
+                throw $this->createNotFoundException();
+        } elseif ($params['type'] == 'bank') {
+            $rootNode = $entityManagerInterface->getRepository(BankAccount::class)->find($params['node']);
+            if (!$rootNode)
+                throw $this->createNotFoundException();
+        } elseif ($params['type'] == 'cashdesk') {
+            $rootNode = $entityManagerInterface->getRepository(Cashdesk::class)->find($params['node']);
+            if (!$rootNode)
+                throw $this->createNotFoundException();
+        } elseif ($params['type'] == 'salary') {
+            $rootNode = $entityManagerInterface->getRepository(Salary::class)->find($params['node']);
+            if (!$rootNode)
+                throw $this->createNotFoundException();
+        } elseif ($params['type'] == 'person') {
+            $rootNode = $entityManagerInterface->getRepository(Person::class)->find($params['node']);
+            if (!$rootNode)
+                throw $this->createNotFoundException();
+        } elseif ($params['type'] == 'commodity') {
+            $rootNode = $entityManagerInterface->getRepository(Commodity::class)->find($params['node']);
+            if (!$rootNode)
+                throw $this->createNotFoundException();
+        }
+        $items = $this->tree2flat($rootNode, $acc);
+        return $this->json(Explore::ExploreHesabdariRows($items));
+    }
+
+    private function tree2flat(Person|HesabdariTable|BankAccount|Cashdesk $item, array $acc): array
+    {
+        $res = [];
+        if ($this->getEntityName($item) == 'App\Entity\HesabdariTable') {
+            if ($this->hasChild($item)) {
+                $temp = [];
+                foreach ($this->getChilds($item) as $child) {
+                    $temp = array_merge($temp, $this->getTree($child));
+                }
+                $res = array_merge($res, $temp);
+            } else {
+                $items = $this->em->getRepository(HesabdariRow::class)->findByJoinMoney([
+                    'bid' => $acc['bid'],
+                    'ref' => $item
+                ], $acc['money']);
+                $res = array_merge($res, $items);
+            }
+        } elseif ($this->getEntityName($item) == 'App\Entity\BankAccount') {
+            $items = $this->em->getRepository(HesabdariRow::class)->findByJoinMoney([
+                'bid' => $acc['bid'],
+                'bank' => $item
+            ], $acc['money']);
+            $res = array_merge($res, $items);
+        } elseif ($this->getEntityName($item) == 'App\Entity\Cashdesk') {
+            $items = $this->em->getRepository(HesabdariRow::class)->findByJoinMoney([
+                'bid' => $acc['bid'],
+                'bank' => $item
+            ], $acc['money']);
+            $res = array_merge($res, $items);
+        } elseif ($this->getEntityName($item) == 'App\Entity\Salary') {
+            $items = $this->em->getRepository(HesabdariRow::class)->findByJoinMoney([
+                'bid' => $acc['bid'],
+                'salary' => $item
+            ], $acc['money']);
+            $res = array_merge($res, $items);
+        } elseif ($this->getEntityName($item) == 'App\Entity\Person') {
+            $items = $this->em->getRepository(HesabdariRow::class)->findByJoinMoney([
+                'bid' => $acc['bid'],
+                'person' => $item
+            ], $acc['money']);
+            $res = array_merge($res, $items);
+        } elseif ($this->getEntityName($item) == 'App\Entity\Commodity') {
+            $items = $this->em->getRepository(HesabdariRow::class)->findByJoinMoney([
+                'bid' => $acc['bid'],
+                'commodity' => $item,
+            ], $acc['money']);
+            $res = array_merge($res, $items);
+        }
+
+        return $res;
+    }
+
+    /**
+     * Returns Doctrine entity name
+     *
+     * @param mixed $entity
+     *
+     * @return string
+     * @throws \Exception
+     */
+    private function getEntityName($entity): string
+    {
+        $entityName = $this->em->getMetadataFactory()->getMetadataFor(get_class($entity))->getName();
+        return $entityName;
     }
 }

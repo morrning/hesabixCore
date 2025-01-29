@@ -62,6 +62,17 @@ class UserController extends AbstractController
                     $translatorInterface->trans('login_fail'),
                 ));
             }
+            if ($user->isActive() == false) {
+                return $this->json($extractor->operationFail(
+                    'حساب کاربری شما فعال نیست. لطفا با پشتیبانی تماس بگیرید'
+                    ,
+                    506,
+                    [
+                        'user' => $user->getUserIdentifier(),
+                        'active' => $user->isActive(),
+                    ]
+                ));
+            }
             $token = new UserToken();
             $token->setUser($user);
             $token->setToken($this->RandomString(254));
@@ -71,7 +82,8 @@ class UserController extends AbstractController
             return $this->json($extractor->operationSuccess([
                 'user' => $user->getUserIdentifier(),
                 'token' => $token->getToken(),
-                'tokenID' => $token->getTokenID()
+                'tokenID' => $token->getTokenID(),
+                'active' => $user->isActive(),
             ]));
         } else {
             if (null === $user) {
@@ -88,14 +100,15 @@ class UserController extends AbstractController
             return $this->json([
                 'user' => $user->getUserIdentifier(),
                 'token' => $token->getToken(),
-                'tokenID' => $token->getTokenID()
+                'tokenID' => $token->getTokenID(),
+                'active' => $user->isActive(),
             ]);
         }
 
     }
 
     #[Route('/api/user/has/role/{id}', name: 'api_user_has_role')]
-    public function api_user_has_role(Extractor $extractor,#[CurrentUser] ?User $user, EntityManagerInterface $entityManager, $id): Response
+    public function api_user_has_role(Extractor $extractor, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager, $id): Response
     {
         if ($this->isGranted($id)) {
             return $this->json(
@@ -244,7 +257,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/user/change/password', name: 'api_user_change_password')]
-    public function api_user_change_password(Extractor $extractor,#[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    public function api_user_change_password(Extractor $extractor, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -460,7 +473,7 @@ class UserController extends AbstractController
             $entityManager->persist($user);
             $entityManager->flush();
             return $this->json($extractor->operationSuccess(
-                ['id'=>$user->getId()],
+                ['id' => $user->getId()],
                 'حساب کاربری شما فعال شد.هماکنون می‌توانید با اطلاعات ثبت نام خود به حساب کاربری وارد شوید.'
             ));
         }

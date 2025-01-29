@@ -160,8 +160,10 @@ class Explore
     }
     public static function ExploreHesabdariRow(HesabdariRow $row)
     {
+        $jdate = new Jdate();
         $temp = [
             'id' => $row->getId(),
+            'doc_code' => $row->getDoc()->getCode(),
             'bid' => self::ExploreBid($row->getBid()),
             'year' => self::ExploreYear($row->getYear()),
             'ref' => self::ExploreHesabdariTable($row->getRef()),
@@ -172,6 +174,8 @@ class Explore
             'bs' => $row->getBs(),
             'bd' => $row->getBd(),
             'des' => $row->getDes(),
+            'date' => $row->getDoc()->getDate(),
+            'dateSubmit' => $jdate->jdate('Y/n/d', $row->getDoc()->getDateSubmit()),
             'plugin' => $row->getPlugin(),
             'commodity_count' => $row->getCommdityCount(),
             'commodity' => self::ExploreCommodity($row->getCommodity(), $row->getCommdityCount(), $row->getDes()),
@@ -563,26 +567,35 @@ class Explore
 
     public static function ExploreDashboardSettings(DashboardSettings $item)
     {
-        $result =  [
+        $result = [
             'banks' => $item->isBanks(),
             'buys' => $item->isBuys(),
             'sells' => $item->isSells(),
             'wallet' => $item->isWallet(),
-            'acc_docs'=> $item->isAccDocs(),
-            'accounting_total'=>$item->isAccountingTotal(),
-            'commodities'=>$item->isCommodities(),
-            'persons'=>$item->isPersons(),
-            'notif'=>$item->isNotif(),
+            'acc_docs' => $item->isAccDocs(),
+            'accounting_total' => $item->isAccountingTotal(),
+            'commodities' => $item->isCommodities(),
+            'persons' => $item->isPersons(),
+            'notif' => $item->isNotif(),
         ];
-        if($result['banks'] === null) $result['banks'] = true;
-        if($result['buys'] === null) $result['buys'] = true;
-        if($result['sells'] === null) $result['sells'] = true;
-        if($result['wallet'] === null) $result['wallet'] = true;
-        if($result['acc_docs'] === null) $result['acc_docs'] = true;
-        if($result['accounting_total'] ===null) $result['accounting_total'] = true;
-        if($result['commodities'] === null) $result['commodities'] = true;
-        if($result['persons'] === null) $result['persons'] = true;
-        if($result['notif'] === null) $result['notif'] = true;
+        if ($result['banks'] === null)
+            $result['banks'] = true;
+        if ($result['buys'] === null)
+            $result['buys'] = true;
+        if ($result['sells'] === null)
+            $result['sells'] = true;
+        if ($result['wallet'] === null)
+            $result['wallet'] = true;
+        if ($result['acc_docs'] === null)
+            $result['acc_docs'] = true;
+        if ($result['accounting_total'] === null)
+            $result['accounting_total'] = true;
+        if ($result['commodities'] === null)
+            $result['commodities'] = true;
+        if ($result['persons'] === null)
+            $result['persons'] = true;
+        if ($result['notif'] === null)
+            $result['notif'] = true;
 
         return $result;
     }

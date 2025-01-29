@@ -3,11 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Printer;
+use App\Entity\PrinterQueue;
 use App\Entity\PrintItem;
 use App\Entity\PrintOptions;
 use App\Service\Access;
 use App\Service\Explore;
 use App\Service\Extractor;
+use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -55,7 +57,9 @@ class PrintersController extends AbstractController
         $temp['sell']['noteString'] = $settings->getSellNoteString();
         $temp['sell']['pays'] = $settings->isSellPays();
         $temp['sell']['paper'] = $settings->getSellPaper();
-        if(!$temp['sell']['paper']) { $temp['sell']['paper'] = 'A4-L'; }
+        if (!$temp['sell']['paper']) {
+            $temp['sell']['paper'] = 'A4-L';
+        }
 
         $temp['buy']['id'] = $settings->getId();
         $temp['buy']['bidInfo'] = $settings->isBuyBidInfo();
@@ -65,7 +69,9 @@ class PrintersController extends AbstractController
         $temp['buy']['noteString'] = $settings->getBuyNoteString();
         $temp['buy']['pays'] = $settings->isBuyPays();
         $temp['buy']['paper'] = $settings->getBuyPaper();
-        if(!$temp['buy']['paper']) { $temp['buy']['paper'] = 'A4-L'; }
+        if (!$temp['buy']['paper']) {
+            $temp['buy']['paper'] = 'A4-L';
+        }
 
         $temp['rfbuy']['id'] = $settings->getId();
         $temp['rfbuy']['bidInfo'] = $settings->isRfbuyBidInfo();
@@ -75,7 +81,9 @@ class PrintersController extends AbstractController
         $temp['rfbuy']['noteString'] = $settings->getRfbuyNoteString();
         $temp['rfbuy']['pays'] = $settings->isRfbuyPays();
         $temp['rfbuy']['paper'] = $settings->getRfbuyPaper();
-        if(!$temp['rfbuy']['paper']) { $temp['rfbuy']['paper'] = 'A4-L'; }
+        if (!$temp['rfbuy']['paper']) {
+            $temp['rfbuy']['paper'] = 'A4-L';
+        }
 
         $temp['rfsell']['id'] = $settings->getId();
         $temp['rfsell']['bidInfo'] = $settings->isRfsellBidInfo();
@@ -92,7 +100,9 @@ class PrintersController extends AbstractController
 
         $temp['repservice']['noteString'] = $settings->getRepserviceNoteString();
         $temp['repservice']['paper'] = $settings->getRepServicePaper();
-        if(!$temp['rfsell']['paper']) { $temp['rfsell']['paper'] = 'A4-L'; }
+        if (!$temp['rfsell']['paper']) {
+            $temp['rfsell']['paper'] = 'A4-L';
+        }
 
         return $this->json($temp);
     }
@@ -122,13 +132,12 @@ class PrintersController extends AbstractController
         $settings->setSellNoteString($params['sell']['noteString']);
         $settings->setSellPays($params['sell']['pays']);
         $settings->setSellPaper($params['sell']['paper']);
-        if($params['buy']['bidInfo'] == null){
+        if ($params['buy']['bidInfo'] == null) {
             $settings->setBuyBidInfo(false);
-        }
-        else{
+        } else {
             $settings->setBuyBidInfo(true);
         }
-        
+
         $settings->setBuyTaxInfo($params['buy']['taxInfo']);
         $settings->setBuyDiscountInfo($params['buy']['discountInfo']);
         $settings->setBuyNote($params['buy']['note']);
@@ -212,9 +221,9 @@ class PrintersController extends AbstractController
         }
         if (!array_key_exists('name', $params))
             return $this->json($extractor->paramsNotSend());
-        $item =  $entityManager->getRepository(Printer::class)->findOneBy(['bid' => $acc['bid'], 'name' => $params['name']]);
-        if($item)
-            return $this->json(['result'=>2]);
+        $item = $entityManager->getRepository(Printer::class)->findOneBy(['bid' => $acc['bid'], 'name' => $params['name']]);
+        if ($item)
+            return $this->json(['result' => 2]);
         $item = new Printer();
         $item->setBid($acc['bid']);
         $item->setName($params['name']);
@@ -234,16 +243,81 @@ class PrintersController extends AbstractController
             throw $this->createAccessDeniedException();
         $printer = $entityManager->getRepository(Printer::class)->findBy([
             'bid' => $acc['bid'],
-            'token'=>$request->headers->get('printer-key')
+            'token' => $request->headers->get('printer-key')
         ]);
         $items = $entityManager->getRepository(PrintItem::class)->findBy([
             'printer' => $printer,
             'printed' => false
         ]);
-        if(count($items) == 0)   return new Response('');
+        if (count($items) == 0)
+            return new Response('');
         $items[count($items) - 1]->setPrinted(true);
         $entityManager->persist($items[count($items) - 1]);
         $entityManager->flush();
-        return new Response($items[count($items) - 1]->getType() . ',' .$items[count($items) - 1]->getFile());
+        return new Response($items[count($items) - 1]->getType() . ',' . $items[count($items) - 1]->getFile());
+    }
+
+    #[Route('/api/printers/exist/{code}', name: 'app_printers_exist')]
+    public function app_printers_exist(Extractor $extractor, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $printer = $entityManager->getRepository(Printer::class)->findOneBy(['bid' => $acc['bid'], 'id' => $code]);
+        if ($printer)
+            return $this->json($extractor->operationSuccess());
+        return $this->json($extractor->operationFail());
+    }
+
+    #[Route('/api/printers/queue/{code}', name: 'app_printers_queue')]
+    public function app_printers_queue(Jdate $jdate, Extractor $extractor, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $queue = $entityManager->getRepository(PrinterQueue::class)->findBy(['bid' => $acc['bid']]);
+        $resp = [];
+        foreach ($queue as $item) {
+            $resp[] = [
+                'id' => $item->getId(),
+                'submitter' => $item->getSubmitter()->getFullName(),
+                'code' => $item->getPid(),
+                'dateSubmit' => $jdate->jdate('Y/n/d H:i', $item->getDateSubmit())
+            ];
+        }
+        return $this->json($extractor->operationSuccess($resp));
+    }
+
+    #[Route('/api/printers/queue_doc_delete/{code}', name: 'app_printers_queuequeue_doc_delete')]
+    public function app_printers_queuequeue_doc_delete(Jdate $jdate, Extractor $extractor, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $item = $entityManager->getRepository(PrinterQueue::class)->findOneBy(['bid' => $acc['bid'], 'pid' => $code]);
+        if (!$item)
+            throw $this->createNotFoundException();
+        $log->insert('تنظیمات چاپ', ' برگه پرینت ابری با کد' . $item->getId() . ' حذف شد.', $this->getUser(), $acc['bid']->getId());
+        $entityManager->remove($item);
+        $entityManager->flush();
+        return $this->json($extractor->operationSuccess());
+    }
+
+    #[Route('/api/printers/queue_doc_delete_all', name: 'app_printers_queuequeue_doc_delete_all')]
+    public function app_printers_queuequeue_doc_delete_all(Jdate $jdate, Extractor $extractor, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('join');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $items = $entityManager->getRepository(PrinterQueue::class)->findBy(['bid' => $acc['bid']]);
+        foreach ($items as $item) {
+            $entityManager->remove($item);
+        }
+        $log->insert('تنظیمات چاپ', 'لیست چاپگرهای ابری پاک شد.', $this->getUser(), $acc['bid']->getId());
+        return $this->json($extractor->operationSuccess());
     }
 }

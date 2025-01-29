@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Commodity;
 use App\Entity\HesabdariRow;
+use App\Entity\Money;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\Persistence\ManagerRegistry;
@@ -51,8 +52,22 @@ class HesabdariRowRepository extends ServiceEntityRepository
         return $qb->select('t')
             ->where($qb->expr()->isNotNull('t.' . $notField))
             ->andWhere('t.doc = :doc')
-            ->setParameter('doc',$doc)
+            ->setParameter('doc', $doc)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function findByJoinMoney(array $params, Money $money): array
+    {
+        $query = $this->createQueryBuilder('t')
+            ->select('t')
+            ->innerJoin('t.doc', 'd')
+            ->where('d.money = :money')
+            ->setParameter('money', $money);
+        foreach ($params as $key => $value) {
+            $query->andWhere('t.' . $key . '= :' . $key);
+            $query->setParameter($key, $value);
+        }
+        return $query->getQuery()->getResult();
     }
 }
