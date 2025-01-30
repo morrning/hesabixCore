@@ -276,6 +276,12 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: DashboardSettings::class, orphanRemoval: true)]
     private Collection $dashboardSettings;
 
+    /**
+     * @var Collection<int, HesabdariTable>
+     */
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: HesabdariTable::class)]
+    private Collection $hesabdariTables;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -315,6 +321,7 @@ class Business
         $this->preInvoiceDocs = new ArrayCollection();
         $this->preInvoiceItems = new ArrayCollection();
         $this->dashboardSettings = new ArrayCollection();
+        $this->hesabdariTables = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1924,6 +1931,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($dashboardSetting->getBid() === $this) {
                 $dashboardSetting->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, HesabdariTable>
+     */
+    public function getHesabdariTables(): Collection
+    {
+        return $this->hesabdariTables;
+    }
+
+    public function addHesabdariTable(HesabdariTable $hesabdariTable): static
+    {
+        if (!$this->hesabdariTables->contains($hesabdariTable)) {
+            $this->hesabdariTables->add($hesabdariTable);
+            $hesabdariTable->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeHesabdariTable(HesabdariTable $hesabdariTable): static
+    {
+        if ($this->hesabdariTables->removeElement($hesabdariTable)) {
+            // set the owning side to null (unless already changed)
+            if ($hesabdariTable->getBid() === $this) {
+                $hesabdariTable->setBid(null);
             }
         }
 

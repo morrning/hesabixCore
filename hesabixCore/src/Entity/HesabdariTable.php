@@ -33,6 +33,9 @@ class HesabdariTable
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $entity = null;
 
+    #[ORM\ManyToOne(inversedBy: 'hesabdariTables')]
+    private ?Business $bid = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -129,6 +132,18 @@ class HesabdariTable
     public function setEntity(?string $entity): self
     {
         $this->entity = $entity;
+
+        return $this;
+    }
+
+    public function getBid(): ?Business
+    {
+        return $this->bid;
+    }
+
+    public function setBid(?Business $bid): static
+    {
+        $this->bid = $bid;
 
         return $this;
     }

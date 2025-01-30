@@ -39,7 +39,7 @@ class HesabdariTableRepository extends ServiceEntityRepository
         }
     }
 
-//    /**
+    //    /**
 //     * @return HesabdariTable[] Returns an array of HesabdariTable objects
 //     */
 //    public function findByExampleField($value): array
@@ -54,13 +54,13 @@ class HesabdariTableRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-//    public function findOneBySomeField($value): ?HesabdariTable
-//    {
-//        return $this->createQueryBuilder('h')
-//            ->andWhere('h.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    public function findNode($value, $bid): ?HesabdariTable
+    {
+        return $this->createQueryBuilder('h')
+            ->Where('h.id = :val AND (h.bid= :bid OR h.bid IS NULL)')
+            ->setParameters(['val' => $value, 'bid' => $bid])
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
+    }
 }

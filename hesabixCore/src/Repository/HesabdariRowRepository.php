@@ -65,8 +65,18 @@ class HesabdariRowRepository extends ServiceEntityRepository
             ->where('d.money = :money')
             ->setParameter('money', $money);
         foreach ($params as $key => $value) {
-            $query->andWhere('t.' . $key . '= :' . $key);
-            $query->setParameter($key, $value);
+            if (is_array($value)) {
+                $temp = [];
+                foreach ($value as $k => $v) {
+                    $temp[] = $v->getId();
+                }
+                $query->andWhere('t.' . $key . ' IN (:' . $key . ')');
+                $query->setParameter($key, $temp);
+            } else {
+                $query->andWhere('t.' . $key . '= :' . $key);
+                $query->setParameter($key, $value);
+            }
+
         }
         return $query->getQuery()->getResult();
     }
