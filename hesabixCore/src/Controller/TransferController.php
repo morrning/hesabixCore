@@ -27,7 +27,8 @@ class TransferController extends AbstractController
             'type'=>'transfer',
             'year'=>$acc['year'],
             'money'=> $acc['money']
-        ]);
+        ],
+        ['dateSubmit'=>'DESC']);
         $resp = [];
         foreach ($items as $item){
             $temp = [];
