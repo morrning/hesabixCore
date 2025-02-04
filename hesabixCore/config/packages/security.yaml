@@ -8,7 +8,7 @@ security:
         app_user_provider:
             entity:
                 class: App\Entity\User
-                property: email
+                property: mobile
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -20,7 +20,7 @@ security:
             json_login:
                 # api_login is a route we will create below
                 check_path: api_login
-                username_path: email
+                username_path: mobile
                 password_path: password
 
             custom_authenticators:
