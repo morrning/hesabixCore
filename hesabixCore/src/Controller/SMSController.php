@@ -11,10 +11,12 @@ use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Notification;
+use App\Service\PayMGR;
 use App\Service\PluginService;
 use App\Service\Provider;
 use App\Service\registryMGR;
 use App\Service\SMS;
+use App\Service\twigFunctions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -104,7 +106,7 @@ class SMSController extends AbstractController
 
     }
     #[Route('/api/sms/charge', name: 'api_sms_charge')]
-    public function api_sms_charge(Log $log, Notification $notification, Request $request, Access $access, EntityManagerInterface $entityManager): JsonResponse
+    public function api_sms_charge(PayMGR $payMGR, Log $log, registryMGR $registryMGR, Request $request, Access $access, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('owner');
         if (!$acc)
@@ -116,108 +118,50 @@ class SMSController extends AbstractController
         if (!array_key_exists('price', $params))
             throw $this->createAccessDeniedException('price not set');
 
-        //get system settings
-        $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
-        $data = array(
-            "merchant_id" => $settings->getZarinpalMerchant(),
-            "amount" => $params['price'],
-            "callback_url" => $this->generateUrl('api_sms_buy_verify', [], UrlGeneratorInterface::ABSOLUTE_URL),
-            "description" => 'افزایش اعتبار سرویس پیامک',
-        );
-        $jsonData = json_encode($data);
-        $ch = curl_init('https://api.zarinpal.com/pg/v4/payment/request.json');
-        curl_setopt($ch, CURLOPT_USERAGENT, 'ZarinPal Rest Api v1');
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Content-Length: ' . strlen($jsonData)
-        ));
+        $smsPay = new SMSPays();
+        $smsPay->setBid($acc['bid']);
+        $smsPay->setDateSubmit(time());
+        $smsPay->setSubmitter($this->getUser());
+        $smsPay->setDes('افزایش اعتبار سرویس پیامک');
+        $smsPay->setPrice($params['price']);
+        $smsPay->setStatus(0);
+        $entityManager->persist($smsPay);
+        $entityManager->flush();
 
-        $result = curl_exec($ch);
-        $err = curl_error($ch);
-        $result = json_decode($result, true, JSON_PRETTY_PRINT);
-        curl_close($ch);
-        if ($err) {
-            throw $this->createAccessDeniedException($err);
-        } else {
-            if (empty($result['errors'])) {
-                if ($result['data']['code'] == 100) {
-                    $smsPay = new SMSPays();
-                    $smsPay->setBid($acc['bid']);
-                    $smsPay->setDateSubmit(time());
-                    $smsPay->setSubmitter($this->getUser());
-                    $smsPay->setDes('افزایش اعتبار سرویس پیامک');
-                    $smsPay->setPrice($params['price']);
-                    $smsPay->setStatus(0);
-                    $smsPay->setVerifyCode($result['data']['authority']);
-                    $smsPay->setGatePay('zarinpal');
-                    $entityManager->persist($smsPay);
-                    $entityManager->flush();
-                    $log->insert('سرویس پیامک', 'صدور فاکتور شارژ سرویس پیامک', $this->getUser(), $acc['bid']);
-                    return $this->json([
-                        'authority' => $result['data']["authority"]
-                    ]);
-                }
-            }
+        $result = $payMGR->createRequest($params['price'], $this->generateUrl('api_sms_buy_verify', ['id' => $smsPay->getId()], UrlGeneratorInterface::ABSOLUTE_URL), 'افزایش اعتبار سرویس پیامک');
+        if ($result['Success']) {
+            $smsPay->setVerifyCode($result['authkey']);
+            $smsPay->setGatePay($result['gate']);
+            $entityManager->persist($smsPay);
+            $entityManager->flush();
+            $log->insert('سرویس پیامک', 'صدور فاکتور شارژ سرویس پیامک', $this->getUser(), $acc['bid']);
         }
-        throw $this->createAccessDeniedException();
+        return $this->json($result);
     }
 
-    #[Route('/api/sms/buy/verify', name: 'api_sms_buy_verify')]
-    public function api_sms_buy_verify(Notification $notification, Request $request, EntityManagerInterface $entityManager, Log $log): Response
+    #[Route('/api/sms/buy/verify/{id}', name: 'api_sms_buy_verify')]
+    public function api_sms_buy_verify(string $id, PayMGR $payMGR, twigFunctions $twigFunctions, Notification $notification, Request $request, EntityManagerInterface $entityManager, Log $log): Response
     {
-        $Authority = $request->get('Authority');
-        $status = $request->get('Status');
-        $req = $entityManager->getRepository(SMSPays::class)->findOneBy(['verifyCode' => $Authority]);
-        //get system settings
-        $settings = $entityManager->getRepository(Settings::class)->findAll()[0];
-        $data = array("merchant_id" => $settings->getZarinpalMerchant(), "authority" => $Authority, "amount" => $req->getPrice());
-        $jsonData = json_encode($data);
-        $ch = curl_init('https://api.zarinpal.com/pg/v4/payment/verify.json');
-        curl_setopt($ch, CURLOPT_USERAGENT, 'ZarinPal Rest Api v4');
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Content-Length: ' . strlen($jsonData)
-        ));
-
-        $result = curl_exec($ch);
-        $err = curl_error($ch);
-        curl_close($ch);
-        $result = json_decode($result, true);
-
-        //-----------------------------------
-
-        //-----------------------------------
-        if ($err) {
+        $req = $entityManager->getRepository(SMSPays::class)->find($id);
+        $res = $payMGR->verify($req->getPrice(), $id, $request);
+        if ($res['Success'] == false) {
             $log->insert('سرویس پیامک', 'پرداخت ناموفق شارژ سرویس پیامک', $this->getUser(), $req->getBid());
-            return $this->render('buy/fail.html.twig', ['results' => $result]);
+            return $this->render('buy/fail.html.twig', ['results' => $res]);
         } else {
-            if (array_key_exists('code', $result['data'])) {
-                if ($result['data']['code'] == 100) {
-                    $req->setStatus(100);
-                    $req->setRefID($result['data']['ref_id']);
-                    $req->setCardPan($result['data']['card_pan']);
-                    $req->getBid()->setSmsCharge($req->getBid()->getSmsCharge() + ($req->getPrice() / 1.09));
-                    $entityManager->persist($req);
-                    $entityManager->flush();
-                    $log->insert(
-                        'سرویس پیامک',
-                        'افزایش اعتبار سرویس پیامک به مبلغ: ' . $req->getPrice() . ' ریال ',
-                        $req->getSubmitter(),
-                        $req->getBid()
-                    );
-                    $notification->insert(' سرویس پیامک شارژ شد.', '/acc/sms/panel', $req->getBid(), $req->getSubmitter());
-                    return $this->render('buy/success.html.twig', ['req' => $req]);
-                }
-            }
-            $notification->insert('پرداخت فاکتور شارژ سرویس پیامک ناموفق بود', '/', $req->getBid(), $req->getSubmitter());
-            $log->insert('سرویس پیامک', 'پرداخت ناموفق شارژ سرویس پیامک', $this->getUser(), $req->getBid());
-            return $this->render('buy/fail.html.twig', ['results' => $result]);
+            $req->setStatus(100);
+            $req->setRefID($res['refID']);
+            $req->setCardPan($res['card_pan']);
+            $req->getBid()->setSmsCharge($req->getBid()->getSmsCharge() + ($req->getPrice() / 1.09));
+            $entityManager->persist($req);
+            $entityManager->flush();
+            $log->insert(
+                'سرویس پیامک',
+                'افزایش اعتبار سرویس پیامک به مبلغ: ' . $req->getPrice() . ' ریال ',
+                $req->getSubmitter(),
+                $req->getBid()
+            );
+            $notification->insert(' سرویس پیامک شارژ شد.', '/acc/sms/panel', $req->getBid(), $req->getSubmitter());
+            return $this->render('buy/success.html.twig', ['req' => $req]);
         }
     }
 
@@ -238,7 +182,7 @@ class SMSController extends AbstractController
             'id' => $id,
             'bid' => $bid,
             'type' => 'sell',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         if (!$doc)
             return $this->json(['result' => 3]);

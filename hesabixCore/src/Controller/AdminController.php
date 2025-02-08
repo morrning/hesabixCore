@@ -140,7 +140,7 @@ class AdminController extends AbstractController
     {
         return $this->json($entityManager->getRepository(Business::class)->countAll());
     }
-    
+
     #[Route('/api/admin/users/count', name: 'admin_users_count')]
     public function admin_users_count(Extractor $extractor, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
@@ -148,13 +148,13 @@ class AdminController extends AbstractController
     }
 
     #[Route('/api/admin/business/search', name: 'admin_business_list_search')]
-    public function admin_business_list_search(Extractor $extractor,Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    public function admin_business_list_search(Extractor $extractor, Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        $items = $entityManager->getRepository(Business::class)->findByPage($params['options']['page'],$params['options']['rowsPerPage'],$params['search']);
+        $items = $entityManager->getRepository(Business::class)->findByPage($params['options']['page'], $params['options']['rowsPerPage'], $params['search']);
         $resp = [];
         foreach ($items as $item) {
             $temp = [];
@@ -173,13 +173,13 @@ class AdminController extends AbstractController
     }
 
     #[Route('/api/admin/users/search', name: 'admin_users_list_search')]
-    public function admin_users_list_search(Extractor $extractor,Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    public function admin_users_list_search(Extractor $extractor, Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        $items = $entityManager->getRepository(User::class)->findByPage($params['options']['page'],$params['options']['rowsPerPage'],$params['search']);
+        $items = $entityManager->getRepository(User::class)->findByPage($params['options']['page'], $params['options']['rowsPerPage'], $params['search']);
         $resp = [];
         foreach ($items as $item) {
             $temp = [];
@@ -340,23 +340,25 @@ class AdminController extends AbstractController
     }
 
     #[Route('/api/admin/settings/system/info', name: 'admin_settings_system_info')]
-    public function admin_settings_system_info(Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
+    public function admin_settings_system_info(registryMGR $registryMGR, Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {
         $item = $entityManager->getRepository(Settings::class)->findAll()[0];
         $resp = [];
         $resp['keywords'] = $item->getSiteKeywords();
         $resp['description'] = $item->getDiscription();
         $resp['scripts'] = $item->getScripts();
-        $resp['zarinpal'] = $item->getZarinpalMerchant();
+        $resp['zarinpal'] = $registryMGR->get('system', key: 'zarinpalKey');;
         $resp['footerScripts'] = $item->getFooterScripts();
         $resp['appSite'] = $item->getAppSite();
         $resp['footer'] = $item->getFooter();
+        $resp['activeGateway'] = $registryMGR->get('system', key: 'activeGateway');
+        $resp['parsianGatewayAPI'] = $registryMGR->get('system', key: 'parsianGatewayAPI');
         return $this->json($resp);
     }
 
 
     #[Route('/api/admin/settings/system/info/save', name: 'admin_settings_system_info_save')]
-    public function admin_settings_system_info_save(EntityManagerInterface $entityManager, Request $request): Response
+    public function admin_settings_system_info_save(registryMGR $registryMGR, EntityManagerInterface $entityManager, Request $request): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -367,10 +369,12 @@ class AdminController extends AbstractController
             $item->setSiteKeywords($params['keywords']);
             $item->setDiscription($params['description']);
             $item->setScripts($params['scripts']);
-            $item->setZarinpalMerchant($params['zarinpal']);
+            $registryMGR->update('system', 'zarinpalKey', $params['zarinpal']);
             $item->setFooterScripts($params['footerScripts']);
             $item->setAppSite($params['appSite']);
             $item->setFooter($params['footer']);
+            $registryMGR->update('system', 'activeGateway', $params['activeGateway']);
+            $registryMGR->update('system', 'parsianGatewayAPI', $params['parsianGatewayAPI']);
             $entityManager->persist($item);
             $entityManager->flush();
             return $this->json(['result' => 1]);
@@ -561,7 +565,7 @@ class AdminController extends AbstractController
         ]);
     }
     #[Route('/api/admin/logs/last', name: 'api_admin_logs_last')]
-    public function api_admin_logs_last(Extractor $extractor,Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
+    public function api_admin_logs_last(Extractor $extractor, Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
     {
         $logs = $entityManager->getRepository(\App\Entity\Log::class)->findBy([], ['id' => 'DESC'], 250);
         $temps = [];
@@ -583,16 +587,16 @@ class AdminController extends AbstractController
     }
 
     #[Route('/api/admin/onlineusers/list', name: 'api_admin_online_users_list')]
-    public function api_admin_online_users_list(Extractor $extractor,Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
+    public function api_admin_online_users_list(Extractor $extractor, Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
     {
         $tokens = $entityManager->getRepository(UserToken::class)->getOnlines(120);
         $res = [];
-        foreach($tokens as $token){
+        foreach ($tokens as $token) {
             $res[] = [
                 'name' => $token->getUser()->getFullName(),
-                'email'=>$token->getUser()->getEmail(),
-                'mobile'=>$token->getUser()->getMobile(),
-                'lastActive'=>$token->getLastActive() - time(),
+                'email' => $token->getUser()->getEmail(),
+                'mobile' => $token->getUser()->getMobile(),
+                'lastActive' => $token->getLastActive() - time(),
             ];
         }
         return $this->json($res);
@@ -621,16 +625,16 @@ class AdminController extends AbstractController
     public function script2(EntityManagerInterface $entitymanager): JsonResponse
     {
         $banks = $entitymanager->getRepository(BankAccount::class)->findAll();
-        foreach( $banks as $bank ){
-            if($bank->getMoney() == null){
+        foreach ($banks as $bank) {
+            if ($bank->getMoney() == null) {
                 $bank->setMoney($bank->getBid()->getMoney());
                 $entitymanager->persist($bank);
             }
         }
 
         $items = $entitymanager->getRepository(Cashdesk::class)->findAll();
-        foreach( $items as $item ){
-            if($item->getMoney() == null){
+        foreach ($items as $item) {
+            if ($item->getMoney() == null) {
                 $item->setMoney($item->getBid()->getMoney());
                 $entitymanager->persist($bank);
             }
