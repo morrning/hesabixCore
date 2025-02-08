@@ -789,7 +789,9 @@ class PersonsController extends AbstractController
         if (!array_key_exists('items', $params)) {
             $transactions = $entityManager->getRepository(HesabdariRow::class)->findBy([
                 'bid' => $acc['bid'],
-                'person' => $person
+                'person' => $person,
+                'year' => $acc['year'],
+                'money' => $acc['money'],
             ]);
         } else {
             $transactions = [];
@@ -797,7 +799,9 @@ class PersonsController extends AbstractController
                 $prs = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
                     'id' => $param['id'],
                     'bid' => $acc['bid'],
-                    'person' => $person
+                    'person' => $person,
+                    'year' => $acc['year'],
+                    'money' => $acc['money'],
                 ]);
                 if ($prs) {
                     $transactions[] = $prs;
@@ -855,7 +859,9 @@ class PersonsController extends AbstractController
         if (!array_key_exists('items', $params)) {
             $transactions = $entityManager->getRepository(HesabdariRow::class)->findBy([
                 'bid' => $acc['bid'],
-                'person' => $person
+                'person' => $person,
+                'year' => $acc['year'],
+                'money' => $acc['money'],
             ]);
         } else {
             $transactions = [];
@@ -863,7 +869,9 @@ class PersonsController extends AbstractController
                 $prs = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
                     'id' => $param['id'],
                     'bid' => $acc['bid'],
-                    'person' => $person
+                    'person' => $person,
+                    'year' => $acc['year'],
+                    'money' => $acc['money'],
                 ]);
                 if ($prs) {
                     $transactions[] = $prs;
@@ -898,7 +906,7 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid'],
                 'type' => 'person_receive',
                 'year' => $acc['year'],
-                'money' => $acc['money']
+                'money' => $acc['money'],
             ]);
         } else {
             $items = [];
