@@ -93,6 +93,7 @@ class ArchiveController extends AbstractController
         $result = $payMGR->createRequest($order->getPrice(), $this->generateUrl('api_archive_buy_verify', ["id"=>$order->getId()], UrlGeneratorInterface::ABSOLUTE_URL), 'خرید فضای ابری');
         if ($result['Success']) {
             $order->setGatePay($result['gate']);
+            $order->setVerifyCode($result['authkey']);
             $entityManager->persist($order);
             $entityManager->flush();
             $log->insert('سرویس فضای ابری', 'صدور فاکتور سرویس فضای ابری به مقدار ' . $params['space'] . ' گیگابایت به مدت ' . $params['month'] . ' ماه ', $this->getUser(), $acc['bid']);
@@ -107,7 +108,7 @@ class ArchiveController extends AbstractController
         if (!$req)
             throw $this->createNotFoundException('');
 
-        $res = $payMGR->verify($req->getPrice(), $id, $request);
+        $res = $payMGR->verify($req->getPrice(), $req->getVerifyCode(), $request);
         if ($res['Success'] == false) {
             $log->insert('سرویس فضای ابری', 'پرداخت ناموفق سرویس فضای ابری', $this->getUser(), $req->getBid());
             return $this->render('buy/fail.html.twig', ['results' => $res]);

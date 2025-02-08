@@ -19,9 +19,6 @@ class Settings
     private ?bool $activeSendSms = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $zarinpalMerchant = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
     private ?string $appSite = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -58,18 +55,6 @@ class Settings
     public function setActiveSendSms(?bool $activeSendSms): static
     {
         $this->activeSendSms = $activeSendSms;
-
-        return $this;
-    }
-
-    public function getZarinpalMerchant(): ?string
-    {
-        return $this->zarinpalMerchant;
-    }
-
-    public function setZarinpalMerchant(?string $zarinpalMerchant): static
-    {
-        $this->zarinpalMerchant = $zarinpalMerchant;
 
         return $this;
     }

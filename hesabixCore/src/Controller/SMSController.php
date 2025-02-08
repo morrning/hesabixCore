@@ -143,7 +143,10 @@ class SMSController extends AbstractController
     public function api_sms_buy_verify(string $id, PayMGR $payMGR, twigFunctions $twigFunctions, Notification $notification, Request $request, EntityManagerInterface $entityManager, Log $log): Response
     {
         $req = $entityManager->getRepository(SMSPays::class)->find($id);
-        $res = $payMGR->verify($req->getPrice(), $id, $request);
+        if (!$req)
+            throw $this->createNotFoundException('');
+
+        $res = $payMGR->verify($req->getPrice(), $req->getVerifyCode(), $request);
         if ($res['Success'] == false) {
             $log->insert('سرویس پیامک', 'پرداخت ناموفق شارژ سرویس پیامک', $this->getUser(), $req->getBid());
             return $this->render('buy/fail.html.twig', ['results' => $res]);

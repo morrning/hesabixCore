@@ -72,7 +72,9 @@ class PluginController extends AbstractController
     public function api_plugin_buy_verify(string $id, twigFunctions $twigFunctions, PayMGR $payMGR, Request $request, EntityManagerInterface $entityManager, Log $log): Response
     {
         $req = $entityManager->getRepository(Plugin::class)->find($id);
-        $res = $payMGR->verify($req->getPrice(), $id, $request);
+        if (!$req)
+            throw $this->createNotFoundException('');
+        $res = $payMGR->verify($req->getPrice(), $req->getVerifyCode(), $request);
         if ($res['Success'] == false) {
             $log->insert(
                 'بازار افزونه‌ها' . $req->getName(),

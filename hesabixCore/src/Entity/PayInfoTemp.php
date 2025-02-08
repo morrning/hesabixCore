@@ -32,7 +32,7 @@ class PayInfoTemp
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $verifyCode = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $gatePay = null;
 
     #[ORM\ManyToOne]
