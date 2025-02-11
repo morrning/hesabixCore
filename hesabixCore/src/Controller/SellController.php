@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Access;
 use App\Service\Explore;
@@ -39,7 +40,7 @@ class SellController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $code,
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         //check related documents
         if (count($doc->getRelatedDocs()) != 0)
@@ -63,7 +64,7 @@ class SellController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $code,
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException();
@@ -74,8 +75,7 @@ class SellController extends AbstractController
             if ($item->getCommodity() && $item->getCommdityCount()) {
                 if ($acc['bid']->getProfitCalctype() == 'simple') {
                     $profit = $profit + (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceSell()) * $item->getCommdityCount());
-                }
-                elseif ($acc['bid']->getProfitCalctype() == 'lis') {
+                } elseif ($acc['bid']->getProfitCalctype() == 'lis') {
                     $last = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
                         'commodity' => $item->getCommodity(),
                         'bs' => 0
@@ -104,8 +104,7 @@ class SellController extends AbstractController
                     if ($count != 0) {
                         $price = $avg / $count;
                         $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
-                    }
-                    else{
+                    } else {
                         $profit = $profit + $item->getBs();
                     }
 
@@ -139,11 +138,11 @@ class SellController extends AbstractController
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
                 'code' => $params['update'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ]);
             if (!$doc)
                 return $this->json($extractor->notFound());
-            
+
             $rows = $doc->getHesabdariRows();
             foreach ($rows as $row)
                 $entityManager->remove($row);
@@ -249,19 +248,19 @@ class SellController extends AbstractController
 
         $entityManager->persist($doc);
         $entityManager->flush();
-        if(!$doc->getShortlink()){
+        if (!$doc->getShortlink()) {
             $doc->setShortlink($doc->getId());
         }
 
         //add pair docs
-        if(array_key_exists('pair_docs',$params)){
-            foreach($params['pair_docs'] as $pairCode){
+        if (array_key_exists('pair_docs', $params)) {
+            foreach ($params['pair_docs'] as $pairCode) {
                 $pair = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-                    'bid'=>$acc['bid'],
-                    'code'=>$pairCode,
-                    'type'=>'buy'
+                    'bid' => $acc['bid'],
+                    'code' => $pairCode,
+                    'type' => 'buy'
                 ]);
-                if($pair){
+                if ($pair) {
                     $doc->addPairDoc($pair);
                 }
             }
@@ -333,7 +332,7 @@ class SellController extends AbstractController
                 'bid' => $acc['bid'],
                 'year' => $acc['year'],
                 'code' => $item['code'],
-                'money'=> $acc['money']
+                'money' => $acc['money']
             ]);
             if (!$doc)
                 return $this->json($extractor->notFound());
@@ -378,7 +377,7 @@ class SellController extends AbstractController
             'bid' => $acc['bid'],
             'year' => $acc['year'],
             'type' => 'sell',
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ], [
             'id' => 'DESC'
         ]);
@@ -454,8 +453,7 @@ class SellController extends AbstractController
                         if ($count != 0) {
                             $price = $avg / $count;
                             $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
-                        }
-                        else{
+                        } else {
                             $temp['profit'] = $temp['profit'] + $item->getBs();
                         }
                     }
@@ -489,7 +487,7 @@ class SellController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code'],
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException();
@@ -555,7 +553,7 @@ class SellController extends AbstractController
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code'],
-            'money'=> $acc['money']
+            'money' => $acc['money']
         ]);
         if (!$doc)
             throw $this->createNotFoundException();
@@ -638,5 +636,46 @@ class SellController extends AbstractController
             $printers->addFile($pid, $acc, "fastSellInvoice");
         }
         return $this->json(['id' => $pdfPid]);
+    }
+
+    #[Route('/api/sell/chart/data', name: 'app_sell_chart_data')]
+    public function app_sell_chart_data(Jdate $jdate, Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+
+        $acc = $access->hasRole('sell');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        // create data numbers
+        $dayTime = 3600 * 24;
+        $dayNames = [];
+        $daySells = [];
+        for ($i = 0; $i < 7; $i++) {
+            $dayInfo = [
+                $jdate->jdate('l', time() - ($i * $dayTime)),
+                $jdate->jdate('Y/n/d', time() - ($i * $dayTime))
+            ];
+            $dayNames[] = $jdate->jdate('l', time() - ($i * $dayTime));
+            //get sell docs
+            $docs = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid' => $acc['bid'],
+                'money' => $acc['money'],
+                'year' => $acc['year'],
+                'type' => 'sell',
+                'date' => $dayInfo[1],
+            ]);
+            $bd = 0;
+            foreach ($docs as $doc) {
+                foreach ($doc->getHesabdariRows() as $row) {
+                    if ($row->getPerson()) {
+                        $bd += $row->getBd();
+                    }
+                }
+            }
+            $daySells[] = $bd;
+        }
+        return $this->json([
+            'dayNames' => $dayNames,
+            'daySells' => $daySells
+        ]);
     }
 }

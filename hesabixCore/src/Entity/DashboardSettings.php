@@ -48,6 +48,9 @@ class DashboardSettings
     #[ORM\Column(nullable: true)]
     private ?bool $notif = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $sellChart = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -181,6 +184,18 @@ class DashboardSettings
     public function setNotif(?bool $notif): static
     {
         $this->notif = $notif;
+
+        return $this;
+    }
+
+    public function isSellChart(): ?bool
+    {
+        return $this->sellChart;
+    }
+
+    public function setSellChart(?bool $sellChart): static
+    {
+        $this->sellChart = $sellChart;
 
         return $this;
     }

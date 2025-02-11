@@ -62,6 +62,7 @@ class DashboardController extends AbstractController
         if(array_key_exists('commodities',$params)) $setting->setCommodities($params['commodities']);
         if(array_key_exists('persons',$params)) $setting->setPersons($params['persons']);
         if(array_key_exists('notif',$params)) $setting->setNotif($params['notif']);
+        if(array_key_exists('sellChart',$params)) $setting->setSellChart($params['sellChart']);
 
         $entityManagerInterface->persist($setting);
         $entityManagerInterface->flush();

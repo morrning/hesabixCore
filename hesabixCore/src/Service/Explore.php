@@ -577,6 +577,7 @@ class Explore
             'commodities' => $item->isCommodities(),
             'persons' => $item->isPersons(),
             'notif' => $item->isNotif(),
+            'sellChart' => $item->isSellChart(),
         ];
         if ($result['banks'] === null)
             $result['banks'] = true;
@@ -596,6 +597,8 @@ class Explore
             $result['persons'] = true;
         if ($result['notif'] === null)
             $result['notif'] = true;
+        if ($result['sellChart'] === null)
+            $result['sellChart'] = true;
 
         return $result;
     }
