@@ -149,6 +149,9 @@ class Person
     #[ORM\OneToMany(mappedBy: 'salesman', targetEntity: PreInvoiceDoc::class)]
     private Collection $preinvoiceDocsSalemans;
 
+    #[ORM\ManyToOne(inversedBy: 'people')]
+    private ?PersonPrelabel $prelabel = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -844,6 +847,18 @@ class Person
                 $preinvoiceDocsSaleman->setSalesman(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getPrelabel(): ?PersonPrelabel
+    {
+        return $this->prelabel;
+    }
+
+    public function setPrelabel(?PersonPrelabel $prelabel): static
+    {
+        $this->prelabel = $prelabel;
 
         return $this;
     }

@@ -125,6 +125,7 @@
 								<p>
 									<b>نام:
 									</b>
+									{% if person.prelabel is not null %}{{ person.prelabel.label }}{% endif %}
 									{{ person.nikename }}
 								</p>
 							</td>

@@ -312,7 +312,11 @@ class Explore
                 'birthday' => $person->getBirthday(),
                 'speedAccess' => $person->isSpeedAccess(),
                 'address' => $person->getAddress(),
+                'prelabel' => '',
             ];
+            if ($person->getPrelabel()) {
+                $res['prelabel'] = $person->getPrelabel()->getLabel();
+            }
             $res['accounts'] = self::ExplorePersonCards($person);
             if (count($typesAll) != 0) {
                 $res['types'] = self::ExplorePersonTypes($typesAll);

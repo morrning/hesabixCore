@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\PersonPrelabel;
 use App\Service\Extractor;
 use App\Service\Log;
 use App\Entity\Person;
@@ -239,6 +240,7 @@ class PersonsController extends AbstractController
             return $this->json(['result' => -1]);
         if (count_chars(trim($params['nikename'])) == 0)
             return $this->json(['result' => 3]);
+
         if ($code == 0) {
             $person = $entityManager->getRepository(Person::class)->findOneBy([
                 'nikename' => $params['nikename'],
@@ -298,7 +300,14 @@ class PersonsController extends AbstractController
             $person->setShenasemeli($params['shenasemeli']);
         if (array_key_exists('company', $params))
             $person->setCompany($params['company']);
-
+        if (array_key_exists('prelabel', $params)) {
+            if ($params['prelabel'] != '') {
+                $prelabel = $entityManager->getRepository(PersonPrelabel::class)->findOneBy(['code' => $params['prelabel']['code']]);
+                if ($prelabel) {
+                    $person->setPrelabel($prelabel);
+                }
+            }
+        }
         //inset cards
         if (array_key_exists('accounts', $params)) {
             foreach ($params['accounts'] as $item) {
@@ -1232,5 +1241,23 @@ class PersonsController extends AbstractController
         }
         $log->insert('اشخاص', '  شخص  با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/person/prelabels/list', name: 'app_persons_prelabels_list')]
+    public function app_persons_prelabels_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): Response
+    {
+        $acc = $access->hasRole('person');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $labels = $entityManager->getRepository(PersonPrelabel::class)->findAll();
+        $rows = [];
+        foreach ($labels as $key => $label) {
+            $rows[] = [
+                'label' => $label->getLabel(),
+                'code' => $label->getCode(),
+            ];
+        }
+        return new Response(json_encode($rows));
     }
 }

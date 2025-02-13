@@ -11,6 +11,7 @@ use App\Service\Jdate;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use App\Entity\Business;
@@ -21,51 +22,56 @@ use App\Service\Provider;
 class GeneralController extends AbstractController
 {
     #[Route('/api/general/stat', name: 'general_stat')]
-    public function general_stat(EntityManagerInterface $entityManager,Jdate $jdate): JsonResponse
+    public function general_stat(EntityManagerInterface $entityManager, Jdate $jdate): JsonResponse
     {
-        
+
         //get last version number
         $version = '0.0.1';
         $lastUpdateDate = '1399';
         $lastUpdateDes = '';
-        $last = $entityManager->getRepository(ChangeReport::class)->findOneBy([],['id'=>'DESC']);
-        if($last){
-            $version =  $last->getVersion();
-            $lastUpdateDate = $jdate->jdate('Y/n/d',$last->getDateSubmit());
+        $last = $entityManager->getRepository(ChangeReport::class)->findOneBy([], ['id' => 'DESC']);
+        if ($last) {
+            $version = $last->getVersion();
+            $lastUpdateDate = $jdate->jdate('Y/n/d', $last->getDateSubmit());
             $lastUpdateDes = $last->getBody();
         }
 
         return $this->json([
-            'version'=>$version,
-            'lastUpdateDate'=>$lastUpdateDate,
-            'lastUpdateDes'=>$lastUpdateDes,
+            'version' => $version,
+            'lastUpdateDate' => $lastUpdateDate,
+            'lastUpdateDes' => $lastUpdateDes,
         ]);
     }
 
     #[Route('/api/general/statements', name: 'general_statement')]
-    public function general_statement(EntityManagerInterface $entityManager,Jdate $jdate): JsonResponse
+    public function general_statement(EntityManagerInterface $entityManager, Jdate $jdate): JsonResponse
     {
-        return $this->json($entityManager->getRepository(Statment::class)->findBy([],['id'=>'DESC']));
+        return $this->json($entityManager->getRepository(Statment::class)->findBy([], ['id' => 'DESC']));
     }
 
     #[Route('/api/general/get/time', name: 'general_get_time')]
-    public function general_get_time(Jdate $jdate): JsonResponse
+    public function general_get_time(Jdate $jdate, Request $request): JsonResponse
     {
-        return $this->json(['timeNow'=>$jdate->jdate('Y/n/d',time())]);
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (array_key_exists('format', $params))
+            return $this->json(['timeNow' => $jdate->jdate($params['format'], time()), 'ts' => time()]);
+        return $this->json(['timeNow' => $jdate->jdate('Y/n/d', time()), 'ts' => time()]);
     }
     #[Route('/front/print/{id}', name: 'app_front_print')]
-    public function app_front_print(Provider $provider,EntityManagerInterface $entityManager,pdfMGR $pdfMGR,String $id)
+    public function app_front_print(Provider $provider, EntityManagerInterface $entityManager, pdfMGR $pdfMGR, string $id)
     {
-        $print = $entityManager->getRepository(PrinterQueue::class)->findOneBy(['pid'=>$id]);
-        if(!$print)
+        $print = $entityManager->getRepository(PrinterQueue::class)->findOneBy(['pid' => $id]);
+        if (!$print)
             throw $this->createNotFoundException();
-        if($print->isPosprint()){
+        if ($print->isPosprint()) {
             $pdfMGR->streamTwig2PDFInvoiceType($print);
+        } else {
+            $pdfMGR->streamTwig2PDF($print);
         }
-        else{
-          $pdfMGR->streamTwig2PDF($print);  
-        }
-        
+
         return new Response('');
     }
 }
