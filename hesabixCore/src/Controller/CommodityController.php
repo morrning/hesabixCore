@@ -1103,6 +1103,47 @@ class CommodityController extends AbstractController
         return $this->json(['result' => 1]);
     }
 
+    #[Route('/api/commodity/deletegroup', name: 'app_commodity_delete_group')]
+    public function app_commodity_delete_group(Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = $request->getPayload()->all();
+        $hasIgnored = false;
+        foreach ($params as $param) {
+            $commodity = $entityManager->getRepository(Commodity::class)->findOneBy([
+                'bid' => $acc['bid'],
+                'code' => $param['code']
+            ]);
+            if (!$commodity) {
+                $hasIgnored = true;
+                continue;
+            }
+
+            //check accounting docs
+            $docs = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'commodity' => $commodity]);
+            if (count($docs) > 0) {
+                $hasIgnored = true;
+                continue;
+            }
+
+            //check for storeroom docs
+            $storeDocs = $entityManager->getRepository(StoreroomItem::class)->findby(['bid' => $acc['bid'], 'commodity' => $commodity]);
+            if (count($storeDocs) > 0) {
+                $hasIgnored = true;
+                continue;
+            }
+
+            $comName = $commodity->getName();
+            $entityManager->getRepository(Commodity::class)->remove($commodity, false);
+            $log->insert('کالا/خدمات', ' کالا / خدمات با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
+        }
+        $entityManager->flush();
+        return $this->json($extractor->operationSuccess(['ignored' => $hasIgnored]));
+
+    }
+
     #[Route('/api/commodity/pricelist/list', name: 'app_commodity_pricelist_list')]
     public function app_commodity_pricelist_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -1208,5 +1249,69 @@ class CommodityController extends AbstractController
         $entityManager->remove($item);
         $log->insert('کالا/خدمات', 'فهرست قیمت کالا و خدمات با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
+    }
+
+
+    #[Route('/api/commodity/pricegroup/update', name: 'app_commodity_pricegroup_update')]
+    public function app_commodity_pricegroup_update(Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = $request->getPayload()->all();
+        foreach ($params['items'] as $item) {
+            $commodity = $entityManager->getRepository(Commodity::class)->findOneBy([
+                'bid' => $acc['bid'],
+                'id' => $item['id']
+            ]);
+            if (!$commodity)
+                continue;
+            if ($params['arrow'] == 'up') {
+                if ($params['priceType'] == 'sell') {
+                    if ($params['changeType'] == 'percent') {
+                        $commodity->setPriceSell($commodity->getPriceSell() + (($commodity->getPriceSell() * $params['percent']) / 100));
+                    } else {
+                        if ($commodity->getPriceSell() < $params['much'])
+                            $commodity->setPriceSell(0);
+                        else
+                            $commodity->setPriceSell($commodity->getPriceSell() + $params['much']);
+                    }
+                } elseif ($params['priceType'] == 'buy') {
+                    if ($params['changeType'] == 'percent') {
+                        $commodity->setPriceBuy($commodity->getPriceBuy() + (($commodity->getPriceBuy() * $params['percent']) / 100));
+                    } else {
+                        $commodity->setPriceBuy($commodity->getPriceBuy() + $params['much']);
+                    }
+                }
+            } elseif ($params['arrow'] == 'down') {
+                if ($params['priceType'] == 'sell') {
+                    if ($params['changeType'] == 'percent') {
+                        $commodity->setPriceSell($commodity->getPriceSell() - (($commodity->getPriceSell() * $params['percent']) / 100));
+                    } else {
+                        if ($commodity->getPriceSell() < $params['much'])
+                            $commodity->setPriceSell(0);
+                        else
+                            $commodity->setPriceSell($commodity->getPriceSell() - $params['much']);
+                    }
+                } elseif ($params['priceType'] == 'buy') {
+                    if ($params['changeType'] == 'percent') {
+                        $commodity->setPriceBuy($commodity->getPriceBuy() - (($commodity->getPriceBuy() * $params['percent']) / 100));
+                    } else {
+                        if ($commodity->getPriceBuy() < $params['much'])
+                            $commodity->setPriceBuy(0);
+                        else
+                            $commodity->setPriceBuy($commodity->getPriceBuy() - $params['much']);
+                    }
+                }
+            }
+            $commodity->setPriceBuy(round($commodity->getPriceBuy()));
+            $commodity->setPriceSell(round($commodity->getPriceSell()));
+
+            $entityManager->persist($commodity);
+        }
+        $entityManager->flush();
+        $log->insert('کالا/خدمات', 'قیمت تعدادی از کالا‌ها به صورت گروهی ویرایش شد.', $this->getUser(), $acc['bid']->getId());
+        return $this->json($extractor->operationSuccess());
     }
 }
