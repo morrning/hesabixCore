@@ -25,11 +25,23 @@ class PayMGR
     ) {
     }
 
+    /**
+     * function to generate random strings
+     * @param 		int 	$length 	number of characters in the generated string
+     * @return 		string	a new string is created with random characters of the desired length
+     */
+    private function RandomString($length = 32)
+    {
+        return substr(str_shuffle(str_repeat($x = '123456789', ceil($length / strlen($x)))), 1, $length);
+    }
+
     public function createRequest($price, $callback_url, $des = '', $orderID = 0): array
     {
         $res = [
             'Success' => false,
         ];
+        if ($orderID == 0)
+            $orderID = $this->RandomString(15);
         $activeGateway = $this->registry->get('system', 'activeGateway');
         if ($activeGateway == 'zarinpal') {
             $data = array(
@@ -79,18 +91,19 @@ class PayMGR
                 "Originator" => ''
             );
             $client = new \SoapClient($url);
+
+            $result = $client->SalePaymentRequest(array(
+                "requestData" => $params
+            ));
+            if ($result->SalePaymentRequestResult->Token && $result->SalePaymentRequestResult->Status === 0) {
+                $res['code'] = 100;
+                $res['Success'] = true;
+                $res['gate'] = 'pec';
+                $res['message'] = 'OK';
+                $res['authkey'] = $result->SalePaymentRequestResult->Token;
+                $res['targetURL'] = 'https://pec.shaparak.ir/NewIPG/?Token=' . $result->SalePaymentRequestResult->Token;
+            }
             try {
-                $result = $client->SalePaymentRequest(array(
-                    "requestData" => $params
-                ));
-                if ($result->SalePaymentRequestResult->Token && $result->SalePaymentRequestResult->Status === 0) {
-                    $res['code'] = 100;
-                    $res['Success'] = true;
-                    $res['gate'] = 'zarinpal';
-                    $res['message'] = 'OK';
-                    $res['authkey'] = $result->SalePaymentRequestResult->Token;
-                    $res['targetURL'] = 'https://pec.shaparak.ir/NewIPG/?Token=' . $result->SalePaymentRequestResult->Token;
-                }
             } catch (\Exception $ex) {
 
             }
@@ -99,7 +112,7 @@ class PayMGR
     }
 
 
-    public function verify($price,$token, Request $request): array
+    public function verify($price, $token, Request $request): array
     {
         $res = [
             'Success' => false
@@ -133,26 +146,26 @@ class PayMGR
                         $res['status'] = 100;
                         $res['refID'] = $result['data']['ref_id'];
                         $res['card_pan'] = $result['data']['card_pan'];
-                       return $res;
+                        return $res;
                     }
                 }
             }
         } elseif ($activeGateway == 'pec') {
             $confirmUrl = 'https://pec.shaparak.ir/NewIPGServices/Confirm/ConfirmService.asmx?WSDL';
             $params = array(
-                "LoginAccount" =>  $this->registry->get('system', 'parsianGatewayAPI'),
+                "LoginAccount" => $this->registry->get('system', 'parsianGatewayAPI'),
                 "Token" => $token
             );
-    
+
             $client = new \SoapClient($confirmUrl);
-    
+
             $result = $client->ConfirmPayment(array(
                 "requestData" => $params
             ));
             if ($result->ConfirmPaymentResult->Status == '0') {
                 $res['Success'] = true;
                 $res['status'] = 100;
-                $res['refID'] = $_POST ["RRN"];
+                $res['refID'] = $_POST["RRN"];
                 $res['card_pan'] = $result->CardNumberMasked;
             }
         }
