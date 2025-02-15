@@ -113,8 +113,10 @@ class CommodityController extends AbstractController
             $temp['priceSell'] = $item->getPriceSell();
             $temp['code'] = $item->getCode();
             $temp['cat'] = null;
-            if ($item->getCat())
-                $temp['cat'] = $item->getCat()->getName();
+            if ($item->getCat()){
+                 $temp['cat'] = $item->getCat()->getName();
+                 $temp['catData'] = Explore::ExploreCommodityCat($item->getCat());
+            }
             $temp['khadamat'] = false;
             if ($item->isKhadamat())
                 $temp['khadamat'] = true;
@@ -814,22 +816,21 @@ class CommodityController extends AbstractController
         return $this->json($provider->Entity2Array($data, 0));
     }
     #[Route('/api/commodity/cat/get/line', name: 'app_commodity_cat_get_line')]
-    public function app_commodity_cat_get_line(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_cat_get_line(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $acc = $access->hasRole('commodity');
         if (!$acc)
             throw $this->createAccessDeniedException();
-        $temp = [];
         $nodes = $entityManager->getRepository(CommodityCat::class)->findBy([
             'bid' => $acc['bid'],
         ]);
         if (count($nodes) == 0)
             $nodes = $this->createDefaultCat($acc['bid'], $entityManager);
-        return $this->json($provider->ArrayEntity2Array($nodes, 0));
+        return $this->json(Explore::ExploreCommodityCats($nodes));
     }
 
     #[Route('/api/commodity/cat/get', name: 'app_commodity_cat_get')]
-    public function app_commodity_cat_get(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_commodity_cat_get(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
 
         $acc = $access->hasRole('commodity');

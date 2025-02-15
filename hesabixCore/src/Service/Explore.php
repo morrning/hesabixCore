@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\BankAccount;
+use App\Entity\CommodityCat;
 use App\Entity\DashboardSettings;
 use App\Entity\Project;
 use App\Entity\Storeroom;
@@ -605,5 +606,26 @@ class Explore
             $result['sellChart'] = true;
 
         return $result;
+    }
+
+    public static function ExploreCommodityCats(array $items): array
+    {
+        $res = [];
+        foreach ($items as $item) {
+            $res[] = self::ExploreCommodityCat($item);
+        }
+        return $res;
+    }
+
+    public static function ExploreCommodityCat(CommodityCat $item): array
+    {
+        return [
+            'id' => $item->getId(),
+            'code' => $item->getId(),
+            'name' => $item->getName(),
+            'checked' => false,
+            'root' => $item->isRoot(),
+            'upper' => $item->getUpper()
+        ];
     }
 }
