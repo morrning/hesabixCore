@@ -282,6 +282,9 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: HesabdariTable::class)]
     private Collection $hesabdariTables;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $sealFile = null;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -1963,6 +1966,18 @@ class Business
                 $hesabdariTable->setBid(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getSealFile(): ?string
+    {
+        return $this->sealFile;
+    }
+
+    public function setSealFile(?string $sealFile): static
+    {
+        $this->sealFile = $sealFile;
 
         return $this;
     }

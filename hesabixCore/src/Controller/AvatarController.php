@@ -42,6 +42,18 @@ class AvatarController extends AbstractController
         return new Response('default.png');
     }
 
+    #[Route('/api/seal/get', name: 'api_seal_get')]
+    public function api_seal_get(Access $access): Response
+    {
+        $acc = $access->hasRole('settings');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        if ($acc['bid']->getSealFile()) {
+            return new Response($acc['bid']->getSealFile());
+        }
+        return new Response('default.png');
+    }
+
     #[Route('/api/avatar/get/file/{id}', name: 'api_avatar_get_file')]
     public function api_avatar_get_file(string $id): BinaryFileResponse
     {
@@ -50,6 +62,24 @@ class AvatarController extends AbstractController
             throw $this->createNotFoundException();
         $response = new BinaryFileResponse($fileAdr);
         return $response;
+    }
+
+    #[Route('/api/seal/get/file/{id}', name: 'api_seal_get_file')]
+    public function api_seal_get_file(string $id = null): BinaryFileResponse
+    {
+        if ($id) {
+            $fileAdr = __DIR__ . '/../../../hesabixArchive/seal/' . $id;
+            if (!file_exists($fileAdr))
+                throw $this->createNotFoundException();
+            $response = new BinaryFileResponse($fileAdr);
+            return $response;
+        }
+        $fileAdr = __DIR__ . '/../../../hesabixArchive/seal/default.png';
+        if (!file_exists($fileAdr))
+            throw $this->createNotFoundException();
+        $response = new BinaryFileResponse($fileAdr);
+        return $response;
+
     }
 
     #[Route('/api/avatar/post', name: 'api_avatar_post')]
@@ -109,6 +139,66 @@ class AvatarController extends AbstractController
 
         if ($acc['bid']->getAvatar()) {
             return new Response($acc['bid']->getAvatar());
+        }
+        return new Response('default.png');
+    }
+
+    #[Route('/api/seal/post', name: 'api_seal_post')]
+    public function api_seal_post(Log $log, SluggerInterface $slugger, Request $request, Access $access, EntityManagerInterface $entityManagerInterface): Response
+    {
+        $acc = $access->hasRole('owner');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $uploadedFile = $request->files->get('bytes');
+        if ($uploadedFile) {
+            $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+            // this is needed to safely include the file name as part of the URL
+            $safeFilename = $slugger->slug($originalFilename);
+            $newFilename = $safeFilename . '-' . uniqid() . '.' . $uploadedFile->guessExtension();
+            $ext = $uploadedFile->getClientOriginalExtension();
+            $extOK = false;
+            if ($ext == 'png' || $ext == 'jpg' || $ext == 'jpeg') {
+                $extOK = true;
+            } else {
+                return new Response('e');
+            }
+            $sizeOK = false;
+            if ($uploadedFile->getSize() < 1000000) {
+                $sizeOK = true;
+            } else {
+                return new Response('s');
+            }
+            $imgSizeOK = false;
+            $info = getimagesize($uploadedFile);
+            list($x, $y) = $info;
+            if ($x < 513 && $y < 513) {
+                $imgSizeOK = true;
+            } else {
+                return new Response('is');
+            }
+            if ($extOK && $sizeOK && $imgSizeOK) {
+                // Move the file to the directory where brochures are stored
+                try {
+                    $uploadedFile->move(
+                        $this->getParameter('sealDir'),
+                        $newFilename
+                    );
+                } catch (FileException $e) {
+                    // ... handle exception if something happens during file upload
+                    return $this->json("error");
+                }
+                $acc['bid']->setSealFile($newFilename);
+                $entityManagerInterface->persist($acc['bid']);
+                $entityManagerInterface->flush();
+                //save log
+                $log->insert('تنظیمات پایه', 'مهر کسب و کار تغییر یافت', $this->getUser(), $acc['bid']);
+
+                return new Response($acc['bid']->getAvatar());
+            }
+        }
+
+        if ($acc['bid']->getSealFile()) {
+            return new Response($acc['bid']->getSealFile());
         }
         return new Response('default.png');
     }
