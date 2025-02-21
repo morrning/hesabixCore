@@ -54,6 +54,12 @@ class HesabdariController extends AbstractController
         ]);
         if (!$doc)
             throw $this->createNotFoundException();
+        //add shortlink to doc
+        if (!$doc->getShortlink()) {
+            $doc->setShortlink($provider->RandomString(8));
+            $entityManager->persist($doc);
+            $entityManager->flush();
+        }
         $rows = [];
         $rowsObj = $entityManager->getRepository(HesabdariRow::class)->findBy(
             ['doc' => $doc]

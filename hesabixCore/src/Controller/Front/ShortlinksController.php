@@ -27,11 +27,11 @@ class ShortlinksController extends AbstractController
         ]);
         if (!$ticket)
             throw $this->createNotFoundException();
-        if(!$ticket->isCanShare())
+        if (!$ticket->isCanShare())
             throw $this->createAccessDeniedException();
 
         $person = null;
-        
+
         foreach ($ticket->getDoc()->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = $item->getPerson();
@@ -40,12 +40,12 @@ class ShortlinksController extends AbstractController
         return $this->render('shortlinks/storeroom.html.twig', [
             'bid' => $bus,
             'doc' => $ticket,
-            'person'=>$person
+            'person' => $person
         ]);
     }
 
     #[Route('/sl/{type}/{bid}/{link}/{msg}', name: 'shortlinks_show')]
-    public function shortlinks_show(string $bid, string $type, string $link, EntityManagerInterface $entityManager, string $msg = 'default'): Response
+    public function shortlinks_show(Provider $provider, string $bid, string $type, string $link, EntityManagerInterface $entityManager, string $msg = 'default'): Response
     {
         $bus = $entityManager->getRepository(Business::class)->find($bid);
         if (!$bus)
@@ -55,7 +55,8 @@ class ShortlinksController extends AbstractController
         if ($type == 'sell') {
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'type' => 'sell',
-                'shortlink' => $link
+                'shortlink' => $link,
+                'bid' => $bus
             ]);
             if (!$doc) {
                 $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([

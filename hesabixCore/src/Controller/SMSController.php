@@ -189,9 +189,12 @@ class SMSController extends AbstractController
         ]);
         if (!$doc)
             return $this->json(['result' => 3]);
-        $shortLink = $doc->getId();
-        if ($doc->getShortlink())
-            $shortLink = $doc->getShortlink();
+        if(!$doc->getShortlink()){
+            $doc->setShortlink($provider->RandomString(8));
+            $entityManager->persist($doc);
+            $entityManager->flush();
+        }
+        $shortLink = $doc->getShortlink();
 
         //find custommer
         $customer = null;

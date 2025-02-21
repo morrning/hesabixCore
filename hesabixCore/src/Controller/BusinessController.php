@@ -255,7 +255,7 @@ class BusinessController extends AbstractController
                     $business->setMoney($Arzmain);
                 else
                     return $this->json(['result' => 2]);
-            } 
+            }
             if (!$business->getDateSubmit())
                 $business->setDateSubmit(time());
             $entityManager->persist($business);

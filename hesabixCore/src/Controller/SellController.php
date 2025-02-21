@@ -249,7 +249,7 @@ class SellController extends AbstractController
         $entityManager->persist($doc);
         $entityManager->flush();
         if (!$doc->getShortlink()) {
-            $doc->setShortlink($doc->getId());
+            $doc->setShortlink($provider->RandomString(8));
         }
 
         //add pair docs
@@ -437,7 +437,11 @@ class SellController extends AbstractController
                         } else {
                             $temp['profit'] = $temp['profit'] + $item->getBs();
                         }
-                    } else {
+                    }
+                    else if ($acc['bid']->getProfitCalctype() == 'simple') {
+                        $temp['profit'] = $temp['profit'] + (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceBuy()) * $item->getCommdityCount());
+                    }
+                    else {
                         $lasts = $entityManager->getRepository(HesabdariRow::class)->findBy([
                             'commodity' => $item->getCommodity(),
                             'bs' => 0

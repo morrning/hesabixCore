@@ -226,7 +226,7 @@ class PreinvoiceController extends AbstractController
         $entityManager->persist($doc);
         $entityManager->flush();
         if(!$doc->getShortlink()){
-            $doc->setShortlink($doc->getId());
+            $doc->setShortlink($provider->RandomString(8));
         }
 
         //add pair docs
