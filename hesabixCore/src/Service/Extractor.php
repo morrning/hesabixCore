@@ -50,6 +50,7 @@ class Extractor
     public function notFound($data = '')
     {
         return [
+            'Success' => false,
             'code' => 404,
             'data' => $data,
             'message' => 'item not found'
@@ -59,6 +60,7 @@ class Extractor
     public function paramsNotSend()
     {
         return [
+            'Success' => false,
             'code' => 101,
             'data' => '',
             'message' => 'parameters not send currectly'

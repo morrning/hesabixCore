@@ -166,7 +166,7 @@ class PayMGR
                 $res['Success'] = true;
                 $res['status'] = 100;
                 $res['refID'] = $_POST["RRN"];
-                $res['card_pan'] = $result->CardNumberMasked;
+                $res['card_pan'] = $result->ConfirmPaymentResult->CardNumberMasked;
             }
         }
         return $res;

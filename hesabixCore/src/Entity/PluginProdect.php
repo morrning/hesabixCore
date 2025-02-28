@@ -31,6 +31,9 @@ class PluginProdect
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $icon = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $defaultOn = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -104,6 +107,18 @@ class PluginProdect
     public function setIcon(?string $icon): static
     {
         $this->icon = $icon;
+
+        return $this;
+    }
+
+    public function isDefaultOn(): ?bool
+    {
+        return $this->defaultOn;
+    }
+
+    public function setDefaultOn(?bool $defaultOn): static
+    {
+        $this->defaultOn = $defaultOn;
 
         return $this;
     }

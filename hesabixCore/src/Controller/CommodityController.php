@@ -113,9 +113,9 @@ class CommodityController extends AbstractController
             $temp['priceSell'] = $item->getPriceSell();
             $temp['code'] = $item->getCode();
             $temp['cat'] = null;
-            if ($item->getCat()){
-                 $temp['cat'] = $item->getCat()->getName();
-                 $temp['catData'] = Explore::ExploreCommodityCat($item->getCat());
+            if ($item->getCat()) {
+                $temp['cat'] = $item->getCat()->getName();
+                $temp['catData'] = Explore::ExploreCommodityCat($item->getCat());
             }
             $temp['khadamat'] = false;
             if ($item->isKhadamat())
@@ -1314,5 +1314,151 @@ class CommodityController extends AbstractController
         $entityManager->flush();
         $log->insert('کالا/خدمات', 'قیمت تعدادی از کالا‌ها به صورت گروهی ویرایش شد.', $this->getUser(), $acc['bid']->getId());
         return $this->json($extractor->operationSuccess());
+    }
+
+    /**
+     * @Route("/api/commodities/search", name="search_commodities", methods={"POST"})
+     */
+    public function searchCommodities(Access $access, EntityManagerInterface $entityManagerInterface, Request $request): JsonResponse
+    {
+        $acc = $access->hasRole('commodity');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        // لیست فیلدهای ممنوعه
+        $forbiddenFields = ['id', 'bid', 'submitter'];
+
+        // پارامترهای صفحه‌بندی
+        $page = max(1, $request->query->getInt('page', 1));
+        $limit = max(1, $request->query->getInt('limit', 10));
+
+        // دریافت فیلترهای ارسالی
+        $filters = json_decode($request->getContent(), true);
+        if (!is_array($filters)) {
+            $filters = [];
+        }
+
+        // ساخت کوئری
+        $qb = $entityManagerInterface->getRepository(Commodity::class)->createQueryBuilder('c');
+
+        // شرط ثابت: bid.id همیشه برابر با $acc['bid']
+        $qb->andWhere('c.bid = :bid')
+           ->setParameter('bid', $acc['bid']);
+
+        // اعمال فیلترهای کاربر
+        foreach ($filters as $field => $condition) {
+            if (in_array($field, $forbiddenFields)) {
+                continue;
+            }
+
+            if (!isset($condition['operator']) || !isset($condition['value'])) {
+                continue;
+            }
+
+            $operator = $condition['operator'];
+            $value = $condition['value'];
+            $paramName = str_replace('.', '_', $field) . '_param';
+
+            switch ($operator) {
+                case '=':
+                    $qb->andWhere("c.$field = :$paramName")
+                       ->setParameter($paramName, $value);
+                    break;
+                case '>':
+                    $qb->andWhere("c.$field > :$paramName")
+                       ->setParameter($paramName, $value);
+                    break;
+                case '<':
+                    $qb->andWhere("c.$field < :$paramName")
+                       ->setParameter($paramName, $value);
+                    break;
+                case '%':
+                    $qb->andWhere("c.$field LIKE :$paramName")
+                       ->setParameter($paramName, "%$value%");
+                    break;
+            }
+        }
+
+        // مرتب‌سازی پیش‌فرض بر اساس code (نزولی)
+        $qb->orderBy('c.code', 'DESC');
+
+        // شمارش کل نتایج
+        $countQb = clone $qb;
+        $totalItems = $countQb->select('COUNT(c.id)')->getQuery()->getSingleScalarResult();
+
+        // اعمال صفحه‌بندی
+        $qb->setFirstResult(($page - 1) * $limit)
+           ->setMaxResults($limit);
+
+        // اجرای کوئری
+        $results = $qb->getQuery()->getResult();
+
+        // تبدیل نتایج به آرایه
+        $data = array_map(function (Commodity $item) use ($entityManagerInterface, $acc): array {
+            $temp = [];
+            $temp['id'] = $item->getId();
+            $temp['name'] = $item->getName();
+            $temp['unit'] = $item->getUnit()->getName();
+            $temp['des'] = $item->getDes();
+            $temp['priceBuy'] = $item->getPriceBuy();
+            $temp['speedAccess'] = $item->isSpeedAccess();
+            $temp['priceSell'] = $item->getPriceSell();
+            $temp['code'] = $item->getCode();
+            $temp['cat'] = null;
+            if ($item->getCat()) {
+                $temp['cat'] = $item->getCat()->getName();
+                $temp['catData'] = Explore::ExploreCommodityCat($item->getCat());
+            }
+            $temp['khadamat'] = false;
+            if ($item->isKhadamat()) {
+                $temp['khadamat'] = true;
+            }
+            $temp['withoutTax'] = false;
+            if ($item->isWithoutTax()) {
+                $temp['withoutTax'] = true;
+            }
+            $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
+            $temp['minOrderCount'] = $item->getMinOrderCount();
+            $temp['dayLoading'] = $item->getDayLoading();
+            $temp['orderPoint'] = $item->getOrderPoint();
+            $temp['unitData'] = [
+                'name' => $item->getUnit()->getName(),
+                'floatNumber' => $item->getUnit()->getFloatNumber(),
+            ];
+            $temp['barcodes'] = $item->getBarcodes();
+            // محاسبه موجودی
+            if ($item->isKhadamat()) {
+                $temp['count'] = 0;
+            } else {
+                $rows = $entityManagerInterface->getRepository(HesabdariRow::class)->findBy([
+                    'bid' => $acc['bid'],
+                    'commodity' => $item
+                ]);
+                $count = 0;
+                foreach ($rows as $row) {
+                    if ($row->getDoc()->getType() == 'buy') {
+                        $count += $row->getCommdityCount();
+                    } elseif ($row->getDoc()->getType() == 'sell') {
+                        $count -= $row->getCommdityCount();
+                    }
+                }
+                $temp['count'] = $count;
+            }
+            return $temp;
+        }, $results);
+
+        // اطلاعات صفحه‌بندی
+        $totalPages = ceil($totalItems / $limit);
+
+        return new JsonResponse([
+            'results' => $data,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_items' => $totalItems,
+                'total_pages' => $totalPages,
+            ],
+        ], 200);
     }
 }

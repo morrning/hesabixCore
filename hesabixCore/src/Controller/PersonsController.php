@@ -302,7 +302,7 @@ class PersonsController extends AbstractController
             $person->setCompany($params['company']);
         if (array_key_exists('prelabel', $params)) {
             if ($params['prelabel'] != '') {
-                $prelabel = $entityManager->getRepository(PersonPrelabel::class)->findOneBy(['code' => $params['prelabel']['code']]);
+                $prelabel = $entityManager->getRepository(PersonPrelabel::class)->findOneBy(['label' => $params['prelabel']]);
                 if ($prelabel) {
                     $person->setPrelabel($prelabel);
                 }

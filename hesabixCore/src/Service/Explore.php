@@ -313,7 +313,7 @@ class Explore
                 'birthday' => $person->getBirthday(),
                 'speedAccess' => $person->isSpeedAccess(),
                 'address' => $person->getAddress(),
-                'prelabel' => '',
+                'prelabel' => null,
             ];
             if ($person->getPrelabel()) {
                 $res['prelabel'] = $person->getPrelabel()->getLabel();
