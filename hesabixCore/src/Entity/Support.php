@@ -38,6 +38,9 @@ class Support
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $code = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $fileName = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -123,6 +126,18 @@ class Support
     public function setCode(?string $code): static
     {
         $this->code = $code;
+
+        return $this;
+    }
+
+    public function getFileName(): ?string
+    {
+        return $this->fileName;
+    }
+
+    public function setFileName(?string $fileName): static
+    {
+        $this->fileName = $fileName;
 
         return $this;
     }

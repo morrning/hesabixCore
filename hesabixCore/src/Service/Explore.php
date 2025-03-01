@@ -564,6 +564,7 @@ class Explore
         $res['submitter'] = self::ExploreUser($support->getSubmitter());
         $res['main'] = $support->getMain();
         $res['owner'] = true;
+        $res['fileName'] = $support->getFileName();
         if ($user->getId() != $support->getSubmitter()->getId()) {
             $res['owner'] = false;
         }

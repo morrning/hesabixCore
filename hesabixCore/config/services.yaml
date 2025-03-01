@@ -8,6 +8,7 @@ parameters:
     archiveTempMediaDir: '%kernel.project_dir%/../hesabixArchive/temp'
     avatarDir: '%kernel.project_dir%/../hesabixArchive/avatars'
     sealDir: '%kernel.project_dir%/../hesabixArchive/seal'
+    SupportFilesDir: '%kernel.project_dir%/../hesabixArchive/support'
 services:
     # default configuration for services in *this* file
     _defaults:
