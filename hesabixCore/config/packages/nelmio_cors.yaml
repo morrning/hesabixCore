@@ -1,10 +1,19 @@
+# config/packages/nelmio_cors.yaml
 nelmio_cors:
     defaults:
         origin_regex: false
-        allow_origin: ['%env(CORS_ALLOW_ORIGIN)%']
-        allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
-        allow_headers: ['*']
-        expose_headers: ['Link']
+        allow_origin: [ '*' ] # اجازه به همه دامنه‌ها
+        allow_methods: [ 'GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE' ]
+        allow_headers: [ '*' ] # اجازه به همه هدرها
+        expose_headers: [ 'Link' ]
+        allow_credentials: true # اجازه ارسال کوکی‌ها
         max_age: 3600
     paths:
-        '^/': null
+        '^/':
+            # اعمال تنظیمات به همه مسیرها
+            allow_origin: [ '*' ]
+            allow_methods: [ 'GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE' ]
+            allow_headers: [ '*' ]
+            expose_headers: [ 'Link' ]
+            allow_credentials: true
+            max_age: 3600

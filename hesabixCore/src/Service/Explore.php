@@ -584,7 +584,10 @@ class Explore
             'persons' => $item->isPersons(),
             'notif' => $item->isNotif(),
             'sellChart' => $item->isSellChart(),
+            'topCommodities' => $item->isTopCommoditiesChart(),
         ];
+        if ($result['topCommodities'] === null)
+            $result['topCommodities'] = true;
         if ($result['banks'] === null)
             $result['banks'] = true;
         if ($result['buys'] === null)

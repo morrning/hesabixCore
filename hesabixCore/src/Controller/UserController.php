@@ -5,9 +5,11 @@ namespace App\Controller;
 use App\Entity\Business;
 use App\Entity\EmailHistory;
 use App\Entity\Permission;
+use App\Service\CaptchaService;
 use App\Service\Extractor;
 use App\Service\Provider;
 use App\Service\SMS;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
@@ -18,6 +20,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use App\Entity\User;
@@ -52,60 +55,76 @@ class UserController extends AbstractController
         return substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil($length / strlen($x)))), 1, $length);
     }
 
-    #[Route('/api/user/login', name: 'api_login')]
-    public function api_login(TranslatorInterface $translatorInterface, Extractor $extractor, Request $request, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager): Response
-    {
+    #[Route('/api/user/login', name: 'api_login', methods: ['POST'])]
+    public function api_login(
+        TranslatorInterface $translatorInterface,
+        Extractor $extractor,
+        Request $request,
+        CaptchaService $captchaService,
+        #[CurrentUser] ?User $user,
+        EntityManagerInterface $entityManager
+    ): Response {
         $params = $request->getPayload()->all();
-        if (array_key_exists('standard', $params)) {
-            if (null === $user) {
+        $captchaAnswer = $params['captcha_answer'] ?? '';
+        $attemptKey = 'login_attempts';
+
+        // بررسی نیاز به کپچا
+        $captchaRequired = $captchaService->isCaptchaRequired($attemptKey);
+        if ($captchaRequired) {
+            if (!$captchaService->validateCaptcha($captchaAnswer)) {
                 return $this->json($extractor->operationFail(
-                    $translatorInterface->trans('login_fail'),
+                    empty($captchaAnswer) ? 'کپچا لازم است' : 'کپچا اشتباه است',
+                    400,
+                    ['captcha_required' => true]
                 ));
             }
-            if ($user->isActive() == false) {
-                return $this->json($extractor->operationFail(
-                    'حساب کاربری شما فعال نیست. لطفا با پشتیبانی تماس بگیرید'
-                    ,
-                    506,
-                    [
-                        'user' => $user->getUserIdentifier(),
-                        'active' => $user->isActive(),
-                    ]
-                ));
-            }
-            $token = new UserToken();
-            $token->setUser($user);
-            $token->setToken($this->RandomString(254));
-            $token->setTokenID($this->RandomString(254));
-            $entityManager->persist($token);
-            $entityManager->flush();
-            return $this->json($extractor->operationSuccess([
-                'user' => $user->getUserIdentifier(),
-                'token' => $token->getToken(),
-                'tokenID' => $token->getTokenID(),
-                'active' => $user->isActive(),
-            ]));
-        } else {
-            if (null === $user) {
-                return $this->json([
-                    'message' => 'missing credentials',
-                ], Response::HTTP_UNAUTHORIZED);
-            }
-            $token = new UserToken();
-            $token->setUser($user);
-            $token->setToken($this->RandomString(254));
-            $token->setTokenID($this->RandomString(254));
-            $entityManager->persist($token);
-            $entityManager->flush();
-            return $this->json([
-                'user' => $user->getUserIdentifier(),
-                'token' => $token->getToken(),
-                'tokenID' => $token->getTokenID(),
-                'active' => $user->isActive(),
-            ]);
         }
 
+        // چون #[CurrentUser] فقط در صورت احراز هویت موفق کاربر رو برمی‌گردونه،
+        // اینجا فقط شرایط بعد از احراز هویت موفق بررسی می‌شه
+        if (null === $user) {
+            // این خط عملاً اجرا نمی‌شه چون Security Bundle شکست رو مدیریت می‌کنه
+            // اما برای اطمینان نگهش داشتم
+            $captchaService->incrementAttempts($attemptKey);
+            return $this->json($extractor->operationFail(
+                $translatorInterface->trans('login_fail'),
+                400,
+                ['captcha_required' => $captchaService->isCaptchaRequired($attemptKey)]
+            ));
+        }
+
+        // بررسی وضعیت کاربر
+        if ($user->isActive() == false) {
+            $captchaService->incrementAttempts($attemptKey);
+            return $this->json($extractor->operationFail(
+                'حساب کاربری شما فعال نیست. لطفا با پشتیبانی تماس بگیرید',
+                506,
+                [
+                    'user' => $user->getUserIdentifier(),
+                    'active' => $user->isActive(),
+                    'captcha_required' => $captchaService->isCaptchaRequired($attemptKey)
+                ]
+            ));
+        }
+
+        // ورود موفق
+        $token = new UserToken();
+        $token->setUser($user);
+        $token->setToken($this->RandomString(254));
+        $token->setTokenID($this->RandomString(254));
+        $entityManager->persist($token);
+        $entityManager->flush();
+
+        $captchaService->resetAttempts($attemptKey);
+        return $this->json($extractor->operationSuccess([
+            'user' => $user->getUserIdentifier(),
+            'token' => $token->getToken(),
+            'tokenID' => $token->getTokenID(),
+            'active' => $user->isActive(),
+            'captcha_required' => false
+        ]));
     }
+
 
     #[Route('/api/user/has/role/{id}', name: 'api_user_has_role')]
     public function api_user_has_role(Extractor $extractor, #[CurrentUser] ?User $user, EntityManagerInterface $entityManager, $id): Response
@@ -279,23 +298,51 @@ class UserController extends AbstractController
         ));
     }
 
-    #[Route('/api/user/register', name: 'api_user_register')]
-    public function api_user_register(Extractor $extractor, registryMGR $registryMGR, SMS $SMS, MailerInterface $mailer, Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
-    {
+    #[Route('/api/user/register', name: 'api_user_register', methods: ['POST'])]
+    public function api_user_register(
+        Extractor $extractor,
+        registryMGR $registryMGR,
+        SMS $SMS,
+        MailerInterface $mailer,
+        Request $request,
+        UserPasswordHasherInterface $userPasswordHasher,
+        EntityManagerInterface $entityManager,
+        CaptchaService $captchaService // اضافه کردن به آرگومان‌های متد
+    ): Response {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if (array_key_exists('name', $params) && array_key_exists('email', $params) && array_key_exists('mobile', $params) && array_key_exists('password', $params)) {
+
+        // همیشه کپچا رو چک می‌کنیم
+        $captchaAnswer = $params['captcha_answer'] ?? '';
+        if (!$captchaService->validateCaptcha($captchaAnswer)) {
+            return $this->json($extractor->operationFail(
+                empty($captchaAnswer) ? 'کپچا لازم است' : 'کپچا اشتباه است',
+                400,
+                ['captcha_required' => true]
+            ));
+        }
+
+        // ادامه منطق عضویت
+        if (
+            array_key_exists('name', $params) && array_key_exists('email', $params) &&
+            array_key_exists('mobile', $params) && array_key_exists('password', $params)
+        ) {
             if ($entityManager->getRepository(User::class)->findOneBy(['email' => trim($params['email'])])) {
                 return $this->json($extractor->operationFail(
-                    'پست الکترونیکی وارد شده قبلا ثبت شده است'
+                    'پست الکترونیکی وارد شده قبلا ثبت شده است',
+                    400,
+                    ['captcha_required' => true]
                 ));
             } elseif ($entityManager->getRepository(User::class)->findOneBy(['mobile' => trim($params['mobile'])])) {
                 return $this->json($extractor->operationFail(
-                    'شماره تلفن وارد شده قبلا ثبت شده است'
+                    'شماره تلفن وارد شده قبلا ثبت شده است',
+                    400,
+                    ['captcha_required' => true]
                 ));
             }
+
             $user = new User();
             $user->setEmail($params['email']);
             $user->setRoles(['ROLE_USER']);
@@ -313,11 +360,13 @@ class UserController extends AbstractController
             $user->setActive(false);
             $entityManager->persist($user);
             $entityManager->flush();
+
             $SMS->send(
                 [$user->getVerifyCode()],
                 $registryMGR->get('sms', 'f2a'),
                 $user->getMobile()
             );
+
             try {
                 $email = (new Email())
                     ->to($user->getEmail())
@@ -331,15 +380,21 @@ class UserController extends AbstractController
 
                 $mailer->send($email);
             } catch (Exception $exception) {
+                // خطای ارسال ایمیل رو می‌تونید لاگ کنید، فعلاً نادیده می‌گیره
             }
+
             return $this->json($extractor->operationSuccess([
                 'id' => $user->getId()
             ]));
         }
+
         return $this->json($extractor->operationFail(
-            'تمام موارد لازم را وارد کنید.'
+            'تمام موارد لازم را وارد کنید.',
+            400,
+            ['captcha_required' => true]
         ));
     }
+
 
     #[Route('/api/user/active/code/info/{id}', name: 'api_user_active_code_info')]
     public function api_user_active_code_info(registryMGR $registryMGR, MailerInterface $mailer, SMS $SMS, string $id, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
@@ -479,35 +534,61 @@ class UserController extends AbstractController
         }
         return $this->json($extractor->operationFail('کد ارسالی اشتباه است.'));
     }
-    #[Route('/api/user/forget/password/send-code', name: 'api_user_forget_password_send_code')]
-    public function api_user_forget_password_send_code(Extractor $extractor, registryMGR $registryMGR, #[CurrentUser] ?User $user, SMS $SMS, MailerInterface $mailer, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
-    {
+
+    #[Route('/api/user/forget/password/send-code', name: 'api_user_forget_password_send_code', methods: ['POST'])]
+    public function api_user_forget_password_send_code(
+        Extractor $extractor,
+        registryMGR $registryMGR,
+        #[CurrentUser] ?User $user,
+        SMS $SMS,
+        MailerInterface $mailer,
+        UserPasswordHasherInterface $userPasswordHasher,
+        EntityManagerInterface $entityManager,
+        Request $request,
+        CaptchaService $captchaService
+    ): Response {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
+
+        // همیشه کپچا رو چک می‌کنیم
+        $captchaAnswer = $params['captcha_answer'] ?? '';
+        if (!$captchaService->validateCaptcha($captchaAnswer)) {
+            return $this->json($extractor->operationFail(
+                empty($captchaAnswer) ? 'کپچا لازم است' : 'کپچا اشتباه است',
+                400,
+                ['captcha_required' => true]
+            ));
+        }
+
+        // ادامه منطق بازیابی
         if (!array_key_exists('mobile', $params)) {
             return $this->json($extractor->paramsNotSend());
         }
 
         $user = $entityManager->getRepository(User::class)->findOneBy(['mobile' => $params['mobile']]);
         if (!$user) {
-            return $this->json(data: $extractor->operationFail(
+            return $this->json($extractor->operationFail(
                 'کاربری با شماره تلفن وارد شده یافت نشد.',
-                404
+                404,
+                ['captcha_required' => true]
             ));
         }
         if ($user->getVerifyCodeTime() > time()) {
-            return $this->json(data: $extractor->operationFail(
-                'کد بازیابی رمز عبور اخیرا ارسال شده است.لطفا چند دقیقه دیگر مجددا درخواست خود را ارسال نمایید.',
-                600
+            return $this->json($extractor->operationFail(
+                'کد بازیابی رمز عبور اخیرا ارسال شده است. لطفا چند دقیقه دیگر مجددا درخواست خود را ارسال نمایید.',
+                600,
+                ['captcha_required' => true]
             ));
         }
+
         $user->setVerifyCode($this->RandomString(6, true));
         $user->setVerifyCodeTime(time() + 300);
         $entityManager->persist($user);
         $entityManager->flush();
-        //send sms and email
+
+        // ارسال SMS و ایمیل
         $SMS->send(
             [$user->getVerifyCode()],
             $registryMGR->get('sms', 'recPassword'),
@@ -524,10 +605,12 @@ class UserController extends AbstractController
             );
 
         $mailer->send($email);
+
         return $this->json($extractor->operationSuccess([
             'id' => $user->getId(),
         ]));
     }
+
     #[Route('/api/user/save/mobile-number', name: 'api_user_save_mobile_number')]
     public function api_user_save_mobile_number(MailerInterface $mailer, SMS $SMS, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
     {

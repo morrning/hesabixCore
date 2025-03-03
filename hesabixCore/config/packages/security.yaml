@@ -22,10 +22,13 @@ security:
                 check_path: api_login
                 username_path: mobile
                 password_path: password
-
+                failure_handler: App\Security\AuthenticationFailureHandler
+            form_login:
+                # ...
+                failure_handler: App\Security\AuthenticationFailureHandler
             custom_authenticators:
-                - App\Security\ApiKeyAuthenticator
-                - App\Security\ParttyAuthenticator
+              - App\Security\ApiKeyAuthenticator
+              - App\Security\ParttyAuthenticator
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
 
@@ -44,12 +47,12 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        - { path: ^/api/acc/*, roles: ROLE_USER }
-        - { path: ^/hooks/*, roles: ROLE_USER }
-        - { path: ^/api/app/*, roles: ROLE_USER }
-        - { path: ^/api/admin/*, roles: ROLE_ADMIN }
-        - { path: ^/app/*, roles: ROLE_ADMIN }
+      # - { path: ^/admin, roles: ROLE_ADMIN }
+      - { path: ^/api/acc/*, roles: ROLE_USER }
+      - { path: ^/hooks/*, roles: ROLE_USER }
+      - { path: ^/api/app/*, roles: ROLE_USER }
+      - { path: ^/api/admin/*, roles: ROLE_ADMIN }
+      - { path: ^/app/*, roles: ROLE_ADMIN }
 when@test:
     security:
         password_hashers:

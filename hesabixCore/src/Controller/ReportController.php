@@ -17,6 +17,7 @@ use App\Entity\HesabdariRow;
 use App\Service\Explore;
 use App\Service\Jdate;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -28,11 +29,13 @@ class ReportController extends AbstractController
 {
     private $em;
     private $provider;
+
     function __construct(Provider $provider, EntityManagerInterface $entityManager)
     {
         $this->em = $entityManager;
         $this->provider = $provider;
     }
+
     #[Route('/api/report/person/buysell', name: 'app_report_person_buysell')]
     public function app_report_person_buysell(Provider $provider, Jdate $jdate, Access $access, Request $request, EntityManagerInterface $entityManagerInterface): JsonResponse
     {
@@ -215,7 +218,6 @@ class ReportController extends AbstractController
             ]);
         }
 
-
         $commodity = $entityManagerInterface->getRepository(Commodity::class)->findOneBy([
             'bid' => $acc['bid']->getId(),
             'code' => $params['commodity'],
@@ -284,5 +286,108 @@ class ReportController extends AbstractController
             $response[] = $temp;
         }
         return $this->json($response);
+    }
+
+    #[Route('/api/report/top-selling-commodities', name: 'app_report_top_selling_commodities', methods: ['POST'])]
+    public function app_report_top_selling_commodities(Access $access, Explore $explore, Jdate $jdate, Request $request, EntityManagerInterface $entityManager, LoggerInterface $logger): JsonResponse
+    {
+        $acc = $access->hasRole('report');
+        if (!$acc) {
+            $acc = $access->hasRole('sell');
+            if (!$acc) {
+                throw $this->createAccessDeniedException('شما دسترسی لازم برای مشاهده این اطلاعات را ندارید.');
+            }
+        }
+
+        /** @var Business $business */
+        $business = $acc['bid'];
+        /** @var Year $year */
+        $year = $acc['year'];
+
+        $payload = $request->getPayload();
+        $period = $payload->get('period', 'year');
+        $limit = (int) $payload->get('limit', 10);
+        if ($limit < 3) {
+            $limit = 3;
+        }
+
+        $today = $jdate->GetTodayDate();
+        list($currentYear, $currentMonth, $currentDay) = explode('/', $today);
+
+        switch ($period) {
+            case 'today':
+                $dateStart = $today;
+                $dateEnd = $today;
+                break;
+            case 'week':
+                $weekDay = (int) $jdate->jdate('w', time());
+                $daysToSubtract = $weekDay;
+                $dateStart = $jdate->shamsiDate(0, 0, -$daysToSubtract);
+                $dateEnd = $jdate->shamsiDate(0, 0, 6 - $weekDay);
+                break;
+            case 'month':
+                $dateStart = "$currentYear/$currentMonth/01";
+                $dateEnd = "$currentYear/$currentMonth/" . $jdate->jdate('t', $jdate->jallaliToUnixTime("$currentYear/$currentMonth/01"));
+                break;
+            case 'year':
+            default:
+                $dateStart = $jdate->jdate('Y/m/d', $year->getStart());
+                $dateEnd = $jdate->jdate('Y/m/d', $year->getEnd());
+                break;
+        }
+
+        $queryBuilder = $entityManager->createQueryBuilder();
+        $queryBuilder
+            ->select('c') // Commodity
+            ->addSelect('SUM(CAST(hr.commdityCount AS INTEGER)) as totalCount')
+            ->addSelect('hr') // HesabdariRow
+            ->from(HesabdariRow::class, 'hr')
+            ->innerJoin('hr.doc', 'hd')
+            ->innerJoin('hr.commodity', 'c')
+            ->where('hd.bid = :business')
+            ->andWhere('hd.type = :type')
+            ->andWhere('hr.year = :year')
+            ->andWhere('hd.date BETWEEN :dateStart AND :dateEnd')
+            ->setParameter('business', $business)
+            ->setParameter('type', 'sell')
+            ->setParameter('year', $year)
+            ->setParameter('dateStart', $dateStart)
+            ->setParameter('dateEnd', $dateEnd)
+            ->groupBy('c.id, hr.id')
+            ->orderBy('totalCount', 'DESC')
+            ->setMaxResults($limit);
+
+        try {
+            $results = $queryBuilder->getQuery()->getResult();
+            $logger->info('Query executed successfully', [
+                'sql' => $queryBuilder->getQuery()->getSQL(),
+                'params' => $queryBuilder->getQuery()->getParameters()->toArray(),
+                'results' => $results
+            ]);
+
+            if (empty($results)) {
+                $logger->info('No results returned from query');
+                return $this->json(['message' => 'No data found'], 200);
+            }
+
+            $topCommodities = [];
+            foreach ($results as $result) {
+                // با توجه به لاگ، اندیس 0 الان HesabdariRow هست
+                $row = $result[0]; // HesabdariRow
+                $commodity = $row->getCommodity(); // Commodity از داخل HesabdariRow
+                $totalCount = (int) $result['totalCount'];
+                $topCommodities[] = $explore::ExploreCommodity($commodity, $totalCount);
+            }
+
+            return $this->json($topCommodities);
+        } catch (\Exception $e) {
+            $logger->error('Error in top-selling commodities query', [
+                'message' => $e->getMessage(),
+                'sql' => $queryBuilder->getQuery()->getSQL(),
+                'params' => $queryBuilder->getQuery()->getParameters()->toArray(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
 }

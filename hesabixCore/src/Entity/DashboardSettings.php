@@ -51,6 +51,9 @@ class DashboardSettings
     #[ORM\Column(nullable: true)]
     private ?bool $sellChart = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $topCommoditiesChart = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -196,6 +199,18 @@ class DashboardSettings
     public function setSellChart(?bool $sellChart): static
     {
         $this->sellChart = $sellChart;
+
+        return $this;
+    }
+
+    public function isTopCommoditiesChart(): ?bool
+    {
+        return $this->topCommoditiesChart;
+    }
+
+    public function setTopCommoditiesChart(?bool $topCommoditiesChart): static
+    {
+        $this->topCommoditiesChart = $topCommoditiesChart;
 
         return $this;
     }

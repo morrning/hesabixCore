@@ -19,7 +19,7 @@
     "melipayamak/php": "1.0.0",
     "mpdf/mpdf": "^8.2",
     "nelmio/api-doc-bundle": "^4.34",
-    "nelmio/cors-bundle": "^2.4",
+    "nelmio/cors-bundle": "^2.5",
     "phpdocumentor/reflection-docblock": "^5.3",
     "phpoffice/phpspreadsheet": "^1.29",
     "phpstan/phpdoc-parser": "^1.16",
