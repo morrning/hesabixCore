@@ -14,6 +14,13 @@ services:
     _defaults:
         autowire: true # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+    doctrine.orm.default_attribute_driver:
+        class: Doctrine\ORM\Mapping\Driver\AttributeDriver
+        arguments:
+          - [ '%kernel.project_dir%/src/Entity' ]
+          - true # reportFieldsWhereDeclared
+        tags:
+          - { name: doctrine.orm.mapping_driver }
     App\Security\AuthenticationFailureHandler:
         arguments:
             $captchaService: '@App\Service\CaptchaService'

@@ -338,12 +338,27 @@ class ReportController extends AbstractController
 
         $queryBuilder = $entityManager->createQueryBuilder();
         $queryBuilder
-            ->select('c') // Commodity
-            ->addSelect('SUM(CAST(hr.commdityCount AS INTEGER)) as totalCount')
-            ->addSelect('hr') // HesabdariRow
+            ->select('c.id AS id')
+            ->addSelect('c.code AS code')
+            ->addSelect('c.name AS name')
+            ->addSelect('c.des AS des')
+            ->addSelect('c.priceBuy AS priceBuy')
+            ->addSelect('c.priceSell AS priceSell')
+            ->addSelect('c.khadamat AS khadamat')
+            ->addSelect('c.orderPoint AS orderPoint')
+            ->addSelect('c.commodityCountCheck AS commodityCountCheck')
+            ->addSelect('c.minOrderCount AS minOrderCount')
+            ->addSelect('c.dayLoading AS dayLoading')
+            ->addSelect('c.speedAccess AS speedAccess')
+            ->addSelect('c.withoutTax AS withoutTax')
+            ->addSelect('c.barcodes AS barcodes')
+            ->addSelect('IDENTITY(c.unit) AS unitId') // ID واحد شمارش
+            ->addSelect('u.name AS unit') // نام واحد شمارش
+            ->addSelect('SUM(CAST(hr.commdityCount AS INTEGER)) AS totalCount') // مجموع فروش
             ->from(HesabdariRow::class, 'hr')
             ->innerJoin('hr.doc', 'hd')
             ->innerJoin('hr.commodity', 'c')
+            ->leftJoin('c.unit', 'u') // برای گرفتن نام واحد شمارش
             ->where('hd.bid = :business')
             ->andWhere('hd.type = :type')
             ->andWhere('hr.year = :year')
@@ -353,12 +368,13 @@ class ReportController extends AbstractController
             ->setParameter('year', $year)
             ->setParameter('dateStart', $dateStart)
             ->setParameter('dateEnd', $dateEnd)
-            ->groupBy('c.id, hr.id')
+            ->groupBy('c.id') // گروه‌بندی فقط بر اساس شناسه کالا
+            ->addGroupBy('u.name') // برای اطمینان از گروه‌بندی درست با واحد
             ->orderBy('totalCount', 'DESC')
             ->setMaxResults($limit);
 
         try {
-            $results = $queryBuilder->getQuery()->getResult();
+            $results = $queryBuilder->getQuery()->getArrayResult(); // نتیجه به صورت آرایه
             $logger->info('Query executed successfully', [
                 'sql' => $queryBuilder->getQuery()->getSQL(),
                 'params' => $queryBuilder->getQuery()->getParameters()->toArray(),
@@ -370,14 +386,27 @@ class ReportController extends AbstractController
                 return $this->json(['message' => 'No data found'], 200);
             }
 
-            $topCommodities = [];
-            foreach ($results as $result) {
-                // با توجه به لاگ، اندیس 0 الان HesabdariRow هست
-                $row = $result[0]; // HesabdariRow
-                $commodity = $row->getCommodity(); // Commodity از داخل HesabdariRow
-                $totalCount = (int) $result['totalCount'];
-                $topCommodities[] = $explore::ExploreCommodity($commodity, $totalCount);
-            }
+            // فرمت‌بندی خروجی
+            $topCommodities = array_map(function ($result) {
+                return [
+                    'id' => $result['id'],
+                    'code' => $result['code'],
+                    'name' => $result['name'],
+                    'des' => $result['des'],
+                    'priceBuy' => $result['priceBuy'],
+                    'priceSell' => $result['priceSell'],
+                    'khadamat' => $result['khadamat'],
+                    'orderPoint' => $result['orderPoint'],
+                    'commodityCountCheck' => $result['commodityCountCheck'],
+                    'minOrderCount' => $result['minOrderCount'],
+                    'dayLoading' => $result['dayLoading'],
+                    'speedAccess' => $result['speedAccess'],
+                    'withoutTax' => $result['withoutTax'],
+                    'barcodes' => $result['barcodes'],
+                    'unit' => $result['unit'] ?? '', // نام واحد شمارش
+                    'count' => (int) $result['totalCount'] // مجموع فروش
+                ];
+            }, $results);
 
             return $this->json($topCommodities);
         } catch (\Exception $e) {
