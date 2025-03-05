@@ -1,28 +1,28 @@
-# This file is the entry point to configure your own services.
-# Files in the packages/ subdirectory configure your dependencies.
-
-# Put parameters here that don't need to change on each machine where the app is deployed
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     archiveMediaDir: '%kernel.project_dir%/../hesabixArchive'
     archiveTempMediaDir: '%kernel.project_dir%/../hesabixArchive/temp'
     avatarDir: '%kernel.project_dir%/../hesabixArchive/avatars'
     sealDir: '%kernel.project_dir%/../hesabixArchive/seal'
     SupportFilesDir: '%kernel.project_dir%/../hesabixArchive/support'
+
 services:
-    # default configuration for services in *this* file
     _defaults:
-        autowire: true # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        autowire: true
+        autoconfigure: true
         public: false
 
     App\Command\UpdateSoftwareCommand:
         arguments:
             $logger: '@Psr\Log\LoggerInterface'
-            $projectDir: '%kernel.project_dir%'
             $lockFactory: '@Symfony\Component\Lock\LockFactory'
         tags:
           - { name: 'console.command' }
+    App\Command\ReleaseUpdateLockCommand:
+        arguments:
+            $lockFactory: '@Symfony\Component\Lock\LockFactory'
+        tags:
+          - { name: 'console.command' }
+
     # تنظیمات Lock
     Symfony\Component\Lock\LockFactory:
         arguments:
@@ -33,19 +33,7 @@ services:
         arguments:
           - '%kernel.project_dir%/var/lock'
 
-    doctrine.orm.default_attribute_driver:
-        class: Doctrine\ORM\Mapping\Driver\AttributeDriver
-        arguments:
-          - [ '%kernel.project_dir%/src/Entity' ]
-          - true # reportFieldsWhereDeclared
-        tags:
-          - { name: doctrine.orm.mapping_driver }
-    App\Security\AuthenticationFailureHandler:
-        arguments:
-            $captchaService: '@App\Service\CaptchaService'
-            $requestStack: '@request_stack'
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
+    # سایر سرویس‌ها
     App\:
         resource: '../src/'
         exclude:
@@ -53,28 +41,46 @@ services:
           - '../src/Entity/'
           - '../src/Kernel.php'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    doctrine.orm.default_attribute_driver:
+        class: Doctrine\ORM\Mapping\Driver\AttributeDriver
+        arguments:
+          - [ '%kernel.project_dir%/src/Entity' ]
+          - true
+        tags:
+          - { name: doctrine.orm.mapping_driver }
+
+    App\Security\AuthenticationFailureHandler:
+        arguments:
+            $captchaService: '@App\Service\CaptchaService'
+            $requestStack: '@request_stack'
+
     Jdate:
         class: App\Service\Jdate
+
     Exctractor:
         class: App\Service\Exctractor
+
     Log:
         class: App\Service\Log
-        arguments: [ "@doctrine.orm.entity_manager" ]
+        arguments: [ '@doctrine.orm.entity_manager' ]
+
     SMS:
         class: App\Service\SMS
         arguments:
-            $entityManager: "@doctrine.orm.entity_manager"
+            $entityManager: '@doctrine.orm.entity_manager'
+
     Provider:
         class: App\Service\Provider
-        arguments: [ "@doctrine.orm.entity_manager" ]
+        arguments: [ '@doctrine.orm.entity_manager' ]
+
     twigFunctions:
         class: App\Service\twigFunctions
-        arguments: [ "@doctrine.orm.entity_manager" ]
+        arguments: [ '@doctrine.orm.entity_manager' ]
+
     registryMGR:
         class: App\Service\registryMGR
-        arguments: [ "@doctrine.orm.entity_manager" ]
+        arguments: [ '@doctrine.orm.entity_manager' ]
+
     Printers:
         class: App\Service\Printers
-        arguments: [ "@doctrine.orm.entity_manager" ]
+        arguments: [ '@doctrine.orm.entity_manager' ]

@@ -1,15 +1,19 @@
 <?php
-// src/Command/ReleaseUpdateLockCommand.php
+
 namespace App\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\LockFactory;
 
+#[AsCommand(
+    name: 'app:release-update-lock',
+    description: 'Releases the software update lock manually.'
+)]
 class ReleaseUpdateLockCommand extends Command
 {
-    protected static $defaultName = 'app:release-update-lock';
     private LockFactory $lockFactory;
 
     public function __construct(LockFactory $lockFactory)
