@@ -48,7 +48,7 @@ after set connection string edit mailer.yaml located in configs folder and set h
 
 ## update software
 
-For update software with last changes that publishe in hesabixCore folder run this command
+For update software with last changes that published in hesabixCore folder run this command
 
 ```
 php bin/console hesabix:update
