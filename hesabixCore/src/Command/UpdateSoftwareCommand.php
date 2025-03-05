@@ -14,7 +14,7 @@ use Symfony\Component\Lock\LockFactory;
 
 #[AsCommand(
     name: 'hesabix:update',
-    description: 'Updates the software by pulling from GitHub, clearing cache, and updating the database.please back up database before update'
+    description: 'Updates the software by pulling from GitHub, clearing cache, and updating the database.please back up database before update!'
 )]
 class UpdateSoftwareCommand extends Command
 {
