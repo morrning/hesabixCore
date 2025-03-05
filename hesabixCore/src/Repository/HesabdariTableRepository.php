@@ -54,13 +54,17 @@ class HesabdariTableRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-    public function findNode($value, $bid): ?HesabdariTable
+    /**
+     * پیدا کردن یک نود با فیلتر bid
+     */
+    public function findNode($nodeId, $bid): ?HesabdariTable
     {
-        return $this->createQueryBuilder('h')
-            ->Where('h.id = :val AND (h.bid= :bid OR h.bid IS NULL)')
-            ->setParameters(['val' => $value, 'bid' => $bid])
+        return $this->createQueryBuilder('ht')
+            ->where('ht.id = :nodeId')
+            ->andWhere('ht.bid = :bid OR ht.bid IS NULL') // فقط کسب‌وکار فعلی یا عمومی
+            ->setParameter('nodeId', $nodeId)
+            ->setParameter('bid', $bid)
             ->getQuery()
-            ->getOneOrNullResult()
-        ;
+            ->getOneOrNullResult();
     }
 }

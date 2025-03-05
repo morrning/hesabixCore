@@ -21,14 +21,135 @@ use App\Entity\StoreroomItem;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Psr\Log\LoggerInterface;
 
 class CommodityController extends AbstractController
 {
+
+    #[Route('/api/commodities/search', name: 'search_commodities')]
+    public function searchCommodities(
+        Access $access,
+        EntityManagerInterface $entityManager,
+        Request $request,
+        Explore $explore
+    ): JsonResponse {
+        $acc = $access->hasRole('commodity');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        // دریافت داده‌ها از بدنه درخواست POST
+        $payload = json_decode($request->getContent(), true) ?? [];
+        $filters = $payload['filters'] ?? [];
+        $pagination = $payload['pagination'] ?? [];
+        $sort = $payload['sort'] ?? [];
+
+        // پارامترهای صفحه‌بندی و مرتب‌سازی
+        $page = max(1, $pagination['page'] ?? 1);
+        $limit = max(1, $pagination['limit'] ?? 10);
+        $sortBy = $sort['sortBy'] ?? 'code';
+        $sortDesc = $sort['sortDesc'] ?? true;
+
+        // فیلدهای معتبر برای مرتب‌سازی
+        $validSortFields = ['id', 'name', 'code', 'des', 'priceBuy', 'priceSell', 'orderPoint', 'minOrderCount', 'dayLoading'];
+        $sortBy = in_array($sortBy, $validSortFields) ? $sortBy : 'code';
+
+        // ساخت کوئری پایه
+        $qb = $entityManager->getRepository(Commodity::class)->createQueryBuilder('c')
+            ->andWhere('c.bid = :bid')
+            ->setParameter('bid', $acc['bid']);
+
+        // اعمال فیلتر دسته‌بندی
+        if (!empty($filters['cat']) && !empty($filters['cat']['value'])) {
+            $qb->andWhere('c.cat IN (:cats)')
+                ->setParameter('cats', (array) $filters['cat']['value']);
+        }
+
+        // جستجوی جامع در تمام فیلدها
+        if (!empty($filters['search']) && !empty($filters['search']['value'])) {
+            $searchValue = trim($filters['search']['value']);
+            $searchConditions = [];
+            $searchParams = [];
+
+            // فیلدهای رشته‌ای با LOWER
+            $stringFields = ['name', 'des', 'barcodes'];
+            foreach ($stringFields as $index => $field) {
+                $paramName = "search_$index";
+                $searchConditions[] = "LOWER(c.$field) LIKE :$paramName";
+                $searchParams[$paramName] = "%$searchValue%";
+            }
+
+            // کد کالا بدون LOWER
+            $searchConditions[] = "c.code LIKE :search_code";
+            $searchParams['search_code'] = "%$searchValue%";
+
+            // فیلدهای عددی
+            $numericFields = ['priceBuy', 'priceSell', 'orderPoint', 'minOrderCount', 'dayLoading'];
+            foreach ($numericFields as $index => $field) {
+                $paramName = "search_" . (count($stringFields) + $index + 1);
+                $searchConditions[] = "CAST(c.$field AS CHAR) LIKE :$paramName";
+                $searchParams[$paramName] = "%$searchValue%";
+            }
+
+            // جستجو در نام واحد شمارش
+            $qb->leftJoin('c.unit', 'u');
+            $searchConditions[] = "LOWER(u.name) LIKE :search_unit";
+            $searchParams['search_unit'] = "%$searchValue%";
+
+            $qb->andWhere('(' . implode(' OR ', $searchConditions) . ')');
+            foreach ($searchParams as $param => $value) {
+                $qb->setParameter($param, $value);
+            }
+        }
+
+        // مرتب‌سازی
+        $qb->orderBy("c.$sortBy", $sortDesc ? 'DESC' : 'ASC');
+
+        // شمارش کل نتایج
+        $countQb = clone $qb;
+        $totalItems = $countQb->select('COUNT(c.id)')->getQuery()->getSingleScalarResult();
+
+        // اعمال صفحه‌بندی
+        $qb->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+        // اجرای کوئری
+        $results = $qb->getQuery()->getResult();
+
+        // تبدیل نتایج
+        $data = array_map(function (Commodity $item) use ($entityManager, $acc, $explore) {
+            $temp = $explore::ExploreCommodity($item);
+            if (!$item->isKhadamat()) {
+                $rows = $entityManager->getRepository('App\Entity\HesabdariRow')->findBy([
+                    'bid' => $acc['bid'],
+                    'commodity' => $item
+                ]);
+                $count = 0;
+                foreach ($rows as $row) {
+                    $count += $row->getDoc()->getType() === 'buy' ? $row->getCommdityCount() : -$row->getCommdityCount();
+                }
+                $temp['count'] = $count;
+            }
+            return $temp;
+        }, $results);
+
+        return new JsonResponse([
+            'results' => $data,
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $limit,
+                'total_items' => (int) $totalItems,
+                'total_pages' => ceil($totalItems / $limit),
+            ],
+        ], 200);
+    }
+
     #[Route('/api/commodity/search/extra', name: 'app_commodity_search_extra')]
     public function app_commodity_search_extra(Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -338,61 +459,91 @@ class CommodityController extends AbstractController
         return $this->json($extractor->operationSuccess($temp));
     }
 
-    /**
-     * @throws Exception
-     */
-    #[Route('/api/commodity/list/excel', name: 'app_commodity_list_excel')]
-    public function app_commodity_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse|JsonResponse|StreamedResponse
-    {
+    #[Route('/api/commodity/list/excel', name: 'app_commodity_list_excel', methods: ['POST'])]
+    public function app_commodity_list_excel(
+        Provider $provider,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager
+    ): BinaryFileResponse {
         $acc = $access->hasRole('commodity');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
         }
-        if (!array_key_exists('items', $params)) {
-            $items = $entityManager->getRepository(Commodity::class)->findBy([
-                'bid' => $acc['bid']
-            ]);
+
+        $params = json_decode($request->getContent(), true) ?? [];
+
+        if (isset($params['all']) && $params['all'] === true) {
+            // دریافت همه کالاها بدون محدودیت
+            $items = $entityManager->getRepository(Commodity::class)->findBy(['bid' => $acc['bid']]);
         } else {
+            if (!isset($params['items']) || empty($params['items'])) {
+                throw new \Exception('هیچ کالایی برای خروجی انتخاب نشده است');
+            }
             $items = [];
             foreach ($params['items'] as $param) {
-                $prs = $entityManager->getRepository(Commodity::class)->findOneBy([
+                $item = $entityManager->getRepository(Commodity::class)->findOneBy([
                     'id' => $param['id'],
                     'bid' => $acc['bid']
                 ]);
-                if ($prs)
-                    $items[] = $prs;
+                if ($item) {
+                    $items[] = $item;
+                }
             }
         }
-        return new BinaryFileResponse($provider->createExcell($items));
+
+        if (empty($items)) {
+            throw new \Exception('هیچ کالایی برای خروجی یافت نشد');
+        }
+
+        $filePath = $provider->createExcell($items);
+        $response = new BinaryFileResponse($filePath);
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'commodities.xlsx');
+        $response->deleteFileAfterSend(true);
+
+        $log->insert('کالا/خدمات', 'خروجی اکسل برای ' . count($items) . ' کالا تولید شد.', $this->getUser(), $acc['bid']->getId());
+        return $response;
     }
 
-    #[Route('/api/commodity/list/print', name: 'app_commodity_list_print')]
-    public function app_commodity_list_print(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
+
+
+    #[Route('/api/commodity/list/print', name: 'app_commodity_list_print', methods: ['POST'])]
+    public function app_commodity_list_print(
+        Provider $provider,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
         $acc = $access->hasRole('commodity');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
         }
-        if (!array_key_exists('items', $params)) {
-            $items = $entityManager->getRepository(Commodity::class)->findBy([
-                'bid' => $request->headers->get('activeBid')
-            ]);
+
+        $params = json_decode($request->getContent(), true) ?? [];
+
+        if (isset($params['all']) && $params['all'] === true) {
+            // دریافت همه کالاها بدون محدودیت
+            $items = $entityManager->getRepository(Commodity::class)->findBy(['bid' => $acc['bid']]);
         } else {
+            if (!isset($params['items']) || empty($params['items'])) {
+                return $this->json(['Success' => false, 'message' => 'هیچ کالایی برای چاپ انتخاب نشده است'], 400);
+            }
             $items = [];
             foreach ($params['items'] as $param) {
-                $prs = $entityManager->getRepository(Commodity::class)->findOneBy([
+                $item = $entityManager->getRepository(Commodity::class)->findOneBy([
                     'id' => $param['id'],
                     'bid' => $acc['bid']
                 ]);
-                if ($prs)
-                    $items[] = $prs;
+                if ($item) {
+                    $items[] = $item;
+                }
             }
+        }
+
+        if (empty($items)) {
+            return $this->json(['Success' => false, 'message' => 'هیچ کالایی برای چاپ یافت نشد'], 400);
         }
 
         $pid = $provider->createPrint(
@@ -404,8 +555,11 @@ class CommodityController extends AbstractController
                 'persons' => $items
             ])
         );
+
+        $log->insert('کالا/خدمات', 'خروجی PDF برای ' . count($items) . ' کالا تولید شد.', $this->getUser(), $acc['bid']->getId());
         return $this->json(['id' => $pid]);
     }
+
     #[Route('/api/commodity/info/{code}', name: 'app_commodity_info')]
     public function app_commodity_info($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -1079,70 +1233,100 @@ class CommodityController extends AbstractController
         return $this->json(['result' => 1]);
     }
 
-    #[Route('/api/commodity/delete/{code}', name: 'app_commodity_delete')]
-    public function app_commodity_delete(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
-    {
+    #[Route('/api/commodities/{code}', name: 'app_commodity_delete', methods: ['DELETE'])]
+    public function app_commodity_delete(
+        Provider $provider,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager,
+        $code = 0
+    ): JsonResponse {
         $acc = $access->hasRole('commodity');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
+        }
 
         $commodity = $entityManager->getRepository(Commodity::class)->findOneBy(['bid' => $acc['bid'], 'code' => $code]);
-        if (!$commodity)
-            throw $this->createNotFoundException();
-        //check accounting docs
-        $docs = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'commodity' => $commodity]);
-        if (count($docs) > 0)
-            return $this->json(['result' => 2]);
-        //check for storeroom docs
-        $storeDocs = $entityManager->getRepository(StoreroomItem::class)->findby(['bid' => $acc['bid'], 'commodity' => $commodity]);
-        if (count($storeDocs) > 0)
-            return $this->json(['result' => 2]);
+        if (!$commodity) {
+            throw $this->createNotFoundException('کالا یافت نشد');
+        }
+
+        // بررسی اسناد حسابداری
+        $docs = $entityManager->getRepository(HesabdariRow::class)->findBy(['bid' => $acc['bid'], 'commodity' => $commodity]);
+        if (count($docs) > 0) {
+            return $this->json(['result' => 2, 'message' => 'این کالا در اسناد حسابداری استفاده شده و قابل حذف نیست']);
+        }
+
+        // بررسی اسناد انبار
+        $storeDocs = $entityManager->getRepository(StoreroomItem::class)->findBy(['bid' => $acc['bid'], 'commodity' => $commodity]);
+        if (count($storeDocs) > 0) {
+            return $this->json(['result' => 2, 'message' => 'این کالا در اسناد انبار استفاده شده و قابل حذف نیست']);
+        }
 
         $comName = $commodity->getName();
         $entityManager->remove($commodity);
-        $log->insert('کالا/خدمات', ' کالا / خدمات با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
-        return $this->json(['result' => 1]);
+        $entityManager->flush();
+        $log->insert('کالا/خدمات', 'کالا/خدمات با نام ' . $comName . ' حذف شد.', $this->getUser(), $acc['bid']->getId());
+        return $this->json(['result' => 1, 'message' => 'کالا با موفقیت حذف شد']);
     }
 
-    #[Route('/api/commodity/deletegroup', name: 'app_commodity_delete_group')]
-    public function app_commodity_delete_group(Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
-    {
+    #[Route('/api/commodity/deletegroup', name: 'app_commodity_delete_group', methods: ['POST'])]
+    public function app_commodity_delete_group(
+        Extractor $extractor,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
         $acc = $access->hasRole('commodity');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
-        $params = $request->getPayload()->all();
+        }
+
+        $params = json_decode($request->getContent(), true);
+        if (!isset($params['codes']) || !is_array($params['codes'])) {
+            return $this->json(['Success' => false, 'message' => 'لیست کدهای کالا ارسال نشده است'], 400);
+        }
+
         $hasIgnored = false;
-        foreach ($params as $param) {
+        $deletedCount = 0;
+
+        foreach ($params['codes'] as $code) {
             $commodity = $entityManager->getRepository(Commodity::class)->findOneBy([
                 'bid' => $acc['bid'],
-                'code' => $param['code']
+                'code' => $code
             ]);
+
             if (!$commodity) {
                 $hasIgnored = true;
                 continue;
             }
 
-            //check accounting docs
-            $docs = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'commodity' => $commodity]);
-            if (count($docs) > 0) {
-                $hasIgnored = true;
-                continue;
-            }
+            $docs = $entityManager->getRepository(HesabdariRow::class)->findBy(['bid' => $acc['bid'], 'commodity' => $commodity]);
+            $storeDocs = $entityManager->getRepository(StoreroomItem::class)->findBy(['bid' => $acc['bid'], 'commodity' => $commodity]);
 
-            //check for storeroom docs
-            $storeDocs = $entityManager->getRepository(StoreroomItem::class)->findby(['bid' => $acc['bid'], 'commodity' => $commodity]);
-            if (count($storeDocs) > 0) {
+            if (count($docs) > 0 || count($storeDocs) > 0) {
                 $hasIgnored = true;
                 continue;
             }
 
             $comName = $commodity->getName();
-            $entityManager->getRepository(Commodity::class)->remove($commodity, false);
-            $log->insert('کالا/خدمات', ' کالا / خدمات با نام ' . $comName . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
+            $entityManager->remove($commodity);
+            $log->insert('کالا/خدمات', 'کالا/خدمات با نام ' . $comName . ' حذف شد.', $this->getUser(), $acc['bid']->getId());
+            $deletedCount++;
         }
-        $entityManager->flush();
-        return $this->json($extractor->operationSuccess(['ignored' => $hasIgnored]));
 
+        $entityManager->flush();
+
+        return $this->json([
+            'Success' => true,
+            'result' => [
+                'ignored' => $hasIgnored,
+                'deletedCount' => $deletedCount,
+                'message' => $hasIgnored ? 'برخی کالاها به دلیل استفاده در اسناد حذف نشدند' : 'همه کالاها با موفقیت حذف شدند'
+            ]
+        ]);
     }
 
     #[Route('/api/commodity/pricelist/list', name: 'app_commodity_pricelist_list')]
@@ -1316,149 +1500,4 @@ class CommodityController extends AbstractController
         return $this->json($extractor->operationSuccess());
     }
 
-    /**
-     * @Route("/api/commodities/search", name="search_commodities", methods={"POST"})
-     */
-    public function searchCommodities(Access $access, EntityManagerInterface $entityManagerInterface, Request $request): JsonResponse
-    {
-        $acc = $access->hasRole('commodity');
-        if (!$acc) {
-            throw $this->createAccessDeniedException();
-        }
-
-        // لیست فیلدهای ممنوعه
-        $forbiddenFields = ['id', 'bid', 'submitter'];
-
-        // پارامترهای صفحه‌بندی
-        $page = max(1, $request->query->getInt('page', 1));
-        $limit = max(1, $request->query->getInt('limit', 10));
-
-        // دریافت فیلترهای ارسالی
-        $filters = json_decode($request->getContent(), true);
-        if (!is_array($filters)) {
-            $filters = [];
-        }
-
-        // ساخت کوئری
-        $qb = $entityManagerInterface->getRepository(Commodity::class)->createQueryBuilder('c');
-
-        // شرط ثابت: bid.id همیشه برابر با $acc['bid']
-        $qb->andWhere('c.bid = :bid')
-           ->setParameter('bid', $acc['bid']);
-
-        // اعمال فیلترهای کاربر
-        foreach ($filters as $field => $condition) {
-            if (in_array($field, $forbiddenFields)) {
-                continue;
-            }
-
-            if (!isset($condition['operator']) || !isset($condition['value'])) {
-                continue;
-            }
-
-            $operator = $condition['operator'];
-            $value = $condition['value'];
-            $paramName = str_replace('.', '_', $field) . '_param';
-
-            switch ($operator) {
-                case '=':
-                    $qb->andWhere("c.$field = :$paramName")
-                       ->setParameter($paramName, $value);
-                    break;
-                case '>':
-                    $qb->andWhere("c.$field > :$paramName")
-                       ->setParameter($paramName, $value);
-                    break;
-                case '<':
-                    $qb->andWhere("c.$field < :$paramName")
-                       ->setParameter($paramName, $value);
-                    break;
-                case '%':
-                    $qb->andWhere("c.$field LIKE :$paramName")
-                       ->setParameter($paramName, "%$value%");
-                    break;
-            }
-        }
-
-        // مرتب‌سازی پیش‌فرض بر اساس code (نزولی)
-        $qb->orderBy('c.code', 'DESC');
-
-        // شمارش کل نتایج
-        $countQb = clone $qb;
-        $totalItems = $countQb->select('COUNT(c.id)')->getQuery()->getSingleScalarResult();
-
-        // اعمال صفحه‌بندی
-        $qb->setFirstResult(($page - 1) * $limit)
-           ->setMaxResults($limit);
-
-        // اجرای کوئری
-        $results = $qb->getQuery()->getResult();
-
-        // تبدیل نتایج به آرایه
-        $data = array_map(function (Commodity $item) use ($entityManagerInterface, $acc): array {
-            $temp = [];
-            $temp['id'] = $item->getId();
-            $temp['name'] = $item->getName();
-            $temp['unit'] = $item->getUnit()->getName();
-            $temp['des'] = $item->getDes();
-            $temp['priceBuy'] = $item->getPriceBuy();
-            $temp['speedAccess'] = $item->isSpeedAccess();
-            $temp['priceSell'] = $item->getPriceSell();
-            $temp['code'] = $item->getCode();
-            $temp['cat'] = null;
-            if ($item->getCat()) {
-                $temp['cat'] = $item->getCat()->getName();
-                $temp['catData'] = Explore::ExploreCommodityCat($item->getCat());
-            }
-            $temp['khadamat'] = false;
-            if ($item->isKhadamat()) {
-                $temp['khadamat'] = true;
-            }
-            $temp['withoutTax'] = false;
-            if ($item->isWithoutTax()) {
-                $temp['withoutTax'] = true;
-            }
-            $temp['commodityCountCheck'] = $item->isCommodityCountCheck();
-            $temp['minOrderCount'] = $item->getMinOrderCount();
-            $temp['dayLoading'] = $item->getDayLoading();
-            $temp['orderPoint'] = $item->getOrderPoint();
-            $temp['unitData'] = [
-                'name' => $item->getUnit()->getName(),
-                'floatNumber' => $item->getUnit()->getFloatNumber(),
-            ];
-            $temp['barcodes'] = $item->getBarcodes();
-            // محاسبه موجودی
-            if ($item->isKhadamat()) {
-                $temp['count'] = 0;
-            } else {
-                $rows = $entityManagerInterface->getRepository(HesabdariRow::class)->findBy([
-                    'bid' => $acc['bid'],
-                    'commodity' => $item
-                ]);
-                $count = 0;
-                foreach ($rows as $row) {
-                    if ($row->getDoc()->getType() == 'buy') {
-                        $count += $row->getCommdityCount();
-                    } elseif ($row->getDoc()->getType() == 'sell') {
-                        $count -= $row->getCommdityCount();
-                    }
-                }
-                $temp['count'] = $count;
-            }
-            return $temp;
-        }, $results);
-
-        // اطلاعات صفحه‌بندی
-        $totalPages = ceil($totalItems / $limit);
-
-        return new JsonResponse([
-            'results' => $data,
-            'pagination' => [
-                'current_page' => $page,
-                'per_page' => $limit,
-                'total_items' => $totalItems,
-                'total_pages' => $totalPages,
-            ],
-        ], 200);
-    }
 }

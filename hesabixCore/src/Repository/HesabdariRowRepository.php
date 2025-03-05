@@ -2,21 +2,11 @@
 
 namespace App\Repository;
 
-use App\Entity\Commodity;
 use App\Entity\HesabdariRow;
 use App\Entity\Money;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @extends ServiceEntityRepository<HesabdariRow>
- *
- * @method HesabdariRow|null find($id, $lockMode = null, $lockVersion = null)
- * @method HesabdariRow|null findOneBy(array $criteria, array $orderBy = null)
- * @method HesabdariRow[]    findAll()
- * @method HesabdariRow[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
- */
 class HesabdariRowRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -27,7 +17,6 @@ class HesabdariRowRepository extends ServiceEntityRepository
     public function save(HesabdariRow $entity, bool $flush = false): void
     {
         $this->getEntityManager()->persist($entity);
-
         if ($flush) {
             $this->getEntityManager()->flush();
         }
@@ -36,15 +25,42 @@ class HesabdariRowRepository extends ServiceEntityRepository
     public function remove(HesabdariRow $entity, bool $flush = false): void
     {
         $this->getEntityManager()->remove($entity);
-
         if ($flush) {
             $this->getEntityManager()->flush();
         }
     }
 
-
     /**
-     * @throws NonUniqueResultException
+     * پیدا کردن ردیف‌ها با جوین روی سند و فیلتر پول، با حذف تکرارها
+     */
+    public function findByJoinMoney(array $params, Money $money): array
+    {
+        $query = $this->createQueryBuilder('t')
+            ->select('DISTINCT t') // حذف تکرارها با DISTINCT
+            ->innerJoin('t.doc', 'd')
+            ->where('d.money = :money')
+            ->andWhere('t.bid = :bid OR t.bid IS NULL') // فقط کسب‌وکار فعلی یا عمومی
+            ->setParameter('money', $money)
+            ->setParameter('bid', $params['bid']); // bid از پارامترها دریافت می‌شود
+
+        unset($params['bid']); // حذف bid از params برای جلوگیری از تداخل
+
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                $temp = array_map(fn($v) => is_object($v) ? $v->getId() : $v, $value);
+                $query->andWhere('t.' . $key . ' IN (:' . $key . ')')
+                      ->setParameter($key, $temp);
+            } else {
+                $query->andWhere('t.' . $key . ' = :' . $key)
+                      ->setParameter($key, $value);
+            }
+        }
+
+        return $query->getQuery()->getResult();
+    }
+
+     /**
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function getNotEqual($doc, $notField): ?HesabdariRow
     {
@@ -55,29 +71,5 @@ class HesabdariRowRepository extends ServiceEntityRepository
             ->setParameter('doc', $doc)
             ->getQuery()
             ->getOneOrNullResult();
-    }
-
-    public function findByJoinMoney(array $params, Money $money): array
-    {
-        $query = $this->createQueryBuilder('t')
-            ->select('t')
-            ->innerJoin('t.doc', 'd')
-            ->where('d.money = :money')
-            ->setParameter('money', $money);
-        foreach ($params as $key => $value) {
-            if (is_array($value)) {
-                $temp = [];
-                foreach ($value as $k => $v) {
-                    $temp[] = $v->getId();
-                }
-                $query->andWhere('t.' . $key . ' IN (:' . $key . ')');
-                $query->setParameter($key, $temp);
-            } else {
-                $query->andWhere('t.' . $key . '= :' . $key);
-                $query->setParameter($key, $value);
-            }
-
-        }
-        return $query->getQuery()->getResult();
     }
 }

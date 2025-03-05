@@ -21,7 +21,7 @@ use OpenApi\Annotations as OA;
 
 class PluginController extends AbstractController
 {
-    private const PRICE_MULTIPLIER = 1.09; // ضریب قیمت به صورت ثابت برای محاسبه
+    private const PRICE_MULTIPLIER = 10.1; // ضریب قیمت به صورت ثابت برای محاسبه
 
     /**
      * بررسی دسترسی کاربر با نقش مشخص
@@ -117,7 +117,7 @@ class PluginController extends AbstractController
         $result = $payMGR->createRequest(
             $plugin->getPrice(),
             $this->generateUrl('api_plugin_buy_verify', ['id' => $plugin->getId()], UrlGeneratorInterface::ABSOLUTE_URL),
-            'خرید فضای ابری'
+            'خرید ' . $pp->getName()
         );
 
         if ($result['Success'] ?? false) {
@@ -149,7 +149,7 @@ class PluginController extends AbstractController
      *     @OA\Response(response=404, description="افزونه یافت نشد")
      * )
      */
-    #[Route('/api/plugin/buy/verify/{id}', name: 'api_plugin_buy_verify', methods: ["POST"])]
+    #[Route('/api/plugin/buy/verify/{id}', name: 'api_plugin_buy_verify',requirements: ['id' => '.+'], methods: ["POST"])]
     public function api_plugin_buy_verify(string $id, twigFunctions $twigFunctions, PayMGR $payMGR, Request $request, EntityManagerInterface $entityManager, Log $log): Response
     {
         $req = $entityManager->getRepository(Plugin::class)->find($id)

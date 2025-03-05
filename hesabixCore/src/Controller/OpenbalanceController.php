@@ -15,7 +15,7 @@ use App\Service\Extractor;
 use App\Service\Jdate;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
-use Proxies\__CG__\App\Entity\HesabdariRow;
+use App\Entity\HesabdariRow;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
