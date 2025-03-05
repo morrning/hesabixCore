@@ -46,6 +46,13 @@ For connect hesabix to your email service edit .env.local.php file located in he
 
 after set connection string edit mailer.yaml located in configs folder and set header for send emails.
 
+## update software
+
+For update software with last changes that publishe in hesabixCore folder run this command
+
+```
+php bin/console hesabix:update
+```
 ## Donation
 
 for help developers please use this link

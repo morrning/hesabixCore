@@ -13,7 +13,7 @@ use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\LockFactory;
 
 #[AsCommand(
-    name: 'hesabix:update-software',
+    name: 'hesabix:update',
     description: 'Updates the Hesabix Core by pulling from GitHub, clearing cache, and updating the database.'
 )]
 class UpdateSoftwareCommand extends Command
@@ -179,7 +179,8 @@ class UpdateSoftwareCommand extends Command
     private function writeOutput(OutputInterface $output, string $message): void
     {
         $output->writeln($message);
-        if (PHP_SAPI === 'cli' && $output instanceof \Symfony\Component\Console\Output\StreamOutput && $output->getStream()) {
+        // فقط اگه بافرینگ فعال باشه، flush کن
+        if (ob_get_level() > 0) {
             ob_flush();
             flush();
         }
