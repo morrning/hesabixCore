@@ -13,8 +13,8 @@ use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\LockFactory;
 
 #[AsCommand(
-    name: 'app:update-software',
-    description: 'Updates the software by pulling from GitHub, clearing cache, and updating the database.'
+    name: 'hesabix:update-software',
+    description: 'Updates the Hesabix Core by pulling from GitHub, clearing cache, and updating the database.'
 )]
 class UpdateSoftwareCommand extends Command
 {
@@ -51,7 +51,6 @@ class UpdateSoftwareCommand extends Command
         $this->logger->info("Starting software update with UUID: $uuid");
         $this->writeOutput($output, "Starting software update (UUID: $uuid)...");
 
-        // چک کردن اینکه آیا آپدیت لازم است
         if ($this->isUpToDate()) {
             $this->writeOutput($output, '<info>The software is already up to date with the remote repository.</info>');
             $this->logger->info('No update needed, software is up to date.');
@@ -59,7 +58,6 @@ class UpdateSoftwareCommand extends Command
             return Command::SUCCESS;
         }
 
-        // ادامه فرآیند فقط در صورتی که آپدیت لازم باشه
         if (!is_dir($this->backupDir)) {
             mkdir($this->backupDir, 0755, true);
         }
@@ -74,9 +72,101 @@ class UpdateSoftwareCommand extends Command
         $archiveBackup = null;
 
         try {
-            // بقیه کد بدون تغییر ...
+            if (!in_array('pre_checks', $state['completedSteps'])) {
+                $this->preUpdateChecks($output);
+                $state['completedSteps'][] = 'pre_checks';
+                $this->saveState($uuid, $state);
+            }
+
+            if (!in_array('archive_backup', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Backing up hesabixArchive...');
+                $archiveBackup = $this->backupArchive();
+                $state['archiveBackup'] = $archiveBackup;
+                $archiveHashBefore = $this->getDirectoryHash($this->archiveDir);
+                $state['archiveHashBefore'] = $archiveHashBefore;
+                $state['completedSteps'][] = 'archive_backup';
+                $this->saveState($uuid, $state);
+            } else {
+                $archiveBackup = $state['archiveBackup'];
+                $archiveHashBefore = $state['archiveHashBefore'];
+            }
+
+            if (!in_array('git_pull', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Pulling latest changes from GitHub...');
+                $gitHeadBefore = $this->getCurrentGitHead();
+                $this->runProcess(['git', 'pull'], $this->rootDir, $output, 3);
+                $state['gitHeadBefore'] = $gitHeadBefore;
+                $state['completedSteps'][] = 'git_pull';
+                $this->saveState($uuid, $state);
+            } else {
+                $gitHeadBefore = $state['gitHeadBefore'];
+            }
+
+            if (!in_array('composer_install', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Installing dependencies...');
+                $this->runProcess(['composer', 'install', '--no-dev', '--optimize-autoloader'], $this->appDir, $output, 3);
+                $state['completedSteps'][] = 'composer_install';
+                $this->saveState($uuid, $state);
+            }
+
+            if (!in_array('cache_clear', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Clearing cache...');
+                $cacheDir = $this->appDir . '/var/cache';
+                $cacheBackup = $this->backupCache($cacheDir);
+                $state['cacheBackup'] = $cacheBackup;
+                $this->runProcess(['php', 'bin/console', 'cache:clear', '--env=prod'], $this->appDir, $output, 3);
+                $state['completedSteps'][] = 'cache_clear';
+                $this->saveState($uuid, $state);
+            } else {
+                $cacheBackup = $state['cacheBackup'];
+            }
+
+            if (!in_array('db_update', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Updating database schema...');
+                $dbBackup = $this->backupDatabase();
+                $state['dbBackup'] = $dbBackup;
+                $this->runProcess(['php', 'bin/console', 'doctrine:schema:update', '--force', '--no-interaction'], $this->appDir, $output, 3);
+                $state['completedSteps'][] = 'db_update';
+                $this->saveState($uuid, $state);
+            } else {
+                $dbBackup = $state['dbBackup'];
+            }
+
+            if (!in_array('archive_check', $state['completedSteps'])) {
+                $archiveHashAfter = $this->getDirectoryHash($this->archiveDir);
+                if ($archiveHashBefore !== $archiveHashAfter) {
+                    $this->writeOutput($output, 'hesabixArchive has changed, restoring from backup...');
+                    $this->restoreArchive($archiveBackup);
+                    $this->writeOutput($output, 'hesabixArchive restored successfully.');
+                } else {
+                    $this->writeOutput($output, 'hesabixArchive unchanged, no restore needed.');
+                }
+                $state['completedSteps'][] = 'archive_check';
+                $this->saveState($uuid, $state);
+            }
+
+            if (!in_array('post_update_test', $state['completedSteps'])) {
+                $this->postUpdateChecks($output);
+                $state['completedSteps'][] = 'post_update_test';
+                $this->saveState($uuid, $state);
+            }
+
+            $version = $this->getPackageVersion();
+            $this->writeOutput($output, "Software updated to version: $version");
+            $state['version'] = $version;
+
+            $this->logger->info('Software update completed successfully!');
+            $this->writeOutput($output, '<info>Software update completed successfully!</info>');
+            $this->saveState($uuid, $state);
+            return Command::SUCCESS;
         } catch (\Exception $e) {
-            // بقیه کد بدون تغییر ...
+            $this->logger->error('Update failed: ' . $e->getMessage());
+            $this->writeOutput($output, '<error>An error occurred: ' . $e->getMessage() . '</error>');
+            $this->rollback($gitHeadBefore, $cacheBackup, $dbBackup, $archiveBackup, $output);
+            $this->writeOutput($output, '<comment>Update process aborted and rolled back.</comment>');
+            $state['error'] = $e->getMessage();
+            $this->saveState($uuid, $state);
+            return Command::FAILURE;
         } finally {
             $this->cleanupBackups($cacheBackup, $dbBackup, $archiveBackup);
             $lock->release();
@@ -84,30 +174,6 @@ class UpdateSoftwareCommand extends Command
                 unlink($this->stateFile);
             }
         }
-    }
-
-    // متد جدید برای چک کردن به‌روز بودن
-    private function isUpToDate(): bool
-    {
-        // گرفتن HEAD فعلی مخزن محلی
-        $localHeadProcess = new Process(['git', 'rev-parse', 'HEAD'], $this->rootDir);
-        $localHeadProcess->run();
-        if (!$localHeadProcess->isSuccessful()) {
-            throw new \RuntimeException('Failed to get local Git HEAD: ' . $localHeadProcess->getErrorOutput());
-        }
-        $localHead = trim($localHeadProcess->getOutput());
-
-        // گرفتن HEAD مخزن ریموت
-        $remoteHeadProcess = new Process(['git', 'ls-remote', 'origin', 'HEAD'], $this->rootDir);
-        $remoteHeadProcess->run();
-        if (!$remoteHeadProcess->isSuccessful()) {
-            throw new \RuntimeException('Failed to get remote Git HEAD: ' . $remoteHeadProcess->getErrorOutput());
-        }
-        $remoteOutput = explode("\t", trim($remoteHeadProcess->getOutput()));
-        $remoteHead = $remoteOutput[0] ?? '';
-
-        // مقایسه HEAD محلی و ریموت
-        return $localHead === $remoteHead;
     }
 
     private function writeOutput(OutputInterface $output, string $message): void
@@ -144,6 +210,26 @@ class UpdateSoftwareCommand extends Command
         }
     }
 
+    private function isUpToDate(): bool
+    {
+        $localHeadProcess = new Process(['git', 'rev-parse', 'HEAD'], $this->rootDir);
+        $localHeadProcess->run();
+        if (!$localHeadProcess->isSuccessful()) {
+            throw new \RuntimeException('Failed to get local Git HEAD: ' . $localHeadProcess->getErrorOutput());
+        }
+        $localHead = trim($localHeadProcess->getOutput());
+
+        $remoteHeadProcess = new Process(['git', 'ls-remote', 'origin', 'HEAD'], $this->rootDir);
+        $remoteHeadProcess->run();
+        if (!$remoteHeadProcess->isSuccessful()) {
+            throw new \RuntimeException('Failed to get remote Git HEAD: ' . $remoteHeadProcess->getErrorOutput());
+        }
+        $remoteOutput = explode("\t", trim($remoteHeadProcess->getOutput()));
+        $remoteHead = $remoteOutput[0] ?? '';
+
+        return $localHead === $remoteHead;
+    }
+
     private function preUpdateChecks(OutputInterface $output): void
     {
         $this->writeOutput($output, 'Running pre-update checks...');
@@ -153,7 +239,7 @@ class UpdateSoftwareCommand extends Command
         $this->writeOutput($output, 'Database connection OK.');
     }
 
-    private function postUpdateTest(OutputInterface $output): void
+    private function postUpdateChecks(OutputInterface $output): void
     {
         $this->writeOutput($output, 'Running post-update tests...');
         $this->runProcess(['php', 'bin/console', 'cache:warmup', '--env=prod'], $this->appDir, $output);

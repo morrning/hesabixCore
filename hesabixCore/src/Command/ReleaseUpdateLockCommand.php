@@ -9,7 +9,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\LockFactory;
 
 #[AsCommand(
-    name: 'app:release-update-lock',
+    name: 'hesabix:release-update-lock',
     description: 'Releases the software update lock manually.'
 )]
 class ReleaseUpdateLockCommand extends Command
