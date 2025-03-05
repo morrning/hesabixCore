@@ -55,5 +55,5 @@ php bin/console hesabix:update
 ```
 ## Donation
 
-for help developers please use this link
+for Donate developers please use this link
 [https://zarinp.al/hesabix.ir](https://zarinp.al/hesabix.ir)
