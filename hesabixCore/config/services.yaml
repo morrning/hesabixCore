@@ -14,6 +14,25 @@ services:
     _defaults:
         autowire: true # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        public: false
+
+    App\Command\UpdateSoftwareCommand:
+        arguments:
+            $logger: '@Psr\Log\LoggerInterface'
+            $projectDir: '%kernel.project_dir%'
+            $lockFactory: '@Symfony\Component\Lock\LockFactory'
+        tags:
+          - { name: 'console.command' }
+    # تنظیمات Lock
+    Symfony\Component\Lock\LockFactory:
+        arguments:
+            $store: '@lock.store.flock'
+
+    lock.store.flock:
+        class: Symfony\Component\Lock\Store\FlockStore
+        arguments:
+          - '%kernel.project_dir%/var/lock'
+
     doctrine.orm.default_attribute_driver:
         class: Doctrine\ORM\Mapping\Driver\AttributeDriver
         arguments:
