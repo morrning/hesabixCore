@@ -14,7 +14,7 @@ use Symfony\Component\Lock\LockFactory;
 
 #[AsCommand(
     name: 'hesabix:update',
-    description: 'Updates the Hesabix Core by pulling from GitHub, clearing cache, and updating the database.'
+    description: 'Updates the software by pulling from GitHub, clearing cache, and updating the database.'
 )]
 class UpdateSoftwareCommand extends Command
 {
@@ -25,6 +25,7 @@ class UpdateSoftwareCommand extends Command
     private string $archiveDir;
     private string $backupDir;
     private string $stateFile;
+    private string $env;
 
     public function __construct(LoggerInterface $logger, LockFactory $lockFactory)
     {
@@ -35,6 +36,7 @@ class UpdateSoftwareCommand extends Command
         $this->archiveDir = $this->rootDir . '/hesabixArchive';
         $this->backupDir = $this->rootDir . '/../backup';
         $this->stateFile = $this->backupDir . '/update_state.json';
+        $this->env = getenv('APP_ENV') ?: 'prod'; // گرفتن محیط فعلی
         parent::__construct();
     }
 
@@ -48,7 +50,7 @@ class UpdateSoftwareCommand extends Command
         }
 
         $uuid = Uuid::uuid4()->toString();
-        $this->logger->info("Starting software update with UUID: $uuid");
+        $this->logger->info("Starting software update with UUID: $uuid in {$this->env} mode");
         $this->writeOutput($output, "Starting software update (UUID: $uuid)...");
 
         if ($this->isUpToDate()) {
@@ -75,7 +77,7 @@ class UpdateSoftwareCommand extends Command
             if (!in_array('pre_checks', $state['completedSteps'])) {
                 $this->preUpdateChecks($output);
                 $state['completedSteps'][] = 'pre_checks';
-                $this->saveState($uuid, $state);
+                $this->saveState($uuid, $state, $output, 'Pre-update checks completed');
             }
 
             if (!in_array('archive_backup', $state['completedSteps'])) {
@@ -85,7 +87,7 @@ class UpdateSoftwareCommand extends Command
                 $archiveHashBefore = $this->getDirectoryHash($this->archiveDir);
                 $state['archiveHashBefore'] = $archiveHashBefore;
                 $state['completedSteps'][] = 'archive_backup';
-                $this->saveState($uuid, $state);
+                $this->saveState($uuid, $state, $output, 'hesabixArchive backed up');
             } else {
                 $archiveBackup = $state['archiveBackup'];
                 $archiveHashBefore = $state['archiveHashBefore'];
@@ -97,16 +99,20 @@ class UpdateSoftwareCommand extends Command
                 $this->runProcess(['git', 'pull'], $this->rootDir, $output, 3);
                 $state['gitHeadBefore'] = $gitHeadBefore;
                 $state['completedSteps'][] = 'git_pull';
-                $this->saveState($uuid, $state);
+                $this->saveState($uuid, $state, $output, 'Git pull completed');
             } else {
                 $gitHeadBefore = $state['gitHeadBefore'];
             }
 
             if (!in_array('composer_install', $state['completedSteps'])) {
                 $this->writeOutput($output, 'Installing dependencies...');
-                $this->runProcess(['composer', 'install', '--no-dev', '--optimize-autoloader'], $this->appDir, $output, 3);
+                $composerCommand = ['composer', 'install', '--optimize-autoloader'];
+                if ($this->env !== 'dev') {
+                    $composerCommand[] = '--no-dev';
+                }
+                $this->runProcess($composerCommand, $this->appDir, $output, 3);
                 $state['completedSteps'][] = 'composer_install';
-                $this->saveState($uuid, $state);
+                $this->saveState($uuid, $state, $output, 'Dependencies installed');
             }
 
             if (!in_array('cache_clear', $state['completedSteps'])) {
@@ -114,9 +120,9 @@ class UpdateSoftwareCommand extends Command
                 $cacheDir = $this->appDir . '/var/cache';
                 $cacheBackup = $this->backupCache($cacheDir);
                 $state['cacheBackup'] = $cacheBackup;
-                $this->runProcess(['php', 'bin/console', 'cache:clear', '--env=prod'], $this->appDir, $output, 3);
+                $this->runProcess(['php', 'bin/console', 'cache:clear', "--env={$this->env}"], $this->appDir, $output, 3);
                 $state['completedSteps'][] = 'cache_clear';
-                $this->saveState($uuid, $state);
+                $this->saveState($uuid, $state, $output, 'Cache cleared');
             } else {
                 $cacheBackup = $state['cacheBackup'];
             }
@@ -127,7 +133,7 @@ class UpdateSoftwareCommand extends Command
                 $state['dbBackup'] = $dbBackup;
                 $this->runProcess(['php', 'bin/console', 'doctrine:schema:update', '--force', '--no-interaction'], $this->appDir, $output, 3);
                 $state['completedSteps'][] = 'db_update';
-                $this->saveState($uuid, $state);
+                $this->saveState($uuid, $state, $output, 'Database schema updated');
             } else {
                 $dbBackup = $state['dbBackup'];
             }
@@ -142,13 +148,13 @@ class UpdateSoftwareCommand extends Command
                     $this->writeOutput($output, 'hesabixArchive unchanged, no restore needed.');
                 }
                 $state['completedSteps'][] = 'archive_check';
-                $this->saveState($uuid, $state);
+                $this->saveState($uuid, $state, $output, 'Archive check completed');
             }
 
             if (!in_array('post_update_test', $state['completedSteps'])) {
                 $this->postUpdateChecks($output);
                 $state['completedSteps'][] = 'post_update_test';
-                $this->saveState($uuid, $state);
+                $this->saveState($uuid, $state, $output, 'Post-update tests completed');
             }
 
             $version = $this->getPackageVersion();
@@ -157,7 +163,7 @@ class UpdateSoftwareCommand extends Command
 
             $this->logger->info('Software update completed successfully!');
             $this->writeOutput($output, '<info>Software update completed successfully!</info>');
-            $this->saveState($uuid, $state);
+            $this->saveState($uuid, $state, $output, 'Update completed successfully');
             return Command::SUCCESS;
         } catch (\Exception $e) {
             $this->logger->error('Update failed: ' . $e->getMessage());
@@ -165,7 +171,7 @@ class UpdateSoftwareCommand extends Command
             $this->rollback($gitHeadBefore, $cacheBackup, $dbBackup, $archiveBackup, $output);
             $this->writeOutput($output, '<comment>Update process aborted and rolled back.</comment>');
             $state['error'] = $e->getMessage();
-            $this->saveState($uuid, $state);
+            $this->saveState($uuid, $state, $output, 'Update failed and rolled back');
             return Command::FAILURE;
         } finally {
             $this->cleanupBackups($cacheBackup, $dbBackup, $archiveBackup);
@@ -179,7 +185,6 @@ class UpdateSoftwareCommand extends Command
     private function writeOutput(OutputInterface $output, string $message): void
     {
         $output->writeln($message);
-        // فقط اگه بافرینگ فعال باشه، flush کن
         if (ob_get_level() > 0) {
             ob_flush();
             flush();
@@ -204,6 +209,11 @@ class UpdateSoftwareCommand extends Command
                 $this->logger->warning("Attempt $attempt failed for " . implode(' ', $command) . ": $errorMessage");
                 $this->writeOutput($output, "<comment>Attempt $attempt failed: $errorMessage</comment>");
                 if ($attempt === $retries) {
+                    if (str_contains($errorMessage, 'symfony-cmd: not found')) {
+                        $this->writeOutput($output, '<comment>Symfony command not found, skipping post-install scripts.</comment>');
+                        $this->logger->warning('Skipping Composer post-install scripts due to missing symfony-cmd.');
+                        return;
+                    }
                     throw new \RuntimeException('Command "' . implode(' ', $command) . '" failed after ' . $retries . ' attempts: ' . $errorMessage);
                 }
                 sleep(5);
@@ -213,22 +223,29 @@ class UpdateSoftwareCommand extends Command
 
     private function isUpToDate(): bool
     {
-        $localHeadProcess = new Process(['git', 'rev-parse', 'HEAD'], $this->rootDir);
-        $localHeadProcess->run();
-        if (!$localHeadProcess->isSuccessful()) {
-            throw new \RuntimeException('Failed to get local Git HEAD: ' . $localHeadProcess->getErrorOutput());
-        }
-        $localHead = trim($localHeadProcess->getOutput());
+        try {
+            $localHeadProcess = new Process(['git', 'rev-parse', 'HEAD'], $this->rootDir);
+            $localHeadProcess->run();
+            if (!$localHeadProcess->isSuccessful()) {
+                $this->logger->warning('Failed to get local Git HEAD: ' . $localHeadProcess->getErrorOutput());
+                return false;
+            }
+            $localHead = trim($localHeadProcess->getOutput());
 
-        $remoteHeadProcess = new Process(['git', 'ls-remote', 'origin', 'HEAD'], $this->rootDir);
-        $remoteHeadProcess->run();
-        if (!$remoteHeadProcess->isSuccessful()) {
-            throw new \RuntimeException('Failed to get remote Git HEAD: ' . $remoteHeadProcess->getErrorOutput());
-        }
-        $remoteOutput = explode("\t", trim($remoteHeadProcess->getOutput()));
-        $remoteHead = $remoteOutput[0] ?? '';
+            $remoteHeadProcess = new Process(['git', 'ls-remote', 'origin', 'HEAD'], $this->rootDir);
+            $remoteHeadProcess->run();
+            if (!$remoteHeadProcess->isSuccessful()) {
+                $this->logger->warning('Failed to get remote Git HEAD: ' . $remoteHeadProcess->getErrorOutput());
+                return false;
+            }
+            $remoteOutput = explode("\t", trim($remoteHeadProcess->getOutput()));
+            $remoteHead = $remoteOutput[0] ?? '';
 
-        return $localHead === $remoteHead;
+            return $localHead === $remoteHead;
+        } catch (\Exception $e) {
+            $this->logger->warning('Error checking Git status: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function preUpdateChecks(OutputInterface $output): void
@@ -243,7 +260,7 @@ class UpdateSoftwareCommand extends Command
     private function postUpdateChecks(OutputInterface $output): void
     {
         $this->writeOutput($output, 'Running post-update tests...');
-        $this->runProcess(['php', 'bin/console', 'cache:warmup', '--env=prod'], $this->appDir, $output);
+        $this->runProcess(['php', 'bin/console', 'cache:warmup', "--env={$this->env}"], $this->appDir, $output);
         $this->writeOutput($output, 'Application tested and warmed up successfully.');
     }
 
@@ -381,10 +398,10 @@ class UpdateSoftwareCommand extends Command
         return ['uuid' => $uuid, 'log' => '', 'completedSteps' => []];
     }
 
-    private function saveState(string $uuid, array $state): void
+    private function saveState(string $uuid, array $state, OutputInterface $output, string $message): void
     {
         $state['uuid'] = $uuid;
-        $state['log'] .= $this->getOutput()->getOutput() . "\n";
+        $state['log'] .= $output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL ? $message . "\n" : '';
         file_put_contents($this->stateFile, json_encode($state));
     }
 }
