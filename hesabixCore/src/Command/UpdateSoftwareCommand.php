@@ -291,9 +291,13 @@ class UpdateSoftwareCommand extends Command
     private function backupDatabase(): string
     {
         $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
-        $dbUrl = $this->params->get('database_url');
-        $urlParts = parse_url($dbUrl);
+        $dbUrl = getenv('DATABASE_URL');
 
+        if (!$dbUrl) {
+            throw new \RuntimeException('DATABASE_URL environment variable is not set.');
+        }
+
+        $urlParts = parse_url($dbUrl);
         $dbHost = $urlParts['host'] ?? 'localhost';
         $dbUser = $urlParts['user'] ?? 'root';
         $dbPass = $urlParts['pass'] ?? '';
