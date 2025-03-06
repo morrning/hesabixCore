@@ -37,8 +37,8 @@ class UpdateSoftwareCommand extends Command
         $this->appDir = dirname(__DIR__, 2);
         $this->rootDir = dirname($this->appDir);
         $this->archiveDir = $this->rootDir . '/hesabixArchive';
-        $this->backupDir = $this->rootDir . '/../backup';
-        $this->stateFile = $this->backupDir . '/update_state.json';
+        $this->backupDir = $this->rootDir . '/hesabixBackup'; // تغییر به پوشه موجود
+        $this->stateFile = $this->backupDir . '/' . Uuid::uuid4() . '/update_state.json'; // زیرپوشه با UUID
         $this->env = getenv('APP_ENV') ?: 'prod';
         parent::__construct();
     }
@@ -63,8 +63,9 @@ class UpdateSoftwareCommand extends Command
             return Command::SUCCESS;
         }
 
-        if (!is_dir($this->backupDir)) {
-            mkdir($this->backupDir, 0755, true);
+        $stateDir = dirname($this->stateFile);
+        if (!is_dir($stateDir)) {
+            mkdir($stateDir, 0755, true);
         }
 
         $state = $this->loadState($uuid);
@@ -155,9 +156,15 @@ class UpdateSoftwareCommand extends Command
             }
 
             if (!in_array('post_update_test', $state['completedSteps'])) {
-                $this->postUpdateChecks($output);
-                $state['completedSteps'][] = 'post_update_test';
-                $this->saveState($uuid, $state, $output, 'Post-update tests completed');
+                $this->writeOutput($output, 'Running post-update tests...');
+                try {
+                    $this->postUpdateChecks($output);
+                    $state['completedSteps'][] = 'post_update_test';
+                    $this->saveState($uuid, $state, $output, 'Post-update tests completed');
+                } catch (\Exception $e) {
+                    $this->logger->error('Post-update tests failed: ' . $e->getMessage());
+                    throw new \RuntimeException('Post-update tests failed: ' . $e->getMessage());
+                }
             }
 
             $commitHash = $this->getCurrentVersion();
@@ -179,8 +186,10 @@ class UpdateSoftwareCommand extends Command
         } finally {
             $this->cleanupBackups($cacheBackup, $dbBackup, $archiveBackup);
             $lock->release();
-            if (file_exists($this->stateFile)) {
-                unlink($this->stateFile);
+            $stateDir = dirname($this->stateFile);
+            if (is_dir($stateDir)) {
+                $this->logger->info('Cleaning up state directory: ' . $stateDir);
+                $this->runProcess(['rm', '-rf', $stateDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
             }
         }
     }
@@ -285,14 +294,14 @@ class UpdateSoftwareCommand extends Command
 
     private function backupCache(string $cacheDir): string
     {
-        $backupDir = $this->backupDir . '/cache_backup_' . time();
+        $backupDir = $this->backupDir . '/' . Uuid::uuid4() . '/cache_backup_' . time();
         $this->runProcess(['cp', '-r', $cacheDir, $backupDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
         return $backupDir;
     }
 
     private function backupDatabase(): string
     {
-        $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
+        $backupFile = $this->backupDir . '/' . Uuid::uuid4() . '/db_backup_' . time() . '.sql';
 
         // گرفتن DATABASE_URL
         $dbUrl = null;
@@ -322,21 +331,25 @@ class UpdateSoftwareCommand extends Command
         if (in_array($dbScheme, ['mysql', 'mariadb'])) {
             $command = [
                 'mysqldump',
-                '-h', $dbHost,
-                '-u', $dbUser,
+                '-h',
+                $dbHost,
+                '-u',
+                $dbUser,
                 '-p' . $dbPass,
                 $dbName
             ];
         } elseif ($dbScheme === 'pgsql') {
             $command = [
                 'pg_dump',
-                '-h', $dbHost,
-                '-U', $dbUser,
-                '-d', $dbName,
-                '--no-owner', // اختیاری: مالکیت رو حذف می‌کنه
-                '--no-privileges' // اختیاری: دسترسی‌ها رو حذف می‌کنه
+                '-h',
+                $dbHost,
+                '-U',
+                $dbUser,
+                '-d',
+                $dbName,
+                '--no-owner',
+                '--no-privileges'
             ];
-            // تنظیم رمز عبور برای PostgreSQL
             if ($dbPass) {
                 putenv("PGPASSWORD=$dbPass");
             }
@@ -358,12 +371,12 @@ class UpdateSoftwareCommand extends Command
 
     private function backupArchive(): string
     {
-        $tarFile = $this->backupDir . '/hesabixArchive_backup_' . time() . '.tar';
-        $this->runProcess(['tar', '-cf', $tarFile, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-        if (!file_exists($tarFile)) {
+        $backupFile = $this->backupDir . '/' . Uuid::uuid4() . '/hesabixArchive_backup_' . time() . '.tar';
+        $this->runProcess(['tar', '-cf', $backupFile, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+        if (!file_exists($backupFile)) {
             throw new \RuntimeException('Failed to create tar backup of hesabixArchive.');
         }
-        return $tarFile;
+        return $backupFile;
     }
 
     private function restoreArchive(string $backupFile): void
@@ -448,8 +461,10 @@ class UpdateSoftwareCommand extends Command
                 if (in_array($dbScheme, ['mysql', 'mariadb'])) {
                     $command = [
                         'mysql',
-                        '-h', $dbHost,
-                        '-u', $dbUser,
+                        '-h',
+                        $dbHost,
+                        '-u',
+                        $dbUser,
                         '-p' . $dbPass,
                         $dbName
                     ];
@@ -458,10 +473,14 @@ class UpdateSoftwareCommand extends Command
                 } elseif ($dbScheme === 'pgsql') {
                     $command = [
                         'psql',
-                        '-h', $dbHost,
-                        '-U', $dbUser,
-                        '-d', $dbName,
-                        '-f', $dbBackup
+                        '-h',
+                        $dbHost,
+                        '-U',
+                        $dbUser,
+                        '-d',
+                        $dbName,
+                        '-f',
+                        $dbBackup
                     ];
                     if ($dbPass) {
                         putenv("PGPASSWORD=$dbPass");
@@ -518,6 +537,11 @@ class UpdateSoftwareCommand extends Command
     {
         $state['uuid'] = $uuid;
         $state['log'] .= $output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL ? $message . "\n" : '';
-        file_put_contents($this->stateFile, json_encode($state));
+        $stateDir = dirname($this->stateFile);
+        if (!is_dir($stateDir)) {
+            mkdir($stateDir, 0755, true);
+        }
+        file_put_contents($this->stateFile, json_encode($state, JSON_PRETTY_PRINT));
+        $this->logger->debug('State saved to ' . $this->stateFile . ': ' . json_encode($state, JSON_PRETTY_PRINT));
     }
 }
