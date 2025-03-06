@@ -29,6 +29,7 @@ composer install
 
 ```
 composer dump-env prod
+composer dump-env prod  //only for development
 ```
 
 * login to your database managment like phpmyadmin and import file located in hesabixBackup/databaseFiles/hesabix-db-default.sql
