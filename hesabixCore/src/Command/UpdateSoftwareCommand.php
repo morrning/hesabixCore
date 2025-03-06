@@ -4,6 +4,7 @@ namespace App\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -38,43 +39,58 @@ class UpdateSoftwareCommand extends Command
         $this->rootDir = dirname($this->appDir);
         $this->archiveDir = $this->rootDir . '/hesabixArchive';
         $this->backupDir = $this->rootDir . '/hesabixBackup';
-        $this->stateFile = $this->backupDir . '/' . Uuid::uuid4() . '/update_state.json';
         $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
         $this->env = $envConfig['APP_ENV'] ?? getenv('APP_ENV') ?: 'prod';
         $this->logger->info("Environment detected: " . $this->env);
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this->addArgument('state-file', InputArgument::OPTIONAL, 'Path to the state file');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $lock = $this->lockFactory->createLock('software-update', 3600);
+        $lock = $this->lockFactory->createLock('hesabix-update', 3600);
         if (!$lock->acquire()) {
             $this->writeOutput($output, '<error>Another update process is currently running. Please try again later.</error>');
             $this->logger->warning('Update attempt blocked due to existing lock.');
             return Command::FAILURE;
         }
 
-        $uuid = Uuid::uuid4()->toString();
+        $this->stateFile = $input->getArgument('state-file') ?? $this->backupDir . '/update_state_' . Uuid::uuid4() . '.json';
+        if (!file_exists(dirname($this->stateFile))) {
+            mkdir(dirname($this->stateFile), 0755, true);
+        }
+
+        // اگر فایل وضعیت وجود ندارد، آن را ایجاد کن
+        if (!file_exists($this->stateFile)) {
+            file_put_contents($this->stateFile, json_encode([
+                'uuid' => Uuid::uuid4()->toString(),
+                'log' => '',
+                'completedSteps' => [],
+            ]));
+        }
+
+        $uuid = json_decode(file_get_contents($this->stateFile), true)['uuid'];
+
         $this->logger->info("Starting software update with UUID: $uuid in {$this->env} mode");
         $this->writeOutput($output, "Starting software update (UUID: $uuid) in {$this->env} mode");
+
+        $state = $this->loadState($uuid);
+        $state['log'] = $state['log'] ?? ''; // اطمینان از وجود کلید log
 
         if ($this->isUpToDate()) {
             $this->writeOutput($output, '<info>The software is already up to date with the remote repository.</info>');
             $this->logger->info('No update needed, software is up to date.');
+            $state['log'] .= "No update needed, software is up to date.\n"; // اضافه کردن مستقیم به لاگ
+            $state['completedSteps'] = ['post_update_test'];
+            $this->saveState($uuid, $state, $output, 'No update needed');
             $lock->release();
             return Command::SUCCESS;
         }
 
-        $stateDir = dirname($this->stateFile);
-        if (!is_dir($stateDir)) {
-            $this->logger->debug("Creating state directory: $stateDir");
-            if (!mkdir($stateDir, 0755, true) && !is_dir($stateDir)) {
-                throw new \RuntimeException("Failed to create state directory: $stateDir");
-            }
-        }
-
-        $state = $this->loadState($uuid);
-        $state['log'] = $state['log'] ?? '';
         $state['completedSteps'] = $state['completedSteps'] ?? [];
 
         $gitHeadBefore = null;
@@ -93,10 +109,7 @@ class UpdateSoftwareCommand extends Command
                 $this->writeOutput($output, 'Backing up hesabixArchive...');
                 $archiveBackupDir = $this->backupDir . '/' . Uuid::uuid4();
                 if (!is_dir($archiveBackupDir)) {
-                    $this->logger->debug("Creating archive backup directory: $archiveBackupDir");
-                    if (!mkdir($archiveBackupDir, 0755, true) && !is_dir($archiveBackupDir)) {
-                        throw new \RuntimeException("Failed to create archive backup directory: $archiveBackupDir");
-                    }
+                    mkdir($archiveBackupDir, 0755, true);
                 }
                 $archiveBackup = $archiveBackupDir . '/hesabixArchive_backup_' . time() . '.tar';
                 $this->runProcess(['tar', '-cf', $archiveBackup, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, $output, 3);
@@ -137,10 +150,7 @@ class UpdateSoftwareCommand extends Command
                 $this->writeOutput($output, 'Clearing cache...');
                 $cacheBackupDir = $this->backupDir . '/' . Uuid::uuid4();
                 if (!is_dir($cacheBackupDir)) {
-                    $this->logger->debug("Creating cache backup directory: $cacheBackupDir");
-                    if (!mkdir($cacheBackupDir, 0755, true) && !is_dir($cacheBackupDir)) {
-                        throw new \RuntimeException("Failed to create cache backup directory: $cacheBackupDir");
-                    }
+                    mkdir($cacheBackupDir, 0755, true);
                 }
                 $cacheBackup = $cacheBackupDir . '/cache_backup_' . time();
                 $this->runProcess(['cp', '-r', $this->appDir . '/var/cache', $cacheBackup], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
@@ -156,10 +166,7 @@ class UpdateSoftwareCommand extends Command
                 $this->writeOutput($output, 'Updating database schema...');
                 $dbBackupDir = $this->backupDir . '/' . Uuid::uuid4();
                 if (!is_dir($dbBackupDir)) {
-                    $this->logger->debug("Creating database backup directory: $dbBackupDir");
-                    if (!mkdir($dbBackupDir, 0755, true) && !is_dir($dbBackupDir)) {
-                        throw new \RuntimeException("Failed to create database backup directory: $dbBackupDir");
-                    }
+                    mkdir($dbBackupDir, 0755, true);
                 }
                 $dbBackup = $dbBackupDir . '/db_backup_' . time() . '.sql';
                 $this->backupDatabaseToFile($dbBackup, $output);
@@ -198,6 +205,11 @@ class UpdateSoftwareCommand extends Command
             $this->logger->info('Software update completed successfully!');
             $this->writeOutput($output, '<info>Software update completed successfully!</info>');
             $this->saveState($uuid, $state, $output, 'Update completed successfully');
+
+            $this->writeOutput($output, 'Cleaning up all temporary directories...');
+            $this->cleanupAllTempDirectories();
+
+            $lock->release();
             return Command::SUCCESS;
         } catch (\Exception $e) {
             $this->logger->error('Update failed: ' . $e->getMessage());
@@ -206,15 +218,10 @@ class UpdateSoftwareCommand extends Command
             $this->writeOutput($output, '<comment>Update process aborted and rolled back.</comment>');
             $state['error'] = $e->getMessage();
             $this->saveState($uuid, $state, $output, 'Update failed and rolled back');
+            $lock->release();
             return Command::FAILURE;
         } finally {
-            $this->cleanupBackups($cacheBackup, $dbBackup, $archiveBackup);
             $lock->release();
-            $stateDir = dirname($this->stateFile);
-            if (is_dir($stateDir)) {
-                $this->logger->info('Cleaning up state directory: ' . $stateDir);
-                $this->runProcess(['rm', '-rf', $stateDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-            }
         }
     }
 
@@ -240,6 +247,7 @@ class UpdateSoftwareCommand extends Command
                     });
                 } else {
                     $process->mustRun();
+                    $this->writeOutput($output, $process->getOutput());
                 }
                 $this->logger->info('Command executed successfully: ' . implode(' ', $command));
                 return;
@@ -319,13 +327,9 @@ class UpdateSoftwareCommand extends Command
     {
         $backupDir = dirname($backupFile);
         if (!is_dir($backupDir)) {
-            $this->logger->debug("Creating database backup directory: $backupDir");
-            if (!mkdir($backupDir, 0755, true) && !is_dir($backupDir)) {
-                throw new \RuntimeException("Failed to create database backup directory: $backupDir");
-            }
+            mkdir($backupDir, 0755, true);
         }
 
-        // خواندن مستقیم از .env.local.php
         $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
         $dbUrl = $envConfig['DATABASE_URL'] ?? getenv('DATABASE_URL');
         if (!$dbUrl) {
@@ -342,10 +346,8 @@ class UpdateSoftwareCommand extends Command
         if (in_array($dbScheme, ['mysql', 'mariadb'])) {
             $command = [
                 'mysqldump',
-                '-h',
-                $dbHost,
-                '-u',
-                $dbUser,
+                '-h', $dbHost,
+                '-u', $dbUser,
                 '-p' . $dbPass,
                 $dbName,
                 '--result-file=' . $backupFile
@@ -353,16 +355,12 @@ class UpdateSoftwareCommand extends Command
         } elseif ($dbScheme === 'pgsql') {
             $command = [
                 'pg_dump',
-                '-h',
-                $dbHost,
-                '-U',
-                $dbUser,
-                '-d',
-                $dbName,
+                '-h', $dbHost,
+                '-U', $dbUser,
+                '-d', $dbName,
                 '--no-owner',
                 '--no-privileges',
-                '-f',
-                $backupFile
+                '-f', $backupFile
             ];
             if ($dbPass) {
                 putenv("PGPASSWORD=$dbPass");
@@ -380,7 +378,6 @@ class UpdateSoftwareCommand extends Command
         }
         $this->logger->info("Database backup created at: $backupFile (scheme: $dbScheme)");
     }
-
 
     private function restoreArchive(string $backupFile): void
     {
@@ -437,11 +434,10 @@ class UpdateSoftwareCommand extends Command
 
         if ($dbBackup) {
             try {
-                // خواندن مستقیم از .env.local.php
                 $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
                 $dbUrl = $envConfig['DATABASE_URL'] ?? getenv('DATABASE_URL');
                 if (!$dbUrl) {
-                    throw new \RuntimeException('Could not determine DATABASE_URL from .env.local.php or environment for rollback.');
+                    throw new \RuntimeException('Could not determine DATABASE_URL for rollback.');
                 }
 
                 $urlParts = parse_url($dbUrl);
@@ -454,10 +450,8 @@ class UpdateSoftwareCommand extends Command
                 if (in_array($dbScheme, ['mysql', 'mariadb'])) {
                     $command = [
                         'mysql',
-                        '-h',
-                        $dbHost,
-                        '-u',
-                        $dbUser,
+                        '-h', $dbHost,
+                        '-u', $dbUser,
                         '-p' . $dbPass,
                         $dbName
                     ];
@@ -466,14 +460,10 @@ class UpdateSoftwareCommand extends Command
                 } elseif ($dbScheme === 'pgsql') {
                     $command = [
                         'psql',
-                        '-h',
-                        $dbHost,
-                        '-U',
-                        $dbUser,
-                        '-d',
-                        $dbName,
-                        '-f',
-                        $dbBackup
+                        '-h', $dbHost,
+                        '-U', $dbUser,
+                        '-d', $dbName,
+                        '-f', $dbBackup
                     ];
                     if ($dbPass) {
                         putenv("PGPASSWORD=$dbPass");
@@ -501,25 +491,25 @@ class UpdateSoftwareCommand extends Command
         }
     }
 
-    private function cleanupBackups(?string $cacheBackup, ?string $dbBackup, ?string $archiveBackup): void
+    private function cleanupAllTempDirectories(): void
     {
-        if ($cacheBackup && is_dir($cacheBackup)) {
-            $this->runProcess(['rm', '-rf', $cacheBackup], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-        }
-        if ($dbBackup && file_exists($dbBackup)) {
-            unlink($dbBackup);
-        }
-        if ($archiveBackup && file_exists($archiveBackup)) {
-            unlink($archiveBackup);
+        $directories = glob($this->backupDir . '/*', GLOB_ONLYDIR);
+        $protectedDirs = ['databasefiles', 'versions'];
+
+        foreach ($directories as $dir) {
+            $dirName = basename($dir);
+            if (!in_array($dirName, $protectedDirs)) {
+                $this->logger->info("Removing temporary directory: $dir");
+                $this->runProcess(['rm', '-rf', $dir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+            }
         }
     }
 
     private function loadState(string $uuid): array
     {
-        $file = $this->stateFile;
-        if (file_exists($file)) {
-            $state = json_decode(file_get_contents($file), true);
-            if ($state['uuid'] === $uuid) {
+        if (file_exists($this->stateFile)) {
+            $state = json_decode(file_get_contents($this->stateFile), true);
+            if ($state && $state['uuid'] === $uuid) {
                 return $state;
             }
         }
@@ -529,14 +519,7 @@ class UpdateSoftwareCommand extends Command
     private function saveState(string $uuid, array $state, OutputInterface $output, string $message): void
     {
         $state['uuid'] = $uuid;
-        $state['log'] .= $output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL ? $message . "\n" : '';
-        $stateDir = dirname($this->stateFile);
-        if (!is_dir($stateDir)) {
-            $this->logger->debug("Creating state directory: $stateDir");
-            if (!mkdir($stateDir, 0755, true) && !is_dir($stateDir)) {
-                throw new \RuntimeException("Failed to create state directory: $stateDir");
-            }
-        }
+        $state['log'] = ($state['log'] ?? '') . ($output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL ? $message . "\n" : '');
         file_put_contents($this->stateFile, json_encode($state, JSON_PRETTY_PRINT));
         $this->logger->debug('State saved to ' . $this->stateFile);
     }
