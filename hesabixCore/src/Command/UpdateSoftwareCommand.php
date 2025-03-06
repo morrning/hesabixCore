@@ -325,9 +325,11 @@ class UpdateSoftwareCommand extends Command
             }
         }
 
-        $dbUrl = $this->params->get('database_url') ?? getenv('DATABASE_URL');
+        // خواندن مستقیم از .env.local.php
+        $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
+        $dbUrl = $envConfig['DATABASE_URL'] ?? getenv('DATABASE_URL');
         if (!$dbUrl) {
-            throw new \RuntimeException('Could not determine DATABASE_URL.');
+            throw new \RuntimeException('Could not determine DATABASE_URL from .env.local.php or environment.');
         }
 
         $urlParts = parse_url($dbUrl);
@@ -340,8 +342,10 @@ class UpdateSoftwareCommand extends Command
         if (in_array($dbScheme, ['mysql', 'mariadb'])) {
             $command = [
                 'mysqldump',
-                '-h', $dbHost,
-                '-u', $dbUser,
+                '-h',
+                $dbHost,
+                '-u',
+                $dbUser,
                 '-p' . $dbPass,
                 $dbName,
                 '--result-file=' . $backupFile
@@ -349,12 +353,16 @@ class UpdateSoftwareCommand extends Command
         } elseif ($dbScheme === 'pgsql') {
             $command = [
                 'pg_dump',
-                '-h', $dbHost,
-                '-U', $dbUser,
-                '-d', $dbName,
+                '-h',
+                $dbHost,
+                '-U',
+                $dbUser,
+                '-d',
+                $dbName,
                 '--no-owner',
                 '--no-privileges',
-                '-f', $backupFile
+                '-f',
+                $backupFile
             ];
             if ($dbPass) {
                 putenv("PGPASSWORD=$dbPass");
@@ -372,6 +380,7 @@ class UpdateSoftwareCommand extends Command
         }
         $this->logger->info("Database backup created at: $backupFile (scheme: $dbScheme)");
     }
+
 
     private function restoreArchive(string $backupFile): void
     {
@@ -428,9 +437,11 @@ class UpdateSoftwareCommand extends Command
 
         if ($dbBackup) {
             try {
-                $dbUrl = $this->params->get('database_url') ?? getenv('DATABASE_URL');
+                // خواندن مستقیم از .env.local.php
+                $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
+                $dbUrl = $envConfig['DATABASE_URL'] ?? getenv('DATABASE_URL');
                 if (!$dbUrl) {
-                    throw new \RuntimeException('Could not determine DATABASE_URL for rollback.');
+                    throw new \RuntimeException('Could not determine DATABASE_URL from .env.local.php or environment for rollback.');
                 }
 
                 $urlParts = parse_url($dbUrl);
@@ -443,8 +454,10 @@ class UpdateSoftwareCommand extends Command
                 if (in_array($dbScheme, ['mysql', 'mariadb'])) {
                     $command = [
                         'mysql',
-                        '-h', $dbHost,
-                        '-u', $dbUser,
+                        '-h',
+                        $dbHost,
+                        '-u',
+                        $dbUser,
                         '-p' . $dbPass,
                         $dbName
                     ];
@@ -453,10 +466,14 @@ class UpdateSoftwareCommand extends Command
                 } elseif ($dbScheme === 'pgsql') {
                     $command = [
                         'psql',
-                        '-h', $dbHost,
-                        '-U', $dbUser,
-                        '-d', $dbName,
-                        '-f', $dbBackup
+                        '-h',
+                        $dbHost,
+                        '-U',
+                        $dbUser,
+                        '-d',
+                        $dbName,
+                        '-f',
+                        $dbBackup
                     ];
                     if ($dbPass) {
                         putenv("PGPASSWORD=$dbPass");
