@@ -290,10 +290,10 @@ class UpdateSoftwareCommand extends Command
     private function backupDatabase(): string
     {
         $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
-        $dbUrl = getenv('DATABASE_URL');
+        $dbUrl = $this->params->get('env(DATABASE_URL)'); // استفاده از ParameterBag با env()
 
         if (!$dbUrl) {
-            throw new \RuntimeException('DATABASE_URL environment variable is not set.');
+            throw new \RuntimeException('DATABASE_URL is not set in the configuration.');
         }
 
         $urlParts = parse_url($dbUrl);
