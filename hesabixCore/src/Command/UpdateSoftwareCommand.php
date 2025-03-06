@@ -290,11 +290,24 @@ class UpdateSoftwareCommand extends Command
     private function backupDatabase(): string
     {
         $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
-        // استفاده از پارامتر Doctrine به جای env(DATABASE_URL)
-        $dbUrl = $this->params->get('doctrine.dbal.url');
+
+        // تلاش برای گرفتن DATABASE_URL از ParameterBag
+        $dbUrl = null;
+        try {
+            $dbUrl = $this->params->get('database_url'); // کلید کوچک تست می‌کنیم
+        } catch (\Exception $e) {
+            // اگه کار نکرد، از doctrine.dbal.connections.default.url امتحان می‌کنیم
+            try {
+                $dbUrl = $this->params->get('doctrine.dbal.connections.default.url');
+            } catch (\Exception $e) {
+                // اگه بازم نشد، مستقیم از .env.local.php می‌خونیم
+                $envVars = require $this->appDir . '/.env.local.php';
+                $dbUrl = $envVars['DATABASE_URL'] ?? null;
+            }
+        }
 
         if (!$dbUrl) {
-            throw new \RuntimeException('Doctrine database URL is not set in the configuration.');
+            throw new \RuntimeException('Could not determine DATABASE_URL from configuration or .env.local.php.');
         }
 
         $urlParts = parse_url($dbUrl);
@@ -305,8 +318,10 @@ class UpdateSoftwareCommand extends Command
 
         $command = [
             'mysqldump',
-            '-h', $dbHost,
-            '-u', $dbUser,
+            '-h',
+            $dbHost,
+            '-u',
+            $dbUser,
             '-p' . $dbPass,
             $dbName
         ];
@@ -322,6 +337,7 @@ class UpdateSoftwareCommand extends Command
         $this->logger->info("Database backup created at: $backupFile");
         return $backupFile;
     }
+
 
     private function backupArchive(): string
     {
