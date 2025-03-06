@@ -183,14 +183,9 @@ class UpdateSoftwareCommand extends Command
 
             if (!in_array('post_update_test', $state['completedSteps'])) {
                 $this->writeOutput($output, 'Running post-update tests...');
-                try {
-                    $this->postUpdateChecks($output);
-                    $state['completedSteps'][] = 'post_update_test';
-                    $this->saveState($uuid, $state, $output, 'Post-update tests completed');
-                } catch (\Exception $e) {
-                    $this->logger->error('Post-update tests failed: ' . $e->getMessage());
-                    throw new \RuntimeException('Post-update tests failed: ' . $e->getMessage());
-                }
+                $this->postUpdateChecks($output);
+                $state['completedSteps'][] = 'post_update_test';
+                $this->saveState($uuid, $state, $output, 'Post-update tests completed');
             }
 
             $commitHash = $this->getCurrentVersion();
@@ -236,9 +231,13 @@ class UpdateSoftwareCommand extends Command
             try {
                 $process = new Process($command, $workingDir);
                 $process->setTimeout(3600);
-                $process->mustRun(function ($type, $buffer) use ($output) {
-                    $this->writeOutput($output, $buffer);
-                });
+                if ($output->isVerbose()) {
+                    $process->mustRun(function ($type, $buffer) use ($output) {
+                        $this->writeOutput($output, $buffer);
+                    });
+                } else {
+                    $process->mustRun();
+                }
                 $this->logger->info('Command executed successfully: ' . implode(' ', $command));
                 return;
             } catch (ProcessFailedException $e) {
@@ -247,11 +246,6 @@ class UpdateSoftwareCommand extends Command
                 $this->logger->warning("Attempt $attempt failed for " . implode(' ', $command) . ": $errorMessage");
                 $this->writeOutput($output, "<comment>Attempt $attempt failed: $errorMessage</comment>");
                 if ($attempt === $retries) {
-                    if (str_contains($errorMessage, 'symfony-cmd: not found')) {
-                        $this->writeOutput($output, '<comment>Symfony command not found, skipping post-install scripts.</comment>');
-                        $this->logger->warning('Skipping Composer post-install scripts due to missing symfony-cmd.');
-                        return;
-                    }
                     throw new \RuntimeException('Command "' . implode(' ', $command) . '" failed after ' . $retries . ' attempts: ' . $errorMessage);
                 }
                 sleep(5);
@@ -318,17 +312,6 @@ class UpdateSoftwareCommand extends Command
         return trim($process->getOutput());
     }
 
-    private function backupCache(string $cacheDir): string
-    {
-        $backupDir = $this->backupDir . '/' . Uuid::uuid4() . '/cache_backup_' . time();
-        if (!is_dir(dirname($backupDir))) {
-            $this->logger->debug("Creating backup directory: " . dirname($backupDir));
-            mkdir(dirname($backupDir), 0755, true);
-        }
-        $this->runProcess(['cp', '-r', $cacheDir, $backupDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-        return $backupDir;
-    }
-
     private function backupDatabaseToFile(string $backupFile, OutputInterface $output): void
     {
         $backupDir = dirname($backupFile);
@@ -339,21 +322,9 @@ class UpdateSoftwareCommand extends Command
             }
         }
 
-        // گرفتن DATABASE_URL
-        $dbUrl = null;
-        try {
-            $dbUrl = $this->params->get('database_url');
-        } catch (\Exception $e) {
-            try {
-                $dbUrl = $this->params->get('doctrine.dbal.connections.default.url');
-            } catch (\Exception $e) {
-                $envVars = require $this->appDir . '/.env.local.php';
-                $dbUrl = $envVars['DATABASE_URL'] ?? null;
-            }
-        }
-
+        $dbUrl = $this->params->get('database_url') ?? getenv('DATABASE_URL');
         if (!$dbUrl) {
-            throw new \RuntimeException('Could not determine DATABASE_URL from configuration or .env.local.php.');
+            throw new \RuntimeException('Could not determine DATABASE_URL.');
         }
 
         $urlParts = parse_url($dbUrl);
@@ -363,14 +334,14 @@ class UpdateSoftwareCommand extends Command
         $dbName = ltrim($urlParts['path'] ?? '', '/');
         $dbScheme = $urlParts['scheme'] ?? 'mysql';
 
-        // تشخیص نوع دیتابیس و اجرای بکاپ مناسب
         if (in_array($dbScheme, ['mysql', 'mariadb'])) {
             $command = [
                 'mysqldump',
                 '-h', $dbHost,
                 '-u', $dbUser,
                 '-p' . $dbPass,
-                $dbName
+                $dbName,
+                '--result-file=' . $backupFile
             ];
         } elseif ($dbScheme === 'pgsql') {
             $command = [
@@ -379,43 +350,24 @@ class UpdateSoftwareCommand extends Command
                 '-U', $dbUser,
                 '-d', $dbName,
                 '--no-owner',
-                '--no-privileges'
+                '--no-privileges',
+                '-f', $backupFile
             ];
             if ($dbPass) {
                 putenv("PGPASSWORD=$dbPass");
             }
         } else {
-            throw new \RuntimeException("Unsupported database scheme: $dbScheme. Supported: mysql, mariadb, pgsql.");
+            throw new \RuntimeException("Unsupported database scheme: $dbScheme.");
         }
 
         $process = new Process($command, $this->rootDir);
         $process->setTimeout(3600);
-        $process->mustRun(function ($type, $buffer) use ($output) {
-            $this->writeOutput($output, $buffer);
-        });
-        file_put_contents($backupFile, $process->getOutput());
+        $process->mustRun();
 
         if (!file_exists($backupFile) || filesize($backupFile) === 0) {
             throw new \RuntimeException('Failed to create database backup.');
         }
         $this->logger->info("Database backup created at: $backupFile (scheme: $dbScheme)");
-    }
-
-    private function backupArchive(): string
-    {
-        $backupDir = $this->backupDir . '/' . Uuid::uuid4();
-        if (!is_dir($backupDir)) {
-            $this->logger->debug("Creating archive backup directory: $backupDir");
-            if (!mkdir($backupDir, 0755, true) && !is_dir($backupDir)) {
-                throw new \RuntimeException("Failed to create archive backup directory: $backupDir");
-            }
-        }
-        $backupFile = $backupDir . '/hesabixArchive_backup_' . time() . '.tar';
-        $this->runProcess(['tar', '-cf', $backupFile, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput(), 3);
-        if (!file_exists($backupFile)) {
-            throw new \RuntimeException('Failed to create tar backup of hesabixArchive.');
-        }
-        return $backupFile;
     }
 
     private function restoreArchive(string $backupFile): void
@@ -473,19 +425,7 @@ class UpdateSoftwareCommand extends Command
 
         if ($dbBackup) {
             try {
-                // گرفتن DATABASE_URL برای تشخیص نوع دیتابیس
-                $dbUrl = null;
-                try {
-                    $dbUrl = $this->params->get('database_url');
-                } catch (\Exception $e) {
-                    try {
-                        $dbUrl = $this->params->get('doctrine.dbal.connections.default.url');
-                    } catch (\Exception $e) {
-                        $envVars = require $this->appDir . '/.env.local.php';
-                        $dbUrl = $envVars['DATABASE_URL'] ?? null;
-                    }
-                }
-
+                $dbUrl = $this->params->get('database_url') ?? getenv('DATABASE_URL');
                 if (!$dbUrl) {
                     throw new \RuntimeException('Could not determine DATABASE_URL for rollback.');
                 }
@@ -578,6 +518,6 @@ class UpdateSoftwareCommand extends Command
             }
         }
         file_put_contents($this->stateFile, json_encode($state, JSON_PRETTY_PRINT));
-        $this->logger->debug('State saved to ' . $this->stateFile . ': ' . json_encode($state, JSON_PRETTY_PRINT));
+        $this->logger->debug('State saved to ' . $this->stateFile);
     }
 }
