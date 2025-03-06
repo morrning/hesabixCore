@@ -39,7 +39,9 @@ class UpdateSoftwareCommand extends Command
         $this->archiveDir = $this->rootDir . '/hesabixArchive';
         $this->backupDir = $this->rootDir . '/hesabixBackup';
         $this->stateFile = $this->backupDir . '/' . Uuid::uuid4() . '/update_state.json';
-        $this->env = getenv('APP_ENV') ?: 'prod';
+        $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
+        $this->env = $envConfig['APP_ENV'] ?? getenv('APP_ENV') ?: 'prod';
+        $this->logger->info("Environment detected: " . $this->env);
         parent::__construct();
     }
 
@@ -54,7 +56,7 @@ class UpdateSoftwareCommand extends Command
 
         $uuid = Uuid::uuid4()->toString();
         $this->logger->info("Starting software update with UUID: $uuid in {$this->env} mode");
-        $this->writeOutput($output, "Starting software update (UUID: $uuid)...");
+        $this->writeOutput($output, "Starting software update (UUID: $uuid) in {$this->env} mode");
 
         if ($this->isUpToDate()) {
             $this->writeOutput($output, '<info>The software is already up to date with the remote repository.</info>');
@@ -124,6 +126,7 @@ class UpdateSoftwareCommand extends Command
                 $composerCommand = ['composer', 'install', '--optimize-autoloader'];
                 if ($this->env !== 'dev') {
                     $composerCommand[] = '--no-dev';
+                    $composerCommand[] = '--no-scripts';
                 }
                 $this->runProcess($composerCommand, $this->appDir, $output, 3);
                 $state['completedSteps'][] = 'composer_install';
