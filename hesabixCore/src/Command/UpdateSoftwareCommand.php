@@ -14,7 +14,7 @@ use Symfony\Component\Lock\LockFactory;
 
 #[AsCommand(
     name: 'hesabix:update',
-    description: 'Updates the software by pulling from GitHub, clearing cache, and updating the database.please back up database before update!'
+    description: 'Updates the software by pulling from GitHub, clearing cache, and updating the database.'
 )]
 class UpdateSoftwareCommand extends Command
 {
@@ -31,12 +31,12 @@ class UpdateSoftwareCommand extends Command
     {
         $this->logger = $logger;
         $this->lockFactory = $lockFactory;
-        $this->appDir = dirname(__DIR__, 2); // src/Command -> hesabixCore
-        $this->rootDir = dirname($this->appDir); // hesabixCore -> parent dir
+        $this->appDir = dirname(__DIR__, 2);
+        $this->rootDir = dirname($this->appDir);
         $this->archiveDir = $this->rootDir . '/hesabixArchive';
         $this->backupDir = $this->rootDir . '/../backup';
         $this->stateFile = $this->backupDir . '/update_state.json';
-        $this->env = getenv('APP_ENV') ?: 'prod'; // گرفتن محیط فعلی
+        $this->env = getenv('APP_ENV') ?: 'prod';
         parent::__construct();
     }
 
@@ -287,18 +287,9 @@ class UpdateSoftwareCommand extends Command
     private function backupDatabase(): string
     {
         $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
-        $this->runProcess(['php', 'bin/console', 'dbal:database:dump', '--file=' . $backupFile], $this->appDir, new \Symfony\Component\Console\Output\NullOutput());
+        // اصلاح به doctrine:database:dump
+        $this->runProcess(['php', 'bin/console', 'doctrine:database:dump', '--file=' . $backupFile], $this->appDir, new \Symfony\Component\Console\Output\NullOutput());
         return $backupFile;
-    }
-
-    private function backupArchive(): string
-    {
-        $tarFile = $this->backupDir . '/hesabixArchive_backup_' . time() . '.tar';
-        $this->runProcess(['tar', '-cf', $tarFile, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-        if (!file_exists($tarFile)) {
-            throw new \RuntimeException('Failed to create tar backup of hesabixArchive.');
-        }
-        return $tarFile;
     }
 
     private function restoreArchive(string $backupFile): void
