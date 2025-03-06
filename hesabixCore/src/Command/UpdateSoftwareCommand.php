@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -35,8 +34,8 @@ class UpdateSoftwareCommand extends Command
         $this->logger = $logger;
         $this->lockFactory = $lockFactory;
         $this->params = $params;
-        $this->appDir = dirname(__DIR__, 2); // src/Command -> hesabixCore
-        $this->rootDir = dirname($this->appDir); // hesabixCore -> parent dir
+        $this->appDir = dirname(__DIR__, 2);
+        $this->rootDir = dirname($this->appDir);
         $this->archiveDir = $this->rootDir . '/hesabixArchive';
         $this->backupDir = $this->rootDir . '/../backup';
         $this->stateFile = $this->backupDir . '/update_state.json';
@@ -161,9 +160,9 @@ class UpdateSoftwareCommand extends Command
                 $this->saveState($uuid, $state, $output, 'Post-update tests completed');
             }
 
-            $version = $this->getPackageVersion();
-            $this->writeOutput($output, "Software updated to version: $version");
-            $state['version'] = $version;
+            $commitHash = $this->getCurrentVersion();
+            $this->writeOutput($output, "Software updated to commit: $commitHash");
+            $state['commit_hash'] = $commitHash;
 
             $this->logger->info('Software update completed successfully!');
             $this->writeOutput($output, '<info>Software update completed successfully!</info>');
@@ -268,16 +267,19 @@ class UpdateSoftwareCommand extends Command
         $this->writeOutput($output, 'Application tested and warmed up successfully.');
     }
 
-    private function getPackageVersion(): string
+    private function getCurrentVersion(): string
     {
-        $packageJson = json_decode(file_get_contents($this->appDir . '/package.json'), true);
-        return $packageJson['version'] ?? 'unknown';
+        return $this->getCurrentGitHead();
     }
 
     private function getCurrentGitHead(): string
     {
         $process = new Process(['git', 'rev-parse', 'HEAD'], $this->rootDir);
         $process->run();
+        if (!$process->isSuccessful()) {
+            $this->logger->warning('Failed to get current Git HEAD: ' . $process->getErrorOutput());
+            return 'unknown';
+        }
         return trim($process->getOutput());
     }
 
@@ -292,16 +294,14 @@ class UpdateSoftwareCommand extends Command
     {
         $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
 
-        // تلاش برای گرفتن DATABASE_URL از ParameterBag
+        // گرفتن DATABASE_URL
         $dbUrl = null;
         try {
-            $dbUrl = $this->params->get('database_url'); // کلید کوچک تست می‌کنیم
+            $dbUrl = $this->params->get('database_url');
         } catch (\Exception $e) {
-            // اگه کار نکرد، از doctrine.dbal.connections.default.url امتحان می‌کنیم
             try {
                 $dbUrl = $this->params->get('doctrine.dbal.connections.default.url');
             } catch (\Exception $e) {
-                // اگه بازم نشد، مستقیم از .env.local.php می‌خونیم
                 $envVars = require $this->appDir . '/.env.local.php';
                 $dbUrl = $envVars['DATABASE_URL'] ?? null;
             }
@@ -316,16 +316,33 @@ class UpdateSoftwareCommand extends Command
         $dbUser = $urlParts['user'] ?? 'root';
         $dbPass = $urlParts['pass'] ?? '';
         $dbName = ltrim($urlParts['path'] ?? '', '/');
+        $dbScheme = $urlParts['scheme'] ?? 'mysql';
 
-        $command = [
-            'mysqldump',
-            '-h',
-            $dbHost,
-            '-u',
-            $dbUser,
-            '-p' . $dbPass,
-            $dbName
-        ];
+        // تشخیص نوع دیتابیس و اجرای بکاپ مناسب
+        if (in_array($dbScheme, ['mysql', 'mariadb'])) {
+            $command = [
+                'mysqldump',
+                '-h', $dbHost,
+                '-u', $dbUser,
+                '-p' . $dbPass,
+                $dbName
+            ];
+        } elseif ($dbScheme === 'pgsql') {
+            $command = [
+                'pg_dump',
+                '-h', $dbHost,
+                '-U', $dbUser,
+                '-d', $dbName,
+                '--no-owner', // اختیاری: مالکیت رو حذف می‌کنه
+                '--no-privileges' // اختیاری: دسترسی‌ها رو حذف می‌کنه
+            ];
+            // تنظیم رمز عبور برای PostgreSQL
+            if ($dbPass) {
+                putenv("PGPASSWORD=$dbPass");
+            }
+        } else {
+            throw new \RuntimeException("Unsupported database scheme: $dbScheme. Supported: mysql, mariadb, pgsql.");
+        }
 
         $process = new Process($command, $this->rootDir);
         $process->setTimeout(3600);
@@ -335,10 +352,9 @@ class UpdateSoftwareCommand extends Command
         if (!file_exists($backupFile) || filesize($backupFile) === 0) {
             throw new \RuntimeException('Failed to create database backup.');
         }
-        $this->logger->info("Database backup created at: $backupFile");
+        $this->logger->info("Database backup created at: $backupFile (scheme: $dbScheme)");
         return $backupFile;
     }
-
 
     private function backupArchive(): string
     {
@@ -405,7 +421,58 @@ class UpdateSoftwareCommand extends Command
 
         if ($dbBackup) {
             try {
-                $this->runProcess(['php', 'bin/console', 'dbal:database:import', $dbBackup], $this->appDir, $output);
+                // گرفتن DATABASE_URL برای تشخیص نوع دیتابیس
+                $dbUrl = null;
+                try {
+                    $dbUrl = $this->params->get('database_url');
+                } catch (\Exception $e) {
+                    try {
+                        $dbUrl = $this->params->get('doctrine.dbal.connections.default.url');
+                    } catch (\Exception $e) {
+                        $envVars = require $this->appDir . '/.env.local.php';
+                        $dbUrl = $envVars['DATABASE_URL'] ?? null;
+                    }
+                }
+
+                if (!$dbUrl) {
+                    throw new \RuntimeException('Could not determine DATABASE_URL for rollback.');
+                }
+
+                $urlParts = parse_url($dbUrl);
+                $dbHost = $urlParts['host'] ?? 'localhost';
+                $dbUser = $urlParts['user'] ?? 'root';
+                $dbPass = $urlParts['pass'] ?? '';
+                $dbName = ltrim($urlParts['path'] ?? '', '/');
+                $dbScheme = $urlParts['scheme'] ?? 'mysql';
+
+                if (in_array($dbScheme, ['mysql', 'mariadb'])) {
+                    $command = [
+                        'mysql',
+                        '-h', $dbHost,
+                        '-u', $dbUser,
+                        '-p' . $dbPass,
+                        $dbName
+                    ];
+                    $process = new Process($command, $this->rootDir);
+                    $process->setInput(file_get_contents($dbBackup));
+                } elseif ($dbScheme === 'pgsql') {
+                    $command = [
+                        'psql',
+                        '-h', $dbHost,
+                        '-U', $dbUser,
+                        '-d', $dbName,
+                        '-f', $dbBackup
+                    ];
+                    if ($dbPass) {
+                        putenv("PGPASSWORD=$dbPass");
+                    }
+                    $process = new Process($command, $this->rootDir);
+                } else {
+                    throw new \RuntimeException("Unsupported database scheme for rollback: $dbScheme.");
+                }
+
+                $process->setTimeout(3600);
+                $process->mustRun();
                 $this->logger->info('Database rolled back');
             } catch (\Exception $e) {
                 $this->logger->error('Database rollback failed: ' . $e->getMessage());
