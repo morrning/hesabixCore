@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -289,33 +288,35 @@ class UpdateSoftwareCommand extends Command
     }
 
     private function backupDatabase(): string
-{
-    $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
-    $dbUrl = $this->params->get('DATABASE_URL');
-    $urlParts = parse_url($dbUrl);
+    {
+        $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
+        $dbUrl = $this->params->get('database_url');
+        $urlParts = parse_url($dbUrl);
 
-    $dbHost = $urlParts['host'] ?? 'localhost';
-    $dbUser = $urlParts['user'] ?? 'root';
-    $dbPass = $urlParts['pass'] ?? '';
-    $dbName = ltrim($urlParts['path'] ?? '', '/');
+        $dbHost = $urlParts['host'] ?? 'localhost';
+        $dbUser = $urlParts['user'] ?? 'root';
+        $dbPass = $urlParts['pass'] ?? '';
+        $dbName = ltrim($urlParts['path'] ?? '', '/');
 
-    $command = [
-        'mysqldump',
-        '-h', $dbHost,
-        '-u', $dbUser,
-        '-p' . $dbPass,
-        $dbName,
-        '>',
-        $backupFile
-    ];
+        $command = [
+            'mysqldump',
+            '-h', $dbHost,
+            '-u', $dbUser,
+            '-p' . $dbPass,
+            $dbName
+        ];
 
-    $this->runProcess($command, $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-    if (!file_exists($backupFile)) {
-        throw new \RuntimeException('Failed to create database backup.');
+        $process = new Process($command, $this->rootDir);
+        $process->setTimeout(3600);
+        $process->mustRun();
+        file_put_contents($backupFile, $process->getOutput());
+
+        if (!file_exists($backupFile) || filesize($backupFile) === 0) {
+            throw new \RuntimeException('Failed to create database backup.');
+        }
+        $this->logger->info("Database backup created at: $backupFile");
+        return $backupFile;
     }
-    return $backupFile;
-}
-
 
     private function backupArchive(): string
     {
