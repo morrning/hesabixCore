@@ -291,10 +291,11 @@ class UpdateSoftwareCommand extends Command
     private function backupDatabase(): string
     {
         $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
-        $dbUrl = $this->params->get('env(DATABASE_URL)'); // استفاده از ParameterBag با env()
+        // استفاده از پارامتر Doctrine به جای env(DATABASE_URL)
+        $dbUrl = $this->params->get('doctrine.dbal.url');
 
         if (!$dbUrl) {
-            throw new \RuntimeException('DATABASE_URL is not set in the configuration.');
+            throw new \RuntimeException('Doctrine database URL is not set in the configuration.');
         }
 
         $urlParts = parse_url($dbUrl);
