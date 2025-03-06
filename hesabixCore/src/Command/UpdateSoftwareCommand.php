@@ -395,4 +395,14 @@ class UpdateSoftwareCommand extends Command
         $state['log'] .= $output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL ? $message . "\n" : '';
         file_put_contents($this->stateFile, json_encode($state));
     }
+
+    private function backupArchive(): string
+    {
+        $tarFile = $this->backupDir . '/hesabixArchive_backup_' . time() . '.tar';
+        $this->runProcess(['tar', '-cf', $tarFile, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+        if (!file_exists($tarFile)) {
+            throw new \RuntimeException('Failed to create tar backup of hesabixArchive.');
+        }
+        return $tarFile;
+    }
 }
