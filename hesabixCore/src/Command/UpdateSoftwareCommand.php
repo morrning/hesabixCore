@@ -11,6 +11,7 @@ use Symfony\Component\Process\Process;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 #[AsCommand(
     name: 'hesabix:update',
@@ -20,6 +21,7 @@ class UpdateSoftwareCommand extends Command
 {
     private LoggerInterface $logger;
     private LockFactory $lockFactory;
+    private ParameterBagInterface $params;
     private string $rootDir;
     private string $appDir;
     private string $archiveDir;
@@ -27,12 +29,13 @@ class UpdateSoftwareCommand extends Command
     private string $stateFile;
     private string $env;
 
-    public function __construct(LoggerInterface $logger, LockFactory $lockFactory)
+    public function __construct(LoggerInterface $logger, LockFactory $lockFactory, ParameterBagInterface $params)
     {
         $this->logger = $logger;
         $this->lockFactory = $lockFactory;
-        $this->appDir = dirname(__DIR__, 2);
-        $this->rootDir = dirname($this->appDir);
+        $this->params = $params;
+        $this->appDir = dirname(__DIR__, 2); // src/Command -> hesabixCore
+        $this->rootDir = dirname($this->appDir); // hesabixCore -> parent dir
         $this->archiveDir = $this->rootDir . '/hesabixArchive';
         $this->backupDir = $this->rootDir . '/../backup';
         $this->stateFile = $this->backupDir . '/update_state.json';
@@ -285,11 +288,42 @@ class UpdateSoftwareCommand extends Command
     }
 
     private function backupDatabase(): string
+{
+    $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
+    $dbUrl = $this->params->get('database_url');
+    $urlParts = parse_url($dbUrl);
+
+    $dbHost = $urlParts['host'] ?? 'localhost';
+    $dbUser = $urlParts['user'] ?? 'root';
+    $dbPass = $urlParts['pass'] ?? '';
+    $dbName = ltrim($urlParts['path'] ?? '', '/');
+
+    $command = [
+        'mysqldump',
+        '-h', $dbHost,
+        '-u', $dbUser,
+        '-p' . $dbPass,
+        $dbName,
+        '>',
+        $backupFile
+    ];
+
+    $this->runProcess($command, $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+    if (!file_exists($backupFile)) {
+        throw new \RuntimeException('Failed to create database backup.');
+    }
+    return $backupFile;
+}
+
+
+    private function backupArchive(): string
     {
-        $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
-        // اصلاح به doctrine:database:dump
-        $this->runProcess(['php', 'bin/console', 'doctrine:database:dump', '--file=' . $backupFile], $this->appDir, new \Symfony\Component\Console\Output\NullOutput());
-        return $backupFile;
+        $tarFile = $this->backupDir . '/hesabixArchive_backup_' . time() . '.tar';
+        $this->runProcess(['tar', '-cf', $tarFile, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+        if (!file_exists($tarFile)) {
+            throw new \RuntimeException('Failed to create tar backup of hesabixArchive.');
+        }
+        return $tarFile;
     }
 
     private function restoreArchive(string $backupFile): void
@@ -394,15 +428,5 @@ class UpdateSoftwareCommand extends Command
         $state['uuid'] = $uuid;
         $state['log'] .= $output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL ? $message . "\n" : '';
         file_put_contents($this->stateFile, json_encode($state));
-    }
-
-    private function backupArchive(): string
-    {
-        $tarFile = $this->backupDir . '/hesabixArchive_backup_' . time() . '.tar';
-        $this->runProcess(['tar', '-cf', $tarFile, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-        if (!file_exists($tarFile)) {
-            throw new \RuntimeException('Failed to create tar backup of hesabixArchive.');
-        }
-        return $tarFile;
     }
 }
