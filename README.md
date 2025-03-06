@@ -1,4 +1,4 @@
-# **hesabix**
+# **hesabix Core**
 
 Hesabix is first open source accounting software in persian language with web interface.
 
