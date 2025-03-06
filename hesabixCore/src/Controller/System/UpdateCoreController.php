@@ -35,7 +35,12 @@ final class UpdateCoreController extends AbstractController
             'completedSteps' => [],
         ]));
 
-        $process = new Process(['php', 'bin/console', 'hesabix:update', $stateFile], $projectDir);
+        $env = array_merge($_SERVER, [
+            'HOME' => '/var/www',
+            'COMPOSER_HOME' => '/var/www/.composer',
+        ]);
+
+        $process = new Process(['php', 'bin/console', 'hesabix:update', $stateFile], $projectDir, $env);
         $process->setTimeout(3600);
         $process->run(function ($type, $buffer) use ($stateFile) {
             $state = json_decode(file_get_contents($stateFile), true) ?? ['uuid' => uniqid(), 'log' => ''];
@@ -104,6 +109,15 @@ final class UpdateCoreController extends AbstractController
         }
 
         if (!$isRunning) {
+            // عملیات موفق بوده، فایل‌های update_state_*.json رو حذف کن
+            $backupDir = $this->getParameter('kernel.project_dir') . '/../backup';
+            $stateFiles = glob($backupDir . '/update_state_*.json');
+            foreach ($stateFiles as $file) {
+                if (is_file($file)) {
+                    unlink($file);
+                }
+            }
+
             return new JsonResponse([
                 'status' => 'success',
                 'message' => 'Update completed successfully',
@@ -141,13 +155,11 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/system-info', name: 'api_admin_updatecore_system_info', methods: ['GET'])]
     public function api_admin_updatecore_system_info(): JsonResponse
     {
-        // اطلاعات سیستم‌عامل
         $osName = php_uname('s');
         $osRelease = php_uname('r');
         $osVersion = php_uname('v');
         $osMachine = php_uname('m');
 
-        // اطلاعات پردازنده
         $cpuInfo = 'Unknown';
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             $cpuInfo = shell_exec('wmic cpu get caption') ?? 'Unknown';
@@ -156,7 +168,6 @@ final class UpdateCoreController extends AbstractController
             $cpuInfo = str_replace('model name	: ', '', trim($cpuInfo));
         }
 
-        // اطلاعات توزیع لینوکس
         $distroName = 'Unknown';
         $distroVersion = 'Unknown';
         if (strtoupper(PHP_OS) === 'LINUX') {
@@ -169,17 +180,14 @@ final class UpdateCoreController extends AbstractController
             }
         }
 
-        // اطلاعات وب‌سرور
         $webServer = $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown';
 
-        // اطلاعات بانک اطلاعاتی
         $dbVersion = 'Unknown';
         $dbName = 'Unknown';
         try {
             $dbParams = $this->connection->getParams();
             $dbName = $dbParams['driver'] ?? 'Unknown';
 
-            // گرفتن نسخه بانک اطلاعاتی با کوئری SQL
             if (str_contains($dbName, 'mysql')) {
                 $dbVersion = $this->connection->fetchOne('SELECT VERSION()');
             } elseif (str_contains($dbName, 'pgsql')) {
