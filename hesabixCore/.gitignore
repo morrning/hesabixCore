@@ -9,6 +9,7 @@
 /vendor/
 /../hesabixArchive/
 /../hesabixBackup/
+/../backup/
 ###< symfony/framework-bundle ###
 
 ###> phpunit/phpunit ###
