@@ -290,7 +290,7 @@ class UpdateSoftwareCommand extends Command
     private function backupDatabase(): string
 {
     $backupFile = $this->backupDir . '/db_backup_' . time() . '.sql';
-    $dbUrl = $this->params->get('database_url');
+    $dbUrl = $this->params->get('DATABASE_URL');
     $urlParts = parse_url($dbUrl);
 
     $dbHost = $urlParts['host'] ?? 'localhost';
