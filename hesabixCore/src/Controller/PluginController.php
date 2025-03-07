@@ -21,7 +21,7 @@ use OpenApi\Annotations as OA;
 
 class PluginController extends AbstractController
 {
-    private const PRICE_MULTIPLIER = 10.1; // ضریب قیمت به صورت ثابت برای محاسبه
+    private const PRICE_MULTIPLIER = 10; // ضریب قیمت به صورت ثابت برای محاسبه تبدیل تومان به ریال
 
     /**
      * بررسی دسترسی کاربر با نقش مشخص
@@ -95,39 +95,50 @@ class PluginController extends AbstractController
      *     @OA\Response(response=404, description="افزونه یافت نشد")
      * )
      */
-    #[Route('/api/plugin/insert/{id}', name: 'api_plugin_insert', methods: ["POST"])]
+    #[Route('/api/plugin/insert/{id}', name: 'api_plugin_insert')]
     public function api_plugin_insert(string $id, Log $log, twigFunctions $twigFunctions, PayMGR $payMGR, Access $access, EntityManagerInterface $entityManager): Response
     {
         $acc = $this->checkAccess($access, 'join');
         $pp = $entityManager->getRepository(PluginProdect::class)->find($id)
             ?? throw $this->createNotFoundException('افزونه یافت نشد');
 
-        $plugin = new Plugin();
-        $plugin->setBid($acc['bid'])
-            ->setSubmitter($this->getUser())
-            ->setDateSubmit(time())
-            ->setStatus(0)
-            ->setDes($pp->getName())
-            ->setName($pp->getCode())
-            ->setPrice($pp->getPrice() * self::PRICE_MULTIPLIER)
-            ->setDateExpire(time() + $pp->getTimestamp());
+        $entityManager->beginTransaction(); // شروع تراکنش
+        try {
+            $plugin = new Plugin();
+            $pluginPrice = (($pp->getPrice() * self::PRICE_MULTIPLIER) * 111) / 100;
+            $plugin->setBid($acc['bid'])
+                ->setSubmitter($this->getUser())
+                ->setDateSubmit(time())
+                ->setStatus(0)
+                ->setDes($pp->getName())
+                ->setName($pp->getCode())
+                ->setPrice($pluginPrice)
+                ->setDateExpire(time() + $pp->getTimestamp());
 
-        $entityManager->persist($plugin);
+            $entityManager->persist($plugin);
+            $entityManager->flush(); // ذخیره اولیه برای تولید ID
 
-        $result = $payMGR->createRequest(
-            $plugin->getPrice(),
-            $this->generateUrl('api_plugin_buy_verify', ['id' => $plugin->getId()], UrlGeneratorInterface::ABSOLUTE_URL),
-            'خرید ' . $pp->getName()
-        );
+            $result = $payMGR->createRequest(
+                $plugin->getPrice(),
+                $this->generateUrl('api_plugin_buy_verify', ['id' => $plugin->getId()], UrlGeneratorInterface::ABSOLUTE_URL),
+                'خرید ' . $pp->getName()
+            );
 
-        if ($result['Success'] ?? false) {
-            $plugin->setGatePay($result['gate'])
-                ->setVerifyCode($result['authkey']);
-            $log->insert('بازار افزونه‌ها', 'صدور فاکتور افزونه ' . $pp->getName(), $this->getUser(), $acc['bid']);
+            if ($result['Success'] ?? false) {
+                $plugin->setGatePay($result['gate'])
+                    ->setVerifyCode($result['authkey']);
+                $log->insert('بازار افزونه‌ها', 'صدور فاکتور افزونه ' . $pp->getName(), $this->getUser(), $acc['bid']);
+                $entityManager->persist($plugin);
+            }
+
+            $entityManager->flush(); // ذخیره تغییرات نهایی
+            $entityManager->commit(); // تأیید تراکنش
+
+            return $this->json($result);
+        } catch (\Exception $e) {
+            $entityManager->rollback(); // در صورت خطا، تغییرات لغو می‌شوند
+            throw $e; // خطا را به بالا پرتاب کنید تا مدیریت شود
         }
-
-        $entityManager->flush();
-        return $this->json($result);
     }
 
     /**
@@ -149,7 +160,7 @@ class PluginController extends AbstractController
      *     @OA\Response(response=404, description="افزونه یافت نشد")
      * )
      */
-    #[Route('/api/plugin/buy/verify/{id}', name: 'api_plugin_buy_verify',requirements: ['id' => '.+'], methods: ["POST"])]
+    #[Route('/api/plugin/buy/verify/{id}', name: 'api_plugin_buy_verify', requirements: ['id' => '.+'])]
     public function api_plugin_buy_verify(string $id, twigFunctions $twigFunctions, PayMGR $payMGR, Request $request, EntityManagerInterface $entityManager, Log $log): Response
     {
         $req = $entityManager->getRepository(Plugin::class)->find($id)
