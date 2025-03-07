@@ -157,7 +157,9 @@ class PluginController extends AbstractController
      *     ),
      *     @OA\Response(response=200, description="پرداخت موفق و فعال‌سازی افزونه"),
      *     @OA\Response(response=400, description="پرداخت ناموفق"),
-     *     @OA\Response(response=404, description="افزونه یافت نشد")
+     *     @OA\Response(response=404, description="افزونه یافت نشد"),
+     *     @OA\Response(response=405, description="پرداخت ناموفق"),
+
      * )
      */
     #[Route('/api/plugin/buy/verify/{id}', name: 'api_plugin_buy_verify', requirements: ['id' => '.+'])]

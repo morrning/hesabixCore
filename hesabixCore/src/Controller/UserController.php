@@ -208,14 +208,21 @@ class UserController extends AbstractController
     #[Route('/api/user/current/info', name: 'api_user_current_info')]
     public function api_user_current_info(#[CurrentUser] ?User $user, Provider $provider, EntityManagerInterface $entityManager): Response
     {
-        return $this->json([
+        $result = [
             'id' => $user->getId(),
             'email' => $user->getEmail(),
             'fullname' => $user->getFullName(),
             'businessCount' => count($user->getBusinesses()),
             'hash_email' => $provider->gravatarHash($user->getEmail()),
-            'mobile' => $user->getMobile()
-        ]);
+            'mobile' => $user->getMobile(),
+        ];
+        if (!$user->getInvateCode()) {
+            $user->setInvateCode($this->RandomString(7));
+            $entityManager->persist($user);
+            $entityManager->flush();
+        }
+        $result['invateCode'] = $user->getInvateCode();
+        return $this->json($result);
     }
 
     #[Route('/api2/user/current/info', name: 'api2_user_current_info')]
@@ -358,6 +365,16 @@ class UserController extends AbstractController
                 )
             );
             $user->setActive(false);
+
+            //چک کردن کد معرف
+            $invateCode = $params['inviteCode'];
+            if ($invateCode != '0') {
+                $invater = $entityManager->getRepository(User::class)->findOneBy(['invateCode' => $invateCode]);
+                if ($invater) {
+                    $user->setInvitedBy($invater);
+                }
+            }
+
             $entityManager->persist($user);
             $entityManager->flush();
 
@@ -382,7 +399,6 @@ class UserController extends AbstractController
             } catch (Exception $exception) {
                 // خطای ارسال ایمیل رو می‌تونید لاگ کنید، فعلاً نادیده می‌گیره
             }
-
             return $this->json($extractor->operationSuccess([
                 'id' => $user->getId()
             ]));

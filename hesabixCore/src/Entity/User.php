@@ -113,6 +113,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: DashboardSettings::class, orphanRemoval: true)]
     private Collection $dashboardSettings;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $invateCode = null;
+
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    private ?self $invitedBy = null;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -853,6 +859,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $dashboardSetting->setSubmitter(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getInvateCode(): ?string
+    {
+        return $this->invateCode;
+    }
+
+    public function setInvateCode(?string $invateCode): static
+    {
+        $this->invateCode = $invateCode;
+
+        return $this;
+    }
+
+    public function getInvitedBy(): ?self
+    {
+        return $this->invitedBy;
+    }
+
+    public function setInvitedBy(?self $invitedBy): static
+    {
+        $this->invitedBy = $invitedBy;
 
         return $this;
     }

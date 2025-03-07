@@ -17,13 +17,13 @@ services:
             $lockFactory: '@Symfony\Component\Lock\LockFactory'
         tags:
           - { name: 'console.command' }
+
     App\Command\ReleaseUpdateLockCommand:
         arguments:
             $lockFactory: '@Symfony\Component\Lock\LockFactory'
         tags:
           - { name: 'console.command' }
 
-    # تنظیمات Lock
     Symfony\Component\Lock\LockFactory:
         arguments:
             $store: '@lock.store.flock'
@@ -33,7 +33,6 @@ services:
         arguments:
           - '%kernel.project_dir%/var/lock'
 
-    # سایر سرویس‌ها
     App\:
         resource: '../src/'
         exclude:
@@ -45,9 +44,18 @@ services:
         class: Doctrine\ORM\Mapping\Driver\AttributeDriver
         arguments:
           - [ '%kernel.project_dir%/src/Entity' ]
-          - true
+          - true # تنظیم reportFieldsWhereDeclared روی true برای رفع Deprecation
         tags:
           - { name: doctrine.orm.mapping_driver }
+
+    App\EventListener\DoctrineExceptionListener:
+        arguments:
+            $kernel: '@kernel'
+            $logger: '@logger'
+            $lockFactory: '@lock.default.factory'
+            $entityManager: '@doctrine.orm.default_entity_manager'
+        tags:
+          - { name: kernel.event_listener, event: kernel.exception }
 
     App\Security\AuthenticationFailureHandler:
         arguments:
