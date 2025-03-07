@@ -84,7 +84,7 @@ class UpdateSoftwareCommand extends Command
         if ($this->isUpToDate()) {
             $this->writeOutput($output, '<info>The software is already up to date with the remote repository.</info>');
             $this->logger->info('No update needed, software is up to date.');
-            $state['log'] .= "No update needed, software is up to date.\n"; // اضافه کردن مستقیم به لاگ
+            $state['log'] .= "No update needed, software is up to date.\n";
             $state['completedSteps'] = ['post_update_test'];
             $this->saveState($uuid, $state, $output, 'No update needed');
             $lock->release();
@@ -124,6 +124,10 @@ class UpdateSoftwareCommand extends Command
             }
 
             if (!in_array('git_pull', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Setting up tracking for master branch...');
+                // تنظیم ردیابی شاخه master به origin/master
+                $this->runProcess(['git', 'branch', '--set-upstream-to=origin/master', 'master'], $this->rootDir, $output, 1);
+
                 $this->writeOutput($output, 'Pulling latest changes from GitHub...');
                 $gitHeadBefore = $this->getCurrentGitHead();
                 $this->runProcess(['git', 'pull'], $this->rootDir, $output, 3);
