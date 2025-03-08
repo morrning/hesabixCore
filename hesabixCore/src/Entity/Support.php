@@ -41,6 +41,9 @@ class Support
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $fileName = null;
 
+    #[ORM\ManyToOne]
+    private ?Business $bid = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -138,6 +141,18 @@ class Support
     public function setFileName(?string $fileName): static
     {
         $this->fileName = $fileName;
+
+        return $this;
+    }
+
+    public function getBid(): ?Business
+    {
+        return $this->bid;
+    }
+
+    public function setBid(?Business $bid): static
+    {
+        $this->bid = $bid;
 
         return $this;
     }

@@ -501,8 +501,11 @@ class Explore
         return $result;
     }
 
-    public static function ExploreBusiness(Business $item)
+    public static function ExploreBusiness(Business|null $item): array|null
     {
+        if (!$item) {
+            return null;
+        }
         $res = [
             'id' => $item->getId(),
             'owner' => $item->getOwner()->getFullName(),
@@ -568,6 +571,7 @@ class Explore
         if ($user->getId() != $support->getSubmitter()->getId()) {
             $res['owner'] = false;
         }
+        $res['bid'] = self::ExploreBusiness($support->getBid());
         return $res;
     }
 

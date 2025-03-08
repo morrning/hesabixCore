@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Business;
 use App\Entity\Settings;
 use App\Entity\Support;
 use App\Entity\User;
@@ -52,12 +53,94 @@ class SupportController extends AbstractController
         return $ticket;
     }
 
-    #[Route('/api/admin/support/list', name: 'app_admin_support_list')]
-    public function app_admin_support_list(Extractor $extractor, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/admin/support/list', name: 'app_admin_support_list', methods: ['POST'])]
+    public function app_admin_support_list(Request $request, EntityManagerInterface $entityManager, Explore $explore, Jdate $jdate): JsonResponse
     {
-        $items = $entityManager->getRepository(Support::class)->findBy(['main' => 0], ['id' => 'DESC']);
-        $res = array_map(fn($item) => Explore::ExploreSupportTicket($item, $this->getUser()), $items);
-        return $this->json($extractor->operationSuccess($res));
+        $this->denyAccessUnlessGranted('ROLE_ADMIN'); // فقط برای ادمین‌ها
+
+        $params = $request->getPayload()->all();
+        $state = $params['state'] ?? 'در حال پیگیری';
+        $page = (int) ($params['page'] ?? 1);
+        $itemsPerPage = (int) ($params['itemsPerPage'] ?? 10);
+        $searchQuery = $params['searchQuery'] ?? null;
+
+        $queryBuilder = $entityManager->getRepository(Support::class)
+            ->createQueryBuilder('s')
+            ->where('s.main = 0')
+            ->andWhere('s.state = :state')
+            ->setParameter('state', $state)
+            ->orderBy('s.id', 'DESC');
+
+        // اعمال جست‌وجوی واحد در سه ستون
+        if ($searchQuery) {
+            $queryBuilder->leftJoin('s.bid', 'b')
+                ->leftJoin('s.submitter', 'u')
+                ->andWhere(
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->like('s.id', ':searchQuery'),
+                        $queryBuilder->expr()->like('b.name', ':searchQueryLike'),
+                        $queryBuilder->expr()->like('u.fullName', ':searchQueryLike')
+                    )
+                )
+                ->setParameter('searchQuery', $searchQuery)
+                ->setParameter('searchQueryLike', '%' . $searchQuery . '%');
+        }
+
+        // محاسبه تعداد کل
+        $totalQuery = clone $queryBuilder;
+        $total = (int) $totalQuery->select('COUNT(s.id)')->getQuery()->getSingleScalarResult();
+
+        // اعمال صفحه‌بندی
+        $queryBuilder->setFirstResult(($page - 1) * $itemsPerPage)
+            ->setMaxResults($itemsPerPage);
+
+        $items = $queryBuilder->getQuery()->getResult();
+
+        // تبدیل به آرایه با Explore
+        $serializedItems = array_map(function ($item) use ($explore, $jdate) {
+            $item->setDateSubmit($jdate->jdate('Y/n/d', $item->getDateSubmit()));
+            return $explore->ExploreSupportTicket($item, $this->getUser());
+        }, $items);
+
+        return $this->json([
+            'data' => [
+                'items' => $serializedItems,
+                'total' => $total,
+            ],
+            'error' => 0,
+        ]);
+    }
+
+    #[Route('/api/admin/support/bulk-update', name: 'app_admin_support_bulk_update', methods: ['POST'])]
+    public function app_admin_support_bulk_update(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN'); // فقط برای ادمین‌ها
+
+        $params = $request->getPayload()->all();
+        $ticketIds = $params['ticketIds'] ?? [];
+        $state = $params['state'] ?? null;
+
+        if (empty($ticketIds) || !$state || !in_array($state, ['در حال پیگیری', 'پاسخ داده شده', 'خاتمه یافته'])) {
+            return $this->json(['error' => 1, 'message' => 'پارامترهای نامعتبر']);
+        }
+
+        $updatedCount = $entityManager->getRepository(Support::class)
+            ->createQueryBuilder('s')
+            ->update()
+            ->set('s.state', ':state')
+            ->where('s.id IN (:ids)')
+            ->andWhere('s.main = 0')
+            ->setParameter('state', $state)
+            ->setParameter('ids', $ticketIds)
+            ->getQuery()
+            ->execute();
+
+        $entityManager->flush();
+
+        return $this->json([
+            'error' => 0,
+            'message' => "وضعیت $updatedCount تیکت با موفقیت تغییر کرد",
+        ]);
     }
 
     #[Route('/api/admin/support/view/{id}', name: 'app_admin_support_view')]
@@ -81,8 +164,14 @@ class SupportController extends AbstractController
     }
 
     #[Route('/api/admin/support/mod/{id}', name: 'app_admin_support_mod')]
-    public function app_admin_support_mod(registryMGR $registryMGR, SMS $SMS, Request $request, EntityManagerInterface $entityManager, Notification $notifi, string $id): JsonResponse
-    {
+    public function app_admin_support_mod(
+        registryMGR $registryMGR,
+        SMS $SMS,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        Notification $notifi,
+        string $id
+    ): JsonResponse {
         $params = $request->getPayload()->all();
         $item = $this->getTicket($entityManager, $id);
         if (!$item) {
@@ -97,7 +186,7 @@ class SupportController extends AbstractController
         $support->setDateSubmit(time())
             ->setTitle('0')
             ->setBody($params['body'])
-            ->setState('0')
+            ->setState('0') // پاسخ اپراتور به صورت پیش‌فرض حالت خاصی نداره
             ->setMain($item->getId())
             ->setSubmitter($this->getUser());
 
@@ -111,13 +200,20 @@ class SupportController extends AbstractController
             $support->setFileName($fileName);
         }
 
+        // به‌روزرسانی وضعیت تیکت اصلی
+        $newState = $params['state'] ?? 'پاسخ داده شده'; // پیش‌فرض "پاسخ داده شده"
+        if (in_array($newState, ['در حال پیگیری', 'پاسخ داده شده', 'خاتمه یافته'])) {
+            $item->setState($newState);
+        } else {
+            $item->setState('پاسخ داده شده'); // در صورت مقدار نامعتبر
+        }
+
         $entityManager->persist($support);
-        $item->setState('پاسخ داده شده');
         $entityManager->persist($item);
         $entityManager->flush();
 
         // بررسی سوئیچ ارسال SMS
-        $sendSms = filter_var($params['sendSms'] ?? true, FILTER_VALIDATE_BOOLEAN); // پیش‌فرض true
+        $sendSms = filter_var($params['sendSms'] ?? true, FILTER_VALIDATE_BOOLEAN);
         if ($sendSms && ($mobile = $item->getSubmitter()->getMobile())) {
             $SMS->send([$item->getId()], $registryMGR->get('sms', 'ticketReplay'), $mobile);
         }
@@ -128,7 +224,7 @@ class SupportController extends AbstractController
         return $this->json([
             'error' => 0,
             'message' => 'successful',
-            'file' => $fileName
+            'file' => $fileName,
         ]);
     }
 
@@ -153,23 +249,30 @@ class SupportController extends AbstractController
     }
 
     #[Route('/api/support/list', name: 'app_support_list')]
-    public function app_support_list(Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
+    public function app_support_list(Jdate $jdate, EntityManagerInterface $entityManager, Explore $explore): JsonResponse
     {
         $items = $entityManager->getRepository(Support::class)->findBy(
             ['submitter' => $this->getUser(), 'main' => 0],
             ['id' => 'DESC']
         );
 
-        foreach ($items as $item) {
+        // استفاده از Explore برای تبدیل اشیاء به آرایه
+        $serializedItems = array_map(function ($item) use ($explore, $jdate) {
             $item->setDateSubmit($jdate->jdate('Y/n/d', $item->getDateSubmit()));
-        }
+            return $explore->ExploreSupportTicket($item, $this->getUser());
+        }, $items);
 
-        return $this->json($items);
+        return $this->json($serializedItems);
     }
 
     #[Route('/api/support/mod/{id}', name: 'app_support_mod')]
-    public function app_support_mod(registryMGR $registryMGR, SMS $SMS, Request $request, EntityManagerInterface $entityManager, string $id = ''): JsonResponse
-    {
+    public function app_support_mod(
+        registryMGR $registryMGR,
+        SMS $SMS,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        string $id = ''
+    ): JsonResponse {
         $params = $request->getPayload()->all();
         $uploadDirectory = $this->getParameter('SupportFilesDir');
         if (!file_exists($uploadDirectory)) {
@@ -189,6 +292,19 @@ class SupportController extends AbstractController
                 ->setMain(0)
                 ->setCode($this->randomString(8))
                 ->setState('در حال پیگیری');
+
+            // چک کردن مالکیت کسب‌وکار
+            $bid = $params['bid'] ?? null;
+            if ($bid) {
+                $business = $entityManager->getRepository(Business::class)->find($bid);
+                if ($business && $business->getOwner() === $this->getUser()) {
+                    $item->setBid($business); // فقط در صورتی که کاربر مالک باشد
+                } else {
+                    $item->setBid(null); // اگر مالک نباشد، bid خالی می‌ماند
+                }
+            } else {
+                $item->setBid(null); // اگر bid ارسال نشده باشد
+            }
 
             $entityManager->persist($item);
             $entityManager->flush();
@@ -250,6 +366,7 @@ class SupportController extends AbstractController
             'files' => $fileName
         ]);
     }
+
 
     #[Route('/api/support/view/{id}', name: 'app_support_view')]
     public function app_support_view(EntityManagerInterface $entityManager, string $id): JsonResponse
