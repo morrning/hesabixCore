@@ -3,39 +3,43 @@
 namespace App\Service;
 
 use App\Entity\PrinterQueue;
-use App\Service\Twig;
-
 use Twig\Environment;
-class pdfMGR
-{
+use Mpdf\Mpdf;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
 
+class PdfMGR
+{
     private $twig;
 
-    public function __construct(Twig $twig)
+    public function __construct(Environment $twig)
     {
         $this->twig = $twig;
     }
 
-    public function streamTwig2PDF(PrinterQueue $printQueue,$configs = []){
+    public function streamTwig2PDF(PrinterQueue $printQueue, $configs = [])
+    {
         // Load Twig File
         $template = $this->twig->load('pdf/footer.html.twig');
+        $footer = $template->render([]);
 
-        // Render HTML
-        $footer = $template->render([
-            
-        ]);
-        $size = $printQueue->getPaperSize();
-        if(!$size){ $size = 'A4-L'; }
-        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $size = $printQueue->getPaperSize() ?: 'A4-L';
+        
+        $defaultConfig = (new ConfigVariables())->getDefaults();
         $fontDirs = $defaultConfig['fontDir'];
 
-        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $defaultFontConfig = (new FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8', 'format' => $size,
-            'fontDir' => array_merge($fontDirs, [
-                dirname(__DIR__) . '/Fonts',
-            ]),
+
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf';
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => $size,
+            'fontDir' => array_merge($fontDirs, [dirname(__DIR__) . '/Fonts']),
             'fontdata' => $fontData + [
                 'vazirmatn' => [
                     'R' => 'Vazir-Regular-FD.ttf',
@@ -45,14 +49,16 @@ class pdfMGR
                 ]
             ],
             'default_font' => 'vazirmatn',
-            'tempDir' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf',
+            'tempDir' => $tempDir,
             'autoArabic' => true,
         ]);
-        if($printQueue->isFooter()){
+
+        if ($printQueue->isFooter()) {
             $mpdf->SetHTMLFooter($footer);
         }
-        
-        $mpdf->WriteHTML($printQueue->getView());
+
+        $htmlContent = $printQueue->getView() ?: '<p>محتوای PDF در دسترس نیست.</p>';
+        $mpdf->WriteHTML($htmlContent);
         $mpdf->SetAutoPageBreak(true);
         $mpdf->SetTitle('حسابیکس');
         $mpdf->Output('Hesabix PrintOut.pdf', 'I');
@@ -60,17 +66,22 @@ class pdfMGR
 
     public function streamTwig2PDFInvoiceType(PrinterQueue $printQueue, $configs = [])
     {
-        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $defaultConfig = (new ConfigVariables())->getDefaults();
         $fontDirs = $defaultConfig['fontDir'];
 
-        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+        $defaultFontConfig = (new FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8', 'format' => [80, 300],
-            'fontDir' => array_merge($fontDirs, [
-                dirname(__DIR__) . '/Fonts',
-            ]),
-            'fontdata' => [
+
+        $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf';
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0777, true);
+        }
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => [80, 300],
+            'fontDir' => array_merge($fontDirs, [dirname(__DIR__) . '/Fonts']),
+            'fontdata' => $fontData + [
                 'vazirmatn' => [
                     'R' => 'Vazir-Regular-FD.ttf',
                     'I' => 'Vazir-Regular-FD.ttf',
@@ -79,27 +90,39 @@ class pdfMGR
                 ]
             ],
             'default_font' => 'vazirmatn',
-            'tempDir' => sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf',
+            'tempDir' => $tempDir,
             'setAutoTopMargin' => true,
             'autoArabic' => true,
             'margin-collapse' => 'collapse|none'
         ]);
+
         $mpdf->AddPageByArray([
             'margin-left' => 0,
             'margin-right' => 0,
             'margin-top' => 0,
             'margin-bottom' => 0,
         ]);
-        $mpdf->WriteHTML($printQueue->getView());
 
+        $htmlContent = $printQueue->getView() ?: '<p>محتوای PDF در دسترس نیست.</p>';
+        $mpdf->WriteHTML($htmlContent);
         $mpdf->Output();
     }
 
-    private function imageToBase64($path) {
-        $path = $path;
+    public function savePDF(PrinterQueue $printQueue, string $path)
+    {
+        $mpdf = new Mpdf(['mode' => 'utf-8', 'format' => 'A4']);
+        $htmlContent = $printQueue->getView() ?: '<p>محتوای PDF در دسترس نیست.</p>';
+        $mpdf->WriteHTML($htmlContent);
+        $mpdf->Output($path, \Mpdf\Output\Destination::FILE);
+    }
+
+    private function imageToBase64($path)
+    {
+        if (!file_exists($path)) {
+            return '';
+        }
         $type = pathinfo($path, PATHINFO_EXTENSION);
         $data = file_get_contents($path);
-        $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
-        return $base64;
+        return 'data:image/' . $type . ';base64,' . base64_encode($data);
     }
 }
