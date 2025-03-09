@@ -23,14 +23,14 @@ class GeneralController extends AbstractController
         $version = '0.0.1';
         $lastUpdateDate = '1399';
         $lastUpdateDes = '';
-        
+
         $last = $entityManager->getRepository(ChangeReport::class)->findOneBy([], ['id' => 'DESC']);
         if ($last) {
             $version = $last->getVersion();
             $lastUpdateDate = $jdate->jdate('Y/n/d', $last->getDateSubmit());
             $lastUpdateDes = $last->getBody();
         }
-        
+
         return $this->json([
             'version' => $version,
             'lastUpdateDate' => $lastUpdateDate,
@@ -53,10 +53,10 @@ class GeneralController extends AbstractController
     }
 
     #[Route('/front/print/{id}', name: 'app_front_print')]
-    public function app_front_print(Provider $provider, EntityManagerInterface $entityManager, pdfMGR $pdfMGR, string $id): Response
+    public function app_front_print(Provider $provider, EntityManagerInterface $entityManager, PdfMGR $pdfMGR, string $id): Response
     {
         $print = $entityManager->getRepository(PrinterQueue::class)->findOneBy(['pid' => $id]);
-        
+
         if (!$print) {
             return new JsonResponse(['error' => 'Print job not found'], Response::HTTP_NOT_FOUND);
         }
@@ -65,12 +65,21 @@ class GeneralController extends AbstractController
             return new JsonResponse(['error' => 'Empty print content'], Response::HTTP_BAD_REQUEST);
         }
 
+        // تولید PDF و گرفتن محتوا به صورت رشته
         if ($print->isPosprint()) {
-            $pdfMGR->streamTwig2PDFInvoiceType($print);
+            $pdfContent = $pdfMGR->generateTwig2PDFInvoiceType($print); // متد جدید برای گرفتن محتوا
         } else {
-            $pdfMGR->streamTwig2PDF($print);
+            $pdfContent = $pdfMGR->generateTwig2PDF($print); // متد جدید برای گرفتن محتوا
         }
 
-        return new Response('Print job completed', Response::HTTP_OK);
+        // برگرداندن PDF به عنوان پاسخ
+        return new Response(
+            $pdfContent,
+            Response::HTTP_OK,
+            [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="Hesabix PrintOut.pdf"',
+            ]
+        );
     }
 }

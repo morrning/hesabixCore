@@ -17,25 +17,24 @@ class pdfMGR
         $this->twig = $twig;
     }
 
-    public function streamTwig2PDF(PrinterQueue $printQueue, $configs = [])
+    public function generateTwig2PDF(PrinterQueue $printQueue, $configs = []): string
     {
-        // Load Twig File
         $template = $this->twig->load('pdf/footer.html.twig');
         $footer = $template->render([]);
-
+    
         $size = $printQueue->getPaperSize() ?: 'A4-L';
         
         $defaultConfig = (new ConfigVariables())->getDefaults();
         $fontDirs = $defaultConfig['fontDir'];
-
+    
         $defaultFontConfig = (new FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
-
+    
         $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf';
         if (!is_dir($tempDir)) {
             mkdir($tempDir, 0777, true);
         }
-
+    
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => $size,
@@ -52,31 +51,33 @@ class pdfMGR
             'tempDir' => $tempDir,
             'autoArabic' => true,
         ]);
-
+    
         if ($printQueue->isFooter()) {
             $mpdf->SetHTMLFooter($footer);
         }
-
+    
         $htmlContent = $printQueue->getView() ?: '<p>محتوای PDF در دسترس نیست.</p>';
         $mpdf->WriteHTML($htmlContent);
         $mpdf->SetAutoPageBreak(true);
         $mpdf->SetTitle('حسابیکس');
-        $mpdf->Output('Hesabix PrintOut.pdf', 'I');
+    
+        // به جای Output مستقیم، محتوا رو برگردونید
+        return $mpdf->Output('', 'S'); // 'S' برای برگرداندن به صورت رشته
     }
-
-    public function streamTwig2PDFInvoiceType(PrinterQueue $printQueue, $configs = [])
+    
+    public function generateTwig2PDFInvoiceType(PrinterQueue $printQueue, $configs = []): string
     {
         $defaultConfig = (new ConfigVariables())->getDefaults();
         $fontDirs = $defaultConfig['fontDir'];
-
+    
         $defaultFontConfig = (new FontVariables())->getDefaults();
         $fontData = $defaultFontConfig['fontdata'];
-
+    
         $tempDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mpdf';
         if (!is_dir($tempDir)) {
             mkdir($tempDir, 0777, true);
         }
-
+    
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => [80, 300],
@@ -95,17 +96,18 @@ class pdfMGR
             'autoArabic' => true,
             'margin-collapse' => 'collapse|none'
         ]);
-
+    
         $mpdf->AddPageByArray([
             'margin-left' => 0,
             'margin-right' => 0,
             'margin-top' => 0,
             'margin-bottom' => 0,
         ]);
-
+    
         $htmlContent = $printQueue->getView() ?: '<p>محتوای PDF در دسترس نیست.</p>';
         $mpdf->WriteHTML($htmlContent);
-        $mpdf->Output();
+    
+        return $mpdf->Output('', 'S'); // 'S' برای برگرداندن به صورت رشته
     }
 
     public function savePDF(PrinterQueue $printQueue, string $path)
