@@ -8,7 +8,7 @@ use Mpdf\Mpdf;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 
-class PdfMGR
+class pdfMGR
 {
     private $twig;
 
