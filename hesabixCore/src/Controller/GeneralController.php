@@ -6,7 +6,7 @@ use App\Entity\ChangeReport;
 use App\Entity\Statment;
 use App\Entity\PrinterQueue;
 use App\Service\Jdate;
-use App\Service\PdfMGR;
+use App\Service\pdfMGR;
 use App\Service\Provider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -53,7 +53,7 @@ class GeneralController extends AbstractController
     }
 
     #[Route('/front/print/{id}', name: 'app_front_print')]
-    public function app_front_print(Provider $provider, EntityManagerInterface $entityManager, PdfMGR $pdfMGR, string $id): Response
+    public function app_front_print(Provider $provider, EntityManagerInterface $entityManager, pdfMGR $pdfMGR, string $id): Response
     {
         $print = $entityManager->getRepository(PrinterQueue::class)->findOneBy(['pid' => $id]);
         
