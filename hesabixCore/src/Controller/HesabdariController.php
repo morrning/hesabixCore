@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\BankAccount;
+use App\Entity\Business;
 use App\Entity\Cashdesk;
 use App\Entity\Cheque;
 use App\Entity\Commodity;
@@ -805,6 +806,11 @@ class HesabdariController extends AbstractController
                     'text' => $node->getName(),
                 ];
             }
+            if ($node->getBid()) {
+                $temp[$node->getCode()]['is_public'] = false;
+            } else {
+                $temp[$node->getCode()]['is_public'] = true;
+            }
         }
         return $this->json($temp);
     }
@@ -816,15 +822,54 @@ class HesabdariController extends AbstractController
         if (!$acc)
             throw $this->createAccessDeniedException();
 
+        $businessId = $acc['bid']; // آیدی کسب‌وکار کاربر
+
         if ($type == 'cost') {
             $cost = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => 67]);
-            return $this->json($this->getChilds($entityManager, $cost));
+            if (!$cost) {
+                return $this->json(['result' => 0, 'message' => 'ردیف حساب هزینه پیدا نشد'], 404);
+            }
+            return $this->json($this->getFilteredChilds($entityManager, $cost, $businessId));
         } elseif ($type == 'income') {
             $income = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => 56]);
-            return $this->json($this->getChilds($entityManager, $income));
+            if (!$income) {
+                return $this->json(['result' => 0, 'message' => 'ردیف حساب درآمد پیدا نشد'], 404);
+            }
+            return $this->json($this->getFilteredChilds($entityManager, $income, $businessId));
         }
 
         return $this->json([]);
+    }
+
+    // متد جدید برای فیلتر کردن زیرمجموعه‌ها بر اساس bid
+    private function getFilteredChilds(EntityManagerInterface $entityManager, mixed $node, ?Business $businessId): array
+    {
+        $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
+            'upper' => $node
+        ]);
+        $temp = [];
+        foreach ($childs as $child) {
+            $childBid = $child->getBid() ? $child->getBid()->getId() : null; // گرفتن آیدی bid یا null
+
+            // فقط نودهایی که عمومی هستن یا متعلق به کسب‌وکار کاربر هستن
+            if ($childBid === null || $childBid === $businessId) {
+                if ($child->getType() == 'calc') {
+                    if ($this->hasChild($entityManager, $child)) {
+                        $temp[] = [
+                            'id' => $child->getCode(),
+                            'label' => $child->getName(),
+                            'children' => $this->getFilteredChilds($entityManager, $child, $businessId)
+                        ];
+                    } else {
+                        $temp[] = [
+                            'id' => $child->getCode(),
+                            'label' => $child->getName(),
+                        ];
+                    }
+                }
+            }
+        }
+        return $temp;
     }
 
     private function getChildsLabel(EntityManagerInterface $entityManager, mixed $node)
@@ -874,4 +919,142 @@ class HesabdariController extends AbstractController
         }
         return $temp;
     }
+
+    #[Route('/api/accounting/table/add', name: 'app_accounting_table_add', methods: ['POST'])]
+    public function app_accounting_table_add(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('accounting');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = json_decode($request->getContent(), true);
+        if (!isset($params['text']) || !isset($params['parentId'])) {
+            return $this->json(['result' => 0, 'message' => 'نام ردیف حساب و آیدی والد الزامی است'], 400);
+        }
+
+        $parentNode = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => $params['parentId']]);
+        if (!$parentNode) {
+            return $this->json(['result' => 0, 'message' => 'ردیف حساب والد پیدا نشد'], 404);
+        }
+
+        $maxAttempts = 10;
+        $uniqueCode = null;
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $code = (string) rand(1000, 999999);
+            $existingNode = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => $code]);
+            if (!$existingNode) {
+                $uniqueCode = $code;
+                break;
+            }
+        }
+
+        if ($uniqueCode === null) {
+            return $this->json(['result' => 0, 'message' => 'امکان تولید کد منحصربه‌فرد برای ردیف حساب وجود ندارد'], 500);
+        }
+
+        $newNode = new HesabdariTable();
+        $newNode->setName($params['text']);
+        $newNode->setCode($uniqueCode);
+        $newNode->setBid($acc['bid']);
+        $newNode->setUpper($parentNode);
+        $newNode->setType('calc');
+
+        $entityManager->persist($newNode);
+        $entityManager->flush();
+
+        $log->insert('حسابداری', 'ردیف حساب جدید با کد ' . $newNode->getCode() . ' اضافه شد.', $this->getUser(), $acc['bid']);
+
+        return $this->json([
+            'result' => 1,
+            'node' => [
+                'id' => $newNode->getCode(),
+                'text' => $newNode->getName(),
+                'children' => [],
+                'is_public' => $newNode->getBid() ? false : true,
+            ]
+        ]);
+    }
+
+    #[Route('/api/accounting/table/edit', name: 'app_accounting_table_edit', methods: ['POST'])]
+    public function app_accounting_table_edit(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('accounting');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = json_decode($request->getContent(), true);
+        if (!isset($params['id']) || !isset($params['text'])) {
+            return $this->json(['result' => 0, 'message' => 'آیدی ردیف حساب و نام جدید الزامی است'], 400);
+        }
+
+        $node = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => $params['id']]);
+        if (!$node) {
+            return $this->json(['result' => 0, 'message' => 'ردیف حساب پیدا نشد'], 404);
+        }
+
+        if (!$node->getBid()) {
+            return $this->json(['result' => 0, 'message' => 'ردیف حساب عمومی قابل ویرایش نیست'], 403);
+        }
+
+        $oldName = $node->getName();
+        $node->setName($params['text']);
+        $entityManager->persist($node);
+        $entityManager->flush();
+
+        $log->insert('حسابداری', 'ردیف حساب با کد ' . $node->getCode() . ' از ' . $oldName . ' به ' . $params['text'] . ' ویرایش شد.', $this->getUser(), $acc['bid']);
+
+        return $this->json([
+            'result' => 1,
+            'node' => [
+                'id' => $node->getCode(),
+                'text' => $node->getName(),
+                'children' => $this->getChildsLabel($entityManager, $node),
+                'is_public' => $node->getBid() ? false : true,
+            ]
+        ]);
+    }
+
+    #[Route('/api/accounting/table/delete', name: 'app_accounting_table_delete', methods: ['POST'])]
+    public function app_accounting_table_delete(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('accounting');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = json_decode($request->getContent(), true);
+        if (!isset($params['id'])) {
+            return $this->json(['result' => 0, 'message' => 'آیدی ردیف حساب الزامی است'], 400);
+        }
+
+        $node = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => $params['id']]);
+        if (!$node) {
+            return $this->json(['result' => 0, 'message' => 'ردیف حساب پیدا نشد'], 404);
+        }
+
+        if (!$node->getBid()) {
+            return $this->json(['result' => 0, 'message' => 'ردیف حساب عمومی قابل حذف نیست'], 403);
+        }
+
+        $relatedDocs = $entityManager->getRepository(HesabdariRow::class)->findBy(['ref' => $node]);
+        if (count($relatedDocs) > 0) {
+            return $this->json(['result' => 0, 'message' => 'ردیف حساب به دلیل داشتن سند حسابداری قابل حذف نیست'], 403);
+        }
+
+        $children = $entityManager->getRepository(HesabdariTable::class)->findBy(['upper' => $node]);
+        if (count($children) > 0) {
+            return $this->json(['result' => 0, 'message' => 'ردیف حساب به دلیل داشتن زیرمجموعه قابل حذف نیست'], 403);
+        }
+
+        $code = $node->getCode();
+        $entityManager->remove($node);
+        $entityManager->flush();
+
+        $log->insert('حسابداری', 'ردیف حساب با کد ' . $code . ' حذف شد.', $this->getUser(), $acc['bid']);
+
+        return $this->json(['result' => 1, 'id' => $code]);
+    }
+
 }
