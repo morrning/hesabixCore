@@ -789,76 +789,102 @@ class HesabdariController extends AbstractController
     #[Route('/api/accounting/table/get', name: 'app_accounting_table_get')]
     public function app_accounting_table_get(Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
-
         $acc = $access->hasRole('accounting');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
+        }
+
+        $business = $acc['bid']; // شیء Business از Access
         $temp = [];
+
+        // دریافت تمام نودها
         $nodes = $entityManager->getRepository(HesabdariTable::class)->findAll();
+
         foreach ($nodes as $node) {
-            if ($this->hasChild($entityManager, $node)) {
-                $temp[$node->getCode()] = [
-                    'text' => $node->getName(),
-                    'children' => $this->getChildsLabel($entityManager, $node)
-                ];
-            } else {
-                $temp[$node->getCode()] = [
-                    'text' => $node->getName(),
-                ];
-            }
-            if ($node->getBid()) {
-                $temp[$node->getCode()]['is_public'] = false;
-            } else {
-                $temp[$node->getCode()]['is_public'] = true;
+            $nodeBid = $node->getBid(); // شیء Business یا null
+
+            // فقط نودهایی که عمومی هستند (bid=null) یا متعلق به کسب‌وکار فعلی‌اند
+            if ($nodeBid === null || ($nodeBid && $nodeBid->getId() === $business->getId())) {
+                if ($this->hasChild($entityManager, $node)) {
+                    $temp[$node->getCode()] = [
+                        'text' => $node->getName(),
+                        'children' => $this->getFilteredChildsLabel($entityManager, $node, $business),
+                    ];
+                } else {
+                    $temp[$node->getCode()] = [
+                        'text' => $node->getName(),
+                    ];
+                }
+                $temp[$node->getCode()]['is_public'] = $nodeBid === null;
             }
         }
+
         return $this->json($temp);
     }
 
-    #[Route('/api/accounting/table/childs/{type}', name: 'app_accounting_table_childs')]
-    public function app_accounting_table_childs(string $type, Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $acc = $access->hasRole($type);
-        if (!$acc)
-            throw $this->createAccessDeniedException();
-
-        $businessId = $acc['bid']; // آیدی کسب‌وکار کاربر
-
-        if ($type == 'cost') {
-            $cost = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => 67]);
-            if (!$cost) {
-                return $this->json(['result' => 0, 'message' => 'ردیف حساب هزینه پیدا نشد'], 404);
-            }
-            return $this->json($this->getFilteredChilds($entityManager, $cost, $businessId));
-        } elseif ($type == 'income') {
-            $income = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => 56]);
-            if (!$income) {
-                return $this->json(['result' => 0, 'message' => 'ردیف حساب درآمد پیدا نشد'], 404);
-            }
-            return $this->json($this->getFilteredChilds($entityManager, $income, $businessId));
-        }
-
-        return $this->json([]);
-    }
-
-    // متد جدید برای فیلتر کردن زیرمجموعه‌ها بر اساس bid
-    private function getFilteredChilds(EntityManagerInterface $entityManager, mixed $node, ?Business $businessId): array
+    // متد جدید برای دریافت کدهای زیرمجموعه‌ها با فیلتر بر اساس bid
+    private function getFilteredChildsLabel(EntityManagerInterface $entityManager, HesabdariTable $node, Business $business): array
     {
         $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
             'upper' => $node
         ]);
         $temp = [];
         foreach ($childs as $child) {
-            $childBid = $child->getBid() ? $child->getBid()->getId() : null; // گرفتن آیدی bid یا null
+            $childBid = $child->getBid(); // شیء Business یا null
 
-            // فقط نودهایی که عمومی هستن یا متعلق به کسب‌وکار کاربر هستن
-            if ($childBid === null || $childBid === $businessId) {
-                if ($child->getType() == 'calc') {
+            // فقط نودهایی که عمومی هستند (bid=null) یا متعلق به کسب‌وکار فعلی‌اند
+            if ($childBid === null || ($childBid && $childBid->getId() === $business->getId())) {
+                $temp[] = $child->getCode();
+            }
+        }
+        return $temp;
+    }
+
+    #[Route('/api/accounting/table/childs/{type}', name: 'app_accounting_table_childs')]
+    public function app_accounting_table_childs(string $type, Jdate $jdate, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole($type);
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $business = $acc['bid']; // شیء Business از Access
+
+        if ($type === 'cost') {
+            $cost = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => 67]);
+            if (!$cost) {
+                return $this->json(['result' => 0, 'message' => 'ردیف حساب هزینه پیدا نشد'], 404);
+            }
+            return $this->json($this->getFilteredChilds($entityManager, $cost, $business));
+        } elseif ($type === 'income') {
+            $income = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => 56]);
+            if (!$income) {
+                return $this->json(['result' => 0, 'message' => 'ردیف حساب درآمد پیدا نشد'], 404);
+            }
+            return $this->json($this->getFilteredChilds($entityManager, $income, $business));
+        }
+
+        return $this->json([]);
+    }
+
+    // متد اصلاح‌شده برای فیلتر کردن زیرمجموعه‌ها بر اساس bid
+    private function getFilteredChilds(EntityManagerInterface $entityManager, HesabdariTable $node, Business $business): array
+    {
+        $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
+            'upper' => $node
+        ]);
+        $temp = [];
+        foreach ($childs as $child) {
+            $childBid = $child->getBid(); // شیء Business یا null
+
+            // فقط نودهایی که عمومی هستند (bid=null) یا متعلق به کسب‌وکار فعلی‌اند
+            if ($childBid === null || ($childBid && $childBid->getId() === $business->getId())) {
+                if ($child->getType() === 'calc') {
                     if ($this->hasChild($entityManager, $child)) {
                         $temp[] = [
                             'id' => $child->getCode(),
                             'label' => $child->getName(),
-                            'children' => $this->getFilteredChilds($entityManager, $child, $businessId)
+                            'children' => $this->getFilteredChilds($entityManager, $child, $business)
                         ];
                     } else {
                         $temp[] = [
@@ -871,7 +897,6 @@ class HesabdariController extends AbstractController
         }
         return $temp;
     }
-
     private function getChildsLabel(EntityManagerInterface $entityManager, mixed $node)
     {
         $childs = $entityManager->getRepository(HesabdariTable::class)->findBy([
