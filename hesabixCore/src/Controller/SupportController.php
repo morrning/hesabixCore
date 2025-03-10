@@ -98,7 +98,6 @@ class SupportController extends AbstractController
 
         // تبدیل به آرایه با Explore
         $serializedItems = array_map(function ($item) use ($explore, $jdate) {
-            $item->setDateSubmit($jdate->jdate('Y/n/d', $item->getDateSubmit()));
             return $explore->ExploreSupportTicket($item, $this->getUser());
         }, $items);
 
@@ -258,7 +257,6 @@ class SupportController extends AbstractController
 
         // استفاده از Explore برای تبدیل اشیاء به آرایه
         $serializedItems = array_map(function ($item) use ($explore, $jdate) {
-            $item->setDateSubmit($jdate->jdate('Y/n/d', $item->getDateSubmit()));
             return $explore->ExploreSupportTicket($item, $this->getUser());
         }, $items);
 
