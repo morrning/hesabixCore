@@ -42,11 +42,9 @@ class SellController extends AbstractController
             'code' => $code,
             'money' => $acc['money']
         ]);
-        //check related documents
         if (count($doc->getRelatedDocs()) != 0)
             $canEdit = false;
 
-        //check storeroom tickets
         $tickets = $entityManager->getRepository(StoreroomTicket::class)->findBy(['doc' => $doc]);
         if (count($tickets) != 0)
             $canEdit = false;
@@ -70,7 +68,6 @@ class SellController extends AbstractController
             throw $this->createNotFoundException();
         $result = Explore::ExploreSellDoc($doc);
         $profit = 0;
-        //calculate profit
         foreach ($doc->getHesabdariRows() as $item) {
             if ($item->getCommodity() && $item->getCommdityCount()) {
                 if ($acc['bid']->getProfitCalctype() == 'simple') {
@@ -107,10 +104,7 @@ class SellController extends AbstractController
                     } else {
                         $profit = $profit + $item->getBs();
                     }
-
                 }
-
-                //round output
                 $profit = round($profit);
             }
         }
@@ -165,7 +159,7 @@ class SellController extends AbstractController
             $hesabdariRow->setBs($params['transferCost']);
             $hesabdariRow->setBd(0);
             $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '61' // transfer cost income
+                'code' => '61'
             ]);
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
@@ -179,7 +173,7 @@ class SellController extends AbstractController
             $hesabdariRow->setBs(0);
             $hesabdariRow->setBd($params['discountAll']);
             $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '104' // سایر هزینه های پخش و فروش
+                'code' => '104'
             ]);
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
@@ -201,7 +195,7 @@ class SellController extends AbstractController
             $hesabdariRow->setDiscount($row['discount']);
             $hesabdariRow->setTax($row['tax']);
             $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '53' // sell commodity
+                'code' => '53'
             ]);
             $hesabdariRow->setRef($ref);
             $row['count'] = str_replace(',', '', $row['count']);
@@ -215,15 +209,12 @@ class SellController extends AbstractController
             $hesabdariRow->setCommdityCount($row['count']);
             $entityManager->persist($hesabdariRow);
 
-            //update commodity price for auto update price option
             if ($acc['bid']->isCommodityUpdateSellPriceAuto() == true && $commodity->getPriceSell() != $row['price']) {
                 $commodity->setPriceSell($row['price']);
                 $entityManager->persist($commodity);
             }
         }
-        //set amount of document
         $doc->setAmount($sumTax + $sumTotal - $params['discountAll'] + $params['transferCost']);
-        //set person person
         $hesabdariRow = new HesabdariRow();
         $hesabdariRow->setDes('فاکتور فروش');
         $hesabdariRow->setBid($acc['bid']);
@@ -232,7 +223,7 @@ class SellController extends AbstractController
         $hesabdariRow->setBs(0);
         $hesabdariRow->setBd($sumTax + $sumTotal + $params['transferCost'] - $params['discountAll']);
         $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-            'code' => '3' // persons
+            'code' => '3'
         ]);
         $hesabdariRow->setRef($ref);
         $person = $entityManager->getRepository(Person::class)->findOneBy([
@@ -244,15 +235,12 @@ class SellController extends AbstractController
         $hesabdariRow->setPerson($person);
         $entityManager->persist($hesabdariRow);
 
-        //set tax info
-
         $entityManager->persist($doc);
         $entityManager->flush();
         if (!$doc->getShortlink()) {
             $doc->setShortlink($provider->RandomString(8));
         }
 
-        //add pair docs
         if (array_key_exists('pair_docs', $params)) {
             foreach ($params['pair_docs'] as $pairCode) {
                 $pair = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
@@ -275,7 +263,6 @@ class SellController extends AbstractController
             $request->headers->get('activeBid'),
             $doc
         );
-        //send sms to customer
         if (array_key_exists('sms', $params)) {
             if ($params['sms'] == true) {
                 if ($pluginService->isActive('accpro', $acc['bid']) && $person->getMobile() != '' && $acc['bid']->getTel()) {
@@ -362,184 +349,254 @@ class SellController extends AbstractController
         return $this->json($extractor->operationSuccess());
     }
 
-    #[Route('/api/sell/docs/search', name: 'app_sell_docs_search')]
-    public function app_sell_docs_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
+    #[Route('/api/sell/docs/search', name: 'app_sell_docs_search', methods: ['POST'])]
+    public function searchSellDocs(
+        Provider $provider,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager,
+        Jdate $jdate
+    ): JsonResponse {
         $acc = $access->hasRole('sell');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
-
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
         }
-        $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
-            'bid' => $acc['bid'],
-            'year' => $acc['year'],
-            'type' => 'sell',
-            'money' => $acc['money']
-        ], [
-            'id' => 'DESC'
-        ]);
+
+        $params = json_decode($request->getContent(), true) ?? [];
+        $searchTerm = $params['search'] ?? '';
+        $page = max(1, $params['page'] ?? 1);
+        $perPage = max(1, min(100, $params['perPage'] ?? 10));
+        $types = $params['types'] ?? [];
+        $dateFilter = $params['dateFilter'] ?? 'all';
+
+        $queryBuilder = $entityManager->createQueryBuilder()
+            ->select('DISTINCT d.id, d.dateSubmit, d.date, d.type, d.code, d.des, d.amount')
+            ->addSelect('u.fullName as submitter')
+            ->addSelect('l.code as labelCode, l.label as labelLabel')
+            ->from(HesabdariDoc::class, 'd')
+            ->leftJoin('d.submitter', 'u')
+            ->leftJoin('d.InvoiceLabel', 'l')
+            ->where('d.bid = :bid')
+            ->andWhere('d.year = :year')
+            ->andWhere('d.type = :type')
+            ->andWhere('d.money = :money')
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('year', $acc['year'])
+            ->setParameter('type', 'sell')
+            ->setParameter('money', $acc['money'])
+            ->orderBy('d.id', 'DESC');
+
+        $today = $jdate->jdate('Y/m/d', time());
+        if ($dateFilter === 'today') {
+            $queryBuilder->andWhere('d.date = :today')
+                ->setParameter('today', $today);
+        } elseif ($dateFilter === 'week') {
+            $weekStart = $jdate->jdate('Y/m/d', strtotime('-6 days'));
+            $queryBuilder->andWhere('d.date BETWEEN :weekStart AND :today')
+                ->setParameter('weekStart', $weekStart)
+                ->setParameter('today', $today);
+        } elseif ($dateFilter === 'month') {
+            $monthStart = $jdate->jdate('Y/m/01', time());
+            $queryBuilder->andWhere('d.date BETWEEN :monthStart AND :today')
+                ->setParameter('monthStart', $monthStart)
+                ->setParameter('today', $today);
+        }
+
+        if ($searchTerm) {
+            $queryBuilder->leftJoin('d.hesabdariRows', 'r')
+                ->leftJoin('r.person', 'p')
+                ->andWhere(
+                    $queryBuilder->expr()->orX(
+                        'd.code LIKE :search',
+                        'd.des LIKE :search',
+                        'd.date LIKE :search',
+                        'd.amount LIKE :search',
+                        'p.nikename LIKE :search',
+                        'p.mobile LIKE :search'
+                    )
+                )
+                ->setParameter('search', "%$searchTerm%");
+        }
+
+        if (!empty($types)) {
+            $queryBuilder->andWhere('l.code IN (:types)')
+                ->setParameter('types', $types);
+        }
+
+        $totalItemsQuery = clone $queryBuilder;
+        $totalItems = $totalItemsQuery->select('COUNT(DISTINCT d.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $queryBuilder->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage);
+
+        $docs = $queryBuilder->getQuery()->getArrayResult();
 
         $dataTemp = [];
-        foreach ($data as $item) {
-            $temp = [
-                'id' => $item->getId(),
-                'dateSubmit' => $item->getDateSubmit(),
-                'date' => $item->getDate(),
-                'type' => $item->getType(),
-                'code' => $item->getCode(),
-                'des' => $item->getDes(),
-                'amount' => $item->getAmount(),
-                'submitter' => $item->getSubmitter()->getFullName(),
+        foreach ($docs as $doc) {
+            $item = [
+                'id' => $doc['id'],
+                'dateSubmit' => $doc['dateSubmit'],
+                'date' => $doc['date'],
+                'type' => $doc['type'],
+                'code' => $doc['code'],
+                'des' => $doc['des'],
+                'amount' => $doc['amount'],
+                'submitter' => $doc['submitter'],
+                'label' => $doc['labelCode'] ? [
+                    'code' => $doc['labelCode'],
+                    'label' => $doc['labelLabel']
+                ] : null,
             ];
-            $mainRow = $entityManager->getRepository(HesabdariRow::class)->getNotEqual($item, 'person');
-            $temp['person'] = '';
-            if ($mainRow)
-                $temp['person'] = Explore::ExplorePerson($mainRow->getPerson());
 
-            $temp['label'] = null;
-            if ($item->getInvoiceLabel()) {
-                $temp['label'] = [
-                    'code' => $item->getInvoiceLabel()->getCode(),
-                    'label' => $item->getInvoiceLabel()->getLabel()
-                ];
+            $mainRow = $entityManager->getRepository(HesabdariRow::class)
+                ->createQueryBuilder('r')
+                ->where('r.doc = :docId')
+                ->andWhere('r.person IS NOT NULL')
+                ->setParameter('docId', $doc['id'])
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+            $item['person'] = $mainRow && $mainRow->getPerson() ? [
+                'id' => $mainRow->getPerson()->getId(),
+                'nikename' => $mainRow->getPerson()->getNikename(),
+                'code' => $mainRow->getPerson()->getCode()
+            ] : null;
+
+            $relatedDocs = $entityManager->createQueryBuilder()
+                ->select('SUM(rd.amount)')
+                ->from(HesabdariDoc::class, 'rd')
+                ->join('rd.relatedDocs', 'r')
+                ->where('r.id = :docId')
+                ->setParameter('docId', $doc['id'])
+                ->getQuery()
+                ->getSingleScalarResult();
+            $item['relatedDocsCount'] = $relatedDocs ? count($relatedDocs) : 0;
+            $item['relatedDocsPays'] = $relatedDocs ?: 0;
+
+            $item['profit'] = $this->calculateProfit($doc['id'], $acc, $entityManager);
+            $item['discountAll'] = 0;
+            $item['transferCost'] = 0;
+
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $doc]);
+            foreach ($rows as $row) {
+                if ($row->getRef()->getCode() == '104')
+                    $item['discountAll'] = $row->getBd();
+                elseif ($row->getRef()->getCode() == '61')
+                    $item['transferCost'] = $row->getBs();
             }
 
-            $temp['relatedDocsCount'] = count($item->getRelatedDocs());
-            $pays = 0;
-            foreach ($item->getRelatedDocs() as $relatedDoc) {
-                $pays += $relatedDoc->getAmount();
-            }
-            $temp['relatedDocsPays'] = $pays;
-            // this variable is for store profit of invoice
-            $temp['profit'] = 0;
-            foreach ($item->getHesabdariRows() as $item) {
-                if ($item->getRef()->getCode() == '104') {
-                    $temp['discountAll'] = $item->getBd();
-                } elseif ($item->getRef()->getCode() == '61') {
-                    $temp['transferCost'] = $item->getBs();
-                }
-
-                //calculate profit
-                if ($item->getCommodity() && $item->getCommdityCount()) {
-                    if ($acc['bid']->getProfitCalctype() == 'lis') {
-                        $last = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
-                            'commodity' => $item->getCommodity(),
-                            'bs' => 0
-                        ], [
-                            'id' => 'DESC'
-                        ]);
-                        if ($last) {
-                            $price = $last->getBd() / $last->getCommdityCount();
-                            $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
-                        } else {
-                            $temp['profit'] = $temp['profit'] + $item->getBs();
-                        }
-                    }
-                    else if ($acc['bid']->getProfitCalctype() == 'simple') {
-                        $temp['profit'] = $temp['profit'] + (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceBuy()) * $item->getCommdityCount());
-                    }
-                    else {
-                        $lasts = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                            'commodity' => $item->getCommodity(),
-                            'bs' => 0
-                        ], [
-                            'id' => 'DESC'
-                        ]);
-                        $avg = 0;
-                        $count = 0;
-                        foreach ($lasts as $last) {
-                            $avg = $avg + $last->getBd();
-                            $count = $count + $last->getCommdityCount();
-                        }
-                        if ($count != 0) {
-                            $price = $avg / $count;
-                            $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
-                        } else {
-                            $temp['profit'] = $temp['profit'] + $item->getBs();
-                        }
-                    }
-
-                    //round output
-                    $temp['profit'] = round($temp['profit']);
-                }
-
-            }
-            if (!array_key_exists('discountAll', $temp))
-                $temp['discountAll'] = 0;
-            if (!array_key_exists('transferCost', $temp))
-                $temp['transferCost'] = 0;
-            $dataTemp[] = $temp;
+            $dataTemp[] = $item;
         }
-        return $this->json($dataTemp);
+
+        return $this->json([
+            'items' => $dataTemp,
+            'total' => (int) $totalItems,
+            'page' => $page,
+            'perPage' => $perPage,
+        ]);
     }
 
-    #[Route('/api/sell/posprinter/invoice', name: 'app_sell_posprinter_invoice')]
-    public function app_sell_posprinter_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    private function calculateProfit(int $docId, array $acc, EntityManagerInterface $entityManager): int
     {
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
+        $profit = 0;
+        $rows = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $docId]);
+        foreach ($rows as $item) {
+            if ($item->getCommdityCount() && $item->getBs()) {
+                $commodityId = $item->getCommodity() ? $item->getCommodity()->getId() : null;
+                if ($acc['bid']->getProfitCalctype() === 'lis') {
+                    if ($commodityId) {
+                        $last = $entityManager->getRepository(HesabdariRow::class)
+                            ->findOneBy(['commodity' => $commodityId, 'bs' => 0], ['id' => 'DESC']);
+                        if ($last) {
+                            $price = $last->getBd() / $last->getCommdityCount();
+                            $profit += ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                        } else {
+                            $profit += $item->getBs();
+                        }
+                    } else {
+                        $profit += $item->getBs();
+                    }
+                } elseif ($acc['bid']->getProfitCalctype() === 'simple') {
+                    if ($item->getCommodity() && $item->getCommodity()->getPriceSell() !== null && $item->getCommodity()->getPriceBuy() !== null) {
+                        $profit += (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceBuy()) * $item->getCommdityCount());
+                    } else {
+                        $profit += $item->getBs();
+                    }
+                } else {
+                    if ($commodityId) {
+                        $lasts = $entityManager->getRepository(HesabdariRow::class)
+                            ->findBy(['commodity' => $commodityId, 'bs' => 0], ['id' => 'DESC']);
+                        $avg = array_sum(array_map(fn($last) => $last->getBd(), $lasts));
+                        $count = array_sum(array_map(fn($last) => $last->getCommdityCount(), $lasts));
+                        if ($count != 0) {
+                            $price = $avg / $count;
+                            $profit += ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                        } else {
+                            $profit += $item->getBs();
+                        }
+                    } else {
+                        $profit += $item->getBs();
+                    }
+                }
+            }
+        }
+        return round($profit);
+    }
+
+    #[Route('/api/sell/rows/{code}', name: 'app_sell_rows', methods: ['GET'])]
+    public function getSellRows(
+        Request $request,
+        Access $access,
+        EntityManagerInterface $entityManager,
+        string $code,
+        Log $log // سرویس Log را اضافه کنید
+    ): JsonResponse {
+        $acc = $access->hasRole('sell');
+        if (!$acc) {
+            $log->insert('SellController', 'Access denied for code: ' . $code, $this->getUser(), null);
+            throw $this->createAccessDeniedException();
         }
 
-        $acc = $access->hasRole('sell');
-        if (!$acc)
-            throw $this->createAccessDeniedException();
-
+        $log->insert('SellController', 'Searching for doc with code: ' . $code, $this->getUser(), $acc['bid']->getId());
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
-            'code' => $params['code'],
-            'money' => $acc['money']
+            'code' => $code,
+            'money' => $acc['money'],
         ]);
-        if (!$doc)
+
+        if (!$doc) {
+            $log->insert('SellController', 'Doc not found for code: ' . $code, $this->getUser(), $acc['bid']->getId());
             throw $this->createNotFoundException();
-        $pdfPid = 0;
-        if ($params['pdf']) {
-            $pdfPid = $provider->createPrint(
-                $acc['bid'],
-                $this->getUser(),
-                $this->renderView('pdf/posPrinters/sell.html.twig', [
-                    'bid' => $acc['bid'],
-                    'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
-                    'printInvoice' => $params['posPrint'],
-                    'printcashdeskRecp' => $params['posPrintRecp'],
-                ]),
-                true
-            );
         }
 
+        $rows = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $doc]);
+        $log->insert('SellController', 'Found ' . count($rows) . ' rows for code: ' . $code, $this->getUser(), $acc['bid']->getId());
 
-        if ($params['posPrint'] == true) {
-            $pid = $provider->createPrint(
-                $acc['bid'],
-                $this->getUser(),
-                $this->renderView('pdf/posPrinters/justSell.html.twig', [
-                    'bid' => $acc['bid'],
-                    'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
-                ]),
-                true
-            );
-            $printers->addFile($pid, $acc, "fastSellInvoice");
-        }
-        if ($params['posPrintRecp'] == true) {
-            $pid = $provider->createPrint(
-                $acc['bid'],
-                $this->getUser(),
-                $this->renderView('pdf/posPrinters/cashdesk.html.twig', [
-                    'bid' => $acc['bid'],
-                    'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
-                ]),
-                true
-            );
-            $printers->addFile($pid, $acc, "fastSellCashdesk");
-        }
+        $data = array_map(function ($row) use ($log) {
+            try {
+                return [
+                    'id' => $row->getId(),
+                    'des' => $row->getDes(),
+                    'bs' => $row->getBs(),
+                    'commdityCount' => $row->getCommdityCount(),
+                    'commodity' => $row->getCommodity() ? [
+                        'id' => $row->getCommodity()->getId(),
+                        'name' => $row->getCommodity()->getName(),
+                    ] : null,
+                ];
+            } catch (\Exception $e) {
+                $log->insert('SellController', 'Error processing row: ' . $e->getMessage(), $this->getUser(), null);
+                return null;
+            }
+        }, $rows);
 
-        return $this->json(['id' => $pdfPid]);
+        // فیلتر کردن موارد null
+        $data = array_filter($data);
+
+        return $this->json(['rows' => array_values($data)]);
     }
 
     #[Route('/api/sell/print/invoice', name: 'app_sell_print_invoice')]
@@ -640,46 +697,5 @@ class SellController extends AbstractController
             $printers->addFile($pid, $acc, "fastSellInvoice");
         }
         return $this->json(['id' => $pdfPid]);
-    }
-
-    #[Route('/api/sell/chart/data', name: 'app_sell_chart_data')]
-    public function app_sell_chart_data(Jdate $jdate, Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
-
-        $acc = $access->hasRole('sell');
-        if (!$acc)
-            throw $this->createAccessDeniedException();
-        // create data numbers
-        $dayTime = 3600 * 24;
-        $dayNames = [];
-        $daySells = [];
-        for ($i = 0; $i < 7; $i++) {
-            $dayInfo = [
-                $jdate->jdate('l', time() - ($i * $dayTime)),
-                $jdate->jdate('Y/n/d', time() - ($i * $dayTime))
-            ];
-            $dayNames[] = $jdate->jdate('l', time() - ($i * $dayTime));
-            //get sell docs
-            $docs = $entityManager->getRepository(HesabdariDoc::class)->findBy([
-                'bid' => $acc['bid'],
-                'money' => $acc['money'],
-                'year' => $acc['year'],
-                'type' => 'sell',
-                'date' => $dayInfo[1],
-            ]);
-            $bd = 0;
-            foreach ($docs as $doc) {
-                foreach ($doc->getHesabdariRows() as $row) {
-                    if ($row->getPerson()) {
-                        $bd += $row->getBd();
-                    }
-                }
-            }
-            $daySells[] = $bd;
-        }
-        return $this->json([
-            'dayNames' => $dayNames,
-            'daySells' => $daySells
-        ]);
     }
 }
