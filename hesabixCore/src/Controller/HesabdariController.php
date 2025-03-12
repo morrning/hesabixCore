@@ -18,6 +18,7 @@ use App\Entity\PlugNoghreOrder;
 use App\Entity\Salary;
 use App\Entity\StoreroomTicket;
 use App\Service\Access;
+use App\Service\AccountingPermissionService;
 use App\Service\Explore;
 use App\Service\Jdate;
 use App\Service\JsonResp;
@@ -271,7 +272,7 @@ class HesabdariController extends AbstractController
      * @throws \ReflectionException
      */
     #[Route('/api/accounting/insert', name: 'app_accounting_insert')]
-    public function app_accounting_insert(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, Jdate $jdate): JsonResponse
+    public function app_accounting_insert(AccountingPermissionService $accountingPermissionService, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, Jdate $jdate): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -279,6 +280,7 @@ class HesabdariController extends AbstractController
         }
         if (!array_key_exists('type', $params))
             $this->createNotFoundException();
+
         $roll = '';
         if ($params['type'] == 'person_receive' || $params['type'] == 'person_send')
             $roll = 'person';
@@ -295,6 +297,13 @@ class HesabdariController extends AbstractController
         if (!$acc)
             throw $this->createAccessDeniedException();
 
+        $pkgcntr = $accountingPermissionService->canRegisterAccountingDoc($acc['bid']);
+        if ($pkgcntr['code'] == 4) {
+            return $this->json([
+                'result' => 4,
+                'msg' => $pkgcntr['message']
+            ]);
+        }
         if (!array_key_exists('rows', $params) || count($params['rows']) < 2)
             throw $this->createNotFoundException('rows is to short');
         if (!array_key_exists('date', $params) || !array_key_exists('des', $params))

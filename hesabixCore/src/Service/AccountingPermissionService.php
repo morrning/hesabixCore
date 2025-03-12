@@ -20,7 +20,7 @@ class AccountingPermissionService
     private function getAccountingDocPrice(): int
     {
         $rootSystem = 'system_settings';
-        return (int) $this->registryMGR->get($rootSystem, 'accountingDocPrice');
+        return (int) $this->registryMGR->get($rootSystem, 'accounting_doc_price');
     }
 
     /**
@@ -62,7 +62,6 @@ class AccountingPermissionService
         // ۳. چک کردن اعتبار موجود (smsCharge) و کسر هزینه
         $accountingDocPrice = $this->getAccountingDocPrice();
         $smsCharge = (int) $business->getSmsCharge();
-
         if ($smsCharge >= $accountingDocPrice) {
             // کسر هزینه از اعتبار
             $business->setSmsCharge((string) ($smsCharge - $accountingDocPrice));
