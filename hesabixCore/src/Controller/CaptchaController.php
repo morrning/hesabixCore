@@ -11,8 +11,8 @@ use App\Service\CaptchaService;
 class CaptchaController extends AbstractController
 {
     #[Route('/api/captcha/image', name: 'api_captcha_image', methods: ['GET'])]
-    public function generateCaptchaImage(SessionInterface $session,CaptchaService $captchaService): Response
+    public function generateCaptchaImage(CaptchaService $captchaService): Response
     {
-        return $captchaService->createCaptchaImage($session);
+        return $captchaService->createCaptchaImage();
     }
 }

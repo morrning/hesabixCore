@@ -119,6 +119,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToOne(targetEntity: self::class)]
     private ?self $invitedBy = null;
 
+    /**
+     * @var Collection<int, AccountingPackageOrder>
+     */
+    #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: AccountingPackageOrder::class, orphanRemoval: true)]
+    private Collection $accountingPackageOrders;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -141,6 +147,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->notes = new ArrayCollection();
         $this->preInvoiceDocs = new ArrayCollection();
         $this->dashboardSettings = new ArrayCollection();
+        $this->accountingPackageOrders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -883,6 +890,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setInvitedBy(?self $invitedBy): static
     {
         $this->invitedBy = $invitedBy;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AccountingPackageOrder>
+     */
+    public function getAccountingPackageOrders(): Collection
+    {
+        return $this->accountingPackageOrders;
+    }
+
+    public function addAccountingPackageOrder(AccountingPackageOrder $accountingPackageOrder): static
+    {
+        if (!$this->accountingPackageOrders->contains($accountingPackageOrder)) {
+            $this->accountingPackageOrders->add($accountingPackageOrder);
+            $accountingPackageOrder->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAccountingPackageOrder(AccountingPackageOrder $accountingPackageOrder): static
+    {
+        if ($this->accountingPackageOrders->removeElement($accountingPackageOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($accountingPackageOrder->getSubmitter() === $this) {
+                $accountingPackageOrder->setSubmitter(null);
+            }
+        }
 
         return $this;
     }

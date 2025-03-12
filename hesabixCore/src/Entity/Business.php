@@ -285,6 +285,12 @@ class Business
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $sealFile = null;
 
+    /**
+     * @var Collection<int, AccountingPackageOrder>
+     */
+    #[ORM\OneToMany(mappedBy: 'bid', targetEntity: AccountingPackageOrder::class, orphanRemoval: true)]
+    private Collection $accountingPackageOrders;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -325,6 +331,7 @@ class Business
         $this->preInvoiceItems = new ArrayCollection();
         $this->dashboardSettings = new ArrayCollection();
         $this->hesabdariTables = new ArrayCollection();
+        $this->accountingPackageOrders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -1978,6 +1985,36 @@ class Business
     public function setSealFile(?string $sealFile): static
     {
         $this->sealFile = $sealFile;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AccountingPackageOrder>
+     */
+    public function getAccountingPackageOrders(): Collection
+    {
+        return $this->accountingPackageOrders;
+    }
+
+    public function addAccountingPackageOrder(AccountingPackageOrder $accountingPackageOrder): static
+    {
+        if (!$this->accountingPackageOrders->contains($accountingPackageOrder)) {
+            $this->accountingPackageOrders->add($accountingPackageOrder);
+            $accountingPackageOrder->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAccountingPackageOrder(AccountingPackageOrder $accountingPackageOrder): static
+    {
+        if ($this->accountingPackageOrders->removeElement($accountingPackageOrder)) {
+            // set the owning side to null (unless already changed)
+            if ($accountingPackageOrder->getBid() === $this) {
+                $accountingPackageOrder->setBid(null);
+            }
+        }
 
         return $this;
     }

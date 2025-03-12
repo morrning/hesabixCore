@@ -21,9 +21,6 @@ class Settings
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $appSite = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $storagePrice = null;
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $siteKeywords = null;
 
@@ -38,9 +35,6 @@ class Settings
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $footer = null;
-
-    #[ORM\Column(length: 50, nullable: true)]
-    private ?string $activeSmsPanel = null;
 
     public function getId(): ?int
     {
@@ -67,18 +61,6 @@ class Settings
     public function setAppSite(?string $appSite): static
     {
         $this->appSite = $appSite;
-
-        return $this;
-    }
-
-    public function getStoragePrice(): ?string
-    {
-        return $this->storagePrice;
-    }
-
-    public function setStoragePrice(?string $storagePrice): static
-    {
-        $this->storagePrice = $storagePrice;
 
         return $this;
     }
@@ -139,18 +121,6 @@ class Settings
     public function setFooter(?string $footer): static
     {
         $this->footer = $footer;
-
-        return $this;
-    }
-
-    public function getActiveSmsPanel(): ?string
-    {
-        return $this->activeSmsPanel;
-    }
-
-    public function setActiveSmsPanel(?string $activeSmsPanel): static
-    {
-        $this->activeSmsPanel = $activeSmsPanel;
 
         return $this;
     }

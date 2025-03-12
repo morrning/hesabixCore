@@ -21,6 +21,7 @@ use App\Service\Extractor;
 use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Provider;
+use App\Service\registryMGR;
 use Doctrine\ORM\EntityManagerInterface;
 
 use ReflectionException;
@@ -114,7 +115,7 @@ class BusinessController extends AbstractController
     }
 
     #[Route('/api/business/insert', name: 'api_bussiness_insert')]
-    public function api_bussiness_insert(Jdate $jdate, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager): Response
+    public function api_bussiness_insert(Jdate $jdate, Access $access, Log $log, Request $request, EntityManagerInterface $entityManager,registryMGR $registryMGR): Response
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -262,6 +263,8 @@ class BusinessController extends AbstractController
             $entityManager->flush();
             if ($isNew) {
                 $perms = new Permission();
+                $giftCredit = (int) $registryMGR->get('system_settings', 'gift_credit', 0);
+                $business->setSmsCharge($giftCredit);
                 $perms->setBid($business);
                 $perms->setUser($this->getUser());
                 $perms->setOwner(true);

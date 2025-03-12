@@ -4,17 +4,16 @@ namespace App\Controller;
 
 use App\Entity\ArchiveFile;
 use App\Entity\ArchiveOrders;
-use App\Entity\Settings;
 use App\Service\Access;
 use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Notification;
 use App\Service\PayMGR;
 use App\Service\Provider;
+use App\Service\registryMGR; // اضافه کردن سرویس رجیستری
 use App\Service\twigFunctions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -47,6 +46,7 @@ class ArchiveController extends AbstractController
             'used' => $usedSize
         ];
     }
+
     #[Route('/api/archive/info', name: 'app_archive_info')]
     public function app_archive_info(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
@@ -58,51 +58,69 @@ class ArchiveController extends AbstractController
     }
 
     #[Route('/api/archive/order/settings', name: 'app_archive_order_settings')]
-    public function app_archive_order_settings(twigFunctions $functions, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    public function app_archive_order_settings(registryMGR $registryMGR, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
         $acc = $access->hasRole('join');
         if (!$acc)
             throw $this->createAccessDeniedException();
-        $settings = $functions->systemSettings();
+
+        $rootSystem = 'system_settings';
+        $storagePrice = (int) $registryMGR->get($rootSystem, 'cloud_price_per_gb'); // گرفتن قیمت از رجیستری
+
         return $this->json([
-            'priceBase' => $settings->getStoragePrice()
+            'priceBase' => $storagePrice
         ]);
     }
 
     #[Route('/api/archive/order/submit', name: 'app_archive_order_submit')]
-    public function app_archive_order_submit(PayMGR $payMGR, twigFunctions $functions, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
+    public function app_archive_order_submit(PayMGR $payMGR, registryMGR $registryMGR, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
         $acc = $access->hasRole('join');
         if (!$acc)
             throw $this->createAccessDeniedException();
+
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        $settings = $functions->systemSettings();
+
+        $rootSystem = 'system_settings';
+        $storagePrice = (int) $registryMGR->get($rootSystem, 'cloud_price_per_gb'); // گرفتن قیمت از رجیستری
+
         $order = new ArchiveOrders();
         $order->setBid($acc['bid']);
         $order->setSubmitter($this->getUser());
         $order->setDateSubmit(time());
-        $order->setPrice($params['space'] * $params['month'] * $settings->getStoragePrice());
+        $order->setPrice($params['space'] * $params['month'] * $storagePrice); // استفاده از قیمت رجیستری
         $order->setDes('خرید سرویس فضای ابری به مقدار ' . $params['space'] . ' گیگابایت به مدت ' . $params['month'] . ' ماه ');
         $order->setOrderSize($params['space']);
         $order->setMonth($params['month']);
         $entityManager->persist($order);
         $entityManager->flush();
-        $result = $payMGR->createRequest($order->getPrice(), $this->generateUrl('api_archive_buy_verify', ["id"=>$order->getId()], UrlGeneratorInterface::ABSOLUTE_URL), 'خرید فضای ابری');
+
+        $result = $payMGR->createRequest(
+            $order->getPrice(),
+            $this->generateUrl('api_archive_buy_verify', ["id" => $order->getId()], UrlGeneratorInterface::ABSOLUTE_URL),
+            'خرید فضای ابری'
+        );
+
         if ($result['Success']) {
             $order->setGatePay($result['gate']);
             $order->setVerifyCode($result['authkey']);
             $entityManager->persist($order);
             $entityManager->flush();
-            $log->insert('سرویس فضای ابری', 'صدور فاکتور سرویس فضای ابری به مقدار ' . $params['space'] . ' گیگابایت به مدت ' . $params['month'] . ' ماه ', $this->getUser(), $acc['bid']);
+            $log->insert(
+                'سرویس فضای ابری',
+                'صدور فاکتور سرویس فضای ابری به مقدار ' . $params['space'] . ' گیگابایت به مدت ' . $params['month'] . ' ماه ',
+                $this->getUser(),
+                $acc['bid']
+            );
         }
         return $this->json($result);
     }
 
     #[Route('/api/archive/buy/verify/{id}', name: 'api_archive_buy_verify')]
-    public function api_archive_buy_verify(string $id, PayMGR $payMGR, twigFunctions $functions, Notification $notification, Request $request, EntityManagerInterface $entityManager, Log $log): Response
+    public function api_archive_buy_verify(string $id, PayMGR $payMGR, Notification $notification, Request $request, EntityManagerInterface $entityManager, Log $log): Response
     {
         $req = $entityManager->getRepository(ArchiveOrders::class)->find($id);
         if (!$req)
@@ -125,7 +143,7 @@ class ArchiveController extends AbstractController
                 $req->getSubmitter(),
                 $req->getBid()
             );
-            $notification->insert(' فاکتور فضای ابری پرداخت شد.', '/acc/sms/panel', $req->getBid(), $req->getSubmitter());
+            $notification->insert('فاکتور فضای ابری پرداخت شد.', '/acc/sms/panel', $req->getBid(), $req->getSubmitter());
             return $this->render('buy/success.html.twig', ['req' => $req]);
         }
     }
@@ -187,27 +205,22 @@ class ArchiveController extends AbstractController
         $uploadedFile = $request->files->get('image');
         if ($uploadedFile) {
             $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
-            // this is needed to safely include the file name as part of the URL
             $safeFilename = $slugger->slug($originalFilename);
             $newFilename = $safeFilename . '-' . uniqid() . '.' . $uploadedFile->guessExtension();
 
-            // Move the file to the directory where brochures are stored
             try {
                 $uploadedFile->move(
                     $this->getParameter('archiveTempMediaDir'),
                     $newFilename
                 );
             } catch (FileException $e) {
-                // ... handle exception if something happens during file upload
                 return $this->json("error");
             }
 
-            // updates the 'brochureFilename' property to store the PDF file name
-            // instead of its contents
-            //$product->setBrochureFilename($newFilename);
             return $this->json(['name' => $newFilename]);
         }
     }
+
     #[Route('/api/archive/file/save', name: 'app_archive_file_save')]
     public function app_archive_file_save(Jdate $jdate, Provider $provider, SluggerInterface $slugger, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
     {
@@ -228,7 +241,6 @@ class ArchiveController extends AbstractController
                 $file->setFilename($item);
                 $file->setDes($request->get('des'));
                 $file->setCat($request->get('cat'));
-                //set file type
                 $mimFile = mime_content_type(__DIR__ . '/../../../hesabixArchive/temp/' . $item);
                 $file->setFileType($mimFile);
                 $file->setFileSize(ceil(filesize(__DIR__ . '/../../../hesabixArchive/temp/' . $item) / (1024 * 1024)));
@@ -238,14 +250,11 @@ class ArchiveController extends AbstractController
                 $entityManager->persist($file);
                 $entityManager->flush();
                 $log->insert('آرشیو', 'فایل با نام ' . $file->getFilename() . ' افزوده شد.', $this->getUser(), $acc['bid']);
-
             }
-
         }
         return $this->json([
             'ok' => 'ok'
         ]);
-
     }
 
     #[Route('/api/archive/files/list', name: 'app_archive_file_list')]
@@ -263,7 +272,6 @@ class ArchiveController extends AbstractController
             'relatedDocType' => $params['type'],
             'relatedDocCode' => $params['id']
         ]);
-        echo $request->get('type');
         $resp = [];
         foreach ($files as $file) {
             $temp = [];
@@ -294,8 +302,8 @@ class ArchiveController extends AbstractController
         $fileAdr = __DIR__ . '/../../../hesabixArchive/' . $file->getFilename();
         $response = new BinaryFileResponse($fileAdr);
         return $response;
-
     }
+
     #[Route('/api/archive/file/remove/{id}', name: 'app_archive_file_remove')]
     public function app_archive_file_remove(string $id, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {

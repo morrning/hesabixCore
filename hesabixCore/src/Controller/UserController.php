@@ -704,4 +704,16 @@ class UserController extends AbstractController
             'id' => $user->getId(),
         ]));
     }
+
+    #[Route('/api/user/check-register-status', name: 'app_check_register_status', methods: ['GET'])]
+    public function checkRegisterStatus(registryMGR $registryMGR): JsonResponse
+    {
+        $rootSystem = 'system_settings';
+        $canRegister = filter_var($registryMGR->get($rootSystem, 'can_register'), FILTER_VALIDATE_BOOLEAN);
+
+        return new JsonResponse([
+            'result' => 1,
+            'canRegister' => $canRegister
+        ]);
+    }
 }
