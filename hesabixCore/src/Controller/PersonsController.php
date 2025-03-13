@@ -454,42 +454,131 @@ class PersonsController extends AbstractController
         return $this->json($response);
     }
 
-    #[Route('/api/person/list', name: 'app_persons_list')]
-    public function app_persons_list(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): Response
-    {
+    #[Route('/api/person/list', name: 'app_persons_list', methods: ['POST'])]
+    public function app_persons_list(
+        Provider $provider,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
         $acc = $access->hasRole('person');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
         }
-        if (array_key_exists('speedAccess', $params)) {
-            $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $acc['bid'],
-                'speedAccess' => true
-            ]);
-        } else {
-            $persons = $entityManager->getRepository(Person::class)->findBy([
-                'bid' => $acc['bid']
-            ]);
+
+        $params = json_decode($request->getContent(), true) ?? [];
+        $page = $params['page'] ?? 1;
+        $itemsPerPage = $params['itemsPerPage'] ?? 10;
+        $search = $params['search'] ?? '';
+        $types = $params['types'] ?? null;
+        $transactionFilters = $params['transactionFilters'] ?? null;
+
+        $queryBuilder = $entityManager->getRepository(Person::class)
+            ->createQueryBuilder('p')
+            ->leftJoin('p.type', 't')
+            ->leftJoin('p.hesabdariRows', 'hr', 'WITH', 'hr.person = p.id')
+            ->leftJoin('hr.doc', 'hd')
+            ->where('p.bid = :bid')
+            ->setParameter('bid', $acc['bid']);
+
+        // فیلتر سال مالی و واحد پولی
+        $queryBuilder->andWhere('hd.year = :year')
+            ->andWhere('hd.money = :money')
+            ->setParameter('year', $acc['year'])
+            ->setParameter('money', $acc['money']);
+
+        // جست‌وجو
+        if (!empty($search)) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->orX(
+                    $queryBuilder->expr()->like('p.nikename', ':search'),
+                    $queryBuilder->expr()->like('p.name', ':search'),
+                    $queryBuilder->expr()->like('p.code', ':search'),
+                    $queryBuilder->expr()->like('p.tel', ':search'),
+                    $queryBuilder->expr()->like('p.mobile', ':search'),
+                    $queryBuilder->expr()->like('p.mobile2', ':search'),
+                    $queryBuilder->expr()->like('p.email', ':search'),
+                    $queryBuilder->expr()->like('p.company', ':search'),
+                    $queryBuilder->expr()->like('p.shenasemeli', ':search'),
+                    $queryBuilder->expr()->like('p.codeeghtesadi', ':search'),
+                    $queryBuilder->expr()->like('p.sabt', ':search'),
+                    $queryBuilder->expr()->like('p.keshvar', ':search'),
+                    $queryBuilder->expr()->like('p.ostan', ':search'),
+                    $queryBuilder->expr()->like('p.shahr', ':search'),
+                    $queryBuilder->expr()->like('p.postalcode', ':search'),
+                    $queryBuilder->expr()->like('p.website', ':search'),
+                    $queryBuilder->expr()->like('p.fax', ':search'),
+                    $queryBuilder->expr()->like('p.birthday', ':search')
+                )
+            )->setParameter('search', "%$search%");
         }
+
+        // فیلتر نوع اشخاص
+        if ($types && !empty($types)) {
+            $queryBuilder->andWhere('t.code IN (:types)')
+                ->setParameter('types', $types);
+        }
+
+        // فیلتر وضعیت تراکنش
+        if ($transactionFilters && !empty($transactionFilters)) {
+            $conditions = [];
+            if (in_array('debtors', $transactionFilters)) {
+                $conditions[] = 'SUM(CAST(hr.bd AS DECIMAL)) > SUM(CAST(hr.bs AS DECIMAL))';
+            }
+            if (in_array('creditors', $transactionFilters)) {
+                $conditions[] = 'SUM(CAST(hr.bs AS DECIMAL)) > SUM(CAST(hr.bd AS DECIMAL))';
+            }
+            if (!empty($conditions)) {
+                $queryBuilder->groupBy('p.id')
+                    ->having(implode(' OR ', $conditions));
+            }
+        }
+
+        // محاسبه تعداد کل
+        $totalQuery = (clone $queryBuilder)
+            ->select('COUNT(DISTINCT p.id) as total')
+            ->getQuery()
+            ->getScalarResult();
+        $totalItems = $totalQuery[0]['total'] ?? 0;
+
+        // دریافت لیست با صفحه‌بندی
+        $persons = $queryBuilder
+            ->select('DISTINCT p')
+            ->setFirstResult(($page - 1) * $itemsPerPage)
+            ->setMaxResults($itemsPerPage)
+            ->getQuery()
+            ->getResult();
+
         $response = Explore::ExplorePersons($persons, $entityManager->getRepository(PersonType::class)->findAll());
         foreach ($persons as $key => $person) {
-            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person' => $person
-            ]);
+            $rows = $entityManager->getRepository(HesabdariRow::class)
+                ->createQueryBuilder('hr')
+                ->leftJoin('hr.doc', 'hd')
+                ->where('hr.person = :person')
+                ->andWhere('hd.year = :year')
+                ->andWhere('hd.money = :money')
+                ->setParameter('person', $person)
+                ->setParameter('year', $acc['year'])
+                ->setParameter('money', $acc['money'])
+                ->getQuery()
+                ->getResult();
+
             $bs = 0;
             $bd = 0;
             foreach ($rows as $row) {
-                $bs += $row->getBs();
-                $bd += $row->getBd();
+                $bs += (float) $row->getBs();
+                $bd += (float) $row->getBd();
             }
             $response[$key]['bs'] = $bs;
             $response[$key]['bd'] = $bd;
             $response[$key]['balance'] = $bs - $bd;
         }
-        return new Response(json_encode($response));
+
+        return $this->json([
+            'items' => $response,
+            'total' => $totalItems,
+        ]);
     }
 
     #[Route('/api/person/list/debtors/{amount}', name: 'app_persons_list_debtors')]

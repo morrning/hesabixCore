@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\AccountingPermissionService;
 use App\Service\Jdate;
 use App\Service\Log;
 use App\Service\Access;
@@ -113,7 +114,7 @@ class SellController extends AbstractController
     }
 
     #[Route('/api/sell/mod', name: 'app_sell_mod')]
-    public function app_sell_mod(registryMGR $registryMGR, PluginService $pluginService, SMS $SMS, Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    public function app_sell_mod(AccountingPermissionService $accountingPermissionService, PluginService $pluginService, SMS $SMS, Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
@@ -124,6 +125,13 @@ class SellController extends AbstractController
         if (!$acc)
             throw $this->createAccessDeniedException();
 
+        $pkgcntr = $accountingPermissionService->canRegisterAccountingDoc($acc['bid']);
+        if ($pkgcntr['code'] == 4) {
+            return $this->json([
+                'result' => 4,
+                'message' => $pkgcntr['message']
+            ]);
+        }
         if (!array_key_exists('update', $params)) {
             return $this->json($extractor->paramsNotSend());
         }
