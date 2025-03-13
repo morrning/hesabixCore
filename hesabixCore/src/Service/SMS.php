@@ -38,7 +38,7 @@ class SMS
                 $password = $this->registryMGR->get('sms', 'password');
                 $api = new MelipayamakApi($username, $password);
                 $sms = $api->sms('soap');
-                $response = $sms->sendByBalanceNumber($params, $to, $bodyID);
+                $response = $sms->sendByBaseNumber($params, $to, $bodyID);
                 $json = json_decode($response);
             } catch (\Exception $e) {
                 echo $e->getMessage();
