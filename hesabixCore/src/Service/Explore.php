@@ -589,6 +589,7 @@ class Explore
             'notif' => $item->isNotif(),
             'sellChart' => $item->isSellChart(),
             'topCommodities' => $item->isTopCommoditiesChart(),
+            'costs' => $item->isCosts(),
         ];
         if ($result['topCommodities'] === null)
             $result['topCommodities'] = true;
@@ -612,7 +613,8 @@ class Explore
             $result['notif'] = true;
         if ($result['sellChart'] === null)
             $result['sellChart'] = true;
-
+        if ($result['costs'] === null)
+            $result['costs'] = true;
         return $result;
     }
 
