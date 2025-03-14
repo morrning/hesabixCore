@@ -57,6 +57,15 @@ class DashboardSettings
     #[ORM\Column(nullable: true)]
     private ?bool $costs = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $topCostCenters = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $incomes = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $topIncomesChart = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -226,6 +235,42 @@ class DashboardSettings
     public function setCosts(?bool $costs): static
     {
         $this->costs = $costs;
+
+        return $this;
+    }
+
+    public function isTopCostCenters(): ?bool
+    {
+        return $this->topCostCenters;
+    }
+
+    public function setTopCostCenters(?bool $topCostCenters): static
+    {
+        $this->topCostCenters = $topCostCenters;
+
+        return $this;
+    }
+
+    public function isIncomes(): ?bool
+    {
+        return $this->incomes;
+    }
+
+    public function setIncomes(?bool $incomes): static
+    {
+        $this->incomes = $incomes;
+
+        return $this;
+    }
+
+    public function isTopIncomesChart(): ?bool
+    {
+        return $this->topIncomesChart;
+    }
+
+    public function setTopIncomesChart(?bool $topIncomesChart): static
+    {
+        $this->topIncomesChart = $topIncomesChart;
 
         return $this;
     }

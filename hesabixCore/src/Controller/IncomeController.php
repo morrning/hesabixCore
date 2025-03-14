@@ -10,17 +10,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-class CostController extends AbstractController
+class IncomeController extends AbstractController
 {
-    #[Route('/api/cost/dashboard/data', name: 'app_cost_dashboard_data', methods: ['GET'])]
-    public function getCostDashboardData(
+    #[Route('/api/income/dashboard/data', name: 'app_income_dashboard_data', methods: ['GET'])]
+    public function getIncomeDashboardData(
         Request $request,
         Access $access,
         Jdate $jdate,
         EntityManagerInterface $entityManager
     ): JsonResponse {
         // بررسی دسترسی کاربر
-        $acc = $access->hasRole('cost');
+        $acc = $access->hasRole('income');
         if (!$acc) {
             throw $this->createAccessDeniedException();
         }
@@ -36,65 +36,69 @@ class CostController extends AbstractController
         $yearStart = $jdate->jdate('Y/m/d', $yearStartUnix);
         $yearEnd = $jdate->jdate('Y/m/d', $yearEndUnix);
 
-        // کوئری پایه - فقط جمع bd را محاسبه می‌کنیم
+        // کوئری پایه - جمع bs را محاسبه می‌کنیم
         $qb = $entityManager->createQueryBuilder()
-            ->select('SUM(COALESCE(r.bd, 0)) as total')
+            ->select('SUM(COALESCE(r.bs, 0)) as total')
             ->from('App\Entity\HesabdariDoc', 'd')
             ->join('d.hesabdariRows', 'r')
             ->where('d.bid = :bid')
             ->andWhere('d.money = :money')
             ->andWhere('d.type = :type')
             ->andWhere('d.year = :year')
+            ->andWhere('r.bs != 0') // فقط ردیف‌هایی که bs صفر نیست
             ->setParameter('bid', $acc['bid'])
             ->setParameter('money', $acc['money'])
-            ->setParameter('type', 'cost')
+            ->setParameter('type', 'income')
             ->setParameter('year', $acc['year']);
 
-        // هزینه امروز
-        $todayCost = (clone $qb)
+        // درآمد امروز
+        $todayIncome = (clone $qb)
             ->andWhere('d.date = :date')
             ->setParameter('date', $today)
             ->getQuery()
             ->getSingleScalarResult() ?? 0;
 
-        // هزینه این هفته
-        $weekCost = (clone $qb)
+        // درآمد این هفته
+        $weekIncome = (clone $qb)
             ->andWhere('d.date BETWEEN :start AND :end')
             ->setParameter('start', $weekStart)
             ->setParameter('end', $today)
             ->getQuery()
             ->getSingleScalarResult() ?? 0;
 
-        // هزینه این ماه
-        $monthCost = (clone $qb)
+        // درآمد این ماه
+        $monthIncome = (clone $qb)
             ->andWhere('d.date BETWEEN :start AND :end')
             ->setParameter('start', $monthStart)
             ->setParameter('end', $today)
             ->getQuery()
             ->getSingleScalarResult() ?? 0;
 
-        // هزینه سال مالی
-        $yearCost = (clone $qb)
+        // درآمد سال مالی
+        $yearIncome = (clone $qb)
+            ->andWhere('d.date BETWEEN :start AND :end')
+            ->setParameter('start', $yearStart)
+            ->setParameter('end', $yearEnd)
             ->getQuery()
             ->getSingleScalarResult() ?? 0;
 
         return $this->json([
-            'today' => (int) $todayCost,
-            'week' => (int) $weekCost,
-            'month' => (int) $monthCost,
-            'year' => (int) $yearCost,
+            'today' => (int) $todayIncome,
+            'week' => (int) $weekIncome,
+            'month' => (int) $monthIncome,
+            'year' => (int) $yearIncome,
         ]);
     }
 
-    #[Route('/api/cost/top-centers', name: 'app_cost_top_centers', methods: ['GET'])]
-    public function getTopCostCenters(
+    #[Route('/api/income/top-centers', name: 'app_income_top_centers', methods: ['GET'])]
+    public function getTopIncomeCenters(
         Request $request,
         Access $access,
         Jdate $jdate,
         EntityManagerInterface $entityManager
     ): JsonResponse {
         // بررسی دسترسی کاربر
-        $acc = $access->hasRole('cost');
+        $acc = $access->hasRole('income');
         if (!$acc) {
             throw $this->createAccessDeniedException();
         }
@@ -111,13 +115,13 @@ class CostController extends AbstractController
         $parameters = [
             'bid' => $acc['bid'],
             'money' => $acc['money'],
-            'type' => 'cost',
+            'type' => 'income',
             'year' => $acc['year'],
         ];
 
         // کوئری پایه
         $qb = $entityManager->createQueryBuilder()
-            ->select('t.name AS center_name, SUM(COALESCE(r.bd, 0)) AS total_cost')
+            ->select('t.name AS center_name, SUM(COALESCE(r.bs, 0)) AS total_income')
             ->from('App\Entity\HesabdariDoc', 'd')
             ->join('d.hesabdariRows', 'r')
             ->join('r.ref', 't') // ارتباط با HesabdariTable
@@ -125,9 +129,9 @@ class CostController extends AbstractController
             ->andWhere('d.money = :money')
             ->andWhere('d.type = :type')
             ->andWhere('d.year = :year')
-            ->andWhere('r.bd != 0')
+            ->andWhere('r.bs != 0') // فقط ردیف‌هایی که bs صفر نیست
             ->groupBy('t.id, t.name')
-            ->orderBy('total_cost', 'DESC')
+            ->orderBy('total_income', 'DESC')
             ->setParameters($parameters);
 
         // اعمال فیلتر تاریخ فقط برای امروز و ماه
@@ -152,7 +156,7 @@ class CostController extends AbstractController
         $series = [];
         foreach ($results as $row) {
             $labels[] = $row['center_name'];
-            $series[] = (int) $row['total_cost'];
+            $series[] = (int) $row['total_income'];
         }
 
         return $this->json([

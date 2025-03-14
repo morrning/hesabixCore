@@ -590,6 +590,9 @@ class Explore
             'sellChart' => $item->isSellChart(),
             'topCommodities' => $item->isTopCommoditiesChart(),
             'costs' => $item->isCosts(),
+            'topCostCenters' => $item->isTopCostCenters(),
+            'incomes' => $item->isIncomes(),
+            'topIncomeCenters' => $item->isTopIncomesChart(),
         ];
         if ($result['topCommodities'] === null)
             $result['topCommodities'] = true;
@@ -615,6 +618,13 @@ class Explore
             $result['sellChart'] = true;
         if ($result['costs'] === null)
             $result['costs'] = true;
+        if ($result['topCostCenters'] === null)
+            $result['topCostCenters'] = true;
+        if ($result['incomes'] === null)
+            $result['incomes'] = true;
+        if ($result['topIncomeCenters'] === null)
+            $result['topIncomeCenters'] = true;
+
         return $result;
     }
 
