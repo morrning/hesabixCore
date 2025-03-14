@@ -706,4 +706,45 @@ class SellController extends AbstractController
         }
         return $this->json(['id' => $pdfPid]);
     }
+
+    #[Route('/api/sell/chart/data', name: 'app_sell_chart_data')]
+    public function app_sell_chart_data(Jdate $jdate, Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+
+        $acc = $access->hasRole('sell');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        // create data numbers
+        $dayTime = 3600 * 24;
+        $dayNames = [];
+        $daySells = [];
+        for ($i = 0; $i < 7; $i++) {
+            $dayInfo = [
+                $jdate->jdate('l', time() - ($i * $dayTime)),
+                $jdate->jdate('Y/n/d', time() - ($i * $dayTime))
+            ];
+            $dayNames[] = $jdate->jdate('l', time() - ($i * $dayTime));
+            //get sell docs
+            $docs = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid' => $acc['bid'],
+                'money' => $acc['money'],
+                'year' => $acc['year'],
+                'type' => 'sell',
+                'date' => $dayInfo[1],
+            ]);
+            $bd = 0;
+            foreach ($docs as $doc) {
+                foreach ($doc->getHesabdariRows() as $row) {
+                    if ($row->getPerson()) {
+                        $bd += $row->getBd();
+                    }
+                }
+            }
+            $daySells[] = $bd;
+        }
+        return $this->json([
+            'dayNames' => $dayNames,
+            'daySells' => $daySells
+        ]);
+    }
 }
