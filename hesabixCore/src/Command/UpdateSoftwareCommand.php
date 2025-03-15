@@ -64,7 +64,6 @@ class UpdateSoftwareCommand extends Command
             mkdir(dirname($this->stateFile), 0755, true);
         }
 
-        // اگر فایل وضعیت وجود ندارد، آن را ایجاد کن
         if (!file_exists($this->stateFile)) {
             file_put_contents($this->stateFile, json_encode([
                 'uuid' => Uuid::uuid4()->toString(),
@@ -79,7 +78,7 @@ class UpdateSoftwareCommand extends Command
         $this->writeOutput($output, "Starting software update (UUID: $uuid) in {$this->env} mode");
 
         $state = $this->loadState($uuid);
-        $state['log'] = $state['log'] ?? ''; // اطمینان از وجود کلید log
+        $state['log'] = $state['log'] ?? '';
 
         if ($this->isUpToDate()) {
             $this->writeOutput($output, '<info>The software is already up to date with the remote repository.</info>');
@@ -125,7 +124,6 @@ class UpdateSoftwareCommand extends Command
 
             if (!in_array('git_pull', $state['completedSteps'])) {
                 $this->writeOutput($output, 'Setting up tracking for master branch...');
-                // تنظیم ردیابی شاخه master به origin/master
                 $this->runProcess(['git', 'branch', '--set-upstream-to=origin/master', 'master'], $this->rootDir, $output, 1);
 
                 $this->writeOutput($output, 'Pulling latest changes from GitHub...');
@@ -148,6 +146,18 @@ class UpdateSoftwareCommand extends Command
                 $this->runProcess($composerCommand, $this->appDir, $output, 3);
                 $state['completedSteps'][] = 'composer_install';
                 $this->saveState($uuid, $state, $output, 'Dependencies installed');
+            }
+
+            if (!in_array('composer_install_core', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Installing dependencies in hesabixCore...');
+                $composerCommand = ['composer', 'install', '--optimize-autoloader'];
+                if ($this->env !== 'dev') {
+                    $composerCommand[] = '--no-dev';
+                    $composerCommand[] = '--no-scripts';
+                }
+                $this->runProcess($composerCommand, $this->rootDir . '/hesabixCore', $output, 3);
+                $state['completedSteps'][] = 'composer_install_core';
+                $this->saveState($uuid, $state, $output, 'Dependencies installed in hesabixCore');
             }
 
             if (!in_array('cache_clear', $state['completedSteps'])) {
@@ -258,6 +268,10 @@ class UpdateSoftwareCommand extends Command
             } catch (ProcessFailedException $e) {
                 $attempt++;
                 $errorMessage = $e->getProcess()->getErrorOutput() ?: $e->getMessage();
+                if (stripos($errorMessage, 'permission denied') !== false || stripos($errorMessage, 'access denied') !== false) {
+                    $this->logger->error("Permission error: $errorMessage");
+                    $this->writeOutput($output, "<error>خطای دسترسی به فایل: $errorMessage</error>");
+                }
                 $this->logger->warning("Attempt $attempt failed for " . implode(' ', $command) . ": $errorMessage");
                 $this->writeOutput($output, "<comment>Attempt $attempt failed: $errorMessage</comment>");
                 if ($attempt === $retries) {
