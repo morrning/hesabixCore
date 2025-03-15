@@ -8,18 +8,24 @@
 					<td class="center item">کد حسابداری</td>
 					<td class="center item">تاریخ</td>
 					<td class="center item">مبلغ</td>
+					<td class="center item">اشخاص</td>
 					<td class="center item">شرح</td>
 				</tr>
 				{% for item in items %}
 					<tr class="stimol {% if loop.index is even%}bg-dark text-light{% endif%}">
-						<td class="center item">{{ loop.index }}</td>
+						<td class="center item">{{ loop.index + ((currentPage - 1) * 10) }}</td>
 						<td class="center item">{{ item.code }}</td>
 						<td class="center item">{{ item.date }}</td>
 						<td class="center item">{{ item.amount | number_format }}</td>
+						<td class="center item">{{ item.personNames }}</td>
 						<td class="center item">{{ item.des }}</td>
 					</tr>
 				{% endfor %}
 			</tbody>
 		</table>
+		
+		<div style="margin-top: 20px; text-align: left;">
+			<small>صفحه {{ currentPage }} از {{ totalPages }} - تعداد کل: {{ totalItems }}</small>
+		</div>
 	</div>
 {% endblock %}
