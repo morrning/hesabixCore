@@ -214,10 +214,13 @@ class Explore
                     'name' => $item->getUnit()->getName(),
                     'floatNumber' => $item->getUnit()->getFloatNumber(),
                 ],
-                'cat'=>$item->getCat()->getName()
             ];
             if ($des) {
                 $result['des'] = $des;
+            }
+            $result['cat'] = '';
+            if ($item->getCat()) {
+                $result['cat'] = $item->getCat()->getName();
             }
             return $result;
         }
