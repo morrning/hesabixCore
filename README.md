@@ -12,7 +12,7 @@ For install hesabixCore you need this tools
 * Web server : Apache,NginX,...
 * Database: Mysql, mariaDB,PostgreSql,....
 * PHP: php : +8.1
-* php extentions: php-Intl, php-mbstring, php-http, php-raphf, php-zip
+* php extentions: php-Intl, php-mbstring, php-http, php-raphf, php-zip, php-gd
 * composer
 
 ## Installation
