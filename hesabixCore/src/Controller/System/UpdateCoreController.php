@@ -162,7 +162,7 @@ final class UpdateCoreController extends AbstractController
                 $isRunning = !isset($state['error']) &&
                     !in_array('post_update_test', $state['completedSteps'] ?? []);
 
-                $status = $state['error'] ? 'error' : ($isRunning ? 'running' : 'success');
+                $status = isset($state['error']) ? 'error' : ($isRunning ? 'running' : 'success');
                 echo "data: " . json_encode(['status' => $status, 'output' => $output]) . "\n\n";
                 ob_flush();
                 flush();

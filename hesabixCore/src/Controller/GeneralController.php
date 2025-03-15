@@ -8,6 +8,7 @@ use App\Entity\PrinterQueue;
 use App\Service\Jdate;
 use App\Service\pdfMGR;
 use App\Service\Provider;
+use App\Service\registryMGR;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -55,7 +56,7 @@ class GeneralController extends AbstractController
     #[Route('/front/print/{id}', name: 'app_front_print')]
     public function app_front_print(Provider $provider, EntityManagerInterface $entityManager, PdfMGR $pdfMGR, string $id): Response
     {
-        
+
         $print = $entityManager->getRepository(PrinterQueue::class)->findOneBy(['pid' => $id]);
 
         if (!$print) {
@@ -82,5 +83,11 @@ class GeneralController extends AbstractController
                 'Content-Disposition' => 'inline; filename="Hesabix PrintOut.pdf"',
             ]
         );
+    }
+
+    #[Route('/api/general/sponsors', name: 'api_general_sponsers')]
+    public function api_general_sponsers(registryMGR $registryMGR): JsonResponse
+    {
+        return $this->json(['result' => $registryMGR->get('system', 'sponsers')]);
     }
 }

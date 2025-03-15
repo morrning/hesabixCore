@@ -50,6 +50,8 @@ final class RegistrySettingsController extends AbstractController
             'unlimitedDuration' => json_decode($registryMGR->get($rootSystem, 'unlimited_duration') ?: '[]', true),
             'smsAlertEnabled' => filter_var($registryMGR->get($rootSystem, 'sms_alert_enabled'), FILTER_VALIDATE_BOOLEAN),
             'smsAlertMobile' => $registryMGR->get($rootTicket, 'managerMobile'),
+            'sponsorMessage' => $registryMGR->get('system', 'sponsers'),
+
         ];
 
         return new JsonResponse([
@@ -75,6 +77,8 @@ final class RegistrySettingsController extends AbstractController
         $registryMGR->update($rootSystem, 'unlimited_duration', json_encode($data['unlimitedDuration']));
         $registryMGR->update($rootSystem, 'sms_alert_enabled', $data['smsAlertEnabled'] ? '1' : '0');
         $registryMGR->update($rootTicket, 'managerMobile', $data['smsAlertMobile'] ?? '');
+        $registryMGR->update('system', 'sponsers', $data['sponsorMessage'] ?? '');
+
 
         return new JsonResponse([
             'result' => 1,
