@@ -286,7 +286,7 @@ final class UpdateCoreController extends AbstractController
     public function api_admin_updatecore_change_env(Request $request): JsonResponse
     {
         $newEnv = $request->getPayload()->get('env');
-    
+
         if (!$newEnv || !in_array($newEnv, ['dev', 'prod'])) {
             return new JsonResponse([
                 'status' => 'error',
@@ -295,31 +295,27 @@ final class UpdateCoreController extends AbstractController
                 'debug' => 'Received env: ' . var_export($newEnv, true)
             ], 400);
         }
-    
+
         $projectDir = $this->getParameter('kernel.project_dir');
         $envFile = $projectDir . '/.env.local.php';
         $composerLock = $projectDir . '/composer.lock';
         $output = '';
-    
-        // بارگذاری تنظیمات از .env.local.php و تغییر APP_ENV
+
         $envConfig = file_exists($envFile) ? require $envFile : [];
         $envConfig['APP_ENV'] = $newEnv;
         file_put_contents($envFile, '<?php return ' . var_export($envConfig, true) . ';');
         $output .= "حالت به $newEnv تغییر کرد\n";
-    
-        // حذف composer.lock
+
         if (file_exists($composerLock)) {
             unlink($composerLock);
             $output .= "فایل composer.lock حذف شد\n";
         }
-    
-        // تنظیم متغیرهای محیطی حداقلی برای Composer
+
         $env = [
-            'HOME' => sys_get_temp_dir(), // استفاده از دایرکتوری موقت سیستم
-            'COMPOSER_HOME' => sys_get_temp_dir() . '/composer' // دایرکتوری موقت برای Composer
+            'HOME' => sys_get_temp_dir(),
+            'COMPOSER_HOME' => sys_get_temp_dir() . '/composer'
         ];
-    
-        // چک کردن نصب بودن Composer در سطح سیستم
+
         $composerCheck = new Process(['composer', '--version'], $projectDir, $env);
         $composerCheck->run();
         if (!$composerCheck->isSuccessful()) {
@@ -330,8 +326,7 @@ final class UpdateCoreController extends AbstractController
             ], 500);
         }
         $output .= "Composer نسخه " . trim($composerCheck->getOutput()) . " تشخیص داده شد\n";
-    
-        // اجرای composer install
+
         $composerCommand = ['composer', 'install', '--optimize-autoloader'];
         if ($newEnv !== 'dev') {
             $composerCommand[] = '--no-dev';
@@ -348,8 +343,7 @@ final class UpdateCoreController extends AbstractController
             ], 500);
         }
         $output .= "وابستگی‌ها با موفقیت به‌روزرسانی شدند\n" . $composerProcess->getOutput();
-    
-        // خالی کردن کش
+
         $cacheProcess = new Process(['php', 'bin/console', 'cache:clear', "--env=$newEnv"], $projectDir, $env);
         $cacheProcess->setTimeout(300);
         $cacheProcess->run();
@@ -361,7 +355,7 @@ final class UpdateCoreController extends AbstractController
             ], 500);
         }
         $output .= "کش با موفقیت پاک شد\n" . $cacheProcess->getOutput();
-    
+
         return new JsonResponse([
             'status' => 'success',
             'message' => "حالت به $newEnv تغییر کرد، وابستگی‌ها به‌روزرسانی شدند و کش پاک شد",
@@ -374,5 +368,75 @@ final class UpdateCoreController extends AbstractController
     {
         $env = $this->getParameter('kernel.environment');
         return new JsonResponse(['env' => $env]);
+    }
+
+    #[Route('/api/admin/updatecore/system-logs', name: 'api_admin_updatecore_system_logs', methods: ['GET'])]
+    public function api_admin_updatecore_system_logs(): JsonResponse
+    {
+        $projectDir = $this->getParameter('kernel.project_dir');
+        $env = $this->getParameter('kernel.environment');
+        $logFile = "$projectDir/var/log/$env.log";
+
+        try {
+            if ($env === 'prod') {
+                return new JsonResponse([
+                    'status' => 'error',
+                    'message' => 'نمایش لاگ‌ها در محیط prod پشتیبانی نمی‌شود (به php://stderr ارسال می‌شود)',
+                ], 400);
+            }
+
+            if (file_exists($logFile)) {
+                $logs = file_get_contents($logFile);
+                return new JsonResponse([
+                    'status' => 'success',
+                    'logs' => $logs ?: 'لاگ‌ها خالی هستند',
+                ]);
+            } else {
+                return new JsonResponse([
+                    'status' => 'success',
+                    'logs' => 'فایل لاگ وجود ندارد',
+                ]);
+            }
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'خطا در دریافت لاگ‌ها: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    #[Route('/api/admin/updatecore/clear-logs', name: 'api_admin_updatecore_clear_logs', methods: ['POST'])]
+    public function api_admin_updatecore_clear_logs(): JsonResponse
+    {
+        $projectDir = $this->getParameter('kernel.project_dir');
+        $env = $this->getParameter('kernel.environment');
+        $logFile = "$projectDir/var/log/$env.log";
+
+        try {
+            if ($env === 'prod') {
+                return new JsonResponse([
+                    'status' => 'error',
+                    'message' => 'پاک کردن لاگ‌ها در محیط prod پشتیبانی نمی‌شود (به php://stderr ارسال می‌شود)',
+                ], 400);
+            }
+
+            if (file_exists($logFile)) {
+                file_put_contents($logFile, '');
+                return new JsonResponse([
+                    'status' => 'success',
+                    'message' => 'لاگ‌ها با موفقیت پاک شدند',
+                ]);
+            } else {
+                return new JsonResponse([
+                    'status' => 'success',
+                    'message' => 'فایلی برای پاک کردن وجود نداشت',
+                ]);
+            }
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'status' => 'error',
+                'message' => 'خطا در پاک کردن لاگ‌ها: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
