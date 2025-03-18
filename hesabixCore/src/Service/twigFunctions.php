@@ -18,15 +18,22 @@ class twigFunctions
 
     protected $request;
     protected RequestStack $requestStack;
-
+    protected registryMGR $registryMGR;
     function __construct(
         EntityManagerInterface $entityManager,
-        RequestStack $request
+        RequestStack $request,
+        registryMGR $registryMGR
     ) {
         $this->request = $request->getCurrentRequest();
         $this->em = $entityManager;
+        $this->registryMGR = $registryMGR;
     }
 
+    //get static data from registry
+    public function getStaticData($root,$key)
+    {
+        return $this->registryMGR->get($root, $key);
+    }
 
     public function md5($val)
     {

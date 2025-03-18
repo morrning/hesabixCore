@@ -83,7 +83,7 @@ services:
 
     twigFunctions:
         class: App\Service\twigFunctions
-        arguments: [ '@doctrine.orm.entity_manager' ]
+        arguments: [ '@doctrine.orm.entity_manager', '@request_stack', '@registryMGR' ]
 
     registryMGR:
         class: App\Service\registryMGR

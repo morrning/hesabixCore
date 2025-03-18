@@ -9,6 +9,9 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Service\Provider;
+use App\Entity\HesabdariDoc;
 
 class CostController extends AbstractController
 {
@@ -310,5 +313,156 @@ class CostController extends AbstractController
             'page' => $page,
             'limit' => $limit
         ]);
+    }
+
+    #[Route('/api/costs/list/print', name: 'app_costs_list_print')]
+    public function app_costs_list_print(
+        Provider $provider, 
+        Request $request, 
+        Access $access, 
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
+        $acc = $access->hasRole('cost');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = json_decode($request->getContent(), true) ?? [];
+        
+        // دریافت آیتم‌های انتخاب شده یا همه آیتم‌ها
+        if (!isset($params['items'])) {
+            $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid' => $acc['bid'],
+                'type' => 'cost',
+                'year' => $acc['year'],
+                'money' => $acc['money']
+            ]);
+        } else {
+            $items = [];
+            foreach ($params['items'] as $param) {
+                $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                    'id' => $param['id'],
+                    'bid' => $acc['bid'],
+                    'type' => 'cost',
+                    'year' => $acc['year'],
+                    'money' => $acc['money']
+                ]);
+                if ($doc) {
+                    $items[] = $doc;
+                }
+            }
+        }
+
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/costs.html.twig', [
+                'page_title' => 'فهرست هزینه‌ها',
+                'bid' => $acc['bid'],
+                'items' => $items
+            ])
+        );
+
+        return $this->json(['id' => $pid]);
+    }
+
+    #[Route('/api/costs/list/excel', name: 'app_costs_list_excel')]
+    public function app_costs_list_excel(
+        Provider $provider,
+        Request $request,
+        Access $access,
+        EntityManagerInterface $entityManager
+    ): BinaryFileResponse {
+        $acc = $access->hasRole('cost');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = json_decode($request->getContent(), true) ?? [];
+
+        // دریافت آیتم‌های انتخاب شده یا همه آیتم‌ها
+        if (!isset($params['items'])) {
+            $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
+                'bid' => $acc['bid'],
+                'type' => 'cost',
+                'year' => $acc['year'],
+                'money' => $acc['money']
+            ]);
+        } else {
+            $items = [];
+            foreach ($params['items'] as $param) {
+                $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                    'id' => $param['id'],
+                    'bid' => $acc['bid'],
+                    'type' => 'cost',
+                    'year' => $acc['year'],
+                    'money' => $acc['money']
+                ]);
+                if ($doc) {
+                    $items[] = $doc;
+                }
+            }
+        }
+
+        // ایجاد فایل اکسل
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setRightToLeft(true);
+
+        // تنظیم هدرها
+        $sheet->setCellValue('A1', 'ردیف')
+              ->setCellValue('B1', 'شماره سند')
+              ->setCellValue('C1', 'تاریخ')
+              ->setCellValue('D1', 'شرح')
+              ->setCellValue('E1', 'مرکز هزینه')
+              ->setCellValue('F1', 'مرکز پرداخت')
+              ->setCellValue('G1', 'مبلغ (ریال)');
+
+        // پر کردن داده‌ها
+        $rowNumber = 2;
+        foreach ($items as $index => $item) {
+            // محاسبه مراکز هزینه
+            $costCenters = [];
+            foreach ($item->getHesabdariRows() as $row) {
+                if ($row->getRef()) {
+                    $costCenters[] = $row->getRef()->getName();
+                }
+            }
+            $costCenterNames = implode('، ', array_unique($costCenters));
+
+            // محاسبه مرکز پرداخت
+            $paymentCenter = null;
+            foreach ($item->getHesabdariRows() as $row) {
+                if (!$paymentCenter) {
+                    if ($row->getBank()) {
+                        $paymentCenter = $row->getBank()->getName();
+                    } elseif ($row->getCashdesk()) {
+                        $paymentCenter = $row->getCashdesk()->getName();
+                    } elseif ($row->getSalary()) {
+                        $paymentCenter = $row->getSalary()->getName();
+                    } elseif ($row->getCommodity()) {
+                        $paymentCenter = $row->getCommodity()->getName();
+                    } elseif ($row->getPerson()) {
+                        $paymentCenter = $row->getPerson()->getNikename();
+                    }
+                }
+            }
+
+            $sheet->setCellValue('A' . $rowNumber, $index + 1)
+                  ->setCellValue('B' . $rowNumber, $item->getCode())
+                  ->setCellValue('C' . $rowNumber, $item->getDate())
+                  ->setCellValue('D' . $rowNumber, $item->getDes())
+                  ->setCellValue('E' . $rowNumber, $costCenterNames)
+                  ->setCellValue('F' . $rowNumber, $paymentCenter)
+                  ->setCellValue('G' . $rowNumber, number_format($item->getAmount()));
+            $rowNumber++;
+        }
+
+        // ذخیره فایل اکسل
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filePath = __DIR__ . '/../../var/' . uniqid() . '.xlsx';
+        $writer->save($filePath);
+
+        return new BinaryFileResponse($filePath);
     }
 }

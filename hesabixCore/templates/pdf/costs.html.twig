@@ -1,0 +1,72 @@
+{% extends 'pdf/base.html.twig' %}
+
+{% block body %}
+<table class="table" style="border:2px solid black; width:100%; border-collapse: collapse; margin-top: 20px;">
+    <tbody>
+    <tr style="text-align: center; background-color: #6B7280; color: #ffffff; height: 45px; font-weight: bold;">
+        <td style="width: 5%; border:1px solid black;">ردیف</td>
+        <th style="width: 10%; border:1px solid black;">شماره سند</th>
+        <th style="width: 10%; border:1px solid black;">تاریخ</th>
+        <th style="width: 25%; border:1px solid black;">شرح</th>
+        <th style="width: 20%; border:1px solid black;">مرکز هزینه</th>
+        <th style="width: 15%; border:1px solid black;">مرکز پرداخت</th>
+        <th style="width: 15%; border:1px solid black;">مبلغ (ریال)</th>
+    </tr>
+    {% for item in items %}
+    <tr style="border:1px solid black; height: 35px;" {% if loop.index is even %}style="background-color: #f8f9fa;"{% endif %}>
+        <td style="border:1px solid black; text-align: center;">{{ loop.index }}</td>
+        <td style="border:1px solid black; text-align: center;">{{ item.code }}</td>
+        <td style="border:1px solid black; text-align: center;">{{ item.date }}</td>
+        <td style="border:1px solid black; padding: 5px 10px;">{{ item.des }}</td>
+        <td style="border:1px solid black; padding: 5px 10px;">
+           {% set costCenters = [] %}
+           {% for row in item.hesabdariRows %}
+                {% if row.ref %}
+                    {% if not row.bank and not row.commodity and not row.cheque and not row.salary and not row.cashdesk and not row.person %}
+                        {% set costCenters = costCenters|merge([row.ref.name]) %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            {{ costCenters|join('، ') }}
+        </td>
+        <td style="border:1px solid black; padding: 5px 10px;">
+            {% set paymentCenter = null %}
+            {% for row in item.hesabdariRows %}
+                {% if not paymentCenter %}
+                    {% if row.bank %}
+                        {% set paymentCenter = row.bank.name %}
+                    {% elseif row.cashdesk %}
+                        {% set paymentCenter = row.cashdesk.name %}
+                    {% elseif row.salary %}
+                        {% set paymentCenter = row.salary.name %}
+                    {% elseif row.commodity %}
+                        {% set paymentCenter = row.commodity.name %}
+                    {% elseif row.person %}
+                        {% set paymentCenter = row.person.nikename %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            {{ paymentCenter }}
+        </td>
+        <td style="border:1px solid black; text-align: left; padding-left: 10px;">{{ item.amount|number_format }}</td>
+    </tr>
+    {% endfor %}
+
+    {# جمع کل #}
+    <tr style="background-color: #6B7280; color: #ffffff; height: 45px; font-weight: bold;">
+        <td colspan="6" style="border:1px solid black; text-align: left; padding-left: 15px;">جمع کل:</td>
+        <td style="border:1px solid black; text-align: left; padding-left: 10px;">
+            {{ items|reduce((sum, item) => sum + item.amount, 0)|number_format }}
+        </td>
+    </tr>
+    </tbody>
+</table>   
+
+{# اطلاعات تکمیلی #}
+<div style="margin-top: 20px; font-size: 12px;">
+    <p>تعداد اسناد: {{ items|length }} مورد</p>
+    {% if items|length > 0 %}
+        <p>از تاریخ: {{ items|first.date }} تا تاریخ: {{ items|last.date }}</p>
+    {% endif %}
+</div>
+{% endblock %} 
