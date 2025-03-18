@@ -625,11 +625,9 @@ private function calculateProfit(int $docId, array $acc, EntityManagerInterface 
     ): JsonResponse {
         $acc = $access->hasRole('sell');
         if (!$acc) {
-            $log->insert('SellController', 'Access denied for code: ' . $code, $this->getUser(), null);
             throw $this->createAccessDeniedException();
         }
 
-        $log->insert('SellController', 'Searching for doc with code: ' . $code, $this->getUser(), $acc['bid']->getId());
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $code,
@@ -642,7 +640,6 @@ private function calculateProfit(int $docId, array $acc, EntityManagerInterface 
         }
 
         $rows = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $doc]);
-        $log->insert('SellController', 'Found ' . count($rows) . ' rows for code: ' . $code, $this->getUser(), $acc['bid']->getId());
 
         $data = array_map(function ($row) use ($log) {
             try {
