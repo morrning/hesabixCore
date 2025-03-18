@@ -172,27 +172,104 @@ class AdminController extends AbstractController
         return $this->json($extractor->operationSuccess($resp));
     }
 
-    #[Route('/api/admin/users/search', name: 'admin_users_list_search')]
-    public function admin_users_list_search(Extractor $extractor, Jdate $jdate, #[CurrentUser] ?User $user, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager, Request $request): Response
-    {
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
+    #[Route('/api/admin/users/search', name: 'admin_users_list_search', methods: ['POST'])]
+    public function admin_users_list_search(
+        Extractor $extractor, 
+        Jdate $jdate, 
+        #[CurrentUser] ?User $user, 
+        EntityManagerInterface $entityManager, 
+        Request $request
+    ): Response {
+        $params = json_decode($request->getContent(), true) ?? [];
+        
+        // پارامترهای صفحه‌بندی و مرتب‌سازی
+        $pagination = $params['pagination'] ?? ['page' => 1, 'limit' => 10];
+        $sort = $params['sort'] ?? ['sortBy' => 'id', 'sortDesc' => true];
+        $filters = $params['filters'] ?? [];
+
+        $page = max(1, $pagination['page'] ?? 1);
+        $limit = max(1, min(100, $pagination['limit'] ?? 10));
+        $offset = ($page - 1) * $limit;
+
+        // ساخت کوئری پایه
+        $queryBuilder = $entityManager->createQueryBuilder()
+            ->select('u')
+            ->from(User::class, 'u');
+
+        // اعمال فیلترها و جستجو
+        if (!empty($filters['search'])) {
+            $searchTerm = $filters['search'];
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->orX(
+                    'u.email LIKE :search',
+                    'u.fullName LIKE :search',
+                    'u.mobile LIKE :search',
+                    'u.dateRegister LIKE :search',
+                    'u.invateCode LIKE :search'
+                )
+            )
+            ->setParameter('search', "%$searchTerm%");
         }
-        $items = $entityManager->getRepository(User::class)->findByPage($params['options']['page'], $params['options']['rowsPerPage'], $params['search']);
+
+        // اعمال فیلترهای وضعیت
+        if (isset($filters['status'])) {
+            $queryBuilder->andWhere('u.active = :status')
+                ->setParameter('status', $filters['status']);
+        }
+
+        // اعمال مرتب‌سازی
+        $sortField = $sort['sortBy'] ?? 'id';
+        $sortDirection = ($sort['sortDesc'] ?? true) ? 'DESC' : 'ASC';
+        
+        // اطمینان از اینکه فیلد مرتب‌سازی معتبر است
+        $allowedSortFields = ['id', 'email', 'fullName', 'mobile', 'dateRegister', 'active'];
+        if (in_array($sortField, $allowedSortFields)) {
+            $queryBuilder->orderBy("u.$sortField", $sortDirection);
+        } else {
+            $queryBuilder->orderBy('u.id', 'DESC');
+        }
+
+        // محاسبه تعداد کل نتایج
+        $totalItemsQuery = clone $queryBuilder;
+        $totalItems = $totalItemsQuery->select('COUNT(u.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // اعمال صفحه‌بندی
+        $queryBuilder->setFirstResult($offset)
+            ->setMaxResults($limit);
+
+        // دریافت نتایج
+        $items = $queryBuilder->getQuery()->getResult();
+
+        // تبدیل نتایج به فرمت مورد نظر
         $resp = [];
         foreach ($items as $item) {
-            $temp = [];
-            $temp['id'] = $item->getId();
-            $temp['email'] = $item->getEmail();
-            $temp['mobile'] = $item->getMobile();
-            $temp['fullname'] = $item->getFullName();
-            $temp['status'] = $item->isActive();
-            $temp['dateRegister'] = $jdate->jdate('Y/n/d', $item->getDateRegister());
-            $temp['bidCount'] = count($entityManager->getRepository(Business::class)->findBy(['owner' => $item]));
+            $temp = [
+                'id' => $item->getId(),
+                'email' => $item->getEmail(),
+                'mobile' => $item->getMobile(),
+                'fullname' => $item->getFullName(),
+                'status' => $item->isActive(),
+                'dateRegister' => $jdate->jdate('Y/n/d', $item->getDateRegister()),
+                'bidCount' => count($entityManager->getRepository(Business::class)->findBy(['owner' => $item])),
+                'roles' => $item->getRoles(),
+                'inviteCode' => $item->getInvateCode()
+            ];
             $resp[] = $temp;
         }
-        return $this->json($extractor->operationSuccess($resp));
+
+        return $this->json([
+            'status' => 'success',
+            'message' => 'عملیات با موفقیت انجام شد',
+            'data' => [
+                'items' => $resp,
+                'total' => (int) $totalItems,
+                'page' => $page,
+                'limit' => $limit,
+                'totalPages' => ceil($totalItems / $limit)
+            ]
+        ]);
     }
 
     #[Route('/api/admin/settings/sms/info', name: 'admin_settings_sms_info')]
