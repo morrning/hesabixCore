@@ -475,110 +475,93 @@ class PersonsController extends AbstractController
         $types = $params['types'] ?? null;
         $transactionFilters = $params['transactionFilters'] ?? null;
 
-        $queryBuilder = $entityManager->getRepository(Person::class)
+        // کوئری اصلی برای گرفتن همه اشخاص
+        $queryBuilder = $entityManager->getRepository(\App\Entity\Person::class)
             ->createQueryBuilder('p')
-            ->leftJoin('p.type', 't')
-            ->leftJoin('p.hesabdariRows', 'hr', 'WITH', 'hr.person = p.id')
-            ->leftJoin('hr.doc', 'hd')
             ->where('p.bid = :bid')
             ->setParameter('bid', $acc['bid']);
 
-        // فیلتر سال مالی و واحد پولی
-        $queryBuilder->andWhere('hd.year = :year')
-            ->andWhere('hd.money = :money')
-            ->setParameter('year', $acc['year'])
-            ->setParameter('money', $acc['money']);
-
-        // جست‌وجو
-        if (!empty($search)) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->orX(
-                    $queryBuilder->expr()->like('p.nikename', ':search'),
-                    $queryBuilder->expr()->like('p.name', ':search'),
-                    $queryBuilder->expr()->like('p.code', ':search'),
-                    $queryBuilder->expr()->like('p.tel', ':search'),
-                    $queryBuilder->expr()->like('p.mobile', ':search'),
-                    $queryBuilder->expr()->like('p.mobile2', ':search'),
-                    $queryBuilder->expr()->like('p.email', ':search'),
-                    $queryBuilder->expr()->like('p.company', ':search'),
-                    $queryBuilder->expr()->like('p.shenasemeli', ':search'),
-                    $queryBuilder->expr()->like('p.codeeghtesadi', ':search'),
-                    $queryBuilder->expr()->like('p.sabt', ':search'),
-                    $queryBuilder->expr()->like('p.keshvar', ':search'),
-                    $queryBuilder->expr()->like('p.ostan', ':search'),
-                    $queryBuilder->expr()->like('p.shahr', ':search'),
-                    $queryBuilder->expr()->like('p.postalcode', ':search'),
-                    $queryBuilder->expr()->like('p.website', ':search'),
-                    $queryBuilder->expr()->like('p.fax', ':search'),
-                    $queryBuilder->expr()->like('p.birthday', ':search')
-                )
-            )->setParameter('search', "%$search%");
+        // جست‌وجو (بهبود داده‌شده)
+        if (!empty($search) || $search === '0') { // برای اطمینان از کار با "0" یا خالی
+            $search = trim($search); // حذف فضای خالی اضافی
+            $queryBuilder->andWhere('p.nikename LIKE :search OR p.name LIKE :search OR p.code LIKE :search')
+                ->setParameter('search', "%$search%");
         }
 
         // فیلتر نوع اشخاص
         if ($types && !empty($types)) {
-            $queryBuilder->andWhere('t.code IN (:types)')
+            $queryBuilder->leftJoin('p.type', 't')
+                ->andWhere('t.code IN (:types)')
                 ->setParameter('types', $types);
         }
 
-        // فیلتر وضعیت تراکنش
-        if ($transactionFilters && !empty($transactionFilters)) {
-            $conditions = [];
-            if (in_array('debtors', $transactionFilters)) {
-                $conditions[] = 'SUM(CAST(hr.bd AS DECIMAL)) > SUM(CAST(hr.bs AS DECIMAL))';
-            }
-            if (in_array('creditors', $transactionFilters)) {
-                $conditions[] = 'SUM(CAST(hr.bs AS DECIMAL)) > SUM(CAST(hr.bd AS DECIMAL))';
-            }
-            if (!empty($conditions)) {
-                $queryBuilder->groupBy('p.id')
-                    ->having(implode(' OR ', $conditions));
-            }
-        }
-
-        // محاسبه تعداد کل
-        $totalQuery = (clone $queryBuilder)
-            ->select('COUNT(DISTINCT p.id) as total')
+        // تعداد کل (قبل از فیلتر تراکنش‌ها)
+        $totalItems = (clone $queryBuilder)
+            ->select('COUNT(p.id)')
             ->getQuery()
-            ->getScalarResult();
-        $totalItems = $totalQuery[0]['total'] ?? 0;
+            ->getSingleScalarResult();
 
-        // دریافت لیست با صفحه‌بندی
+        // گرفتن اشخاص با صفحه‌بندی
         $persons = $queryBuilder
-            ->select('DISTINCT p')
+            ->select('p')
             ->setFirstResult(($page - 1) * $itemsPerPage)
             ->setMaxResults($itemsPerPage)
             ->getQuery()
             ->getResult();
 
-        $response = Explore::ExplorePersons($persons, $entityManager->getRepository(PersonType::class)->findAll());
-        foreach ($persons as $key => $person) {
-            $rows = $entityManager->getRepository(HesabdariRow::class)
-                ->createQueryBuilder('hr')
-                ->leftJoin('hr.doc', 'hd')
-                ->where('hr.person = :person')
-                ->andWhere('hd.year = :year')
-                ->andWhere('hd.money = :money')
-                ->setParameter('person', $person)
-                ->setParameter('year', $acc['year'])
-                ->setParameter('money', $acc['money'])
-                ->getQuery()
-                ->getResult();
-
-            $bs = 0;
-            $bd = 0;
+        // محاسبه تراکنش‌ها و اعمال فیلتر تراکنش‌ها
+        $response = [];
+        foreach ($persons as $person) {
+            $rows = $entityManager->getRepository(\App\Entity\HesabdariRow::class)->findBy([
+                'person' => $person,
+                'bid' => $acc['bid'],
+            ]);
+            $bs = 0; // بستانکار
+            $bd = 0; // بدهکار
             foreach ($rows as $row) {
-                $bs += (float) $row->getBs();
-                $bd += (float) $row->getBd();
+                if ($row->getDoc()->getMoney()->getId() == $acc['money']->getId() &&
+                    $row->getDoc()->getYear()->getId() == $acc['year']->getId()) {
+                    $bs += (float) $row->getBs(); // بستانکار
+                    $bd += (float) $row->getBd(); // بدهکار
+                }
             }
-            $response[$key]['bs'] = $bs;
-            $response[$key]['bd'] = $bd;
-            $response[$key]['balance'] = $bs - $bd;
+            $balance = $bs - $bd; // تراز = بستانکار - بدهکار
+
+            // اعمال فیلتر transactionFilters
+            $include = true;
+            if ($transactionFilters && !empty($transactionFilters)) {
+                $include = false;
+                if (in_array('debtors', $transactionFilters) && $balance < 0) { // بدهکارها (تراز منفی)
+                    $include = true;
+                }
+                if (in_array('creditors', $transactionFilters) && $balance > 0) { // بستانکارها (تراز مثبت)
+                    $include = true;
+                }
+                if (in_array('zero', $transactionFilters) && $balance == 0) { // تسویه‌شده‌ها
+                    $include = true;
+                }
+            }
+
+            if ($include) {
+                $response[] = [
+                    'id' => $person->getId(),
+                    'name' => $person->getName(),
+                    'nikename' => $person->getNikename(),
+                    'code' => $person->getCode(),
+                    'bs' => $bs, // بستانکار
+                    'bd' => $bd, // بدهکار
+                    'balance' => $balance, // تراز
+                ];
+            }
         }
 
-        return $this->json([
-            'items' => $response,
-            'total' => $totalItems,
+        // تعداد آیتم‌های فیلترشده
+        $filteredTotal = count($response);
+
+        return new JsonResponse([
+            'items' => array_slice($response, 0, $itemsPerPage), // فقط تعداد درخواستی
+            'total' => $filteredTotal, // تعداد کل فیلترشده
+            'unfilteredTotal' => $totalItems, // تعداد کل بدون فیلتر (اختیاری)
         ]);
     }
 
