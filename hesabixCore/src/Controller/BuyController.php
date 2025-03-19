@@ -332,10 +332,10 @@ class BuyController extends AbstractController
 
             $temp['commodities'] = [];
             foreach ($item->getHesabdariRows() as $item) {
-                if ($item->getRef()->getCode() == '104') {
-                    $temp['discountAll'] = $item->getBd();
+                if ($item->getRef()->getCode() == '51') {
+                    $temp['discountAll'] = $item->getBs();
                 } elseif ($item->getRef()->getCode() == '90') {
-                    $temp['transferCost'] = $item->getBs();
+                    $temp['transferCost'] = $item->getBd();
                 }
                 if ($item->getCommodity()) {
                     $temp['commodities'][] = Explore::ExploreCommodity($item->getCommodity(), $item->getCommdityCount());
@@ -442,9 +442,9 @@ class BuyController extends AbstractController
         foreach ($doc->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = $item->getPerson();
-            } elseif ($item->getRef()->getCode() == 104) {
+            } elseif ($item->getRef()->getCode() == 90) {
                 $discount = $item->getBd();
-            } elseif ($item->getRef()->getCode() == 61) {
+            } elseif ($item->getRef()->getCode() == 51) {
                 $transfer = $item->getBs();
             }
         }

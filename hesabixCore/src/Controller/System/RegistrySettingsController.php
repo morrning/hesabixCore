@@ -53,7 +53,8 @@ final class RegistrySettingsController extends AbstractController
             'sponsorMessage' => $registryMGR->get('system', 'sponsers'),
             'footerLeft' => $registryMGR->get('system', 'footerLeft'),
             'footerRight' => $registryMGR->get('system', 'footerRight'),
-
+            'appName' => $registryMGR->get('system', 'appName'),
+            'appUrl' => $registryMGR->get('system', 'appUrl'),
         ];
 
         return new JsonResponse([
@@ -82,6 +83,8 @@ final class RegistrySettingsController extends AbstractController
         $registryMGR->update('system', 'sponsers', $data['sponsorMessage'] ?? '');
         $registryMGR->update('system', 'footerLeft', $data['footerLeft'] ?? '');
         $registryMGR->update('system', 'footerRight', $data['footerRight'] ?? '');
+        $registryMGR->update('system', 'appName', $data['appName'] ?? '');
+        $registryMGR->update('system', 'appUrl', $data['appUrl'] ?? '');
 
         return new JsonResponse([
             'result' => 1,

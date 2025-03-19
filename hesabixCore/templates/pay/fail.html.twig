@@ -9,8 +9,8 @@
                 <div class="block">
                     <div class="block-header block-header-default">
                         <div class="block-title text-primary-dark text-start">
-                            <img src="{{ asset('/img/logo-blue.png') }}" class="img-avatar img-avatar32"  alt="حسابیکس"/>
-                            حسابیکس
+                            <img src="{{ asset('/img/logo-blue.png') }}" class="img-avatar img-avatar32"  alt="{{twigFunctions.getStaticData('system', 'appName')}}"/>
+                            {{twigFunctions.getStaticData('system', 'appName')}}
                         </div>
                     </div>
                     <div class="block-content p-3">

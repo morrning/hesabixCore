@@ -80,7 +80,7 @@ class GeneralController extends AbstractController
             Response::HTTP_OK,
             [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="Hesabix PrintOut.pdf"',
+                'Content-Disposition' => 'inline; filename="PrintOut.pdf"',
             ]
         );
     }

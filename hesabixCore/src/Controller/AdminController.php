@@ -595,7 +595,7 @@ class AdminController extends AbstractController
             $item->setAmount($params['amount']);
             $item->setCardPan($params['card']);
             $item->setDateSubmit(time());
-            $item->setDes('واریز به حساب کسب و کار از طرف حسابیکس');
+            $item->setDes('تراکنش تسویه کیف پول');
             $item->setRefID($params['refID']);
             $item->setGatePay($params['bank']);
             $item->setBank($bid->getWalletMatchBank()->getName());
@@ -679,43 +679,4 @@ class AdminController extends AbstractController
         return $this->json($res);
     }
 
-
-    /**
-     * @throws Exception
-     */
-    #[Route('/script', name: 'script')]
-    public function script(EntityManagerInterface $entitymanager): JsonResponse
-    {
-        $items = $entitymanager->getRepository(\App\Entity\HesabdariDoc::class)->findAll();
-        foreach ($items as $item) {
-            $item->setDate(str_replace("-", "/", $item->getDate()));
-            $entitymanager->persist($item);
-            $entitymanager->flush();
-
-        }
-        echo str_replace("-", "/", "1403-02-06");
-    }
-    /**
-     * @throws Exception
-     */
-    #[Route('/script2', name: 'script2')]
-    public function script2(EntityManagerInterface $entitymanager): JsonResponse
-    {
-        $banks = $entitymanager->getRepository(BankAccount::class)->findAll();
-        foreach ($banks as $bank) {
-            if ($bank->getMoney() == null) {
-                $bank->setMoney($bank->getBid()->getMoney());
-                $entitymanager->persist($bank);
-            }
-        }
-
-        $items = $entitymanager->getRepository(Cashdesk::class)->findAll();
-        foreach ($items as $item) {
-            if ($item->getMoney() == null) {
-                $item->setMoney($item->getBid()->getMoney());
-                $entitymanager->persist($bank);
-            }
-        }
-        $entitymanager->flush();
-    }
 }

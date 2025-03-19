@@ -11,6 +11,6 @@ class UiGeneralController extends AbstractController
     #[Route('/', name: 'general_home')]
     public function general_home(): JsonResponse
     {
-        return $this->json(['message'=>'HesabixApi is running ...']);
+        return $this->json(['message'=>'System is running ...']);
     }
 }

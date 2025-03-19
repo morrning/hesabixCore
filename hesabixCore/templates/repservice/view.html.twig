@@ -14,9 +14,10 @@
 					<h2 class="flex-grow-1 fs-3 fw-semibold my-2 my-sm-3">
 						مشاهده قبض تعمیرات
 					</h2>
-					<a class="btn btn-alt-primary my-2" href="https://hesabix.ir">
+					<a class="btn btn-alt-primary my-2" href="{{twigFunctions.getStaticData('system', 'appUrl')}}">
 						<i class="fa fa-fw fa-door-open me-1"></i>
-						ورود به حسابیکس
+						ورود به
+						{{twigFunctions.getStaticData('system', 'appName')}}
 					</a>
 				</div>
 			</div>
@@ -58,7 +59,7 @@
 									{{bid.name}}
 								</p>
 								<address>آدرس :
-																																																				استان
+																																																													استان
 									{{bid.ostan}}
 									شهرستان
 									{{bid.shahrestan}}
@@ -86,7 +87,7 @@
 									{{ person.nikename }}
 								</p>
 								<address>آدرس :
-																																		استان
+																																											استان
 									{{person.ostan}}
 									شهرستان
 									{{person.shahr}}
@@ -162,8 +163,8 @@
 							</tbody>
 						</table>
 						<!-- Footer -->
-						<a href="https://hesabix.ir" class="p-4 mb-3text-primary text-center my-5">
-							حسابیکس
+						<a href="{{twigFunctions.getStaticData('system', 'appUrl')}}" class="p-4 mb-3text-primary text-center my-5">
+							{{twigFunctions.getStaticData('system', 'appName')}}
 							<label class="text-muted">سامانه جامع مالی رایگان ، ابری و متن باز</label>
 						</a>
 						<!-- END Footer -->

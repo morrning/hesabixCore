@@ -127,7 +127,7 @@ class PayController extends AbstractController
                 $doc->setSubmitter($walletUser);
             else {
                 $wu = new User();
-                $wu->setFullName('کیف پول حسابیکس');
+                $wu->setFullName('کیف پول');
                 $wu->setEmail('wallet@hesabix.ir');
                 $wu->setRoles([]);
                 $wu->setActive(true);

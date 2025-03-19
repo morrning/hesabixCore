@@ -36,8 +36,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
 use Symfony\Component\EventDispatcher\EventDispatcher,
-Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken,
-Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
+    Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken,
+    Symfony\Component\Security\Http\Event\InteractiveLoginEvent;
 use function PHPUnit\Framework\throwException;
 
 class UserController extends AbstractController
@@ -388,7 +388,7 @@ class UserController extends AbstractController
                 $email = (new Email())
                     ->to($user->getEmail())
                     ->priority(Email::PRIORITY_HIGH)
-                    ->subject('تایید ایمیل در حسابیکس')
+                    ->subject('تایید ایمیل')
                     ->html(
                         $this->renderView('user/email/confrim-register.html.twig', [
                             'code' => $user->getVerifyCode()
@@ -455,7 +455,7 @@ class UserController extends AbstractController
             $email = (new Email())
                 ->to($user->getEmail())
                 ->priority(Email::PRIORITY_HIGH)
-                ->subject('تایید ایمیل در حسابیکس')
+                ->subject('تایید ایمیل  ')
                 ->html(
                     $this->renderView('user/email/confrim-register.html.twig', [
                         'code' => $user->getVerifyCode()
@@ -613,7 +613,7 @@ class UserController extends AbstractController
         $email = (new Email())
             ->to($user->getEmail())
             ->priority(Email::PRIORITY_HIGH)
-            ->subject('حسابیکس - فراموشی کلمه عبور')
+            ->subject('فراموشی کلمه عبور')
             ->html(
                 $this->renderView('user/email/confrim-forget-password.html.twig', [
                     'code' => $user->getVerifyCode()
@@ -690,7 +690,7 @@ class UserController extends AbstractController
             $email = (new Email())
                 ->to($user->getEmail())
                 ->priority(Email::PRIORITY_HIGH)
-                ->subject('تایید ایمیل در حسابیکس')
+                ->subject('تایید ایمیل  ')
                 ->html(
                     $this->renderView('user/email/confrim-register.html.twig', [
                         'code' => $user->getVerifyCode()
@@ -715,5 +715,54 @@ class UserController extends AbstractController
             'result' => 1,
             'canRegister' => $canRegister
         ]);
+    }
+
+    #[Route('/api/admin/user/change-password/{userId}', name: 'change_user_password', methods: ['POST'])]
+    public function changePassword(
+        int $userId,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        UserPasswordHasherInterface $passwordHasher,
+        registryMGR $registryMGR,
+        MailerInterface $mailer,
+        SMS $SMS
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $password = $data['password'] ?? null;
+        $notifyUser = $data['notifyUser'] ?? false;
+
+        if (!$password) {
+            return new JsonResponse(['error' => 'Password is required'], 400);
+        }
+
+        $user = $entityManager->getRepository(User::class)->find($userId);
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'User not found'], 404);
+        }
+
+        $user->setPassword($passwordHasher->hashPassword($user, $password));
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        if ($notifyUser) {
+            $SMS->send(
+                [$password],
+                $registryMGR->get('sms', 'changePassword'),
+                $user->getMobile()
+            );
+            $email = (new Email())
+                ->to($user->getEmail())
+                ->priority(Email::PRIORITY_HIGH)
+                ->subject('تغییر کلمه عبور')
+                ->html(
+                    $this->renderView('user/email/reset-password.html.twig', [
+                        'code' => $password
+                    ])
+                );
+            $mailer->send($email);
+        }
+
+        return new JsonResponse(['message' => 'Password changed successfully']);
     }
 }

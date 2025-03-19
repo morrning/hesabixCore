@@ -59,7 +59,7 @@ class pdfMGR
         $htmlContent = $printQueue->getView() ?: '<p>محتوای PDF در دسترس نیست.</p>';
         $mpdf->WriteHTML($htmlContent);
         $mpdf->SetAutoPageBreak(true);
-        $mpdf->SetTitle('حسابیکس');
+        $mpdf->SetTitle('PDF Export');
     
         // به جای Output مستقیم، محتوا رو برگردونید
         return $mpdf->Output('', 'S'); // 'S' برای برگرداندن به صورت رشته
