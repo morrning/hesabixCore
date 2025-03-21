@@ -21,7 +21,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../public_html/webui',
+    outDir: '../public_html/u',
     chunkSizeWarningLimit: 1600,
     rollupOptions: {
       input: {
@@ -34,5 +34,5 @@ export default defineConfig({
       }
     }
   },
-  base: process.env.VITE_BASE_PATH || '/webui/' // برای سرور فعلی /webui/
+  base: process.env.VITE_BASE_PATH || '/u/' // برای سرور فعلی /u/
 });

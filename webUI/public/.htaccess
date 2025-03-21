@@ -2,7 +2,7 @@ DirectoryIndex index.html
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /webui/
+  RewriteBase /u/
 
   # اگه درخواست مستقیماً index.html باشه، همون رو لود کن
   RewriteRule ^index\.html$ - [L]
@@ -10,5 +10,5 @@ DirectoryIndex index.html
   # اگه فایل یا دایرکتوری فیزیکی وجود نداره، به index.html برو
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^ /webui/index.html [L]
+  RewriteRule ^ /u/index.html [L]
 </IfModule>

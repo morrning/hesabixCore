@@ -4,23 +4,23 @@ export const name = "hesabixConfig";
 
 export function getApiUrl() {
     const origin = window.location.origin; // دامنه اصلی مثل http://localhost.com
-    const path = window.location.pathname; // مسیر فعلی مثل /app/etc/webui
+    const path = window.location.pathname; // مسیر فعلی مثل /app/etc/u
 
     // مسیر رو به آرایه تبدیل می‌کنم تا بتونم پوشه‌ها رو جدا کنم
-    const pathParts = path.split('/').filter(part => part !== ''); // ['app', 'etc', 'webui']
+    const pathParts = path.split('/').filter(part => part !== ''); // ['app', 'etc', 'u']
 
-    // پیدا کردن جایگاه webui و حذفش به همراه هر چی بعدش هست
-    const webuiIndex = pathParts.indexOf('webui');
-    if (webuiIndex !== -1) {
-        // فقط مسیر تا قبل از webui رو نگه می‌دارم
-        const basePath = pathParts.slice(0, webuiIndex).join('/'); // app/etc
+    // پیدا کردن جایگاه u و حذفش به همراه هر چی بعدش هست
+    const uIndex = pathParts.indexOf('u');
+    if (uIndex !== -1) {
+        // فقط مسیر تا قبل از u رو نگه می‌دارم
+        const basePath = pathParts.slice(0, uIndex).join('/'); // app/etc
         if (basePath === '') {
             return `${origin}`;
         }
         return `${origin}/${basePath}`; // http://localhost.com/app/etc
     }
 
-    // اگه webui توی مسیر نبود، مسیر روت رو برگشت بده
+    // اگه u توی مسیر نبود، مسیر روت رو برگشت بده
     return `${origin}`;
 }
 

@@ -3,8 +3,8 @@ DirectoryIndex index.php
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # اگه درخواست با /webui شروع بشه، قوانین بعدی رو اعمال نکن و بذار فایل‌های اونجا مستقیماً لود بشن
-    RewriteCond %{REQUEST_URI} ^/webui(/|$) [NC]
+    # اگه درخواست با /u شروع بشه، قوانین بعدی رو اعمال نکن و بذار فایل‌های اونجا مستقیماً لود بشن
+    RewriteCond %{REQUEST_URI} ^/u(/|$) [NC]
     RewriteRule ^ - [L]
 
     # اگه فایل یا دایرکتوری فیزیکی وجود داره (مثل فایل‌های استاتیک)، مستقیماً لودش کن
