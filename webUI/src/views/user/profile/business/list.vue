@@ -90,24 +90,24 @@ export default {
   methods: {
     async loadData() {
       this.apiurl = getApiUrl();
-      
+
       // دریافت همزمان اطلاعات کسب‌وکارها و پیام اسپانسر
       try {
         const [businessResponse, sponsorResponse] = await Promise.all([
           axios.post('/api/business/list'),
           axios.get('/api/general/sponsors')
         ]);
-        
+
         this.contents = businessResponse.data;
         this.contents.forEach((bid) => {
           bid.selectedMoney = bid.arzmain;
         });
-        
+
         // ذخیره پیام اسپانسر
         if (sponsorResponse.data && sponsorResponse.data.result) {
           this.sponsorMessage = sponsorResponse.data.result;
         }
-        
+
       } catch (error) {
         console.error('خطا در دریافت اطلاعات:', error);
         this.sponsorMessage = '';
@@ -131,10 +131,10 @@ export default {
         { message: "تطبیق و ارزیابی داده‌ها", progress: 60 },
         { message: "بررسی مجوزها و دسترسی‌ها", progress: 80 },
         { message: `در حال انتقال به داشبورد کسب‌وکار "${businessName}"`, progress: 95 },
-        { 
-            message: this.sponsorMessage || `در حال انتقال به داشبورد کسب‌وکار "${businessName}"`, 
-            progress: 100, 
-            delay: 5000 
+        {
+          message: this.sponsorMessage || `در حال انتقال به داشبورد کسب‌وکار "${businessName}"`,
+          progress: 100,
+          delay: 5000
         }
       ];
 
@@ -150,7 +150,7 @@ export default {
     async runBid(id, businessName) {
       await this.showLoadingProgress(businessName);
 
-      await localStorage.setItem('activeBid', id);
+      localStorage.setItem('activeBid', id);
       this.contents.forEach((item) => {
         if (item.id == id) {
           localStorage.setItem('activeMoney', item.selectedMoney.name);
@@ -170,8 +170,16 @@ export default {
             localStorage.setItem('activeYear', item.id);
           }
         });
-        window.location.href = '/acc/dashboard';
+
+        //set axios headers
+        axios.defaults.headers.common['activeBid'] = localStorage.getItem('activeBid');
+        axios.defaults.headers.common['activeYear'] = localStorage.getItem('activeYear');
+        axios.defaults.headers.common['activeMoney'] = localStorage.getItem('activeMoney');
+        this.jumpToBusiness();
       });
+    },
+    jumpToBusiness(){
+      this.$router.push('/acc/dashboard');
     }
   },
   beforeMount() {

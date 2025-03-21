@@ -1,17 +1,14 @@
-
-#Alternate default index page
 DirectoryIndex index.html
-
-<IfModule mod_negotiation.c>
-  Options -MultiViews
-</IfModule>
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /
+  RewriteBase /webui/
+
+  # اگه درخواست مستقیماً index.html باشه، همون رو لود کن
   RewriteRule ^index\.html$ - [L]
+
+  # اگه فایل یا دایرکتوری فیزیکی وجود نداره، به index.html برو
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
-  RewriteCond %{HTTPS} off
+  RewriteRule ^ /webui/index.html [L]
 </IfModule>

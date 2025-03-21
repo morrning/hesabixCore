@@ -14,6 +14,9 @@ export function getApiUrl() {
     if (webuiIndex !== -1) {
         // فقط مسیر تا قبل از webui رو نگه می‌دارم
         const basePath = pathParts.slice(0, webuiIndex).join('/'); // app/etc
+        if (basePath === '') {
+            return `${origin}`;
+        }
         return `${origin}/${basePath}`; // http://localhost.com/app/etc
     }
 
@@ -24,7 +27,7 @@ export function getApiUrl() {
 export async function getSiteName() {
     // کلید ذخیره‌سازی در localStorage
     const localStorageKey = 'hesabix_site_name';
-    
+
     // چک کن که آیا نام برنامه توی localStorage هست یا نه
     const storedName = localStorage.getItem(localStorageKey);
     if (storedName) {
@@ -35,7 +38,7 @@ export async function getSiteName() {
         // اگه نبود، درخواست به سمفونی ارسال کن
         const response = await axios.get(`${getApiUrl()}/system/getname`);
         const siteName = response.data; // فرض می‌کنم سمفونی نام رو مستقیم برمی‌گردونه
-        
+
         // ذخیره توی localStorage
         localStorage.setItem(localStorageKey, siteName);
         return siteName;

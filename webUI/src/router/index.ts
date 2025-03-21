@@ -1,13 +1,21 @@
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import axios from "axios";
 
-// گرفتن base به صورت داینامیک از URL فعلی
-const base = window.location.pathname.endsWith('/')
-    ? window.location.pathname
-    : window.location.pathname + '/';
+// گرفتن base به‌صورت داینامیک تا بخش /webui
+const getBasePath = () => {
+    const fullPath = window.location.pathname;
+    const webuiIndex = fullPath.indexOf('/webui');
+    if (webuiIndex !== -1) {
+        // از اول مسیر تا آخر /webui رو بگیریم
+        return fullPath.substring(0, webuiIndex + '/webui'.length) + '/';
+    }
+    // اگه /webui توی مسیر نبود (که بعیده)، یه پیش‌فرض بذاریم
+    return '/webui/';
+};
+const base = getBasePath();
 
 const router = createRouter({
-    history: createWebHashHistory(base),
+    history: createWebHistory(base),
     routes: [
         {
             path: '/',
