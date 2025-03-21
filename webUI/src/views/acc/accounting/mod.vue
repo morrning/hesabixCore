@@ -153,7 +153,6 @@
       async fetchHesabdariTables() {
         try {
           const response = await axios.get('/api/hesabdari/tables');
-          console.log('دیتای دریافت‌شده از API:', response.data);
           this.hesabdariTables = response.data.data;
         } catch (error) {
           console.error('خطا در دریافت حساب‌ها:', error.response?.data || error.message);

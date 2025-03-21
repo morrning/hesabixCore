@@ -160,8 +160,8 @@ export default defineComponent({
 </script>
 
 <template>
-    <v-btn v-if="$props.btn == true" @click="loadData(); dialog = true"
-        icon="mdi-plus" class="text-primary" variant="plain" density="compact" :title="$t('dialog.new')">
+    <v-btn v-if="$props.btn == true" @click="loadData(); dialog = true" icon="mdi-plus" class="text-primary"
+        variant="plain" density="compact" :title="$t('dialog.new')">
     </v-btn>
 
     <v-dialog v-model="dialog" transition="dialog-bottom-transition" fullscreen>
@@ -223,8 +223,7 @@ export default defineComponent({
                                                 <p class="py-0 my-0 text-primary">نوع مشتری</p>
                                                 <div v-for="(item, index) in person.types"
                                                     class="form-check form-check-inline">
-                                                    <input @change="console.log(this.person.types)"
-                                                        v-model="person.types[index].checked" checked=""
+                                                    <input v-model="person.types[index].checked" checked=""
                                                         class="form-check-input" type="checkbox">
                                                     <label class="form-check-label">{{ item.label }}</label>
                                                 </div>

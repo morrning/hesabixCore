@@ -85,9 +85,7 @@ const callInstallbtn = () => {
 
     event.userChoice.then((choiceResult: { outcome: string }) => {
       if (choiceResult.outcome === "accepted") {
-        console.log("User Accepted");
       } else {
-        console.log("User dismissed");
       }
 
       installPromptEvent.value = null;
@@ -146,7 +144,6 @@ onMounted(() => {
   window.addEventListener("beforeinstallprompt", (e: Event) => {
     e.preventDefault();
     installPromptEvent.value = e;
-    console.log(installPromptEvent.value);
   });
 
   // setTimeout(() => {

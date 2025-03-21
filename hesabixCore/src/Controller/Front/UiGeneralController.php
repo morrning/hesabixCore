@@ -13,7 +13,7 @@ class UiGeneralController extends AbstractController
     #[Route('/', name: 'general_home')]
     public function general_home(): Response
     {
-        return $this->redirect('/u');
+        return $this->redirect('/u/');
     }
 
     #[Route('/system/getname', name: 'general_get_name')]

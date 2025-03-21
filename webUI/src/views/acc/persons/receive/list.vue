@@ -295,11 +295,9 @@ const loadData = async (options = null) => {
       dateFilter: dateFilter.value,
     };
 
-    console.log('Request Params:', params);
 
     const response = await axios.post('/api/person/receive/list/search', params);
     
-    console.log('Server Response:', response.data);
 
     if (response.data) {
       if (Array.isArray(response.data)) {
@@ -316,8 +314,7 @@ const loadData = async (options = null) => {
         amount: parseFloat(item.amount)
       }));
 
-      console.log('Processed Items:', items.value);
-      console.log('Total Items:', totalItems.value);
+     
 
       sumTotal.value = items.value.reduce((acc, item) => acc + parseFloat(item.amount), 0);
     }
