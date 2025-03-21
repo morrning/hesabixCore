@@ -1,0 +1,122 @@
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-Thin-FD.woff2') format('woff2');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-Thin-FD.woff2') format('woff2');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-Light-FD.woff2') format('woff2');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-FD.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-Medium-FD.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-Medium-FD.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-Bold-FD.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-Bold-FD.woff2') format('woff2');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: Vazirmatn FD;
+    src: url('../shabnam/Shabnam-Bold-FD.woff2') format('woff2');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+body,
+.body,
+div,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+a,
+ol,
+ul,
+li,
+strike,
+strong,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+figure,
+figcaption,
+footer,
+header,
+menu,
+nav,
+select option,
+section,
+summary,
+small,
+.form-control,
+.form-select,
+.btn,
+.jqstooltip,
+.jvectormap-tip,
+input,
+.tooltip,
+.select2-container .select2-dropdown .select2-search__field {
+    font-family: 'Shabnam FD', sans-serif;
+}

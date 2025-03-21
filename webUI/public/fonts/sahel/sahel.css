@@ -1,0 +1,89 @@
+/* Sahel Font Face */
+
+@font-face {
+    font-family: 'Sahel FD';
+    src: url('../sahel/Sahel-Black-FD.eot');
+    src: url('../sahel/Sahel-Black-FD.eot?#iefix') format('embedded-opentype'), url('../sahel/Sahel-Black-FD.woff2') format('woff2'), url('../sahel/Sahel-Black-FD.woff') format('woff'), url('../sahel/Sahel-Black-FD.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Sahel FD';
+    src: url('../sahel/Sahel-Bold-FD.eot');
+    src: url('../sahel/Sahel-Bold-FD.eot?#iefix') format('embedded-opentype'), url('../sahel/Sahel-Bold-FD.woff2') format('woff2'), url('../sahel/Sahel-Bold-FD.woff') format('woff'), url('../sahel/Sahel-Bold-FD.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Sahel FD';
+    src: url('../sahel/Sahel-Light-FD.eot');
+    src: url('../sahel/Sahel-Light-FD.eot?#iefix') format('embedded-opentype'), url('../sahel/Sahel-Light-FD.woff2') format('woff2'), url('../sahel/Sahel-Light-FD.woff') format('woff'), url('../sahel/Sahel-Light-FD.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Sahel FD';
+    src: url('../sahel/Sahel-SemiBold-FD.eot');
+    src: url('../sahel/Sahel-SemiBold-FD.eot?#iefix') format('embedded-opentype'), url('../sahel/Sahel-SemiBold-FD.woff2') format('woff2'), url('../sahel/Sahel-SemiBold-FD.woff') format('woff'), url('../sahel/Sahel-SemiBold-FD.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Sahel FD';
+    src: url('../sahel/Sahel-FD.eot');
+    src: url('../sahel/Sahel-FD.eot?#iefix') format('embedded-opentype'), url('../sahel/Sahel-FD.woff2') format('woff2'), url('../sahel/Sahel-FD.woff') format('woff'), url('../sahel/Sahel-FD.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+body,
+.body,
+div,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+a,
+ol,
+ul,
+li,
+strike,
+strong,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+figure,
+figcaption,
+footer,
+header,
+menu,
+nav,
+section,
+summary,
+small,
+.btn {
+    font-family: 'Sahel FD', sans-serif;
+}

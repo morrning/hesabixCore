@@ -55,6 +55,8 @@ final class RegistrySettingsController extends AbstractController
             'footerRight' => $registryMGR->get('system', 'footerRight'),
             'appName' => $registryMGR->get('system', 'appName'),
             'appUrl' => $registryMGR->get('system', 'appUrl'),
+            'appSlogan' => $registryMGR->get('system', 'appSlogan'),
+            'verifyMobileViaSms' => filter_var($registryMGR->get('system', 'verifyMobileViaSms'), FILTER_VALIDATE_BOOLEAN),
         ];
 
         return new JsonResponse([
@@ -85,6 +87,8 @@ final class RegistrySettingsController extends AbstractController
         $registryMGR->update('system', 'footerRight', $data['footerRight'] ?? '');
         $registryMGR->update('system', 'appName', $data['appName'] ?? '');
         $registryMGR->update('system', 'appUrl', $data['appUrl'] ?? '');
+        $registryMGR->update('system', 'appSlogan', $data['appSlogan'] ?? '');
+        $registryMGR->update('system', 'verifyMobileViaSms', $data['verifyMobileViaSms'] ? '1' : '0');
 
         return new JsonResponse([
             'result' => 1,

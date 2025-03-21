@@ -24,8 +24,10 @@ DirectoryIndex index.php
 
     RewriteEngine On
 
+    # Redirect www to non-www with HTTPS
     RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
     RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
     # Determine the RewriteBase automatically and set it as environment variable.
     # If you are using Apache aliases to do mass virtual hosting or installed the
     # project in a subdirectory, the base path will be prepended to allow proper
@@ -54,9 +56,15 @@ DirectoryIndex index.php
     RewriteCond %{ENV:REDIRECT_STATUS} =""
     RewriteRule ^index\.php(?:/(.*)|$) %{ENV:BASE}/$1 [R=301,L]
 
+    # Exclude /webui paths for VueJS frontend
+    # If the request starts with /webui (e.g., /app/etc/webui), stop processing here
+    # and let the request go to the webui folder
+    RewriteCond %{REQUEST_URI} ^%{ENV:BASE}/webui(/|$) [NC]
+    RewriteRule ^ - [L]
+
     # If the requested filename exists, simply serve it.
     # We only want to let Apache serve files and not directories.
-    # Rewrite all other queries to the front controller.
+    # Rewrite all other queries (not starting with /webui) to the front controller.
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ %{ENV:BASE}/index.php [L]
 </IfModule>
@@ -67,6 +75,10 @@ DirectoryIndex index.php
         # the start page to the front controller explicitly so that the website
         # and the generated links can still be used.
         RedirectMatch 307 ^/$ /index.php/
-        # RedirectTemp cannot be used instead
+        # Note: Without mod_rewrite, separating /webui (VueJS) and Symfony paths
+        # won't work as intended because we can't use RewriteCond to exclude /webui.
+        # In this case, all requests will go to index.php unless a physical file exists.
+        # To fix this, you’d need to enable mod_rewrite or manually configure your
+        # server (e.g., via Apache aliases or a different setup).
     </IfModule>
 </IfModule>

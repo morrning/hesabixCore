@@ -1,0 +1,59 @@
+{
+    "name": "Hesabix",
+    "short_name": "Hesabix",
+    "start_url": "./user/login",
+    "scope": "./",
+    "related_applications": [
+        {
+            "platform": "webapp",
+            "url": "./manifest.json"
+        }
+    ],
+    "display": "standalone",
+    "dir": "rtl",
+    "lang": "fa",
+    "background_color": "#fff",
+    "theme_color": "#0665d0",
+    "icons": [
+        {
+            "src": "./img/logo/homescreen48.png",
+            "sizes": "48x48",
+            "type": "image/png"
+        },
+        {
+            "src": "./img/logo/homescreen72.png",
+            "sizes": "72x72",
+            "type": "image/png"
+        },
+        {
+            "src": "./img/logo/homescreen96.png",
+            "sizes": "96x96",
+            "type": "image/png"
+        },
+        {
+            "src": "./img/logo/homescreen144.png",
+            "sizes": "144x144",
+            "type": "image/png"
+        },
+        {
+            "src": "./img/logo/homescreen168.png",
+            "sizes": "168x168",
+            "type": "image/png"
+        },
+        {
+            "src": "./img/logo/homescreen192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "./img/logo/homescreen256.png",
+            "sizes": "256x256",
+            "type": "image/png"
+        },
+        {
+            "src": "./img/logo/homescreen512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

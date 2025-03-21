@@ -11,6 +11,8 @@
 /../hesabixBackup/
 /../backup/
 ###< symfony/framework-bundle ###
+/../public_html/webui/
+/../webUI/node_modules/
 
 ###> phpunit/phpunit ###
 /phpunit.xml

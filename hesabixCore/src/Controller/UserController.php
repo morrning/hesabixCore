@@ -306,6 +306,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/user/register', name: 'api_user_register', methods: ['POST'])]
+    #[Route('/api/user/register', name: 'api_user_register', methods: ['POST'])]
     public function api_user_register(
         Extractor $extractor,
         registryMGR $registryMGR,
@@ -314,14 +315,14 @@ class UserController extends AbstractController
         Request $request,
         UserPasswordHasherInterface $userPasswordHasher,
         EntityManagerInterface $entityManager,
-        CaptchaService $captchaService // اضافه کردن به آرگومان‌های متد
+        CaptchaService $captchaService
     ): Response {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
 
-        // همیشه کپچا رو چک می‌کنیم
+        // چک کردن کپچا
         $captchaAnswer = $params['captcha_answer'] ?? '';
         if (!$captchaService->validateCaptcha($captchaAnswer)) {
             return $this->json($extractor->operationFail(
@@ -331,59 +332,83 @@ class UserController extends AbstractController
             ));
         }
 
-        // ادامه منطق عضویت
+        // بررسی پارامترهای ورودی
         if (
-            array_key_exists('name', $params) && array_key_exists('email', $params) &&
-            array_key_exists('mobile', $params) && array_key_exists('password', $params)
+            !array_key_exists('name', $params) || !array_key_exists('email', $params) ||
+            !array_key_exists('mobile', $params) || !array_key_exists('password', $params)
         ) {
-            if ($entityManager->getRepository(User::class)->findOneBy(['email' => trim($params['email'])])) {
-                return $this->json($extractor->operationFail(
-                    'پست الکترونیکی وارد شده قبلا ثبت شده است',
-                    400,
-                    ['captcha_required' => true]
-                ));
-            } elseif ($entityManager->getRepository(User::class)->findOneBy(['mobile' => trim($params['mobile'])])) {
-                return $this->json($extractor->operationFail(
-                    'شماره تلفن وارد شده قبلا ثبت شده است',
-                    400,
-                    ['captcha_required' => true]
-                ));
-            }
+            return $this->json($extractor->operationFail(
+                'تمام موارد لازم را وارد کنید.',
+                400,
+                ['captcha_required' => true]
+            ));
+        }
 
-            $user = new User();
-            $user->setEmail($params['email']);
+        // بررسی تکراری بودن ایمیل یا موبایل
+        if ($entityManager->getRepository(User::class)->findOneBy(['email' => trim($params['email'])])) {
+            return $this->json($extractor->operationFail(
+                'پست الکترونیکی وارد شده قبلا ثبت شده است',
+                400,
+                ['captcha_required' => true]
+            ));
+        }
+        if ($entityManager->getRepository(User::class)->findOneBy(['mobile' => trim($params['mobile'])])) {
+            return $this->json($extractor->operationFail(
+                'شماره تلفن وارد شده قبلا ثبت شده است',
+                400,
+                ['captcha_required' => true]
+            ));
+        }
+
+        // ایجاد کاربر جدید
+        $user = new User();
+        $user->setEmail($params['email']);
+        $user->setFullName($params['name']);
+        $user->setMobile($params['mobile']);
+        $user->setDateRegister(time());
+        $user->setPassword($userPasswordHasher->hashPassword($user, $params['password']));
+
+        // بررسی اینکه آیا این اولین کاربر است
+        $isFirstUser = $entityManager->getRepository(User::class)->count([]) === 0;
+        if ($isFirstUser) {
+            $user->setRoles(['ROLE_ADMIN', 'ROLE_USER']); // اعطای نقش ادمین
+            $user->setActive(true); // فعال کردن کاربر
+        } else {
             $user->setRoles(['ROLE_USER']);
-            $user->setFullName($params['name']);
-            $user->setMobile($params['mobile']);
-            $user->setVerifyCodeTime(time() + 300);
+            $user->setActive(false); // به طور پیش‌فرض غیرفعال
             $user->setVerifyCode($this->RandomString(6, true));
-            $user->setDateRegister(time());
-            $user->setPassword(
-                $userPasswordHasher->hashPassword(
-                    $user,
-                    $params['password']
-                )
-            );
-            $user->setActive(false);
+            $user->setVerifyCodeTime(time() + 300);
+        }
 
-            //چک کردن کد معرف
-            $invateCode = $params['inviteCode'];
-            if ($invateCode != '0') {
-                $invater = $entityManager->getRepository(User::class)->findOneBy(['invateCode' => $invateCode]);
-                if ($invater) {
-                    $user->setInvitedBy($invater);
-                }
+        // چک کردن کد معرف
+        $inviteCode = $params['inviteCode'] ?? '0';
+        if ($inviteCode !== '0') {
+            $inviter = $entityManager->getRepository(User::class)->findOneBy(['invateCode' => $inviteCode]);
+            if ($inviter) {
+                $user->setInvitedBy($inviter);
             }
+        }
 
-            $entityManager->persist($user);
-            $entityManager->flush();
+        $entityManager->persist($user);
+        $entityManager->flush();
 
+        // بررسی کلید verifyMobileViaSms
+        $verifyMobileViaSms = filter_var($registryMGR->get('system', 'verifyMobileViaSms'), FILTER_VALIDATE_BOOLEAN);
+
+        if ($isFirstUser) {
+            // اولین کاربر نیازی به تأیید ندارد
+            return $this->json($extractor->operationSuccess([
+                'id' => $user->getId(),
+                'message' => 'حساب شما با موفقیت ایجاد و فعال شد. لطفاً وارد شوید.',
+                'redirect' => '/user/login'
+            ]));
+        } elseif ($verifyMobileViaSms) {
+            // ارسال کد تأیید از طریق پیامک و ایمیل
             $SMS->send(
                 [$user->getVerifyCode()],
                 $registryMGR->get('sms', 'f2a'),
                 $user->getMobile()
             );
-
             try {
                 $email = (new Email())
                     ->to($user->getEmail())
@@ -394,21 +419,25 @@ class UserController extends AbstractController
                             'code' => $user->getVerifyCode()
                         ])
                     );
-
                 $mailer->send($email);
             } catch (Exception $exception) {
-                // خطای ارسال ایمیل رو می‌تونید لاگ کنید، فعلاً نادیده می‌گیره
+                // خطای ارسال ایمیل را می‌توان لاگ کرد
             }
             return $this->json($extractor->operationSuccess([
-                'id' => $user->getId()
+                'id' => $user->getId(),
+                'message' => 'لطفاً کد تأیید ارسال‌شده را وارد کنید.'
+            ]));
+        } else {
+            // اگر تأیید پیامک غیرفعال باشد، حساب فعال می‌شود
+            $user->setActive(true);
+            $entityManager->persist($user);
+            $entityManager->flush();
+            return $this->json($extractor->operationSuccess([
+                'id' => $user->getId(),
+                'message' => 'حسابت فعال شده است. لطفاً وارد شوید.',
+                'redirect' => '/user/login'
             ]));
         }
-
-        return $this->json($extractor->operationFail(
-            'تمام موارد لازم را وارد کنید.',
-            400,
-            ['captcha_required' => true]
-        ));
     }
 
 

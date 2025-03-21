@@ -1,0 +1,7 @@
+label.required:before {
+  content: "* ";
+  color:Red;
+}
+.btn-link{
+  text-decoration: none;
+}
