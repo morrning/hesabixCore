@@ -13308,35 +13308,35 @@ fieldset:disabled .btn {
     font-family: Inter;
     font-style: normal;
     font-weight: 300;
-    src: local(""), url(/fonts/inter/inter-v11-latin-300.woff2) format("woff2")
+    src: local(""), url(/u/fonts/inter/inter-v11-latin-300.woff2) format("woff2")
 }
 
 @font-face {
     font-family: Inter;
     font-style: normal;
     font-weight: 400;
-    src: local(""), url(/fonts/inter/inter-v11-latin-regular.woff2) format("woff2")
+    src: local(""), url(/u/fonts/inter/inter-v11-latin-regular.woff2) format("woff2")
 }
 
 @font-face {
     font-family: Inter;
     font-style: normal;
     font-weight: 500;
-    src: local(""), url(/fonts/inter/inter-v11-latin-500.woff2) format("woff2")
+    src: local(""), url(/u/fonts/inter/inter-v11-latin-500.woff2) format("woff2")
 }
 
 @font-face {
     font-family: Inter;
     font-style: normal;
     font-weight: 600;
-    src: local(""), url(/fonts/inter/inter-v11-latin-600.woff2) format("woff2")
+    src: local(""), url(/u/fonts/inter/inter-v11-latin-600.woff2) format("woff2")
 }
 
 @font-face {
     font-family: Inter;
     font-style: normal;
     font-weight: 700;
-    src: local(""), url(/fonts/inter/inter-v11-latin-700.woff2) format("woff2")
+    src: local(""), url(/u/fonts/inter/inter-v11-latin-700.woff2) format("woff2")
 }
 
 b,
@@ -30339,7 +30339,7 @@ a.text-xplay-lighter:hover {
     font-style: normal;
     font-weight: 400;
     font-display: block;
-    src: url(/fonts/fontawesome/fa-regular-400.woff2) format("woff2"), url(/fonts/fontawesome/fa-regular-400.ttf) format("truetype")
+    src: url(/u/fonts/fontawesome/fa-regular-400.woff2) format("woff2"), url(/u/fonts/fontawesome/fa-regular-400.ttf) format("truetype")
 }
 
 .fa-regular,
@@ -30358,7 +30358,7 @@ a.text-xplay-lighter:hover {
     font-style: normal;
     font-weight: 900;
     font-display: block;
-    src: url(/fonts/fontawesome/fa-solid-900.woff2) format("woff2"), url(/fonts/fontawesome/fa-solid-900.ttf) format("truetype")
+    src: url(/u/fonts/fontawesome/fa-solid-900.woff2) format("woff2"), url(/u/fonts/fontawesome/fa-solid-900.ttf) format("truetype")
 }
 
 .fa-solid,
@@ -30377,7 +30377,7 @@ a.text-xplay-lighter:hover {
     font-style: normal;
     font-weight: 400;
     font-display: block;
-    src: url(/fonts/fontawesome/fa-brands-400.woff2) format("woff2"), url(/fonts/fontawesome/fa-brands-400.ttf) format("truetype")
+    src: url(/u/fonts/fontawesome/fa-brands-400.woff2) format("woff2"), url(/u/fonts/fontawesome/fa-brands-400.ttf) format("truetype")
 }
 
 .fa-brands,
@@ -32384,8 +32384,8 @@ a.text-xplay-lighter:hover {
 
 @font-face {
     font-family: simple-line-icons;
-    src: url(/fonts/simple-line-icons/Simple-Line-Icons.eot?v=2.4.0);
-    src: url(/fonts/simple-line-icons/Simple-Line-Icons.eot?v=2.4.0#iefix) format("embedded-opentype"), url(/fonts/simple-line-icons/Simple-Line-Icons.woff2?v=2.4.0) format("woff2"), url(/fonts/simple-line-icons/Simple-Line-Icons.ttf?v=2.4.0) format("truetype"), url(/fonts/simple-line-icons/Simple-Line-Icons.woff?v=2.4.0) format("woff"), url(/fonts/simple-line-icons/Simple-Line-Icons.svg?v=2.4.0#simple-line-icons) format("svg");
+    src: url(/u/fonts/simple-line-icons/Simple-Line-Icons.eot?v=2.4.0);
+    src: url(/u/fonts/simple-line-icons/Simple-Line-Icons.eot?v=2.4.0#iefix) format("embedded-opentype"), url(/u/fonts/simple-line-icons/Simple-Line-Icons.woff2?v=2.4.0) format("woff2"), url(/u/fonts/simple-line-icons/Simple-Line-Icons.ttf?v=2.4.0) format("truetype"), url(/u/fonts/simple-line-icons/Simple-Line-Icons.woff?v=2.4.0) format("woff"), url(/u/fonts/simple-line-icons/Simple-Line-Icons.svg?v=2.4.0#simple-line-icons) format("svg");
     font-weight: 400;
     font-style: normal
 }
