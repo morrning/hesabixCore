@@ -6,39 +6,42 @@ export default defineComponent({
   name: "notifications_btn",
   data: () => ({
     items: [],
+    timeoutId: null as number | null, // برای ذخیره ID تایمر
   }),
-  components: {
-
-  },
+  components: {},
   mounted() {
     this.loadData();
+  },
+  beforeUnmount() {
+    // پاک کردن تایمر هنگام تخریب کامپوننت
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
   },
   methods: {
     jump(item) {
       axios.post('/api/notifications/read/' + item.id).then((response) => {
         if (item.url.startsWith('http')) {
           window.location.href = item.url;
-        }
-        else {
+        } else {
           this.$router.push(item.url);
         }
-
-      })
+      });
     },
     loadData() {
       axios.post('/api/notifications/list/new').then((response) => {
         if (response.data.length != 0) {
           this.items = response.data;
-        }
-        else {
+        } else {
           this.items = [];
         }
+      }).finally(() => {
+        // تنظیم تایمر جدید و ذخیره ID آن
+        this.timeoutId = setTimeout(this.loadData, 10000);
       });
-      setTimeout(this.loadData, 10000);
     }
   }
-
-})
+});
 </script>
 
 <template>
@@ -71,7 +74,6 @@ export default defineComponent({
           prepend-icon="mdi-eye" />
       </v-card-actions>
     </v-card>
-
   </v-menu>
 </template>
 

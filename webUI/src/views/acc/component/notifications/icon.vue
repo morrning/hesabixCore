@@ -3,37 +3,45 @@ import axios from "axios";
 
 export default {
   name: "icon",
-  data: ()=>{return{
-    items:undefined,
-  }},
-  created() {
-    this.loadData()
+  data: () => {
+    return {
+      items: undefined,
+      timeoutId: null, // برای ذخیره ID تایمر
+    };
   },
-  methods:{
-    jump(item){
-      axios.post('/api/notifications/read/' + item.id).then((response)=>{
-        if(item.url.startsWith('http')){
-            window.location.href = item.url;
-        }
-        else{
-            this.$router.push(item.url);
-        }
-        
-      })
-    },
-    loadData(){
-      axios.post('/api/notifications/list/new').then((response)=>{
-        if(response.data.length !== 0){
-          this.items = response.data;
-        }
-        else{
-          this.items = undefined;
+  created() {
+    this.loadData();
+  },
+  beforeDestroy() { // یا destroyed بسته به نسخه Vue
+    // پاک کردن تایمر هنگام تخریب کامپوننت
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
+  },
+  methods: {
+    jump(item) {
+      axios.post('/api/notifications/read/' + item.id).then((response) => {
+        if (item.url.startsWith('http')) {
+          window.location.href = item.url;
+        } else {
+          this.$router.push(item.url);
         }
       });
-      setTimeout(this.loadData, 10000);
-    }
-  }
-}
+    },
+    loadData() {
+      axios.post('/api/notifications/list/new').then((response) => {
+        if (response.data.length !== 0) {
+          this.items = response.data;
+        } else {
+          this.items = undefined;
+        }
+      }).finally(() => {
+        // تنظیم تایمر جدید و ذخیره ID آن
+        this.timeoutId = setTimeout(this.loadData, 10000);
+      });
+    },
+  },
+};
 </script>
 
 <template>
@@ -74,5 +82,4 @@ export default {
 </template>
 
 <style scoped>
-
 </style>
