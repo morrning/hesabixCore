@@ -942,7 +942,7 @@ const router = createRouter({
             name: 'install_pwa',
             component: () => import('../views/user/InstallPWA.vue'),
             meta: {
-                'title': 'نصب وب اپلیکیشن حسابیکس',
+                'title': 'نصب وب اپلیکیشن ',
             }
         },
         {

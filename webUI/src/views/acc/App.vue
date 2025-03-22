@@ -2,7 +2,7 @@
 import { RouterLink, RouterView } from 'vue-router';
 import axios from "axios";
 import Swal from "sweetalert2";
-import { getApiUrl, getSiteName } from "@/hesabixConfig";
+import { getApiUrl, getBasePath, getSiteName } from "@/hesabixConfig";
 import { ref } from 'vue';
 import Profile_btn from '@/components/application/buttons/profile_btn.vue';
 import Notifications_btn from '@/components/application/buttons/notifications_btn.vue';
@@ -18,6 +18,8 @@ export default {
       business: { id: '', name: '' },
       timeNow: '',
       apiUrl: '',
+      siteName: '',
+      siteSlogon: '',
       permissions: {},
       showShortcutsDialog: false,
       isEditingShortcuts: false,
@@ -63,14 +65,18 @@ export default {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
   },
-  created() {
-    this.siteName = getSiteName();
+  async created() {
+    this.siteName = await getSiteName();
+    this.siteSlogon = await getSiteSlogon();
   },
   beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
   },
   methods: {
+    getbase() {
+      return getBasePath();
+    },
     deleteBusiness() {
       Swal.fire({
         text: 'آیا برای حذف این کسب‌و‌کار مطمئن هستید؟ بعد از تایید این عملیات کسب و کار شما به مدت یک ماه در پایگاه داده آرشیو و بعد از آن به صورت دائم حذف خواهد شد',
@@ -282,7 +288,7 @@ export default {
 <template>
   <v-system-bar color="primaryLight2">
     <v-avatar image="/img/logo-blue.png" size="20" class="me-2 d-none d-sm-flex" />
-    <span class="d-none d-sm-flex">{{ $t('hesabix.banner') }}</span>
+    <span class="d-none d-sm-flex">{{ siteSlogon }}</span>
     <v-avatar :image="apiUrl + '/front/avatar/file/get/' + business.id" size="20" class="me-2 d-flex d-sm-none" />
     <span class="d-flex d-sm-none">{{ business.name }}</span>
     <v-spacer />
@@ -290,10 +296,10 @@ export default {
   </v-system-bar>
   <v-navigation-drawer v-model="drawer" :width="300">
     <v-card height="64" rounded="0" prepend-icon="mdi-account">
-      <template v-slot:title>{{ $t('app.name') }}</template>
+      <template v-slot:title>{{ siteName }}</template>
       <template v-slot:prepend>
         <v-avatar class="d-none d-sm-flex" :image="apiUrl + '/front/avatar/file/get/' + business.id" />
-        <v-avatar class="d-flex d-sm-none" image="./img/favw.png" />
+        <v-avatar class="d-flex d-sm-none" :image="getbase() + 'img/favw.png'" />
       </template>
     </v-card>
     <v-list class="px-0 pt-0">
@@ -961,6 +967,7 @@ export default {
 .shortcut-input {
   max-width: 60px;
 }
+
 .v-data-table {
   overflow-x: auto;
 }

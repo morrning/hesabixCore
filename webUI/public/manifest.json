@@ -6,7 +6,7 @@
     "related_applications": [
         {
             "platform": "webapp",
-            "url": "/u/manifest.json"
+            "url": "/manifest.json"
         }
     ],
     "display": "standalone",

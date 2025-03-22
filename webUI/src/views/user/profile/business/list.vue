@@ -10,7 +10,29 @@
   <v-container class="pa-0 ma-0">
     <v-card :loading="loading ? 'red' : null" :disabled="loading">
       <v-card-text>
-        <v-row>
+        <!-- نمایش پیام در صورت خالی بودن لیست -->
+        <v-row v-if="!loading && contents.length === 0" justify="center" class="text-center pa-5">
+          <v-col cols="12">
+            <v-icon size="60" color="grey" class="mb-4">mdi-store-off-outline</v-icon>
+            <h3 class="text-h6 mb-3">
+              هنوز هیچ کسب‌وکاری ندارید!
+            </h3>
+            <p class="text-body-1 text-grey-darken-1">
+              برای شروع کار  ، ابتدا یک کسب‌وکار ایجاد کنید یا از دیگران بخواهید شما را به کسب‌وکارشان دعوت کنند.
+            </p>
+            <v-btn
+              color="primary"
+              class="mt-4"
+              to="/profile/new-business"
+              prepend-icon="mdi-store-plus-outline"
+            >
+              ایجاد کسب‌وکار جدید
+            </v-btn>
+          </v-col>
+        </v-row>
+
+        <!-- نمایش لودینگ یا لیست کسب‌وکارها -->
+        <v-row v-else>
           <v-col v-if="loading" cols="12" sm="12" md="12" class="pa-0 ma-0">
             <v-skeleton-loader class="my-5 mx-5" :elevation="1" type="list-item-avatar"></v-skeleton-loader>
           </v-col>

@@ -59,13 +59,7 @@ class ShortlinksController extends AbstractController
                 'bid' => $bus
             ]);
             if (!$doc) {
-                $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-                    'type' => 'sell',
-                    'id' => $link,
-                    'bid' => $bus
-                ]);
-                if (!$doc)
-                    throw $this->createNotFoundException();
+                throw $this->createNotFoundException();
             }
 
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $doc]);

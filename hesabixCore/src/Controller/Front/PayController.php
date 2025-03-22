@@ -28,7 +28,7 @@ class PayController extends AbstractController
     #[Route('/pay/sell/{id}', name: 'pay_sell')]
     public function pay_sell(string $id, PayMGR $payMGR, twigFunctions $twigFunctions, EntityManagerInterface $entityManager, Log $log): Response
     {
-        $doc = $entityManager->getRepository(HesabdariDoc::class)->find($id);
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy(['shortlink'=>$id]);
         if (!$doc)
             throw $this->createNotFoundException();
 
@@ -49,7 +49,7 @@ class PayController extends AbstractController
         $tempPay->setDoc($doc);
         $entityManager->persist($tempPay);
         $entityManager->flush();
-        $result = $payMGR->createRequest($amountPay, $this->generateUrl('pay_sell_verify', ["id" => $doc->getId()], UrlGeneratorInterface::ABSOLUTE_URL), 'پرداخت فاکتور شماره ' . $doc->getCode() . ' کسب و کار ' . $doc->getBid()->getLegalName());
+        $result = $payMGR->createRequest($amountPay, $this->generateUrl('pay_sell_verify', ["id" => $tempPay->getId()], UrlGeneratorInterface::ABSOLUTE_URL), 'پرداخت فاکتور شماره ' . $doc->getCode() . ' کسب و کار ' . $doc->getBid()->getLegalName());
         if ($result['Success']) {
             $tempPay->setGatePay($result['gate']);
             $tempPay->setVerifyCode($result['authkey']);
@@ -77,7 +77,7 @@ class PayController extends AbstractController
         $res = $payMGR->verify($req->getPrice(), $req->getVerifyCode(), $request);
         if ($res['Success'] == false) {
             $log->insert('کیف پول', 'خطا در پرداخت فاکتور فروش ' . $doc->getCode(), $this->getUser(), $doc->getBid());
-            return $this->redirectToRoute('shortlinks_show', ['type' => 'sell', 'bid' => $doc->getBid()->getId(), 'link' => $doc->getId(), 'msg' => 'fail']);
+            return $this->redirectToRoute('shortlinks_show', ['type' => 'sell', 'bid' => $doc->getBid()->getId(), 'link' => $doc->getShortlink(), 'msg' => 'fail']);
         } else {
             $req->setStatus(100);
             $req->setRefID($res['refID']);

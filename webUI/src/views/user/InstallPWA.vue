@@ -5,7 +5,7 @@
         <v-row class="d-flex flex-column align-center justify-center">
           <img src="/img/logo-blue.png" width="120 " class="mt-2 mb-5 p-1" alt="" />
           <h4 class="text-center mt-5 px-8">
-            نسخه وب اپلیکیشن (PWA) حسابیکس را به صفحه اصلی اضافه کنید.
+            نسخه وب اپلیکیشن (PWA)  را به صفحه اصلی اضافه کنید.
           </h4>
           <p class="text-center mt-5 px-5">با این کار، می‌توانید برای همیشه و بدون نیاز به بروزرسانی از خدمات اپلیکیشن استفاده کنید.</p>
           <p class="text-center mt-5 px-5" v-if="chromeBanner">ابتدا از دکمه <span class="font-weight-bold text-indigo-darken-3">نصب</span> استفاده کنید و سپس <span class="font-weight-bold text-indigo-darken-3">Add</span> را بزنید. اگر برنامه نصب نشد مراحل بعدی را انجام دهید.</p>

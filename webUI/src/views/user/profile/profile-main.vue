@@ -1,16 +1,16 @@
 <template>
   <v-system-bar color="primaryLight2">
-    <v-avatar image="/img/logo-blue.png" size="20" class="me-2" />
-    <span>{{ $t('hesabix.banner') }}</span>
+    <v-avatar :image="getbase() + 'img/logo-blue.png'" size="20" class="me-2" />
+    <span>{{ siteSlogon }}</span>
     <v-spacer />
   </v-system-bar>
   <v-navigation-drawer v-model="drawer">
     <v-card height="64"  rounded="0" prepend-icon="mdi-account">
       <template v-slot:title>
-        {{ $t('app.name') }}
+        {{ siteName }}
       </template>
       <template v-slot:prepend>
-        <v-avatar image="./img/favw.png" />
+        <v-avatar :image="getbase() + 'img/favw.png'" />
       </template>
     </v-card>
     <v-list class="px-0 pt-0">
@@ -45,7 +45,7 @@
   <v-app-bar scroll-behavior="inverted elevate" scroll-threshold="0">
     <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
     <v-app-bar-title>
-      {{ $t('app.name') }}
+      {{ siteName }}
     </v-app-bar-title>
     <v-spacer></v-spacer>
     <v-tooltip :text="$t('dialog.exit')" location="bottom">
@@ -63,7 +63,7 @@
 
 <script lang="ts">
 import axios from "axios";
-import { getSiteName, getApiUrl } from "@/hesabixConfig"
+import { getSiteName, getApiUrl, getBasePath, getSiteSlogon } from "@/hesabixConfig"
 import { applicationStore } from "@/stores/applicationStore";
 import { useUserStore } from "@/stores/userStore";
 import { ref, defineComponent } from "vue";
@@ -82,6 +82,7 @@ export default defineComponent({
       },
       siteName: '',
       siteUrl: '',
+      siteSlogon:'',
       ROLE_ADMIN: false,
       user: {
         mobile: '1'
@@ -122,13 +123,16 @@ export default defineComponent({
     ...mapState(useUserStore, ['userData', 'synced']),
   },
   components: { Change_lang },
-  created() {
-    this.siteName = getSiteName();
+  async created() {
+    this.siteName = await getSiteName();
+    this.siteSlogon = await getSiteSlogon();
     this.siteUrl = getApiUrl();
   },
   methods: {
     ...mapActions(useUserStore, ['refresh']),
-
+    getbase(){
+      return getBasePath();
+    },
     logout() {
       axios.post('/api/user/logout')
       .then((response) => {

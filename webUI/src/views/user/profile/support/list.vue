@@ -9,7 +9,7 @@
   </v-toolbar>
 
   <v-container class="pa-0 ma-0">
-    <v-card :loading="loading ? 'red' : null" :disabled="loading">
+    <v-card :disabled="loading">
       <v-tabs v-model="activeTab" color="primary" grow>
         <v-tab value="pending" class="flex-grow-1">
           <v-icon start>mdi-progress-clock</v-icon> در حال پیگیری ({{ pendingItems.length }})

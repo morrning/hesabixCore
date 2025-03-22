@@ -39,7 +39,7 @@
 							چاپ فاکتور
 						</a>
 						{% if (totalPays < doc.amount) and bid.walletEnable and doc.money.name == 'IRR' %}
-							<a href="{{ path('pay_sell',{'id':doc.id}) }}" class="btn btn-sm btn-success">
+							<a href="{{ path('pay_sell',{'id':doc.shortlink}) }}" class="btn btn-sm btn-success">
 								<i class="fa fa-credit-card"></i>
 								پرداخت آنلاین مبلغ
 								{{ (doc.amount - totalPays) | number_format }}
