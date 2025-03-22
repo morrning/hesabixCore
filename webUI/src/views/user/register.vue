@@ -1,212 +1,256 @@
 <template>
-  <v-toolbar color="toolbar" :title="$t('title.user.businesses')">
-    <v-spacer></v-spacer>
-    <v-tooltip :text="$t('title.user.business_create')" location="bottom">
-      <template v-slot:activator="{ props }">
-        <v-btn v-bind="props" icon="mdi-store-plus-outline" color="primary" to="/profile/new-business"></v-btn>
-      </template>
-    </v-tooltip>
-  </v-toolbar>
-  <v-container class="pa-0 ma-0">
-    <v-card :loading="loading ? 'red' : null" :disabled="loading">
-      <v-card-text>
-        <v-row>
-          <v-col v-if="loading" cols="12" sm="12" md="12" class="pa-0 ma-0">
-            <v-skeleton-loader class="my-5 mx-5" :elevation="1" type="list-item-avatar"></v-skeleton-loader>
-          </v-col>
-          <v-col v-for="item in contents" cols="12" sm="12" md="6" class="px-1">
-            <v-card class="mx-auto mb-3" border flat>
-              <v-list-item class="px-6" height="88">
-                <template v-slot:prepend>
-                  <v-avatar color="surface-light" size="55" :image="apiurl + '/front/avatar/file/get/' + item.id"
-                    :alt="item.name" />
-                </template>
-                <template v-slot:title>
-                  {{ item.name }}
-                </template>
-                <template v-slot:subtitle>
-                  {{ item.owner }}
-                </template>
-                <template v-slot:append>
-                  <v-btn @click="runBid(item.id, item.name)" class="text-none" color="primary"
-                    :text="$t('pages.dashboard.login')" append-icon="mdi-arrow-left" slim></v-btn>
-                </template>
-              </v-list-item>
-              <v-card-text class="text-medium-emphasis pa-1 px-3">
-                <v-row>
-                  <v-col cols="12" sm="12" md="12" class="mb-0">
-                    <v-select density="comfortable" prepend-inner-icon="mdi-cash" v-model="item.selectedMoney"
-                      :label="$t('pages.dashboard.money')" variant="solo-filled" :items="item.moneys"
-                      item-title="label"></v-select>
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+  <v-container>
+    <v-row class="d-flex justify-center">
+      <v-col md="5">
+        <v-card :loading="loading ? 'blue' : undefined" :title="$t('app.name')" :subtitle="$t('user.register_label')"
+          :disabled="!canRegister">
+          <v-card-text>
+            <v-form ref="form" :disabled="loading" fast-fail @submit.prevent="submit()">
+              <v-text-field class="mb-2" :label="$t('user.name')" :placeholder="$t('user.name_des')" single-line
+                v-model="user.name" type="text" variant="outlined" prepend-inner-icon="mdi-account"
+                :rules="rules.name"></v-text-field>
 
-    <!-- دیالوگ زیباتر شده -->
-    <v-dialog v-model="showProgress" persistent max-width="700px">
-      <v-card class="pa-4" elevation="8" rounded="lg">
-        <v-card-title class="text-h6 font-weight-bold text-center primary--text">
-          <v-icon left>mdi-loading</v-icon> در حال آماده‌سازی...
-        </v-card-title>
-        <v-card-text class="pt-4">
-          <v-progress-linear v-model="progress" color="primary" height="12" rounded striped
-            class="progress-bar"></v-progress-linear>
-          <div class="mt-6 text-center text-subtitle-1" v-html="currentMessage"></div>
-        </v-card-text>
+              <v-text-field class="mb-2" :label="$t('user.email')" :placeholder="$t('user.email_placeholder')"
+                single-line v-model="user.email" type="email" variant="outlined" prepend-inner-icon="mdi-email"
+                :rules="rules.email"></v-text-field>
+
+              <v-text-field class="mb-2" :label="$t('user.mobile')" :placeholder="$t('user.mobile_placeholder')"
+                single-line v-model="user.mobile" type="tel" variant="outlined" prepend-inner-icon="mdi-phone"
+                :rules="rules.mobile"></v-text-field>
+
+              <v-text-field class="mb-2" :label="$t('user.password')" :placeholder="$t('user.password_register_des')"
+                single-line type="password" variant="outlined" prepend-inner-icon="mdi-lock" :rules="rules.password"
+                v-model="user.password"></v-text-field>
+
+              <!-- بخش کپچا -->
+              <v-row class="mb-2" dense>
+                <v-col cols="12" sm="6">
+                  <v-img :src="captchaImage" max-height="50" max-width="150" class="captcha-img" contain></v-img>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field dense :label="$t('captcha.enter_code')" v-model.number="user.captcha" variant="outlined"
+                    type="number" :rules="rules.captcha" required hide-details prepend-inner-icon="mdi-refresh"
+                    @click:prepend-inner="loadCaptcha" :loading="captchaLoading"></v-text-field>
+                </v-col>
+              </v-row>
+
+              <!-- چک‌باکس قوانین -->
+              <v-checkbox v-model="termsAccepted" :label="$t('user.register_terms_des')"
+                :rules="[(v) => !!v || $t('validator.terms_required')]" required class="mb-2"></v-checkbox>
+
+              <v-btn :loading="loading" block class="text-none mb-4" color="indigo-darken-3" size="x-large"
+                variant="flat" prepend-icon="mdi-account-plus" type="submit">
+                {{ $t('user.register') }}
+              </v-btn>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+
+  <!-- دیالوگ خطا یا موفقیت -->
+  <div v-if="dialog" class="text-center">
+    <v-dialog v-model="dialog" max-width="500" persistent>
+      <v-card :color="dialogColor" :prepend-icon="dialogIcon" :title="dialogTitle" :text="dialogMessage">
+        <template v-slot:actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" :text="$t('dialog.ok')" variant="flat" @click="handleDialogClose" />
+        </template>
       </v-card>
     </v-dialog>
-  </v-container>
+  </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import axios from "axios";
-import { getApiUrl } from "@/hesabixConfig";
-import { ref } from "vue";
-import Loading from "vue-loading-overlay";
 
-export default {
-  name: "list",
-  components: { Loading },
-  data: () => {
+axios.defaults.withCredentials = true;
+
+export default defineComponent({
+  name: "register",
+  data() {
+    const self = this;
     return {
-      loading: ref(true),
-      contents: [],
-      apiurl: '',
-      selectedMoney: {
+      loading: false,
+      captchaLoading: false,
+      dialog: false,
+      dialogColor: 'dangerLight',
+      dialogIcon: 'mdi-close-octagon',
+      dialogTitle: '',
+      dialogMessage: '',
+      showCaptcha: true,
+      termsAccepted: false,
+      captchaImage: '',
+      canRegister: true,
+      user: {
         name: '',
-        label: ''
+        email: '',
+        mobile: '',
+        password: '',
+        captcha: '',
       },
-      showProgress: false,
-      progress: 0,
-      currentMessage: '',
-      sponsorMessage: '',
-    }
+      rules: {
+        name: [(value: any) => self.validate(value, 'fill')],
+        email: [(value: any) => self.validate(value, 'email')],
+        mobile: [(value: any) => self.validate(value, 'mobile')],
+        password: [(value: any) => self.validate(value, 'password')],
+        captcha: [(value: any) => !!value || self.$t("captcha.required")],
+      },
+    };
+  },
+  mounted() {
+    this.checkRegisterStatus();
+    this.loadData();
   },
   methods: {
-    async loadData() {
-      this.apiurl = getApiUrl();
-
-      // دریافت همزمان اطلاعات کسب‌وکارها و پیام اسپانسر
+    validate(input: string, type: string) {
+      if (type === 'fill') {
+        if (input?.length > 0) return true;
+        return this.$t('validator.required');
+      } else if (type === 'email') {
+        if (/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g.test(input)) return true;
+        return this.$t('validator.email_not_valid');
+      } else if (type === 'password') {
+        if (!input) return false;
+        if (input.length > 7) return true;
+        return this.$t('validator.password_len_lower');
+      } else if (type === 'mobile') {
+        const regex = new RegExp("^09\\d{9}$");
+        if (regex.test(input)) return true;
+        return this.$t('validator.mobile_not_valid');
+      }
+    },
+    loadData() {
+      this.loadCaptcha();
+    },
+    async loadCaptcha() {
+      this.captchaLoading = true;
       try {
-        const [businessResponse, sponsorResponse] = await Promise.all([
-          axios.post('/api/business/list'),
-          axios.get('/api/general/sponsors')
-        ]);
-
-        this.contents = businessResponse.data;
-        this.contents.forEach((bid) => {
-          bid.selectedMoney = bid.arzmain;
+        const timestamp = new Date().getTime();
+        const response = await axios.get(`/api/captcha/image?t=${timestamp}`, {
+          responseType: 'blob',
+          withCredentials: true,
         });
-
-        // ذخیره پیام اسپانسر
-        if (sponsorResponse.data && sponsorResponse.data.result) {
-          this.sponsorMessage = sponsorResponse.data.result;
-        }
-
+        this.captchaImage = URL.createObjectURL(response.data);
       } catch (error) {
-        console.error('خطا در دریافت اطلاعات:', error);
-        this.sponsorMessage = '';
+        this.dialogMessage = this.$t('captcha.load_error');
+        this.dialogColor = 'dangerLight';
+        this.dialogIcon = 'mdi-close-octagon';
+        this.dialogTitle = this.$t('dialog.error');
+        this.dialog = true;
       } finally {
-        this.loading = false;
+        this.captchaLoading = false;
       }
     },
-    randomDelay(min = 500, max = 1500) {
-      return new Promise(resolve => {
-        const delay = Math.floor(Math.random() * (max - min + 1)) + min;
-        setTimeout(resolve, delay);
-      });
-    },
-    async showLoadingProgress(businessName) {
-      this.showProgress = true;
-      this.progress = 0;
-
-      const steps = [
-        { message: "در حال دریافت اطلاعات کسب و کار", progress: 20 },
-        { message: "در حال بارگذاری داده‌های پایه", progress: 40 },
-        { message: "تطبیق و ارزیابی داده‌ها", progress: 60 },
-        { message: "بررسی مجوزها و دسترسی‌ها", progress: 80 },
-        { message: `در حال انتقال به داشبورد کسب‌وکار "${businessName}"`, progress: 95 },
-        {
-          message: this.sponsorMessage || `در حال انتقال به داشبورد کسب‌وکار "${businessName}"`,
-          progress: 100,
-          delay: 5000
-        }
-      ];
-
-      for (let i = 0; i < steps.length; i++) {
-        this.currentMessage = steps[i].message;
-        this.progress = steps[i].progress;
-        const delay = steps[i].delay || await this.randomDelay();
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-
-      this.showProgress = false;
-    },
-    async runBid(id, businessName) {
-      await this.showLoadingProgress(businessName);
-
-      await localStorage.setItem('activeBid', id);
-      this.contents.forEach((item) => {
-        if (item.id == id) {
-          localStorage.setItem('activeMoney', item.selectedMoney.name);
-          localStorage.setItem('activeMoneySymbol', item.selectedMoney.symbol);
-          localStorage.setItem('activeMoneyShortName', item.selectedMoney.shortName);
-          localStorage.setItem('activeMoneyLabel', item.selectedMoney.label);
-        }
-      });
-
-      await axios.post('/api/year/list', {}, {
-        headers: {
-          activeBid: id
-        }
-      }).then((response) => {
-        response.data.forEach((item) => {
-          if (item.head == '1') {
-            localStorage.setItem('activeYear', item.id);
+    async checkRegisterStatus() {
+      try {
+        const response = await axios.get('/api/user/check-register-status');
+        if (response.data.result === 1) {
+          this.canRegister = response.data.canRegister;
+          if (!this.canRegister) {
+            this.dialogMessage = 'عضویت کاربران جدید توسط مدیر سیستم غیرفعال شده است.';
+            this.dialogColor = 'warning';
+            this.dialogIcon = 'mdi-alert';
+            this.dialogTitle = this.$t('dialog.warning');
+            this.dialog = true;
           }
-        });
+        }
+      } catch (error) {
+        this.dialogMessage = 'خطا در بررسی وضعیت عضویت. لطفاً دوباره تلاش کنید.';
+        this.dialogColor = 'dangerLight';
+        this.dialogIcon = 'mdi-close-octagon';
+        this.dialogTitle = this.$t('dialog.error');
+        this.dialog = true;
+      }
+    },
+    async submit() {
+      if (!this.canRegister) {
+        this.dialogMessage = 'عضویت کاربران جدید غیرفعال است.';
+        this.dialogColor = 'dangerLight';
+        this.dialogIcon = 'mdi-close-octagon';
+        this.dialogTitle = this.$t('dialog.error');
+        this.dialog = true;
+        return;
+      }
 
-        //set axios headers
-        axios.defaults.headers.common['activeBid'] = localStorage.getItem('activeBid');
-        axios.defaults.headers.common['activeYear'] = localStorage.getItem('activeYear');
-        axios.defaults.headers.common['activeMoney'] = localStorage.getItem('activeMoney');
-        this.$router.push('/acc/dashboard');
-      });
-    }
+      const { valid } = await (this.$refs.form as any).validate();
+      if (valid) {
+        this.loading = true;
+
+        const inviteCode = localStorage.getItem('inviteCode') || '0';
+        const userData = {
+          name: this.user.name,
+          email: this.user.email,
+          mobile: this.user.mobile,
+          password: this.user.password,
+          captcha_answer: this.user.captcha.toString(),
+          inviteCode: inviteCode,
+        };
+
+        axios.post('/api/user/register', userData, { withCredentials: true })
+          .then((response) => {
+
+            if (response.data.Success === false) {
+              // خطا در ثبت‌نام
+              this.dialogMessage = response.data.message;
+              this.dialogColor = 'dangerLight';
+              this.dialogIcon = 'mdi-close-octagon';
+              this.dialogTitle = this.$t('dialog.error');
+              this.dialog = true;
+              this.loadCaptcha();
+            } else {
+              // موفقیت در ثبت‌نام
+              const responseData = response.data.data; // دسترسی به شیء data داخلی
+              this.dialogMessage = responseData.message;
+              this.dialogColor = 'success';
+              this.dialogIcon = 'mdi-check-circle';
+              this.dialogTitle = this.$t('dialog.success');
+              this.dialog = true;
+
+              // بررسی وجود redirect در پاسخ بک‌اند
+              if (responseData.redirect) {
+                // اگر ریدایرکت وجود دارد (اولین کاربر یا verifyMobileViaSms غیرفعال)
+                setTimeout(() => {
+                  this.dialog = false;
+                  this.$router.push(responseData.redirect); // هدایت به صفحه لاگین
+                }, 2000);
+              } else {
+                // اگر ریدایرکت وجود ندارد، به صفحه تأیید کد هدایت می‌شود
+                setTimeout(() => {
+                  this.dialog = false;
+                  this.$router.push('/user/active-account/' + this.user.mobile);
+                }, 3000);
+              }
+            }
+          })
+          .catch((error) => {
+            this.dialogMessage = error.response?.data?.message || this.$t('dialog.error_unknown');
+            this.dialogColor = 'dangerLight';
+            this.dialogIcon = 'mdi-close-octagon';
+            this.dialogTitle = this.$t('dialog.error');
+            this.dialog = true;
+            this.loadCaptcha();
+          })
+          .finally(() => {
+            this.loading = false;
+          });
+      }
+    },
+    handleDialogClose() {
+      this.dialog = false;
+      if (this.dialogColor === 'warning' && !this.canRegister) {
+        this.$router.push('/user/login');
+      }
+    },
   },
-  beforeMount() {
-    this.loadData();
-  }
-}
+});
 </script>
 
 <style scoped>
-/* استایل برای دیالوگ و پراگرس بار */
-.progress-bar {
-  transition: width 0.3s ease-in-out;
-}
-
-.text-center {
-  font-family: 'Roboto', sans-serif;
-}
-
-/* انیمیشن برای آیکون لودینگ */
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.mdi-loading {
-  animation: spin 1s linear infinite;
+.captcha-img {
+  display: block;
+  margin: 0 auto;
 }
 </style>

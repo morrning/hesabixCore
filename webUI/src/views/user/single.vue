@@ -7,15 +7,7 @@ export default {
   components: { Change_lang },
   data() {
     return {
-      system:{
-        footer:''
-      },
-      icons: [
-        'mdi-telegram',
-        'mdi-twitter',
-        'mdi-linkedin',
-        'mdi-instagram',
-      ],
+      
     }
   },
   created() {
