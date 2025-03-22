@@ -2,6 +2,7 @@
 import { defineComponent, ref } from 'vue'
 import Swal from 'sweetalert2';
 import axios from "axios";
+import { getSiteName } from '@/hesabixConfig';
 export default defineComponent({
   name: "active_account",
   data() {
@@ -16,6 +17,7 @@ export default defineComponent({
         mobile: '',
         email: '',
       },
+      siteName: '',
       response: {
         code: '',
         message: '',
@@ -36,6 +38,9 @@ export default defineComponent({
       }
     }
   },
+  async created() {
+    this.siteName = await getSiteName();
+  },
   methods: {
     onResendCodeClick() {
       axios.post('/api/user/register/resend-active-code', { 'mobile': this.$route.params.id }).then((response: any) => {
@@ -46,7 +51,7 @@ export default defineComponent({
             icon: 'success'
           });
         }
-        else{
+        else {
           Swal.fire({
             text: response.data.message,
             confirmButtonText: this.$t('dialog.ok'),
@@ -83,7 +88,7 @@ export default defineComponent({
   <v-container>
     <v-row class="d-flex justify-center">
       <v-col md="5">
-        <v-card :loading="loading ? 'blue' : null" :disabled="loading" :title="$t('app.name')"
+        <v-card :loading="loading ? 'blue' : null" :disabled="loading" :title="siteName"
           :subtitle="$t('user.active_account')">
           <v-card-text>
             کد ارسالی از طریق پیامک و یا پست الکترونیکی دریافتی خود را در کادر زیر وارد نمایید.

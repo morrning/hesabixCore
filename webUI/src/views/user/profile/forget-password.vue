@@ -2,7 +2,7 @@
   <v-container>
     <v-row class="d-flex justify-center">
       <v-col md="5">
-        <v-card :loading="loading ? 'blue' : undefined" :title="$t('app.name')" :subtitle="$t('user.forget_password')">
+        <v-card :loading="loading ? 'blue' : undefined" :title="siteName" :subtitle="$t('user.forget_password')">
           <v-card-text>
             <v-form ref="form" :disabled="loading" fast-fail @submit.prevent="submit()">
               <v-text-field v-model="mobile" class="mb-2" :label="$t('user.mobile')"
@@ -50,6 +50,7 @@
 import { defineComponent } from 'vue';
 import axios from "axios";
 import { ref } from 'vue';
+import { getSiteName } from '@/hesabixConfig';
 
 axios.defaults.withCredentials = true;
 
@@ -63,6 +64,7 @@ export default defineComponent({
       dialog: ref(false),
       mobile: '',
       captcha: '',
+      siteName:'',
       captchaImage: '',
       rules: {
         mobile: [
@@ -81,6 +83,9 @@ export default defineComponent({
         }
       }
     };
+  },
+  async created(){
+    this.siteName = await getSiteName();
   },
   mounted() {
     this.loadCaptcha(); // لود اولیه کپچا

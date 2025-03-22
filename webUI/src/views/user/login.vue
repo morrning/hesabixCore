@@ -2,7 +2,7 @@
   <v-container>
     <v-row class="d-flex justify-center">
       <v-col md="5">
-        <v-card :loading="loading ? 'blue' : undefined" :disabled="loading" :title="$t('app.name')"
+        <v-card :loading="loading ? 'blue' : undefined" :disabled="loading" :title="siteName"
           :subtitle="$t('user.login_label')">
           <v-card-text class="text-justify">
             {{ $t("login.des") }}
@@ -62,6 +62,7 @@
 </template>
 
 <script lang="ts">
+import { getSiteName } from "@/hesabixConfig";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { onMounted, ref } from "vue";
@@ -76,6 +77,7 @@ export default {
       loading: false,
       captchaLoading: false,
       dialog: false,
+      siteName:'',
       showCaptcha: false,
       errorMsg: self.$t('login.input_fail'),
       captchaImage: '',
@@ -187,6 +189,9 @@ export default {
   },
   mounted() {
     // کپچا در ابتدا نمایش داده نمی‌شه
+  },
+  async created(){
+    this.siteName = await getSiteName();
   },
 };
 </script>

@@ -74,7 +74,7 @@ export async function getSiteName() {
     );
 }
 
-export async function getSiteSlogon() {
+export async function getSiteSlogan() {
     return fetchAndCache(
         `${getApiUrl()}/system/getslogon`,
         KEYS.SITE_SLOGON,

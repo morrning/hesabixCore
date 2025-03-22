@@ -1,7 +1,7 @@
 <template>
   <v-system-bar color="primaryLight2">
     <v-avatar :image="getbase() + 'img/logo-blue.png'" size="20" class="me-2" />
-    <span>{{ siteSlogon }}</span>
+    <span>{{ siteSlogan }}</span>
     <v-spacer />
   </v-system-bar>
   <v-navigation-drawer v-model="drawer">
@@ -37,7 +37,7 @@
       </v-list-group>
       <v-list-item color="primary">
         <v-list-item-title>
-          <small class="text-primary">{{ $t('app.name') }} : {{ hesabix.version }}</small>
+          <small class="text-primary">{{ siteName }} : {{ hesabix.version }}</small>
         </v-list-item-title>
       </v-list-item>
     </v-list>
@@ -63,7 +63,7 @@
 
 <script lang="ts">
 import axios from "axios";
-import { getSiteName, getApiUrl, getBasePath, getSiteSlogon } from "@/hesabixConfig"
+import { getSiteName, getApiUrl, getBasePath, getSiteSlogan } from "@/hesabixConfig"
 import { applicationStore } from "@/stores/applicationStore";
 import { useUserStore } from "@/stores/userStore";
 import { ref, defineComponent } from "vue";
@@ -82,7 +82,7 @@ export default defineComponent({
       },
       siteName: '',
       siteUrl: '',
-      siteSlogon:'',
+      siteSlogan:'',
       ROLE_ADMIN: false,
       user: {
         mobile: '1'
@@ -125,7 +125,7 @@ export default defineComponent({
   components: { Change_lang },
   async created() {
     this.siteName = await getSiteName();
-    this.siteSlogon = await getSiteSlogon();
+    this.siteSlogan = await getSiteSlogan();
     this.siteUrl = getApiUrl();
   },
   methods: {

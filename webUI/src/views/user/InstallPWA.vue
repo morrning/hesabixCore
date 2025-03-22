@@ -5,7 +5,7 @@
         <v-row class="d-flex flex-column align-center justify-center">
           <img src="/img/logo-blue.png" width="120 " class="mt-2 mb-5 p-1" alt="" />
           <h4 class="text-center mt-5 px-8">
-            نسخه وب اپلیکیشن (PWA)  را به صفحه اصلی اضافه کنید.
+            نسخه وب اپلیکیشن (PWA) را به صفحه اصلی اضافه کنید.
           </h4>
           <p class="text-center mt-5 px-5">با این کار، می‌توانید برای همیشه و بدون نیاز به بروزرسانی از خدمات اپلیکیشن استفاده کنید.</p>
           <p class="text-center mt-5 px-5" v-if="chromeBanner">ابتدا از دکمه <span class="font-weight-bold text-indigo-darken-3">نصب</span> استفاده کنید و سپس <span class="font-weight-bold text-indigo-darken-3">Add</span> را بزنید. اگر برنامه نصب نشد مراحل بعدی را انجام دهید.</p>
@@ -22,7 +22,7 @@
                     class="mt-2 mb-2"
                     alt=""
                   />
-                  <h4 class="text-primary pr-2 pt-4">{{ $t("app.name") }}</h4>
+                  <h4 class="text-primary pr-2 pt-4">{{ siteName }}</h4>
                 </v-col>
                 <v-col md="4" class="pl-5">
                   <v-btn
@@ -49,7 +49,6 @@
             </v-card>
           </v-col>
         </v-row>
-
         <v-row>
           <v-btn
             block
@@ -57,56 +56,69 @@
             color="indigo-darken-3"
             variant="flat"
             :to="{ name: 'user_login' }"
-            >
-              باز گشت به صفحه ورود
+          >
+            باز گشت به صفحه ورود
           </v-btn>
         </v-row>
       </v-container>
     </v-main>
   </v-app>
 </template>
-  
+
 <script setup lang="ts">
-import axios from "axios";
+import { getSiteName } from "@/hesabixConfig";
 import { onMounted, ref } from "vue";
 
 const installPromptEvent = ref<Event | null>(null);
 const browserName = ref<string>("");
 const chromeBanner = ref<boolean>(false);
 const iosChecker = ref<boolean>(false);
+const siteName = ref<string>(""); // siteName به صورت ref
 
-// Call button method for install banner
+// تابع برای گرفتن siteName
+const fetchSiteName = () => {
+  getSiteName()
+    .then((name) => {
+      siteName.value = name; // مقدار رو توی ref می‌ذاریم
+    })
+    .catch((error) => {
+      console.error("خطا در گرفتن نام سایت:", error);
+      siteName.value = "نام پیش‌فرض"; // مقدار پیش‌فرض در صورت خطا
+    });
+};
+
+// تابع نصب
 const callInstallbtn = () => {
   if (installPromptEvent.value) {
-    // Cast as BeforeInstallPromptEvent if needed
     const event = installPromptEvent.value as BeforeInstallPromptEvent;
     event.prompt();
-    
 
     event.userChoice.then((choiceResult: { outcome: string }) => {
       if (choiceResult.outcome === "accepted") {
+        console.log("کاربر نصب رو قبول کرد");
       } else {
+        console.log("کاربر نصب رو رد کرد");
       }
-
       installPromptEvent.value = null;
     });
   }
 };
 
-const getBrowserName = (): any => {
+// تابع تشخیص مرورگر
+const getBrowserName = (): string => {
   const userAgent = navigator.userAgent;
 
   if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) {
     if (userAgent.includes("Mac OS X")) {
-      iosChecker.value = true
-    } else{
+      iosChecker.value = true;
+    } else {
       chromeBanner.value = true;
     }
     return "Google Chrome";
   } else if (userAgent.includes("Firefox")) {
     if (userAgent.includes("Mac OS X")) {
-      iosChecker.value = true
-    } 
+      iosChecker.value = true;
+    }
     return "Mozilla Firefox";
   } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
     iosChecker.value = true;
@@ -114,22 +126,22 @@ const getBrowserName = (): any => {
     return "Apple Safari";
   } else if (userAgent.includes("SamsungBrowser")) {
     if (userAgent.includes("Mac OS X")) {
-      iosChecker.value = true
-    } else{
+      iosChecker.value = true;
+    } else {
       chromeBanner.value = true;
     }
     return "Samsung Browser";
   } else if (userAgent.includes("Edg")) {
     if (userAgent.includes("Mac OS X")) {
-      iosChecker.value = true
-    } else{
+      iosChecker.value = true;
+    } else {
       chromeBanner.value = true;
     }
     return "Microsoft Edge";
   } else if (userAgent.includes("Opera") || userAgent.includes("OPR")) {
     if (userAgent.includes("Mac OS X")) {
-      iosChecker.value = true
-    } else{
+      iosChecker.value = true;
+    } else {
       chromeBanner.value = true;
     }
     return "Opera";
@@ -138,18 +150,14 @@ const getBrowserName = (): any => {
   }
 };
 
+// هنگام بارگذاری کامپوننت
 onMounted(() => {
   browserName.value = getBrowserName();
+  fetchSiteName(); // فراخوانی تابع بدون await
 
   window.addEventListener("beforeinstallprompt", (e: Event) => {
     e.preventDefault();
     installPromptEvent.value = e;
   });
-
-  // setTimeout(() => {
-  //   if (installPromptEvent.value) {
-  //     installBanner.value = true;
-  //   }
-  // }, 1000);
 });
 </script>

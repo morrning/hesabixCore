@@ -2,7 +2,7 @@
   <v-container>
     <v-row class="d-flex justify-center">
       <v-col md="5">
-        <v-card :loading="loading ? 'blue' : undefined" :title="$t('app.name')" :subtitle="$t('user.register_label')"
+        <v-card :loading="loading ? 'blue' : undefined" :title="siteName" :subtitle="$t('user.register_label')"
           :disabled="!canRegister">
           <v-card-text>
             <v-form ref="form" :disabled="loading" fast-fail @submit.prevent="submit()">
@@ -65,6 +65,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import axios from "axios";
+import { getSiteName } from '@/hesabixConfig';
 
 axios.defaults.withCredentials = true;
 
@@ -76,6 +77,7 @@ export default defineComponent({
       loading: false,
       captchaLoading: false,
       dialog: false,
+      siteName: '',
       dialogColor: 'dangerLight',
       dialogIcon: 'mdi-close-octagon',
       dialogTitle: '',
@@ -103,6 +105,9 @@ export default defineComponent({
   mounted() {
     this.checkRegisterStatus();
     this.loadData();
+  },
+  async created(){
+    this.siteName = await getSiteName();
   },
   methods: {
     validate(input: string, type: string) {

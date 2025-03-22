@@ -2,6 +2,7 @@
 import { defineComponent, ref } from 'vue'
 import axios from "axios";
 import VueCountdown from '@chenfengyuan/vue-countdown';
+import { getSiteName } from '@/hesabixConfig';
 
 export default defineComponent({
   name: "reset-password",
@@ -16,6 +17,7 @@ export default defineComponent({
       loading: false,
       counting: true,
       disableSend: ref(true),
+      siteName:'',
       code: '',
       response: {
         code: '',
@@ -34,6 +36,9 @@ export default defineComponent({
         }
       }
     }
+  },
+  async created(){
+    this.siteName = await getSiteName();
   },
   watch: {
     code(cval, bval) {
@@ -81,7 +86,7 @@ export default defineComponent({
   <v-container>
     <v-row class="d-flex justify-center">
       <v-col md="5">
-        <v-card :loading="loading ? 'blue' : null" :title="$t('app.name')" :subtitle="$t('user.forget_password')">
+        <v-card :loading="loading ? 'blue' : null" :title="siteName" :subtitle="$t('user.forget_password')">
           <v-card-text>
             <v-form ref="form" :disabled="loading" fast-fail @submit.prevent="submit()">
               <v-otp-input focus-all v-model="code" :disabled="loading" style="direction: ltr"></v-otp-input>

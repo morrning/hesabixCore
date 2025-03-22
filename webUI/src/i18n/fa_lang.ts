@@ -432,7 +432,6 @@ const fa_lang = {
     close_dialog: "بستن",
   },
   app: {
-    name: "حسابیکس",
     loading: "در حال بارگذاری...",
     please_wait: "لطفا صبر کنید ...",
     logout: "خروج",
@@ -510,10 +509,6 @@ const fa_lang = {
     invalid_file_type: "نوع فایل انتخاب شده مجاز نیست",
     file_size_limit: 'حجم فایل انتخابی بیش از حد مجاز است.',
     "form_invalid": "لطفاً فرم را به درستی پر کنید"
-  },
-  hesabix: {
-    banner: "حسابیکس سامانه جامع مدیریت کسب‌و‌کار",
-    name: "حسابیکس"
   },
   title: {
     user: {

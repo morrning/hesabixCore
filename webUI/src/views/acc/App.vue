@@ -19,7 +19,7 @@ export default {
       timeNow: '',
       apiUrl: '',
       siteName: '',
-      siteSlogon: '',
+      siteSlogan: '',
       permissions: {},
       showShortcutsDialog: false,
       isEditingShortcuts: false,
@@ -67,7 +67,7 @@ export default {
   },
   async created() {
     this.siteName = await getSiteName();
-    this.siteSlogon = await getSiteSlogon();
+    this.siteSlogan = await getSiteSlogan();
   },
   beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeyDown);
@@ -288,7 +288,7 @@ export default {
 <template>
   <v-system-bar color="primaryLight2">
     <v-avatar image="/img/logo-blue.png" size="20" class="me-2 d-none d-sm-flex" />
-    <span class="d-none d-sm-flex">{{ siteSlogon }}</span>
+    <span class="d-none d-sm-flex">{{ siteSlogan }}</span>
     <v-avatar :image="apiUrl + '/front/avatar/file/get/' + business.id" size="20" class="me-2 d-flex d-sm-none" />
     <span class="d-flex d-sm-none">{{ business.name }}</span>
     <v-spacer />

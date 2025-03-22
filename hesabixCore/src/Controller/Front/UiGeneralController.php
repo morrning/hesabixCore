@@ -25,7 +25,7 @@ class UiGeneralController extends AbstractController
     #[Route('/system/getslogon', name: 'general_get_slogon')]
     public function general_get_slogon(registryMGR $registryManager): JsonResponse
     {
-        $name = $registryManager->get('system', 'appSlogon');
+        $name = $registryManager->get('system', 'appSlogan');
         return $this->json($name);
     }
     #[Route('/system/geturl', name: 'general_get_url')]
