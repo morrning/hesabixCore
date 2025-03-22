@@ -148,11 +148,7 @@ export default {
       this.progress = 0;
 
       const steps = [
-        { message: "در حال دریافت اطلاعات کسب و کار", progress: 20 },
-        { message: "در حال بارگذاری داده‌های پایه", progress: 40 },
-        { message: "تطبیق و ارزیابی داده‌ها", progress: 60 },
-        { message: "بررسی مجوزها و دسترسی‌ها", progress: 80 },
-        { message: `در حال انتقال به داشبورد کسب‌وکار "${businessName}"`, progress: 95 },
+        { message: `در حال انتقال به داشبورد کسب‌وکار "${businessName}"`, progress: 50 },
         {
           message: this.sponsorMessage || `در حال انتقال به داشبورد کسب‌وکار "${businessName}"`,
           progress: 100,
