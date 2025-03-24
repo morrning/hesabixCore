@@ -130,6 +130,8 @@ class PayController extends AbstractController
                 $wu->setFullName('کیف پول');
                 $wu->setEmail('wallet@hesabix.ir');
                 $wu->setRoles([]);
+                $wu->setPassword(0);
+                $wu->setDateRegister(time());
                 $wu->setActive(true);
                 $entityManager->persist($wu);
                 $entityManager->flush();
@@ -181,7 +183,7 @@ class PayController extends AbstractController
             $entityManager->flush();
 
             $log->insert('کیف پول', 'پرداخت موفق فاکتور فروش ' . $originalDoc->getCode(), $this->getUser(), $doc->getBid());
-            return $this->redirectToRoute('shortlinks_show', ['type' => 'sell', 'bid' => $originalDoc->getBid()->getId(), 'link' => $originalDoc->getId(), 'msg' => 'success']);
+            return $this->redirectToRoute('shortlinks_show', ['type' => 'sell', 'bid' => $originalDoc->getBid()->getId(), 'link' => $originalDoc->getShortlink(), 'msg' => 'success']);
         }
     }
 }
