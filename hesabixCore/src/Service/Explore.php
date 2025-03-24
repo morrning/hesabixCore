@@ -103,7 +103,7 @@ class Explore
         foreach ($hesabdariDoc->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = self::ExplorePerson($item->getPerson());
-            } elseif ($item->getRef()->getCode() == '104') {
+            } elseif ($item->getRef()->getCode() == '51') {
                 $result['discountAll'] = $item->getBs();
             } elseif ($item->getRef()->getCode() == '90') {
                 $result['transferCost'] = $item->getBd();
