@@ -2,7 +2,7 @@
 import { RouterLink, RouterView } from 'vue-router';
 import axios from "axios";
 import Swal from "sweetalert2";
-import { getApiUrl, getBasePath, getSiteName } from "@/hesabixConfig";
+import { getApiUrl, getBasePath, getSiteName, getSiteSlogan } from "@/hesabixConfig";
 import { ref } from 'vue';
 import Profile_btn from '@/components/application/buttons/profile_btn.vue';
 import Notifications_btn from '@/components/application/buttons/notifications_btn.vue';
