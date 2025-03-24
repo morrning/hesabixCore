@@ -442,10 +442,10 @@ class BuyController extends AbstractController
         foreach ($doc->getHesabdariRows() as $item) {
             if ($item->getPerson()) {
                 $person = $item->getPerson();
-            } elseif ($item->getRef()->getCode() == 90) {
-                $discount = $item->getBd();
             } elseif ($item->getRef()->getCode() == 51) {
-                $transfer = $item->getBs();
+                $discount = $item->getBs();
+            } elseif ($item->getRef()->getCode() == 90) {
+                $transfer = $item->getBd();
             }
         }
         $pdfPid = 0;

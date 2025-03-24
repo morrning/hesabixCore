@@ -55,14 +55,28 @@ class AvatarController extends AbstractController
     }
 
     #[Route('/api/avatar/get/file/{id}', name: 'api_avatar_get_file')]
-    public function api_avatar_get_file(string $id): BinaryFileResponse
+    public function api_avatar_get_file(string $id = ''): BinaryFileResponse
     {
         $fileAdr = __DIR__ . '/../../../hesabixArchive/avatars/' . $id;
         if (!file_exists($fileAdr))
-            throw $this->createNotFoundException();
+            $fileAdr = __DIR__ . '/../../../hesabixArchive/avatars/default.png';
         $response = new BinaryFileResponse($fileAdr);
         return $response;
     }
+
+    #[Route('/front/seal/file/get/{id}', name: 'front_seal_file_get')]
+    public function front_seal_file_get(EntityManagerInterface $entityManager, string $id = '0'): BinaryFileResponse
+    {
+        $bid = $entityManager->getRepository(Business::class)->find($id);
+        if (!$bid)
+            return new BinaryFileResponse(dirname(__DIR__, 3) . '/hesabixArchive/seal/default.png');
+        $fileAdr = dirname(__DIR__, 3) . '/hesabixArchive/seal/' . $bid->getSealFile();
+        if (!$bid->getAvatar() || !file_exists($fileAdr))
+            return new BinaryFileResponse(dirname(__DIR__, 3) . '/hesabixArchive/seal/default.png');
+        $response = new BinaryFileResponse($fileAdr);
+        return $response;
+    }
+
 
     #[Route('/api/seal/get/file/{id}', name: 'api_seal_get_file')]
     public function api_seal_get_file(string $id = null): BinaryFileResponse

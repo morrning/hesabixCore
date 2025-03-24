@@ -123,7 +123,7 @@
 {% if printInvoice%}
 		<header>
 			<p style="text-align:center;">{{ bid.name }}</p>
-			<img src="{{ "/api/seal/get/file/" ~ bid.sealFile}}" width="80"/>
+			<img src="{{ url('front_seal_file_get', {id: bid.id},)}}" width="80"/>
 		</header>
 		<table class="bill-details">
 			<tbody style="text-align:right">
@@ -228,7 +228,7 @@
 		</table>
 		<footer style="text-align:center">
 			<p>{{ bid.name }}</p>
-			<img src="{{ "/api/seal/get/file/" ~ bid.sealFile}}" width="80"/>
+			<img src="{{ url('front_seal_file_get', {id: bid.id},)}}" width="80"/>
 		</footer>
 {% endif %}
 	</body>

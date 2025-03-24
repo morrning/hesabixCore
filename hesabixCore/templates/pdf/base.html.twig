@@ -32,7 +32,7 @@
 					<thead>
 						<tr>
 							<td style="width:20%">
-								<img src="{{ "/api/avatar/get/file/" ~ bid.avatar}}" width="65"/>
+								<img src="{{ url('front_avatar_file_get', {id: bid.id},)}}" width="65"/>
 							</td>
 							<td style="width:60%; text-align:center">
 								<h3 class="">{{bid.name}}</h3>
