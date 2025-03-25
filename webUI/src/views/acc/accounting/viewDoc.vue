@@ -12,7 +12,7 @@
         <button type="button" class="btn btn-sm btn-warning text-light me-2" data-bs-toggle="modal" data-bs-target="#notesModal">
           <span class="badge text-bg-dark me-2">{{ this.notes.count }}</span>
           <i class="fa-regular fa-note-sticky me-1"></i>
-          <span class="d-none d-sm-inline-block">یاداشت‌‌ها</span>
+          <span class="d-none d-sm-inline-block">یادداشت‌‌ها</span>
         </button>
         <notes :stat="notes" :code="this.$route.params.id" typeNote="accounting" />
         <button class="btn btn-sm btn-primary mx-2" onclick="Dashmix.helpers('dm-print');" type="button">

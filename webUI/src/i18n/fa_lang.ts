@@ -411,7 +411,7 @@ const fa_lang = {
     bid_info: "تنظیمات کسب و کار",
     bid_info_label: "اطلاعات کسب‌و‌کار",
     invoice_pays: "پرداختی‌های فاکتور",
-    invoice_footer_note: "یاداشت پایین فاکتور",
+    invoice_footer_note: "یادداشت پایین فاکتور",
     tax_dexpo: "مالیات به تفکیک اقلام",
     paper_size: "اندازه کاغذ",
     discount_dexpo: "تخفیف به تفکیک اقلام",

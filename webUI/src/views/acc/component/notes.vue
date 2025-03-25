@@ -91,7 +91,7 @@ export default defineComponent({
         <div class="modal-header bg-warning text-white">
           <h1 class="modal-title fs-5" id="notesModalLabel">
             <i class="fa-regular fa-note-sticky me-1"></i>
-            یاداشت‌ها
+            یادداشت‌ها
           </h1>
           <div class="block-options">
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -99,7 +99,7 @@ export default defineComponent({
         </div>
         <div class="modal-body">
           <div class="input-group mb-3">
-            <input v-model="des" type="text" class="form-control" placeholder="شرح" aria-label="افزودن یاداشت"
+            <input v-model="des" type="text" class="form-control" placeholder="شرح" aria-label="افزودن یادداشت"
               aria-describedby="button-addon1">
             <button :disabled="this.loading" @click="save()" class="btn btn-outline-success" type="button"
               id="button-addon1">ثبت</button>

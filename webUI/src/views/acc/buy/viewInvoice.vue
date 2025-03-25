@@ -189,7 +189,7 @@ export default defineComponent({
           </div>
           <div class="form-check form-switch">
             <input class="form-check-input" v-model="printOptions.note" type="checkbox">
-            <label class="form-check-label">یاداشت پایین فاکتور</label>
+            <label class="form-check-label">یادداشت پایین فاکتور</label>
           </div>
           <div class="form-check form-switch">
             <input class="form-check-input" v-model="printOptions.taxInfo" type="checkbox">
@@ -227,7 +227,7 @@ export default defineComponent({
           data-bs-target="#notesModal">
           <span class="badge text-bg-dark me-2">{{ this.notes.count }}</span>
           <i class="fa-regular fa-note-sticky me-1"></i>
-          <span class="d-none d-sm-inline-block">یاداشت‌‌ها</span>
+          <span class="d-none d-sm-inline-block">یادداشت‌‌ها</span>
         </button>
         <notes :stat="notes" :code="this.$route.params.id" typeNote="buy" />
         <!-- Button trigger modal -->

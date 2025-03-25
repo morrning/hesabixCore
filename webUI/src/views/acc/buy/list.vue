@@ -192,7 +192,7 @@
           ></v-select>
           <v-switch inset v-model="printOptions.bidInfo" color="primary" label="اطلاعات کسب‌وکار" hide-details></v-switch>
           <v-switch inset v-model="printOptions.pays" color="primary" label="نمایش پرداخت‌های فاکتور" hide-details></v-switch>
-          <v-switch inset v-model="printOptions.note" color="primary" label="یاداشت پایین فاکتور" hide-details></v-switch>
+          <v-switch inset v-model="printOptions.note" color="primary" label="یادداشت پایین فاکتور" hide-details></v-switch>
           <v-switch inset v-model="printOptions.taxInfo" color="primary" label="مالیات به تفکیک اقلام" hide-details></v-switch>
           <v-switch inset v-model="printOptions.discountInfo" color="primary" label="تخفیف به تفکیک اقلام" hide-details></v-switch>
         </template>

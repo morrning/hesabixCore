@@ -287,7 +287,7 @@ class SellController extends AbstractController
                     return $this->json([
                         'result' =>
                             $SMS->sendByBalance(
-                                [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getId(), $acc['bid']->getName(), $acc['bid']->getTel()],
+                                [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortlink(), $acc['bid']->getName(), $acc['bid']->getTel()],
                                 $registryMGR->get('sms', 'plugAccproSharefaktor'),
                                 $person->getMobile(),
                                 $acc['bid'],
@@ -299,7 +299,7 @@ class SellController extends AbstractController
                     return $this->json([
                         'result' =>
                             $SMS->sendByBalance(
-                                [$acc['bid']->getName(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getId()],
+                                [$acc['bid']->getName(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortlink()],
                                 $registryMGR->get('sms', 'sharefaktor'),
                                 $person->getMobile(),
                                 $acc['bid'],

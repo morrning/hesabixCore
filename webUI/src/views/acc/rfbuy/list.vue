@@ -31,7 +31,7 @@
           </div>
           <div class="form-check form-switch">
             <input class="form-check-input" v-model="printOptions.note" type="checkbox">
-            <label class="form-check-label">یاداشت پایین فاکتور</label>
+            <label class="form-check-label">یادداشت پایین فاکتور</label>
           </div>
           <div class="form-check form-switch">
             <input class="form-check-input" v-model="printOptions.taxInfo" type="checkbox">

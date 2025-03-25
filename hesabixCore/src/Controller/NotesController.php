@@ -106,7 +106,7 @@ class NotesController extends AbstractController
         $entityManager->flush();
         $log->insert(
             'حسابداری',
-            ' افزودن یاداشت به فاکتور‌ شماره ' . $doc->getCode(),
+            ' افزودن یادداشت به فاکتور‌ شماره ' . $doc->getCode(),
             $this->getUser(),
             $acc['bid']->getId(),
             $doc
@@ -129,7 +129,7 @@ class NotesController extends AbstractController
 
         $log->insert(
             'حسابداری',
-            ' حذف یاداشت از فاکتور‌ شماره ' . $item->getDoc()->getCode(),
+            ' حذف یادداشت از فاکتور‌ شماره ' . $item->getDoc()->getCode(),
             $this->getUser(),
             $acc['bid']->getId(),
             $item->getDoc()

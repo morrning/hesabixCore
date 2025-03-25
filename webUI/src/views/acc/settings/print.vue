@@ -58,7 +58,7 @@
                 <div class="col-sm-12 col-md-6 mb-2">
                   <div class="form-check form-switch">
                     <input class="form-check-input" v-model="settings.sell.note" type="checkbox">
-                    <label class="form-check-label">یاداشت پایین فاکتور</label>
+                    <label class="form-check-label">یادداشت پایین فاکتور</label>
                   </div>
                 </div>
                 <div class="col-sm-12 col-md-6 mb-2">
@@ -79,7 +79,7 @@
                   <div class="form-floating">
                     <textarea v-model="settings.sell.noteString" class="form-control"
                       placeholder="این نوشته در پایین فاکتور‌ها چاپ خواهد شد" style="height: 100px"></textarea>
-                    <label for="floatingTextarea2">یاداشت پایین فاکتور</label>
+                    <label for="floatingTextarea2">یادداشت پایین فاکتور</label>
                   </div>
                 </div>
                 <div class="col-sm-12 col-md-6 mb-2">
@@ -116,7 +116,7 @@
                 <div class="col-sm-12 col-md-6 mb-2">
                   <div class="form-check form-switch">
                     <input class="form-check-input" v-model="settings.buy.note" type="checkbox">
-                    <label class="form-check-label">یاداشت پایین فاکتور</label>
+                    <label class="form-check-label">یادداشت پایین فاکتور</label>
                   </div>
                 </div>
                 <div class="col-sm-12 col-md-6 mb-2">
@@ -137,7 +137,7 @@
                   <div class="form-floating">
                     <textarea v-model="settings.buy.noteString" class="form-control"
                       placeholder="این نوشته در پایین فاکتور‌ها چاپ خواهد شد" style="height: 100px"></textarea>
-                    <label for="floatingTextarea2">یاداشت پایین فاکتور</label>
+                    <label for="floatingTextarea2">یادداشت پایین فاکتور</label>
                   </div>
                 </div>
                 <div class="col-sm-12 col-md-6 mb-2">
@@ -174,7 +174,7 @@
                 <div class="col-sm-12 col-md-6 mb-2">
                   <div class="form-check form-switch">
                     <input class="form-check-input" v-model="settings.rfbuy.note" type="checkbox">
-                    <label class="form-check-label">یاداشت پایین فاکتور</label>
+                    <label class="form-check-label">یادداشت پایین فاکتور</label>
                   </div>
                 </div>
                 <div class="col-sm-12 col-md-6 mb-2">
@@ -195,7 +195,7 @@
                   <div class="form-floating">
                     <textarea v-model="settings.rfbuy.noteString" class="form-control"
                       placeholder="این نوشته در پایین فاکتور‌ها چاپ خواهد شد" style="height: 100px"></textarea>
-                    <label for="floatingTextarea2">یاداشت پایین فاکتور</label>
+                    <label for="floatingTextarea2">یادداشت پایین فاکتور</label>
                   </div>
                 </div>
                 <div class="col-sm-12 col-md-6 mb-2">
@@ -232,7 +232,7 @@
                 <div class="col-sm-12 col-md-6 mb-2">
                   <div class="form-check form-switch">
                     <input class="form-check-input" v-model="settings.rfsell.note" type="checkbox">
-                    <label class="form-check-label">یاداشت پایین فاکتور</label>
+                    <label class="form-check-label">یادداشت پایین فاکتور</label>
                   </div>
                 </div>
                 <div class="col-sm-12 col-md-6 mb-2">
@@ -253,7 +253,7 @@
                   <div class="form-floating">
                     <textarea v-model="settings.rfsell.noteString" class="form-control"
                       placeholder="این نوشته در پایین فاکتور‌ها چاپ خواهد شد" style="height: 100px"></textarea>
-                    <label for="floatingTextarea2">یاداشت پایین فاکتور</label>
+                    <label for="floatingTextarea2">یادداشت پایین فاکتور</label>
                   </div>
                 </div>
                 <div class="col-sm-12 col-md-6 mb-2">
