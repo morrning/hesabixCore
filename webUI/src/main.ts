@@ -6,12 +6,12 @@ import "./registerServiceWorker";
 import { vMaska } from "maska/vue"
 import VueApexCharts from "vue3-apexcharts";
 import Uploader from 'vue-media-upload';
+import DateFnsJalaliAdapter from '@date-io/date-fns-jalali';
+import faIR from 'date-fns-jalali/locale/fa-IR';
 
 //pinia
 import { createPinia } from 'pinia'
 const pinia = createPinia();
-
-import { VDateInput } from 'vuetify/labs/VDateInput'
 
 import CKEditor from '@ckeditor/ckeditor5-vue';
 // Import translations for the Persian language.
@@ -124,6 +124,12 @@ const vuetify = createVuetify({
             },
         },
     },
+    date: {
+        adapter: DateFnsJalaliAdapter,
+        locale: {
+            fa:faIR // تنظیم زبان فارسی
+        },
+    },
 });
 
 // @ts-ignore
@@ -146,7 +152,6 @@ import 'vue-select/dist/vue-select.css';
 app.component('v-cob', vSelect)
 import Hdatepicker from "@/components/forms/Hdatepicker.vue";
 import calendarLocalConfig from "@/i18n/calendarLocalConfig";
-
 app.component('h-date-picker', Hdatepicker);
 app.use(CKEditor)
 app.use(Vue3PersianDatetimePicker, {

@@ -333,7 +333,7 @@ export default {
           <v-list-item-title>
             {{ $t('drawer.gets') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/persons/receive/list')
-            }}</span>
+              }}</span>
           </v-list-item-title>
           <template v-slot:append>
             <v-tooltip :text="$t('dialog.add_new')" location="end">
@@ -385,7 +385,7 @@ export default {
           <v-list-item-title>
             {{ $t('drawer.price_lists') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/commodity/pricelist/list')
-            }}</span>
+              }}</span>
           </v-list-item-title>
           <template v-slot:append>
             <v-tooltip :text="$t('dialog.add_new')" location="end">
@@ -509,7 +509,7 @@ export default {
           <v-list-item-title>
             {{ $t('drawer.storeroom_ticket') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/storeroom/tickets/list')
-            }}</span>
+              }}</span>
           </v-list-item-title>
           <template v-slot:append>
             <v-tooltip :text="$t('dialog.add_new')" location="end">
@@ -524,7 +524,7 @@ export default {
             {{ $t('drawer.commodity_exist_count') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{
               getShortcutKey('/acc/storeroom/commodity/check/exist')
-            }}</span>
+              }}</span>
           </v-list-item-title>
         </v-list-item>
       </v-list-group>
@@ -647,21 +647,19 @@ export default {
             {{ $t('drawer.accounting_docs') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/accounting/list') }}</span>
           </v-list-item-title>
-          <template v-slot:append>
-            <!--
+          <template v-slot:append v-if="isPluginActive('accpro') && 1==2">
             <v-tooltip :text="$t('dialog.add_new')" location="end">
               <template v-slot:activator="{ props }">
                 <v-btn v-bind="props" icon="mdi-plus-box" variant="plain" to="/acc/accounting/mod/" />
               </template>
-      </v-tooltip>
-      -->
+            </v-tooltip>
           </template>
         </v-list-item>
         <v-list-item v-if="permissions.accounting" to="/acc/accounting/open_balance">
           <v-list-item-title>
             {{ $t('drawer.open_balance') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/accounting/open_balance')
-            }}</span>
+              }}</span>
           </v-list-item-title>
         </v-list-item>
         <v-list-item v-if="permissions.accounting" to="/acc/accounting/table">
@@ -675,7 +673,7 @@ export default {
           <v-list-item-title>
             {{ $t('drawer.close_year') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/accounting/close_year')
-            }}</span>
+              }}</span>
           </v-list-item-title>
         </v-list-item>
       </v-list-group>
@@ -702,7 +700,7 @@ export default {
           <v-list-item-title>
             {{ $t('drawer.print_settings') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/business/printoptions')
-            }}</span>
+              }}</span>
           </v-list-item-title>
         </v-list-item>
         <v-list-item v-if="permissions.settings && this.isPluginActive('accpro')" to="/acc/business/avatar">
@@ -727,7 +725,7 @@ export default {
           <v-list-item-title>
             {{ $t('drawer.extra_moneys') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/business/extramoneys')
-            }}</span>
+              }}</span>
           </v-list-item-title>
         </v-list-item>
         <v-list-item v-if="permissions.log" to="/acc/business/logs">
@@ -751,7 +749,7 @@ export default {
           <v-list-item-title>
             {{ $t('drawer.repservice_reqs') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/plugin/repservice/order/list')
-            }}</span>
+              }}</span>
           </v-list-item-title>
           <template v-slot:append>
             <v-tooltip :text="$t('dialog.add_new')" location="end">
@@ -842,7 +840,7 @@ export default {
           <v-list-item-title>
             {{ $t('drawer.plugins_invoices') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/plugin-center/invoice')
-            }}</span>
+              }}</span>
           </v-list-item-title>
         </v-list-item>
       </v-list-group>

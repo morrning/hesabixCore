@@ -166,160 +166,186 @@ class CostController extends AbstractController
 
     #[Route('/api/cost/list/search', name: 'app_cost_list_search', methods: ['POST'])]
     public function searchCostList(
-        Request $request,
-        Access $access,
-        EntityManagerInterface $entityManager,
-        Jdate $jdate
+     Request $request,
+     Access $access,
+     EntityManagerInterface $entityManager,
+     Jdate $jdate
     ): JsonResponse {
-        $acc = $access->hasRole('cost');
-        if (!$acc) {
-            throw $this->createAccessDeniedException();
-        }
-
-        $params = json_decode($request->getContent(), true) ?? [];
-        
-        // پارامترهای ورودی
-        $filters = $params['filters'] ?? [];
-        $pagination = $params['pagination'] ?? ['page' => 1, 'limit' => 10];
-        $sort = $params['sort'] ?? ['sortBy' => 'id', 'sortDesc' => true];
-        $type = $params['type'] ?? 'cost';
-
-        // تنظیم پارامترهای صفحه‌بندی
-        $page = max(1, $pagination['page'] ?? 1);
-        $limit = max(1, min(100, $pagination['limit'] ?? 10));
-
-        // ساخت کوئری پایه
-        $queryBuilder = $entityManager->createQueryBuilder()
-            ->select('DISTINCT d.id, d.dateSubmit, d.date, d.type, d.code, d.des, d.amount')
-            ->addSelect('u.fullName as submitter')
-            ->from('App\Entity\HesabdariDoc', 'd')
-            ->leftJoin('d.submitter', 'u')
-            ->where('d.bid = :bid')
-            ->andWhere('d.year = :year')
-            ->andWhere('d.type = :type')
-            ->andWhere('d.money = :money')
-            ->setParameter('bid', $acc['bid'])
-            ->setParameter('year', $acc['year'])
-            ->setParameter('type', $type)
-            ->setParameter('money', $acc['money']);
-
-        // اعمال فیلترها
-        if (!empty($filters)) {
-            if (isset($filters['search'])) {
-                $queryBuilder->leftJoin('d.hesabdariRows', 'r')
-                    ->leftJoin('r.person', 'p')
-                    ->leftJoin('r.ref', 't')
-                    ->andWhere(
-                        $queryBuilder->expr()->orX(
-                            'd.code LIKE :search',
-                            'd.des LIKE :search',
-                            'd.date LIKE :search',
-                            'd.amount LIKE :search',
-                            'p.nikename LIKE :search',
-                            't.name LIKE :search'
-                        )
-                    )
-                    ->setParameter('search', "%{$filters['search']}%");
-            }
-
-            if (isset($filters['dateFrom'])) {
-                $queryBuilder->andWhere('d.date >= :dateFrom')
-                    ->setParameter('dateFrom', $filters['dateFrom']);
-            }
-
-            if (isset($filters['dateTo'])) {
-                $queryBuilder->andWhere('d.date <= :dateTo')
-                    ->setParameter('dateTo', $filters['dateTo']);
-            }
-
-            if (isset($filters['amount'])) {
-                $queryBuilder->andWhere('d.amount = :amount')
-                    ->setParameter('amount', $filters['amount']);
-            }
-        }
-
-        // اعمال مرتب‌سازی
-        $sortField = $sort['sortBy'] ?? 'id';
-        $sortDirection = ($sort['sortDesc'] ?? true) ? 'DESC' : 'ASC';
-        $queryBuilder->orderBy("d.$sortField", $sortDirection);
-
-        // محاسبه تعداد کل نتایج
-        $totalItemsQuery = clone $queryBuilder;
-        $totalItems = $totalItemsQuery->select('COUNT(DISTINCT d.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        // اعمال صفحه‌بندی
-        $queryBuilder->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit);
-
-        $docs = $queryBuilder->getQuery()->getArrayResult();
-
-        $dataTemp = [];
-        foreach ($docs as $doc) {
-            $item = [
-                'id' => $doc['id'],
-                'dateSubmit' => $doc['dateSubmit'],
-                'date' => $doc['date'],
-                'type' => $doc['type'],
-                'code' => $doc['code'],
-                'des' => $doc['des'],
-                'amount' => $doc['amount'],
-                'submitter' => $doc['submitter']
-            ];
-
-            // دریافت اطلاعات مرکز هزینه و مبلغ
-            $costDetails = $entityManager->createQueryBuilder()
-                ->select('t.name as center_name, r.bd as amount')
-                ->from('App\Entity\HesabdariRow', 'r')
-                ->join('r.ref', 't')
-                ->where('r.doc = :docId')
-                ->andWhere('r.bd != 0')
-                ->setParameter('docId', $doc['id'])
-                ->getQuery()
-                ->getResult();
-
-            $item['costCenters'] = array_map(function($detail) {
-                return [
-                    'name' => $detail['center_name'],
-                    'amount' => (int) $detail['amount']
-                ];
-            }, $costDetails);
-
-            // دریافت اطلاعات شخص مرتبط
-            $personInfo = $entityManager->createQueryBuilder()
-                ->select('p.id, p.nikename, p.code')
-                ->from('App\Entity\HesabdariRow', 'r')
-                ->join('r.person', 'p')
-                ->where('r.doc = :docId')
-                ->andWhere('r.person IS NOT NULL')
-                ->setParameter('docId', $doc['id'])
-                ->setMaxResults(1)
-                ->getQuery()
-                ->getOneOrNullResult();
-
-            $item['person'] = $personInfo ? [
-                'id' => $personInfo['id'],
-                'nikename' => $personInfo['nikename'],
-                'code' => $personInfo['code']
-            ] : null;
-
-            $dataTemp[] = $item;
-        }
-
-        return $this->json([
-            'items' => $dataTemp,
-            'total' => (int) $totalItems,
-            'page' => $page,
-            'limit' => $limit
-        ]);
+     $acc = $access->hasRole('cost');
+     if (!$acc) {
+     throw $this->createAccessDeniedException();
+     }
+    
+     $params = json_decode($request->getContent(), true) ?? [];
+     
+     // پارامترهای ورودی
+     $filters = $params['filters'] ?? [];
+     $pagination = $params['pagination'] ?? ['page' => 1, 'limit' => 10];
+     $sort = $params['sort'] ?? ['sortBy' => 'id', 'sortDesc' => true];
+     $type = $params['type'] ?? 'cost';
+    
+     // تنظیم پارامترهای صفحه‌بندی
+     $page = max(1, $pagination['page'] ?? 1);
+     $limit = max(1, min(100, $pagination['limit'] ?? 10));
+    
+     // ساخت کوئری پایه
+     $queryBuilder = $entityManager->createQueryBuilder()
+     ->select('DISTINCT d.id, d.dateSubmit, d.date, d.type, d.code, d.des, d.amount')
+     ->addSelect('u.fullName as submitter')
+     ->from('App\Entity\HesabdariDoc', 'd')
+     ->leftJoin('d.submitter', 'u')
+     ->where('d.bid = :bid')
+     ->andWhere('d.year = :year')
+     ->andWhere('d.type = :type')
+     ->andWhere('d.money = :money')
+     ->setParameter('bid', $acc['bid'])
+     ->setParameter('year', $acc['year'])
+     ->setParameter('type', $type)
+     ->setParameter('money', $acc['money']);
+    
+     // اعمال فیلترها
+     if (!empty($filters)) {
+     // جستجوی متنی
+     if (isset($filters['search'])) {
+     $searchValue = is_array($filters['search']) ? $filters['search']['value'] : $filters['search'];
+     $queryBuilder->leftJoin('d.hesabdariRows', 'r')
+     ->leftJoin('r.person', 'p')
+     ->leftJoin('r.ref', 't')
+     ->andWhere(
+     $queryBuilder->expr()->orX(
+     'd.code LIKE :search',
+     'd.des LIKE :search',
+     'd.date LIKE :search',
+     'd.amount LIKE :search',
+     'p.nikename LIKE :search',
+     't.name LIKE :search'
+     )
+     )
+     ->setParameter('search', "%{$searchValue}%");
+     }
+    
+     // فیلتر زمانی
+     if (isset($filters['timeFilter'])) {
+     $today = $jdate->jdate('Y/m/d', time());
+     switch ($filters['timeFilter']) {
+     case 'today':
+     $queryBuilder->andWhere('d.date = :today')
+     ->setParameter('today', $today);
+     break;
+     case 'week':
+     $weekStart = $jdate->jdate('Y/m/d', strtotime('-6 days'));
+     $queryBuilder->andWhere('d.date BETWEEN :weekStart AND :today')
+     ->setParameter('weekStart', $weekStart)
+     ->setParameter('today', $today);
+     break;
+     case 'month':
+     $monthStart = $jdate->jdate('Y/m/01', time());
+     $queryBuilder->andWhere('d.date BETWEEN :monthStart AND :today')
+     ->setParameter('monthStart', $monthStart)
+     ->setParameter('today', $today);
+     break;
+     case 'custom':
+     if (isset($filters['dateFrom']) && isset($filters['dateTo'])) {
+     $queryBuilder->andWhere('d.date BETWEEN :dateFrom AND :dateTo')
+     ->setParameter('dateFrom', $filters['dateFrom'])
+     ->setParameter('dateTo', $filters['dateTo']);
+     }
+     break;
+     case 'all':
+     default:
+     // بدون فیلتر زمانی اضافه
+     break;
+     }
+     }
+    
+     if (isset($filters['amount'])) {
+     $queryBuilder->andWhere('d.amount = :amount')
+     ->setParameter('amount', $filters['amount']);
+     }
+     }
+    
+     // اعمال مرتب‌سازی
+     $sortField = is_array($sort['sortBy']) ? ($sort['sortBy']['key'] ?? 'id') : ($sort['sortBy'] ?? 'id');
+     $sortDirection = ($sort['sortDesc'] ?? true) ? 'DESC' : 'ASC';
+     $queryBuilder->orderBy("d.$sortField", $sortDirection);
+    
+     // محاسبه تعداد کل نتایج
+     $totalItemsQuery = clone $queryBuilder;
+     $totalItems = $totalItemsQuery->select('COUNT(DISTINCT d.id)')
+     ->getQuery()
+     ->getSingleScalarResult();
+    
+     // اعمال صفحه‌بندی
+     $queryBuilder->setFirstResult(($page - 1) * $limit)
+     ->setMaxResults($limit);
+    
+     $docs = $queryBuilder->getQuery()->getArrayResult();
+    
+     $dataTemp = [];
+     foreach ($docs as $doc) {
+     $item = [
+     'id' => $doc['id'],
+     'dateSubmit' => $doc['dateSubmit'],
+     'date' => $doc['date'],
+     'type' => $doc['type'],
+     'code' => $doc['code'],
+     'des' => $doc['des'],
+     'amount' => $doc['amount'],
+     'submitter' => $doc['submitter'],
+     ];
+    
+     // دریافت اطلاعات مرکز هزینه و مبلغ
+     $costDetails = $entityManager->createQueryBuilder()
+     ->select('t.name as center_name, r.bd as amount')
+     ->from('App\Entity\HesabdariRow', 'r')
+     ->join('r.ref', 't')
+     ->where('r.doc = :docId')
+     ->andWhere('r.bd != 0')
+     ->setParameter('docId', $doc['id'])
+     ->getQuery()
+     ->getResult();
+    
+     $item['costCenters'] = array_map(function ($detail) {
+     return [
+     'name' => $detail['center_name'],
+     'amount' => (int) $detail['amount'],
+     ];
+     }, $costDetails);
+    
+     // دریافت اطلاعات شخص مرتبط
+     $personInfo = $entityManager->createQueryBuilder()
+     ->select('p.id, p.nikename, p.code')
+     ->from('App\Entity\HesabdariRow', 'r')
+     ->join('r.person', 'p')
+     ->where('r.doc = :docId')
+     ->andWhere('r.person IS NOT NULL')
+     ->setParameter('docId', $doc['id'])
+     ->setMaxResults(1 )
+     ->getQuery()
+     ->getOneOrNullResult();
+    
+     $item['person'] = $personInfo ? [
+     'id' => $personInfo['id'],
+     'nikename' => $personInfo['nikename'],
+     'code' => $personInfo['code'],
+     ] : null;
+    
+     $dataTemp[] = $item;
+     }
+    
+     return $this->json([
+     'items' => $dataTemp,
+     'total' => (int) $totalItems,
+     'page' => $page,
+     'limit' => $limit,
+     ]);
     }
 
     #[Route('/api/costs/list/print', name: 'app_costs_list_print')]
     public function app_costs_list_print(
-        Provider $provider, 
-        Request $request, 
-        Access $access, 
+        Provider $provider,
+        Request $request,
+        Access $access,
         EntityManagerInterface $entityManager
     ): JsonResponse {
         $acc = $access->hasRole('cost');
@@ -328,7 +354,7 @@ class CostController extends AbstractController
         }
 
         $params = json_decode($request->getContent(), true) ?? [];
-        
+
         // دریافت آیتم‌های انتخاب شده یا همه آیتم‌ها
         if (!isset($params['items'])) {
             $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
@@ -411,12 +437,12 @@ class CostController extends AbstractController
 
         // تنظیم هدرها
         $sheet->setCellValue('A1', 'ردیف')
-              ->setCellValue('B1', 'شماره سند')
-              ->setCellValue('C1', 'تاریخ')
-              ->setCellValue('D1', 'شرح')
-              ->setCellValue('E1', 'مرکز هزینه')
-              ->setCellValue('F1', 'مرکز پرداخت')
-              ->setCellValue('G1', 'مبلغ (ریال)');
+            ->setCellValue('B1', 'شماره سند')
+            ->setCellValue('C1', 'تاریخ')
+            ->setCellValue('D1', 'شرح')
+            ->setCellValue('E1', 'مرکز هزینه')
+            ->setCellValue('F1', 'مرکز پرداخت')
+            ->setCellValue('G1', 'مبلغ (ریال)');
 
         // پر کردن داده‌ها
         $rowNumber = 2;
@@ -449,12 +475,12 @@ class CostController extends AbstractController
             }
 
             $sheet->setCellValue('A' . $rowNumber, $index + 1)
-                  ->setCellValue('B' . $rowNumber, $item->getCode())
-                  ->setCellValue('C' . $rowNumber, $item->getDate())
-                  ->setCellValue('D' . $rowNumber, $item->getDes())
-                  ->setCellValue('E' . $rowNumber, $costCenterNames)
-                  ->setCellValue('F' . $rowNumber, $paymentCenter)
-                  ->setCellValue('G' . $rowNumber, number_format($item->getAmount()));
+                ->setCellValue('B' . $rowNumber, $item->getCode())
+                ->setCellValue('C' . $rowNumber, $item->getDate())
+                ->setCellValue('D' . $rowNumber, $item->getDes())
+                ->setCellValue('E' . $rowNumber, $costCenterNames)
+                ->setCellValue('F' . $rowNumber, $paymentCenter)
+                ->setCellValue('G' . $rowNumber, number_format($item->getAmount()));
             $rowNumber++;
         }
 
