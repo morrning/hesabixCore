@@ -9,7 +9,8 @@ import Notifications_btn from '@/components/application/buttons/notifications_bt
 import Year_cob from '@/components/application/combobox/year_cob.vue';
 import Currency_cob from '@/components/application/combobox/currency_cob.vue';
 import clock from '@/components/application/clock.vue';
-
+import CalculatorButton from '@/components/application/buttons/CalculatorButton.vue'
+import SecretDialog from '@/components/application/buttons/SecretDialog.vue';
 export default {
   data() {
     return {
@@ -280,7 +281,9 @@ export default {
     Notifications_btn,
     Year_cob,
     Currency_cob,
-    clock
+    clock,
+    CalculatorButton,
+    SecretDialog
   }
 };
 </script>
@@ -860,6 +863,8 @@ export default {
     <v-btn class="d-none d-sm-flex" stacked @click="showShortcutsDialog = true; isEditingShortcuts = false">
       <v-icon>mdi-help-circle</v-icon>
     </v-btn>
+    <CalculatorButton />
+    <SecretDialog />
     <v-dialog v-model="showShortcutsDialog" max-width="800" scrollable>
       <v-card>
         <v-card-title class="text-h5 pa-4">
