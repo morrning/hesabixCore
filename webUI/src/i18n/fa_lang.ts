@@ -267,6 +267,8 @@ const fa_lang = {
     count: "تعداد",
   },
   dialog: {
+    acc_price: 'مبلغ',
+    des: 'شرح',
     warning: 'هشدار',
     column_settings: 'ستون‌های جدول',
     all: 'همه موارد',

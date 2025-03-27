@@ -20,14 +20,14 @@
               <input v-model="searchValue" class="form-control" type="text" placeholder="جست و جو ...">
             </div>
           </div>
-          <EasyDataTable table-class-name="customize-table" v-model:items-selected="itemsSelected" show-index alternating :search-value="searchValue"
-            :headers="headers" :items="items" theme-color="#1d90ff" header-text-direction="center"
-            body-text-direction="center" rowsPerPageMessage="تعداد سطر" emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-            rowsOfPageSeparatorMessage="از" :loading="loading">
+          <EasyDataTable table-class-name="customize-table" v-model:items-selected="itemsSelected" show-index
+            alternating :search-value="searchValue" :headers="headers" :items="items" theme-color="#1d90ff"
+            header-text-direction="center" body-text-direction="center" rowsPerPageMessage="تعداد سطر"
+            emptyMessage="اطلاعاتی برای نمایش وجود ندارد" rowsOfPageSeparatorMessage="از" :loading="loading">
             <template #item-operation="{ code }">
               <div class="dropdown-center">
-                <button aria-expanded="false" aria-haspopup="true" class="btn btn-sm btn-link"
-                  data-bs-toggle="dropdown" id="dropdown-align-center-alt-primary" type="button">
+                <button aria-expanded="false" aria-haspopup="true" class="btn btn-sm btn-link" data-bs-toggle="dropdown"
+                  id="dropdown-align-center-alt-primary" type="button">
                   <i class="fa-solid fa-ellipsis"></i>
                 </button>
                 <div aria-labelledby="dropdown-align-center-outline-primary" class="dropdown-menu dropdown-menu-end"
@@ -52,36 +52,35 @@
               </div>
             </template>
           </EasyDataTable>
-          <div class="container-fluid p-0 mx-0 my-3">
-            <a class="block block-rounded block-link-shadow border-start border-success border-3"
-              href="javascript:void(0)">
-              <div class="block-content block-content-full block-content-sm bg-body-light">
-                <div class="row">
-                  <div class="col-sm-6 com-md-6">
+          <v-container fluid class="pa-0 ma-0 my-3">
+            <v-card class="rounded border-start border-success border-3" elevation="2" link href="javascript:void(0)">
+              <v-card-text class="bg-body-light pa-4">
+                <v-row>
+                  <v-col cols="12" sm="6">
                     <span class="text-dark">
-                      <i class="fa fa-list-dots"></i>
+                      <v-icon icon="mdi-format-list-bulleted" size="small" class="me-1" />
                       مبلغ کل:
                     </span>
                     <span class="text-primary">
-                      {{ $filters.formatNumber(this.sumTotal) }}
+                      {{ $filters.formatNumber(sumTotal) }}
                       {{ $filters.getActiveMoney().shortName }}
                     </span>
-                  </div>
+                  </v-col>
 
-                  <div class="col-sm-6 com-md-6">
+                  <v-col cols="12" sm="6">
                     <span class="text-dark">
-                      <i class="fa fa-list-check"></i>
+                      <v-icon icon="mdi-format-list-checks" size="small" class="me-1" />
                       جمع مبلغ موارد انتخابی:
                     </span>
                     <span class="text-primary">
-                      {{ $filters.formatNumber(this.sumSelected) }}
+                      {{ $filters.formatNumber(sumSelected) }}
                       {{ $filters.getActiveMoney().shortName }}
                     </span>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </v-container>
         </div>
       </div>
     </div>

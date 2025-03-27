@@ -103,8 +103,8 @@
   </v-text-field>
 
   <v-data-table-server :headers="headers" :items="items" :loading="loading" :items-length="totalItems"
-    v-model:options="serverOptions" @update:options="fetchData" item-value="code" class="elevation-1 data-table-wrapper"
-    :header-props="{ class: 'custom-header' }">
+    v-model:options="serverOptions" v-model:expanded="expanded" @update:options="fetchData" item-value="code"
+    class="elevation-1 data-table-wrapper" :header-props="{ class: 'custom-header' }" show-expand>
     <template #header.checkbox>
       <v-checkbox :model-value="isAllSelected" @change="toggleSelectAll" hide-details density="compact" />
     </template>
@@ -143,25 +143,66 @@
       {{ $filters.formatNumber(item.amount) }}
     </template>
 
-    <template #item.costCenter="{ item }">
-      {{item.costCenters.map(center => center.name).join(', ') || '—'}}
+    <template #expanded-row="{ columns, item }">
+      <tr>
+        <td :colspan="columns.length" class="expanded-row">
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <h4>مراکز هزینه</h4>
+                <v-list dense>
+                  <v-list-item v-for="(center, index) in item.costCenters" :key="index">
+                    <v-list-item-title>
+                      {{ center.name }}
+                      {{ $t('dialog.acc_price') }} : {{ this.$filters.formatNumber(center.amount) }}
+                      {{ $t('dialog.des') }} : {{ center.des }}
+                    </v-list-item-title>
+                  </v-list-item>
+                  <v-list-item v-if="!item.costCenters || item.costCenters.length === 0">
+                    <v-list-item-title>—</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-col>
+            </v-row>
+          </v-container>
+        </td>
+      </tr>
     </template>
   </v-data-table-server>
+  <v-container fluid class="pa-0 ma-0 my-3">
+    <v-card
+      class="rounded border-start border-success border-3"
+      elevation="2"
+      link
+      href="javascript:void(0)"
+    >
+      <v-card-text class="bg-body-light pa-4">
+        <v-row>
+          <v-col cols="12" sm="6">
+            <span class="text-dark">
+              <v-icon icon="mdi-format-list-bulleted" size="small" class="me-1" />
+              مبلغ کل:
+            </span>
+            <span class="text-primary">
+              {{ $filters.formatNumber(totalCost) }}
+              {{ $filters.getActiveMoney().shortName }}
+            </span>
+          </v-col>
 
-  <v-row class="mt-4 pa-4">
-    <v-col cols="6">
-      <v-card flat>
-        <v-card-title>جمع کل هزینه‌ها</v-card-title>
-        <v-card-text>{{ $filters.formatNumber(totalCost) }}</v-card-text>
-      </v-card>
-    </v-col>
-    <v-col cols="6">
-      <v-card flat>
-        <v-card-title>جمع موارد انتخاب‌شده</v-card-title>
-        <v-card-text>{{ $filters.formatNumber(selectedCost) }}</v-card-text>
-      </v-card>
-    </v-col>
-  </v-row>
+          <v-col cols="12" sm="6">
+            <span class="text-dark">
+              <v-icon icon="mdi-format-list-checks" size="small" class="me-1" />
+              جمع مبلغ موارد انتخابی:
+            </span>
+            <span class="text-primary">
+              {{ $filters.formatNumber(selectedCost) }}
+              {{ $filters.getActiveMoney().shortName }}
+            </span>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 
 <script setup>
@@ -182,8 +223,9 @@ const selectedItems = ref(new Set());
 const totalItems = ref(0);
 const searchQuery = ref('');
 const timeFilter = ref('all');
+const expanded = ref([]); // برای مدیریت ردیف‌های گسترش‌یافته
 
-// فیلترهای زمانی (بدون بازه دلخواه)
+// فیلترهای زمانی
 const timeFilters = ref([
   { label: 'امروز', value: 'today', checked: false },
   { label: 'این هفته', value: 'week', checked: false },
@@ -191,13 +233,12 @@ const timeFilters = ref([
   { label: 'همه', value: 'all', checked: true },
 ]);
 
-// تعریف ستون‌های جدول
+// تعریف ستون‌های جدول (ستون costCenter از هدرها حذف شده)
 const headers = ref([
   { title: '', key: 'checkbox', sortable: false, width: '50', align: 'center' },
   { title: 'ردیف', key: 'index', align: 'center', sortable: false, width: '70' },
   { title: 'عملیات', key: 'operation', align: 'center', sortable: false, width: '100' },
   { title: 'کد', key: 'code', align: 'center', sortable: true },
-  { title: 'مرکز هزینه', key: 'costCenter', align: 'center', sortable: false },
   { title: 'مبلغ', key: 'amount', align: 'center', sortable: true },
   { title: 'تاریخ', key: 'date', align: 'center', sortable: true },
   { title: 'شرح', key: 'des', align: 'center', sortable: true },
@@ -511,5 +552,10 @@ onMounted(() => {
 .v-data-table ::v-deep .v-data-table__checkbox {
   margin-right: 0;
   margin-left: 0;
+}
+
+.expanded-row {
+  background-color: #f5f5f5;
+  padding: 10px;
 }
 </style>
