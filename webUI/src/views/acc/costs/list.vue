@@ -154,7 +154,7 @@
                   <v-list-item v-for="(center, index) in item.costCenters" :key="index">
                     <v-list-item-title>
                       {{ center.name }}
-                      {{ $t('dialog.acc_price') }} : {{ this.$filters.formatNumber(center.amount) }}
+                      {{ $t('dialog.acc_price') }} : {{ $filters.formatNumber(center.amount) }}
                       {{ $t('dialog.des') }} : {{ center.des }}
                     </v-list-item-title>
                   </v-list-item>
