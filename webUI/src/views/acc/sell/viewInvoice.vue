@@ -1,7 +1,6 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
-import Swal from 'sweetalert2';
 import Rec from '../component/rec.vue';
 import RecList from '../component/recList.vue';
 import ArchiveUpload from '../component/archive/archiveUpload.vue';
@@ -25,7 +24,6 @@ export default defineComponent({
       this.PayWindowsState.submited = false;
       if (newValue) {
         this.loadData();
-        this.recDialog = false;
       }
     },
     'recListWindowsState.submited'(newValue) {
@@ -36,7 +34,6 @@ export default defineComponent({
     },
   },
   data: () => ({
-    recDialog: false,
     recListDialog: false,
     activeTab: 'invoice-info',
     loading: ref(true),
@@ -167,10 +164,8 @@ export default defineComponent({
       <v-tooltip activator="parent" location="bottom">آرشیو</v-tooltip>
     </v-btn>
     <notes :stat="notes" :code="$route.params.id" type-note="sell" />
-    <v-btn icon color="error" class="ml-2" v-if="parseInt(item.doc.amount) > parseInt(totalRec)" @click="recDialog = true">
-      <v-icon>mdi-money</v-icon>
-      <v-tooltip activator="parent" location="bottom">ثبت دریافت</v-tooltip>
-    </v-btn>
+    <rec v-if="parseInt(item.doc.amount) > parseInt(totalRec)" :windows-state="PayWindowsState" :person="person.id" :original-doc="item.doc.code" :total-amount="parseInt(item.doc.amount) - parseInt(totalRec)" />
+
     <v-btn icon color="info" class="ml-2" @click="recListDialog = true">
       <v-icon>mdi-arrow-down-circle</v-icon>
       <v-tooltip activator="parent" location="bottom">دریافت‌ها</v-tooltip>
@@ -320,11 +315,6 @@ export default defineComponent({
         </v-card-text>
       </v-window-item>
     </v-window>
-
-    <v-dialog v-model="recDialog" max-width="600">
-      <rec :windows-state="PayWindowsState" :person="person.id" :original-doc="item.doc.code" :total-amount="parseInt(item.doc.amount) - parseInt(totalRec)" />
-    </v-dialog>
-
     <v-dialog v-model="recListDialog" max-width="800">
       <v-card>
         <v-card-title>

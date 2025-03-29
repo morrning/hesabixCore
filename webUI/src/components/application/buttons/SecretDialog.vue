@@ -112,7 +112,6 @@ export default {
       this.heroImg = new Image();
       this.heroImg.src = heroImage;
       this.heroImg.onerror = () => console.error('Failed to load hero image:', heroImage);
-      this.heroImg.onload = () => console.log('Hero image loaded successfully');
     },
     updateCanvasSize() {
       if (!this.$refs.gameCanvas) return;

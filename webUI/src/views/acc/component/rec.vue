@@ -1,486 +1,448 @@
+<template>
+  <v-btn
+    v-if="totalAmount > 0"
+    icon
+    color="error"
+    class="ml-2"
+    @click="dialog = true"
+  >
+    <v-icon>mdi-cash</v-icon>
+    <v-tooltip activator="parent" location="bottom">ثبت دریافت</v-tooltip>
+  </v-btn>
+
+  <v-dialog v-model="dialog" max-width="950" persistent>
+    <v-card>
+      <v-toolbar color="toolbar" flat>
+        <v-toolbar-title>
+          <v-icon color="error" left>mdi-cash</v-icon>
+          ثبت دریافت
+        </v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-menu bottom>
+          <template v-slot:activator="{ props }">
+            <v-btn icon color="success" v-bind="props" :disabled="loading">
+              <v-icon>mdi-plus</v-icon>
+              <v-tooltip activator="parent" location="bottom">افزودن دریافت</v-tooltip>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item @click="addItem('bank')">
+              <v-list-item-title>حساب بانکی</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="addItem('cashdesk')">
+              <v-list-item-title>صندوق</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="addItem('salary')">
+              <v-list-item-title>تنخواه گردان</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="addItem('cheque')">
+              <v-list-item-title>چک</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        <v-btn icon color="primary" @click="submit" :disabled="loading">
+          <v-icon>mdi-content-save</v-icon>
+          <v-tooltip activator="parent" location="bottom">ثبت</v-tooltip>
+        </v-btn>
+        <v-btn icon @click="dialog = false" :disabled="loading">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-toolbar>
+
+      <v-card-text>
+        <v-alert
+          v-if="errorMessage"
+          type="error"
+          dismissible
+          @input="errorMessage = ''"
+          class="mb-4"
+        >
+          {{ errorMessage }}
+        </v-alert>
+        <v-row>
+          <v-col cols="12" md="5">
+            <Hdatepicker v-model="date" label="تاریخ" />
+          </v-col>
+          <v-col cols="12" md="7">
+            <v-text-field
+              v-model="des"
+              label="شرح"
+              outlined
+              clearable
+              class="mb-4"
+            ></v-text-field>
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="formattedTotalPays"
+              label="مجموع"
+              readonly
+              outlined
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="formattedRemainingAmount"
+              label="باقی مانده"
+              readonly
+              outlined
+            ></v-text-field>
+          </v-col>
+        </v-row>
+
+        <v-data-table
+          :headers="headers"
+          :items="items"
+          :loading="loading"
+          class="elevation-1 mt-2"
+          :header-props="{ class: 'custom-header' }"
+          :items-per-page="-1"
+          hide-default-footer
+        >
+          <template v-slot:item.type="{ item }">
+            <v-icon v-if="item.type === 'bank'">mdi-bank</v-icon>
+            <v-icon v-if="item.type === 'cashdesk'">mdi-cash-register</v-icon>
+            <v-icon v-if="item.type === 'salary'">mdi-wallet</v-icon>
+            <v-icon v-if="item.type === 'cheque'">mdi-checkbook</v-icon>
+          </template>
+          <template v-slot:item.selection="{ item }">
+            <v-select
+              v-if="item.type === 'bank'"
+              v-model="item.bank"
+              :items="listBanks"
+              item-title="name"
+              return-object
+              label="بانک"
+              outlined
+              dense
+            ></v-select>
+            <v-select
+              v-if="item.type === 'cashdesk'"
+              v-model="item.cashdesk"
+              :items="listCashdesks"
+              item-title="name"
+              return-object
+              label="صندوق"
+              outlined
+              dense
+            ></v-select>
+            <v-select
+              v-if="item.type === 'salary'"
+              v-model="item.salary"
+              :items="listSalarys"
+              item-title="name"
+              return-object
+              label="تنخواه گردان"
+              outlined
+              dense
+            ></v-select>
+            <template v-if="item.type === 'cheque'">
+              <v-text-field
+                v-model="item.chequeNum"
+                label="شماره چک"
+                outlined
+                dense
+                required
+              ></v-text-field>
+              <v-text-field
+                v-model="item.chequeSayadNum"
+                label="شماره صیاد"
+                outlined
+                dense
+                required
+              ></v-text-field>
+              <v-text-field
+                v-model="item.chequeBank"
+                label="بانک صادرکننده"
+                outlined
+                dense
+                required
+              ></v-text-field>
+              <Hdatepicker
+                v-model="item.chequeDate"
+                label="تاریخ چک"
+                required
+              />
+            </template>
+          </template>
+          <template v-slot:item.bd="{ item }">
+            <Hnumberinput
+              v-model="item.bd"
+              label="مبلغ"
+              outlined
+              dense
+              placeholder="0"
+              @update:modelValue="calc"
+            />
+          </template>
+          <template v-slot:item.referral="{ item }">
+            <v-text-field
+              v-model="item.referral"
+              label="ارجاع"
+              outlined
+              dense
+            ></v-text-field>
+          </template>
+          <template v-slot:item.des="{ item }">
+            <v-text-field
+              v-model="item.des"
+              label="شرح"
+              outlined
+              dense
+            ></v-text-field>
+          </template>
+          <template v-slot:item.actions="{ item, index }">
+            <v-btn
+              variant="plain"
+              color="primary"
+              @click="fillWithTotal(item)"
+            >
+              <v-icon>mdi-cash-100</v-icon>
+              <v-tooltip activator="parent" location="bottom">کل فاکتور</v-tooltip>
+            </v-btn>
+            <v-btn
+              variant="plain"
+              color="error"
+              @click="deleteItem(index)"
+            >
+              <v-icon>mdi-trash-can</v-icon>
+              <v-tooltip activator="parent" location="bottom">حذف</v-tooltip>
+            </v-btn>
+          </template>
+          <template v-slot:no-data>
+            <v-card-text class="text-center">
+              هیچ دریافتی ثبت نشده است.
+            </v-card-text>
+          </template>
+        </v-data-table>
+      </v-card-text>
+
+      <v-overlay :model-value="loading" contained class="align-center justify-center">
+        <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
+      </v-overlay>
+    </v-card>
+  </v-dialog>
+</template>
+
 <script lang="ts">
-import { defineComponent } from 'vue'
-import axios from "axios";
-import Swal from "sweetalert2";
+import { defineComponent, ref } from 'vue'
+import axios from 'axios'
+import { VDataTable } from 'vuetify/components'
+import Hdatepicker from '@/components/forms/Hdatepicker.vue'
+import Hnumberinput from '@/components/forms/Hnumberinput.vue'
 
 export default defineComponent({
-  name: "rec",
+  name: 'Rec',
+  components: {
+    VDataTable,
+    Hdatepicker,
+    Hnumberinput
+  },
   props: {
     totalAmount: Number,
     originalDoc: String,
     person: [String, Number],
-    windowsState: Object,
+    windowsState: Object
   },
-  data: () => {
-    return {
-      submitedDoc: {},
-      des: '',
-      items: [],
-      date: '',
-      year: {},
-      listBanks: [],
-      listSalarys: [],
-      listCashdesks: [],
-      totalPays: 0,
-      currencyConfig: {
-        masked: false,
-        prefix: '',
-        suffix: 'ریال',
-        thousands: ',',
-        decimal: '.',
-        precision: 0,
-        disableNegative: false,
-        disabled: false,
-        min: 0,
-        max: null,
-        allowBlank: false,
-        minimumNumberOfCharacters: 0,
-        shouldRound: true,
-        focusOnRight: true,
-      },
+  setup() {
+    const dialog = ref(false)
+    return { dialog }
+  },
+  data: () => ({
+    submitedDoc: {},
+    des: '',
+    items: [],
+    date: '',
+    listBanks: [],
+    listSalarys: [],
+    listCashdesks: [],
+    totalPays: 0,
+    loading: false,
+    errorMessage: ''
+  }),
+  computed: {
+    headers() {
+      return [
+        { title: 'نوع', key: 'type', sortable: false, width: '5%' },
+        { title: 'انتخاب', key: 'selection', sortable: false, width: '25%' },
+        { title: 'مبلغ', key: 'bd', sortable: false, width: '20%' },
+        { title: 'ارجاع', key: 'referral', sortable: false, width: '15%' },
+        { title: 'شرح', key: 'des', sortable: false, width: '25%' },
+        { title: 'عملیات', key: 'actions', sortable: false, width: '10%' }
+      ]
+    },
+    remainingAmount() {
+      return this.totalAmount - this.totalPays
+    },
+    formattedTotalPays() {
+      return this.formatNumber(this.totalPays)
+    },
+    formattedRemainingAmount() {
+      return this.formatNumber(this.remainingAmount)
     }
   },
   methods: {
+    formatNumber(value: number | string): string {
+      if (!value) return ''
+      const num = parseInt(value.toString().replace(/[^\d]/g, ''))
+      return num.toLocaleString('fa-IR')
+    },
     fillWithTotal(pay) {
-      pay.bd = this.$props.totalAmount - this.totalPays;
+      pay.bd = this.totalAmount - this.totalPays
+      this.calc()
     },
     addItem(type) {
-      let obj = {};
-      let canAdd = true;
-      if (type == 'bank') {
-        if (this.listBanks.length == 0) {
-          Swal.fire({
-            text: 'ابتدا یک حساب بانکی ایجاد کنید.در حال حاضر هیچ بانکی تعریف نشده است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-          canAdd = false;
+      let obj = {}
+      let canAdd = true
+      const uniqueId = Date.now() + Math.random().toString(36).substr(2, 9)
+
+      if (type === 'bank') {
+        if (this.listBanks.length === 0) {
+          this.errorMessage = 'ابتدا یک حساب بانکی ایجاد کنید.'
+          canAdd = false
+        } else {
+          obj = { uniqueId, id: '', type: 'bank', bank: null, cashdesk: {}, salary: {}, bs: 0, bd: 0, des: '', table: 5, referral: '' }
         }
-        else {
-          obj = {
-            id: '',
-            type: 'bank',
-            bank: {},
-            cashdesk: {},
-            salary: {},
-            bs: 0,
-            bd: 0,
-            des: '',
-            table: 5,
-            referral: ''
-          }
+      } else if (type === 'cashdesk') {
+        if (this.listCashdesks.length === 0) {
+          this.errorMessage = 'ابتدا یک صندوق ایجاد کنید.'
+          canAdd = false
+        } else {
+          obj = { uniqueId, id: '', type: 'cashdesk', bank: {}, cashdesk: null, salary: {}, bs: 0, bd: 0, des: '', table: 121, referral: '' }
         }
-      }
-      else if (type == 'cashdesk') {
-        if (this.listCashdesks.length == 0) {
-          Swal.fire({
-            text: 'ابتدا یک صندوق ایجاد کنید.در حال حاضر هیچ صندوقی تعریف نشده است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-          canAdd = false;
+      } else if (type === 'salary') {
+        if (this.listSalarys.length === 0) {
+          this.errorMessage = 'ابتدا یک تنخواه گردان ایجاد کنید.'
+          canAdd = false
+        } else {
+          obj = { uniqueId, id: '', type: 'salary', bank: {}, cashdesk: {}, salary: null, bs: 0, bd: 0, des: '', table: 122, referral: '' }
         }
+      } else if (type === 'cheque') {
         obj = {
-          id: '',
-          type: 'cashdesk',
-          bank: {},
-          cashdesk: {},
-          salary: {},
-          bs: 0,
-          bd: 0,
-          des: '',
-          table: 121,
-          referral: ''
+          uniqueId,
+          id: '', type: 'cheque', bank: {}, cashdesk: {}, salary: {}, bs: 0, bd: 0, des: '', table: 125, referral: '',
+          chequeBank: '', chequeDate: '', chequeSayadNum: '', chequeNum: '', chequeType: 'input', chequeOwner: this.person
         }
       }
-      else if (type == 'salary') {
-        if (this.listSalarys.length == 0) {
-          Swal.fire({
-            text: 'ابتدا یک تخواه گردان ایجاد کنید.در حال حاضر هیچ تنخواه گردانی تعریف نشده است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-          canAdd = false;
-        }
-        obj = {
-          id: '',
-          type: 'salary',
-          bank: {},
-          cashdesk: {},
-          salary: {},
-          bs: 0,
-          bd: 0,
-          des: '',
-          table: 122,
-          referral: ''
-        }
-      }
-      else if (type == "cheque") {
-        obj = {
-          id: '',
-          type: 'cheque',
-          bank: {},
-          cashdesk: {},
-          salary: {},
-          bs: 0,
-          bd: 0,
-          des: '',
-          table: 125,
-          referral: '',
-          chequeBank: '',
-          chequeDate: '',
-          chequeSayadNum: '',
-          chequeNum: '',
-          chequeType: 'input',
-          chequeOwner: this.$props.person
-        }
-      }
+
       if (canAdd) {
-        this.items.push(obj);
+        this.items.push(obj)
+        this.errorMessage = ''
       }
     },
-    deleteItem(key) {
-      this.items.splice(key, 1);
-      this.calc();
+    deleteItem(index) {
+      this.items.splice(index, 1)
+      this.calc()
     },
-    loadData() {
-      //get list of banks
-      axios.post('/api/bank/list').then((response) => {
-        this.listBanks = response.data;
-      })
-      //get list of salarys
-      axios.post('/api/salary/list').then((response) => {
-        this.listSalarys = response.data;
-      })
-      //get list of cashdesks
-      axios.post('/api/cashdesk/list').then((response) => {
-        this.listCashdesks = response.data;
-      })
-      //load year
-      axios.post('/api/year/get').then((response) => {
-        this.year = response.data;
-        this.date = response.data.now;
-      })
+    async loadData() {
+      this.loading = true
+      try {
+        const [banks, salarys, cashdesks] = await Promise.all([
+          axios.post('/api/bank/list'),
+          axios.post('/api/salary/list'),
+          axios.post('/api/cashdesk/list')
+        ])
+        this.listBanks = banks.data
+        this.listSalarys = salarys.data
+        this.listCashdesks = cashdesks.data
+      } catch (error) {
+        this.errorMessage = 'خطا در بارگذاری اطلاعات'
+      } finally {
+        this.loading = false
+      }
     },
     calc() {
-      this.totalPays = 0;
-      this.items.forEach((value) => {
-        this.totalPays += parseInt(value.bd);
-      })
+      this.totalPays = this.items.reduce((sum, item) => {
+        const bd = item.bd !== null && item.bd !== undefined ? Number(item.bd) : 0
+        return sum + bd
+      }, 0)
     },
     async submit() {
-      let errors = [];
-      if (this.$props.totalAmount < this.totalPays) {
-        errors.push('مبالغ وارد شده بیشتر از مبلغ فاکتور است.');
+      let errors = []
+      if (this.totalAmount < this.totalPays) {
+        errors.push('مبالغ وارد شده بیشتر از مبلغ فاکتور است.')
       }
-      this.items.forEach((element, index) => {
-        if (element.bd == 0) {
-          errors.push('مبلغ صفر در ردیف ' + (index + 1) + ' نا معتبر است.');
-        }
-        if (element.type == 'cheque' && (element.chequeBank == '' || element.chequeNum == '' || element.chequeDate == '')) {
-          if (element.bank == null || Object.keys(element.bank).length == 0) {
-            errors.push('موارد الزامی ثبت چک در ردیف  ' + (index + 1) + ' وارد نشده است.');
-          }
-        }
 
-        //check type selected
-        if (element.type == 'bank') {
-          if (element.bank == null || Object.keys(element.bank).length == 0) {
-            errors.push('بانک در ردیف  ' + (index + 1) + ' انتخاب نشده است.');
-          }
+      this.items.forEach((element, index) => {
+        if (element.bd === 0) errors.push(`مبلغ صفر در ردیف ${index + 1} نا معتبر است.`)
+        if (element.type === 'cheque' && (!element.chequeBank || !element.chequeNum || !element.chequeDate)) {
+          errors.push(`موارد الزامی ثبت چک در ردیف ${index + 1} وارد نشده است.`)
         }
-        else if (element.type == 'salary') {
-          if (element.salary == null || Object.keys(element.salary).length == 0) {
-            errors.push('تنخواه گردان در ردیف  ' + (index + 1) + ' انتخاب نشده است.');
-          }
+        if (element.type === 'bank' && (!element.bank || !Object.keys(element.bank).length)) {
+          errors.push(`بانک در ردیف ${index + 1} انتخاب نشده است.`)
         }
-        else if (element.type == 'cashdesk') {
-          if (element.cashdesk == null || Object.keys(element.cashdesk).length == 0) {
-            errors.push('صندوق در ردیف  ' + (index + 1) + ' انتخاب نشده است.');
-          }
+        if (element.type === 'salary' && (!element.salary || !Object.keys(element.salary).length)) {
+          errors.push(`تنخواه گردان در ردیف ${index + 1} انتخاب نشده است.`)
+        }
+        if (element.type === 'cashdesk' && (!element.cashdesk || !Object.keys(element.cashdesk).length)) {
+          errors.push(`صندوق در ردیف ${index + 1} انتخاب نشده است.`)
         }
       })
-      if (this.items.length == 0) {
-        Swal.fire({
-          text: 'هیچ دریافتی ثبت نشده است.',
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        });
-      }
-      else if (errors.length != 0) {
-        //show errors
-        let errorHtml = '<ul class="justify-content-center">';
-        errors.forEach((element) => {
-          errorHtml += '<div class="">' + element + '</div>';
-        });
-        errorHtml += '</ul>';
-        Swal.fire({
-          html: errorHtml,
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        });
-      }
-      else {
-        let rows = [...this.items];
-        rows.forEach((element) => {
-          if (element.type == 'bank') {
-            element.id = element.bank.id;
-          }
-          else if (element.type == 'salary') {
-            element.id = element.salary.id;
-          }
-          else if (element.type == 'cashdesk') {
-            element.id = element.cashdesk.id;
-          }
-          if (element.des == '') {
-            element.des = 'دریافت وجه فاکتور شماره ' + this.$props.originalDoc
-          }
-        });
 
-        rows.push({
-          id: this.$props.person,
-          type: 'person',
-          bd: 0,
-          bs: this.totalPays,
-          table: 3,
-          des: 'دریافت وجه فاکتور شماره ' + this.$filters.formatNumber(this.$props.originalDoc)
-        });
+      if (this.items.length === 0) {
+        this.errorMessage = 'هیچ دریافتی ثبت نشده است.'
+        return
+      }
 
-        if (this.des == '') {
-          this.des = 'دریافت وجه فاکتور شماره ' + this.$filters.formatNumber(this.originalDoc);
-        }
-        axios.post('/api/accounting/insert', {
+      if (errors.length > 0) {
+        this.errorMessage = errors.join('\n')
+        return
+      }
+
+      this.loading = true
+      this.errorMessage = ''
+      const rows = [...this.items].map(element => {
+        if (element.type === 'bank') element.id = element.bank.id
+        else if (element.type === 'salary') element.id = element.salary.id
+        else if (element.type === 'cashdesk') element.id = element.cashdesk.id
+        element.des = element.des || `دریافت وجه فاکتور شماره ${this.originalDoc}`
+        return element
+      })
+
+      rows.push({
+        id: this.person,
+        type: 'person',
+        bd: 0,
+        bs: this.totalPays,
+        table: 3,
+        des: `دریافت وجه فاکتور شماره ${this.formatNumber(this.originalDoc)}`
+      })
+
+      this.des = this.des || `دریافت وجه فاکتور شماره ${this.formatNumber(this.originalDoc)}`
+
+      try {
+        const response = await axios.post('/api/accounting/insert', {
           date: this.date,
           des: this.des,
           type: 'sell_receive',
           update: null,
-          rows: rows,
-          related: this.$props.originalDoc
-        }).then((response) => {
-          if (response.data.result == '1') {
-            Swal.fire({
-              text: 'سند با موفقیت ثبت شد.',
-              icon: 'success',
-              confirmButtonText: 'قبول'
-            }).then((result) => {
-              this.submitedDoc = response.data.doc;
-              this.$props.windowsState.submited = true;
-            });
-          }
-          else if (response.data.result == '4') {
-            Swal.fire({
-              text: response.data.msg,
-              icon: 'error',
-              confirmButtonText: 'قبول'
-            });
-          }
+          rows,
+          related: this.originalDoc
         })
+
+        if (response.data.result === '1') {
+          this.submitedDoc = response.data.doc
+          this.windowsState.submited = true
+          this.dialog = false
+        } else if (response.data.result === '4') {
+          this.errorMessage = response.data.msg
+        }
+      } catch (error) {
+        this.errorMessage = 'خطا در ثبت سند'
+      } finally {
+        this.loading = false
       }
     }
   },
   mounted() {
-    this.loadData();
+    this.loadData()
   }
 })
 </script>
 
-<template>
-
-  <div class="modal-dialog modal-lg" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="exampleModalLabel1">
-          <i class="fas fa-money-bill-1 ms-2"></i>
-          ثبت دریافت
-        </h1>
-        <div class="block-options">
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-      </div>
-      <div class="modal-body">
-        <div class="row mb-3">
-          <div class="col-sm-12 col-md-5 mb-2">
-            <date-picker class="form-control" v-model="date" format="jYYYY/jMM/jDD" display-format="jYYYY/jMM/jDD"
-              :min="year.start" :max="year.end" />
-          </div>
-          <div class="col-sm-12 col-md-7 mb-2">
-            <input type="text" class="form-control" v-model="des" placeholder="شرح">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-sm-12 col-md-6 mb-2">
-            <div class="input-group input-group-sm">
-              <span class="input-group-text">
-                مجموع
-              </span>
-              <input type="text" readonly="readonly" class="form-control"
-                :value="this.$filters.formatNumber(parseInt(this.totalPays))">
-            </div>
-          </div>
-          <div class="col-sm-12 col-md-6 mb-2">
-            <div class="input-group input-group-sm">
-              <span class="input-group-text">
-                باقی مانده
-              </span>
-              <input type="text" readonly="readonly" class="form-control"
-                :value="this.$filters.formatNumber(parseInt(this.$props.totalAmount) - parseInt(this.totalPays))">
-
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <p class="mb-1">دریافت‌ها:</p>
-            <div v-show="items.length === 0" class="alert alert-warning"><i class="fa fa-info pe-3"></i>
-              تاکنون سند دریافتی ثبت نشده است.
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div v-for="(pay, key) in items" class="col-12 ps-2">
-            <i class="card my-1">
-              <div class="card-body p-1">
-                <div class="row">
-                  <div class="col-2 text-center">
-                    <h6 class="mb-1 text-start"><span class="badge bg-primary-light">{{ key + 1 }}</span></h6>
-                    <img v-show="pay.type == 'bank'" src="/img/icons/bank.jpg" class="img-fluid" />
-                    <img v-show="pay.type == 'cashdesk'" src="/img/icons/cashdesk.jpg" class="img-fluid" />
-                    <img v-show="pay.type == 'salary'" src="/img/icons/salary.jpg" class="img-fluid" />
-                    <img v-show="pay.type == 'cheque'" src="/img/icons/check.jpg" class="img-fluid" />
-                    <button @click="deleteItem(key)" type="button" class="btn text-danger mt-2">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                  </div>
-                  <div class="col-10 my-2 ps-0">
-                    <div class="row">
-                      <div class="col-sm-12 col-md-6">
-                        <div v-show="pay.type == 'bank'" class="">
-                          <label class="form-label">بانک</label>
-                          <v-cob dir="rtl" :options="listBanks" label="name" v-model="pay.bank">
-                            <template #no-options="{ search, searching, loading }">
-                              نتیجه‌ای یافت نشد!
-                            </template>
-                          </v-cob>
-                        </div>
-                        <div v-show="pay.type == 'cashdesk'" class="">
-                          <label class="form-label">صندوق</label>
-                          <v-cob dir="rtl" :options="listCashdesks" label="name" v-model="pay.cashdesk">
-                            <template #no-options="{ search, searching, loading }">
-                              نتیجه‌ای یافت نشد!
-                            </template>
-                          </v-cob>
-                        </div>
-                        <div v-show="pay.type == 'cheque'" class="">
-                          <label class="form-label">
-                            <small class="text-danger">*</small>
-                            شماره چک</label>
-                          <input class="form-control" v-model="pay.chequeNum">
-                        </div>
-                        <div v-show="pay.type == 'salary'" class="">
-                          <label class="form-label">تنخواه گردان</label>
-                          <v-cob dir="rtl" :options="listSalarys" label="name" v-model="pay.salary">
-                            <template #no-options="{ search, searching, loading }">
-                              نتیجه‌ای یافت نشد!
-                            </template>
-                          </v-cob>
-                        </div>
-                      </div>
-                      <div v-if="pay.type == 'cheque'" class="col-sm-12 col-md-6">
-                        <div class="mb-1">
-                          <label class="form-label">
-                            <small class="text-danger">*</small>
-                            شماره صیاد
-                          </label>
-                          <input type="text" v-model="pay.chequeSayadNum" class="form-control">
-                        </div>
-                      </div>
-                      <div v-if="pay.type == 'cheque'" class="col-sm-12 col-md-6">
-                        <div class="mb-1">
-                          <label class="form-label">
-                            <small class="text-danger">*</small>
-                            بانک صادر‌ کننده
-                          </label>
-                          <input type="text" v-model="pay.chequeBank" class="form-control">
-                        </div>
-                      </div>
-                      <div v-if="pay.type == 'cheque'" class="col-sm-12 col-md-6">
-                        <div class="mb-1">
-                          <div class="form-control">
-                            <label class="form-label">
-                              <small class="text-danger">*</small>
-                              تاریخ
-                            </label>
-                            <date-picker class="" v-model="pay.chequeDate" format="jYYYY/jMM/jDD"
-                              display-format="jYYYY/jMM/jDD" />
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-sm-12 col-md-6">
-                        <div class="mb-1">
-                          <div class="block-options px-0">
-                            <label class="form-label">
-                              <small class="text-danger">*</small>
-                              مبلغ
-                            </label>
-                            <button @click="fillWithTotal(pay)"
-                              class="btn btn-sm btn-link block-options-item float-end me-2">کل
-                              فاکتور</button>
-                          </div>
-                          <money3 @change="calc()" class="form-control" v-model="pay.bd" v-bind="currencyConfig">
-                          </money3>
-                        </div>
-                      </div>
-                      <div class="col-sm-12 col-md-6">
-                        <div class="mb-1">
-                          <label class="form-label">ارجاع</label>
-                          <input type="text" v-model="pay.referral" class="form-control">
-                        </div>
-                      </div>
-                      <div class="col-sm-12 col-md-6">
-                        <div class="mb-1">
-                          <label class="form-label">شرح</label>
-                          <input class="form-control" v-model="pay.des">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </i>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <div class="btn-group dropup">
-          <button class="btn btn-sm me-1 btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            <i class="fa fa-plus"></i>
-            افزودن دریافت
-          </button>
-          <ul class="dropdown-menu">
-            <li><button type="button" @click="addItem('bank')" class="dropdown-item"><i class="fa fa-dot-circle"></i>
-                حساب
-                بانکی</button></li>
-            <li><button type="button" @click="addItem('cashdesk')" class="dropdown-item"><i
-                  class="fa fa-dot-circle"></i>
-                صندوق</button></li>
-            <li><button type="button" @click="addItem('salary')" class="dropdown-item"><i class="fa fa-dot-circle"></i>
-                تنخواه
-                گردان</button></li>
-            <li><button type="button" @click="addItem('cheque')" class="dropdown-item"><i
-                  class="fa fa-dot-circle"></i>چک</button></li>
-          </ul>
-        </div>
-
-        <button @click="submit()" class="btn btn-sm btn-primary" type="button">
-          <i class="fa fa-save me-2"></i>
-          ثبت
-        </button>
-      </div>
-    </div>
-  </div>
-
-</template>
-
-<style scoped></style>
+<style scoped>
+/* استایل‌های دلخواه */
+</style>
