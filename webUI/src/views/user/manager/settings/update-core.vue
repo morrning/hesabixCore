@@ -72,7 +72,7 @@
                     </v-card>
                 </v-window-item>
 
-                <!-- تب به‌روزرسانی (بدون تغییر) -->
+                <!-- تب به‌روزرسانی -->
                 <v-window-item>
                     <v-card flat>
                         <v-card-text>
@@ -161,6 +161,8 @@ import axios from 'axios';
 export default {
     name: 'UpdateSoftware',
     setup() {
+        axios.defaults.timeout = 3600000; // تنظیم تایم‌اوت پیش‌فرض Axios به 1 ساعت
+
         const isUpdating = ref(false);
         const isClearingCache = ref(false);
         const isChangingEnv = ref(false);
@@ -279,6 +281,7 @@ export default {
             try {
                 const response = await axios.post('/api/admin/updatecore/run', {}, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    timeout: 3600000 // تایم‌اوت 1 ساعت
                 });
 
                 if (response.data.status === 'started') {
@@ -316,30 +319,27 @@ export default {
 
                 try {
                     const response = await axios.get(`/api/admin/updatecore/stream`, {
-                        params: { uuid: this.updateUuid }
+                        params: { uuid: this.updateUuid },
+                        timeout: 3600000 // تایم‌اوت 1 ساعت
                     });
 
-                    // پردازش پاسخ
                     const data = response.data;
                     if (typeof data === 'string' && data.startsWith('data: ')) {
                         try {
-                            // جدا کردن بخش JSON از پیشوند data:
                             const jsonStr = data.substring(data.indexOf('{'));
                             const parsedData = JSON.parse(jsonStr);
                             
                             if (parsedData.output && parsedData.output !== this.output) {
-                                // پردازش و فرمت‌بندی خروجی
                                 const formattedOutput = parsedData.output
                                     .split('\n')
-                                    .filter(line => line.trim()) // حذف خطوط خالی
+                                    .filter(line => line.trim())
                                     .map(line => {
-                                        // برجسته کردن پیام‌های مهم
-                                        if (line.includes('INFO')) {
+                                        if (line.includes('Installing frontend dependencies') || line.includes('Building frontend')) {
                                             return `<span class="log-info">${line}</span>`;
-                                        } else if (line.includes('DEBUG')) {
-                                            return `<span class="log-debug">${line}</span>`;
                                         } else if (line.includes('ERROR')) {
                                             return `<span class="log-error">${line}</span>`;
+                                        } else if (line.includes('DEBUG')) {
+                                            return `<span class="log-debug">${line}</span>`;
                                         }
                                         return line;
                                     })
@@ -400,6 +400,7 @@ export default {
             try {
                 const response = await axios.post('/api/admin/updatecore/clear-cache', {}, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    timeout: 3600000 // تایم‌اوت 1 ساعت
                 });
                 this.output += response.data.output || this.$t('updateSoftware.cacheClearedMessage') + '\n';
                 this.showResultDialog = true;
@@ -438,6 +439,7 @@ export default {
             try {
                 const response = await axios.post('/api/admin/updatecore/change-env', { env: this.tempSelectedEnv }, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    timeout: 3600000 // تایم‌اوت 1 ساعت
                 });
                 this.output += response.data.output || response.data.message + '\n';
                 this.selectedEnv = this.tempSelectedEnv;
@@ -460,6 +462,7 @@ export default {
             try {
                 const response = await axios.get('/api/admin/updatecore/commits', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    timeout: 3600000 // تایم‌اوت 1 ساعت
                 });
                 this.currentCommit = response.data.currentCommit || 'unknown';
                 this.targetCommit = response.data.targetCommit || 'unknown';
@@ -473,6 +476,7 @@ export default {
             try {
                 const response = await axios.get('/api/admin/updatecore/system-info', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    timeout: 3600000 // تایم‌اوت 1 ساعت
                 });
                 this.systemInfo = {
                     osName: response.data.osName || 'unknown',
@@ -506,6 +510,7 @@ export default {
             try {
                 const response = await axios.get('/api/admin/updatecore/current-env', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    timeout: 3600000 // تایم‌اوت 1 ساعت
                 });
                 this.selectedEnv = response.data.env;
                 this.tempSelectedEnv = response.data.env;
@@ -523,9 +528,10 @@ export default {
         },
         async refreshLogs() {
             this.isLoadingLogs = true;
-            try {
+            tryِ try {
                 const response = await axios.get('/api/admin/updatecore/system-logs', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    timeout: 3600000 // تایم‌اوت 1 ساعت
                 });
                 this.systemLogs = response.data.logs || response.data.message;
             } catch (error) {
@@ -540,6 +546,7 @@ export default {
             try {
                 const response = await axios.post('/api/admin/updatecore/clear-logs', {}, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    timeout: 3600000 // تایم‌اوت 1 ساعت
                 });
                 if (response.data.status === 'success') {
                     this.systemLogs = 'لاگ‌ها پاک شدند';

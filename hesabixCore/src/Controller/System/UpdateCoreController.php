@@ -2,7 +2,7 @@
 
 namespace App\Controller\System;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\FrameworkBundleController\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -22,6 +22,8 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/run', name: 'api_admin_updatecore_run', methods: ['POST'])]
     public function api_admin_updatecore_run(): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $projectDir = $this->getParameter('kernel.project_dir');
         $uuid = uniqid();
         $stateFile = $projectDir . '/../backup/update_state_' . $uuid . '.json';
@@ -42,7 +44,7 @@ final class UpdateCoreController extends AbstractController
         ]);
 
         $process = new Process(['php', 'bin/console', 'hesabix:update', $stateFile], $projectDir, $env);
-        $process->setTimeout(3600);
+        $process->setTimeout(3600); // تنظیم تایم‌اوت فرآیند به 1 ساعت
         $process->run(function ($type, $buffer) use ($stateFile) {
             $state = json_decode(file_get_contents($stateFile), true) ?? ['uuid' => uniqid(), 'log' => ''];
             $state['log'] .= $buffer;
@@ -74,6 +76,8 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/status', name: 'api_admin_updatecore_status', methods: ['GET'])]
     public function api_admin_updatecore_status(Request $request): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $uuid = $request->query->get('uuid');
         if (!$uuid) {
             return new JsonResponse([
@@ -136,6 +140,8 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/stream', name: 'api_admin_updatecore_stream', methods: ['GET'])]
     public function api_admin_updatecore_stream(Request $request): StreamedResponse|JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $uuid = $request->query->get('uuid');
         if (!$uuid) {
             return new JsonResponse(['status' => 'error', 'message' => 'UUID is required'], 400);
@@ -179,13 +185,17 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/commits', name: 'api_admin_updatecore_commits', methods: ['GET'])]
     public function api_admin_updatecore_commits(): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $projectDir = $this->getParameter('kernel.project_dir');
 
         $currentProcess = new Process(['git', 'rev-parse', 'HEAD'], $projectDir);
+        $currentProcess->setTimeout(3600);
         $currentProcess->run();
         $currentCommit = $currentProcess->isSuccessful() ? trim($currentProcess->getOutput()) : 'unknown';
 
         $targetProcess = new Process(['git', 'ls-remote', 'origin', 'HEAD'], $projectDir);
+        $targetProcess->setTimeout(3600);
         $targetProcess->run();
         $targetOutput = $targetProcess->isSuccessful() ? explode("\t", trim($targetProcess->getOutput()))[0] : 'unknown';
 
@@ -198,6 +208,8 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/system-info', name: 'api_admin_updatecore_system_info', methods: ['GET'])]
     public function api_admin_updatecore_system_info(): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $osName = php_uname('s');
         $osRelease = php_uname('r');
         $osVersion = php_uname('v');
@@ -262,11 +274,13 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/clear-cache', name: 'api_admin_updatecore_clear_cache', methods: ['POST'])]
     public function api_admin_updatecore_clear_cache(): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $projectDir = $this->getParameter('kernel.project_dir');
         $env = $this->getParameter('kernel.environment');
 
         $process = new Process(['php', 'bin/console', 'cache:clear', "--env=$env"], $projectDir);
-        $process->setTimeout(300);
+        $process->setTimeout(3600);
         $process->run();
 
         if (!$process->isSuccessful()) {
@@ -285,6 +299,8 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/change-env', name: 'api_admin_updatecore_change_env', methods: ['POST'])]
     public function api_admin_updatecore_change_env(Request $request): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $newEnv = $request->getPayload()->get('env');
 
         if (!$newEnv || !in_array($newEnv, ['dev', 'prod'])) {
@@ -317,6 +333,7 @@ final class UpdateCoreController extends AbstractController
         ];
 
         $composerCheck = new Process(['composer', '--version'], $projectDir, $env);
+        $composerCheck->setTimeout(3600);
         $composerCheck->run();
         if (!$composerCheck->isSuccessful()) {
             return new JsonResponse([
@@ -333,7 +350,7 @@ final class UpdateCoreController extends AbstractController
             $composerCommand[] = '--no-scripts';
         }
         $composerProcess = new Process($composerCommand, $projectDir, $env);
-        $composerProcess->setTimeout(600);
+        $composerProcess->setTimeout(3600);
         $composerProcess->run();
         if (!$composerProcess->isSuccessful()) {
             return new JsonResponse([
@@ -345,7 +362,7 @@ final class UpdateCoreController extends AbstractController
         $output .= "وابستگی‌ها با موفقیت به‌روزرسانی شدند\n" . $composerProcess->getOutput();
 
         $cacheProcess = new Process(['php', 'bin/console', 'cache:clear', "--env=$newEnv"], $projectDir, $env);
-        $cacheProcess->setTimeout(300);
+        $cacheProcess->setTimeout(3600);
         $cacheProcess->run();
         if (!$cacheProcess->isSuccessful()) {
             return new JsonResponse([
@@ -361,11 +378,13 @@ final class UpdateCoreController extends AbstractController
             'message' => "حالت به $newEnv تغییر کرد، وابستگی‌ها به‌روزرسانی شدند و کش پاک شد",
             'output' => $output,
         ]);
-    }
+
 
     #[Route('/api/admin/updatecore/current-env', name: 'api_admin_updatecore_current_env', methods: ['GET'])]
     public function api_admin_updatecore_current_env(): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $env = $this->getParameter('kernel.environment');
         return new JsonResponse(['env' => $env]);
     }
@@ -373,6 +392,8 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/system-logs', name: 'api_admin_updatecore_system_logs', methods: ['GET'])]
     public function api_admin_updatecore_system_logs(): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $projectDir = $this->getParameter('kernel.project_dir');
         $env = $this->getParameter('kernel.environment');
         $logFile = "$projectDir/var/log/$env.log";
@@ -408,6 +429,8 @@ final class UpdateCoreController extends AbstractController
     #[Route('/api/admin/updatecore/clear-logs', name: 'api_admin_updatecore_clear_logs', methods: ['POST'])]
     public function api_admin_updatecore_clear_logs(): JsonResponse
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $projectDir = $this->getParameter('kernel.project_dir');
         $env = $this->getParameter('kernel.environment');
         $logFile = "$projectDir/var/log/$env.log";

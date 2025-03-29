@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 #[AsCommand(
     name: 'hesabix:update',
-    description: 'Updates the software by pulling from GitHub, clearing cache, and updating the database.'
+    description: 'Updates the software by pulling from GitHub, clearing cache, updating the database, and rebuilding the frontend.'
 )]
 class UpdateSoftwareCommand extends Command
 {
@@ -52,6 +52,8 @@ class UpdateSoftwareCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        set_time_limit(3600); // تنظیم تایم‌اوت PHP به 1 ساعت
+
         $lock = $this->lockFactory->createLock('hesabix-update', 3600);
         if (!$lock->acquire()) {
             $this->writeOutput($output, '<error>Another update process is currently running. Please try again later.</error>');
@@ -91,6 +93,7 @@ class UpdateSoftwareCommand extends Command
         }
 
         $state['completedSteps'] = $state['completedSteps'] ?? [];
+        $webUIDir = $this->rootDir . '/webUI'; // مسیر دایرکتوری فرانت‌اند
 
         $gitHeadBefore = null;
         $cacheBackup = null;
@@ -111,7 +114,7 @@ class UpdateSoftwareCommand extends Command
                     mkdir($archiveBackupDir, 0755, true);
                 }
                 $archiveBackup = $archiveBackupDir . '/hesabixArchive_backup_' . time() . '.tar';
-                $this->runProcess(['tar', '-cf', $archiveBackup, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, $output, 3);
+                $this->runProcess(['tar', '-cf', $archiveBackup, '-C', $this->rootDir, 'hesabixArchive'], $this->rootDir, $output, 3, 3600);
                 $state['archiveBackup'] = $archiveBackup;
                 $archiveHashBefore = $this->getDirectoryHash($this->archiveDir);
                 $state['archiveHashBefore'] = $archiveHashBefore;
@@ -124,11 +127,11 @@ class UpdateSoftwareCommand extends Command
 
             if (!in_array('git_pull', $state['completedSteps'])) {
                 $this->writeOutput($output, 'Setting up tracking for master branch...');
-                $this->runProcess(['git', 'branch', '--set-upstream-to=origin/master', 'master'], $this->rootDir, $output, 1);
+                $this->runProcess(['git', 'branch', '--set-upstream-to=origin/master', 'master'], $this->rootDir, $output, 1, 3600);
 
                 $this->writeOutput($output, 'Pulling latest changes from GitHub...');
                 $gitHeadBefore = $this->getCurrentGitHead();
-                $this->runProcess(['git', 'pull'], $this->rootDir, $output, 3);
+                $this->runProcess(['git', 'pull'], $this->rootDir, $output, 3, 3600);
                 $state['gitHeadBefore'] = $gitHeadBefore;
                 $state['completedSteps'][] = 'git_pull';
                 $this->saveState($uuid, $state, $output, 'Git pull completed');
@@ -143,7 +146,7 @@ class UpdateSoftwareCommand extends Command
                     $composerCommand[] = '--no-dev';
                     $composerCommand[] = '--no-scripts';
                 }
-                $this->runProcess($composerCommand, $this->appDir, $output, 3);
+                $this->runProcess($composerCommand, $this->appDir, $output, 3, 3600);
                 $state['completedSteps'][] = 'composer_install';
                 $this->saveState($uuid, $state, $output, 'Dependencies installed');
             }
@@ -155,7 +158,7 @@ class UpdateSoftwareCommand extends Command
                     $composerCommand[] = '--no-dev';
                     $composerCommand[] = '--no-scripts';
                 }
-                $this->runProcess($composerCommand, $this->rootDir . '/hesabixCore', $output, 3);
+                $this->runProcess($composerCommand, $this->rootDir . '/hesabixCore', $output, 3, 3600);
                 $state['completedSteps'][] = 'composer_install_core';
                 $this->saveState($uuid, $state, $output, 'Dependencies installed in hesabixCore');
             }
@@ -167,10 +170,10 @@ class UpdateSoftwareCommand extends Command
                     mkdir($cacheBackupDir, 0755, true);
                 }
                 $cacheBackup = $cacheBackupDir . '/cache_backup_' . time();
-                $this->runProcess(['cp', '-r', $this->appDir . '/var/cache', $cacheBackup], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+                $this->runProcess(['cp', '-r', $this->appDir . '/var/cache', $cacheBackup], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput(), 3, 3600);
                 $state['cacheBackup'] = $cacheBackup;
-                $this->runProcess(['php', 'bin/console', 'cache:clear', "--env={$this->env}"], $this->appDir, $output, 3);
-                $state['completedSteps'][] = 'cache_clear';
+                $this->runProcess(['php', 'bin/console', 'cache:clear', "--env={$this->env}"], $this->appDir, $output, 3, 3600);
+                $state['completedSteps'][] = 'cache_clear'; // اصلاح خطا: reciSteps به completedSteps تغییر کرد
                 $this->saveState($uuid, $state, $output, 'Cache cleared');
             } else {
                 $cacheBackup = $state['cacheBackup'];
@@ -185,11 +188,25 @@ class UpdateSoftwareCommand extends Command
                 $dbBackup = $dbBackupDir . '/db_backup_' . time() . '.sql';
                 $this->backupDatabaseToFile($dbBackup, $output);
                 $state['dbBackup'] = $dbBackup;
-                $this->runProcess(['php', 'bin/console', 'doctrine:schema:update', '--force', '--no-interaction'], $this->appDir, $output, 3);
+                $this->runProcess(['php', 'bin/console', 'doctrine:schema:update', '--force', '--no-interaction'], $this->appDir, $output, 3, 3600);
                 $state['completedSteps'][] = 'db_update';
                 $this->saveState($uuid, $state, $output, 'Database schema updated');
             } else {
                 $dbBackup = $state['dbBackup'];
+            }
+
+            if (!in_array('npm_install', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Installing frontend dependencies with npm...');
+                $this->runProcess(['npm', 'install'], $webUIDir, $output, 3, 3600);
+                $state['completedSteps'][] = 'npm_install';
+                $this->saveState($uuid, $state, $output, 'Frontend dependencies installed');
+            }
+
+            if (!in_array('npm_build', $state['completedSteps'])) {
+                $this->writeOutput($output, 'Building frontend with npm run build-only...');
+                $this->runProcess(['npm', 'run', 'build-only'], $webUIDir, $output, 3, 3600);
+                $state['completedSteps'][] = 'npm_build';
+                $this->saveState($uuid, $state, $output, 'Frontend build completed');
             }
 
             if (!in_array('archive_check', $state['completedSteps'])) {
@@ -248,13 +265,13 @@ class UpdateSoftwareCommand extends Command
         }
     }
 
-    private function runProcess(array $command, string $workingDir, OutputInterface $output, int $retries = 3): void
+    private function runProcess(array $command, string $workingDir, OutputInterface $output, int $retries = 3, int $timeout = 3600): void
     {
         $attempt = 0;
         while ($attempt < $retries) {
             try {
                 $process = new Process($command, $workingDir);
-                $process->setTimeout(3600);
+                $process->setTimeout($timeout);
                 if ($output->isVerbose()) {
                     $process->mustRun(function ($type, $buffer) use ($output) {
                         $this->writeOutput($output, $buffer);
@@ -312,16 +329,16 @@ class UpdateSoftwareCommand extends Command
     private function preUpdateChecks(OutputInterface $output): void
     {
         $this->writeOutput($output, 'Running pre-update checks...');
-        $this->runProcess(['git', 'fetch'], $this->rootDir, $output);
+        $this->runProcess(['git', 'fetch'], $this->rootDir, $output, 3, 3600);
         $this->writeOutput($output, 'Git repository accessible.');
-        $this->runProcess(['php', 'bin/console', 'doctrine:query:sql', 'SELECT 1'], $this->appDir, $output);
+        $this->runProcess(['php', 'bin/console', 'doctrine:query:sql', 'SELECT 1'], $this->appDir, $output, 3, 3600);
         $this->writeOutput($output, 'Database connection OK.');
     }
 
     private function postUpdateChecks(OutputInterface $output): void
     {
         $this->writeOutput($output, 'Running post-update tests...');
-        $this->runProcess(['php', 'bin/console', 'cache:warmup', "--env={$this->env}"], $this->appDir, $output);
+        $this->runProcess(['php', 'bin/console', 'cache:warmup', "--env={$this->env}"], $this->appDir, $output, 3, 3600);
         $this->writeOutput($output, 'Application tested and warmed up successfully.');
     }
 
@@ -399,9 +416,9 @@ class UpdateSoftwareCommand extends Command
 
     private function restoreArchive(string $backupFile): void
     {
-        $this->runProcess(['rm', '-rf', $this->archiveDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-        $this->runProcess(['mkdir', $this->archiveDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
-        $this->runProcess(['tar', '-xf', $backupFile, '-C', $this->rootDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+        $this->runProcess(['rm', '-rf', $this->archiveDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput(), 3, 3600);
+        $this->runProcess(['mkdir', $this->archiveDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput(), 3, 3600);
+        $this->runProcess(['tar', '-xf', $backupFile, '-C', $this->rootDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput(), 3, 3600);
         if (!is_dir($this->archiveDir)) {
             throw new \RuntimeException('Failed to restore hesabixArchive from tar backup.');
         }
@@ -433,7 +450,7 @@ class UpdateSoftwareCommand extends Command
 
         if ($gitHeadBefore) {
             try {
-                $this->runProcess(['git', 'reset', '--hard', $gitHeadBefore], $this->rootDir, $output);
+                $this->runProcess(['git', 'reset', '--hard', $gitHeadBefore], $this->rootDir, $output, 3, 3600);
                 $this->logger->info('Git rolled back to ' . $gitHeadBefore);
             } catch (\Exception $e) {
                 $this->logger->error('Git rollback failed: ' . $e->getMessage());
@@ -442,8 +459,8 @@ class UpdateSoftwareCommand extends Command
 
         if ($cacheBackup) {
             try {
-                $this->runProcess(['rm', '-rf', $this->appDir . '/var/cache'], $this->rootDir, $output);
-                $this->runProcess(['cp', '-r', $cacheBackup, $this->appDir . '/var/cache'], $this->rootDir, $output);
+                $this->runProcess(['rm', '-rf', $this->appDir . '/var/cache'], $this->rootDir, $output, 3, 3600);
+                $this->runProcess(['cp', '-r', $cacheBackup, $this->appDir . '/var/cache'], $this->rootDir, $output, 3, 3600);
                 $this->logger->info('Cache rolled back');
             } catch (\Exception $e) {
                 $this->logger->error('Cache rollback failed: ' . $e->getMessage());
@@ -518,7 +535,7 @@ class UpdateSoftwareCommand extends Command
             $dirName = basename($dir);
             if (!in_array($dirName, $protectedDirs)) {
                 $this->logger->info("Removing temporary directory: $dir");
-                $this->runProcess(['rm', '-rf', $dir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+                $this->runProcess(['rm', '-rf', $dir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput(), 3, 3600);
             }
         }
     }
