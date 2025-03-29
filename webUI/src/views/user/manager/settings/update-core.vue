@@ -12,7 +12,7 @@
             </v-tabs>
 
             <v-window v-model="activeTab">
-                <!-- تب اطلاعات (بدون تغییر) -->
+                <!-- تب اطلاعات -->
                 <v-window-item>
                     <v-card flat class="mt-1">
                         <v-card-text>
@@ -31,7 +31,7 @@
                             <p><span class="font-weight-bold primary--text">{{ $t('updateSoftware.distroVersion') }}:</span> {{ systemInfo.distroVersion }}</p>
                             <p><span class="font-weight-bold primary--text">{{ $t('updateSoftware.webServer') }}:</span> {{ systemInfo.webServer }}</p>
                             <p><span class="font-weight-bold primary--text">{{ $t('updateSoftware.dbName') }}:</span> {{ systemInfo.dbName }}</p>
-                            <p><span class="font-weight-bold primary--text">{{ $t('updateSoftware.dbVersion') }}:</span> {{ systemInfo.dbVersion }}</p>
+                            <p><span class="font-weight-bold primary--useStateFiletext">{{ $t('updateSoftware.dbVersion') }}:</span> {{ systemInfo.dbVersion }}</p>
                             <p><span class="font-weight-bold primary--text">{{ $t('updateSoftware.currentEnv') }}:</span> {{ selectedEnv }}</p>
                         </v-card-text>
                     </v-card>
@@ -106,7 +106,7 @@
                                     </v-btn>
                                 </v-toolbar>
                                 <v-card-text>
-                                    <pre class="output-pre" ref="outputPre">{{ output }}</pre>
+                                    <pre class="output-pre" ref="outputPre" v-html="formattedOutput"></pre>
                                 </v-card-text>
                             </v-card>
                         </v-card-text>
@@ -158,11 +158,12 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import axios from 'axios';
 
+// تنظیم تایم‌اوت Axios به 2 ساعت (7200000 میلی‌ثانیه)
+axios.defaults.timeout = 7200000;
+
 export default {
     name: 'UpdateSoftware',
     setup() {
-        axios.defaults.timeout = 3600000; // تنظیم تایم‌اوت پیش‌فرض Axios به 1 ساعت
-
         const isUpdating = ref(false);
         const isClearingCache = ref(false);
         const isChangingEnv = ref(false);
@@ -266,6 +267,23 @@ export default {
                     </span>
                 `;
             }).join('<br>');
+        },
+        formattedOutput() {
+            if (!this.output) return '';
+
+            const lines = this.output.split('\n');
+            return lines.map(line => {
+                if (line.includes('INFO')) {
+                    return `<span class="log-info">${line}</span>`;
+                } else if (line.includes('DEBUG')) {
+                    return `<span class="log-debug">${line}</span>`;
+                } else if (line.includes('ERROR')) {
+                    return `<span class="log-error">${line}</span>`;
+                } else if (line.includes('Installing npm packages') || line.includes('Building frontend')) {
+                    return `<span class="log-info">${line}</span>`;
+                }
+                return line;
+            }).join('<br>');
         }
     },
     methods: {
@@ -281,7 +299,7 @@ export default {
             try {
                 const response = await axios.post('/api/admin/updatecore/run', {}, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    timeout: 3600000 // تایم‌اوت 1 ساعت
+                    timeout: 7200000 // تایم‌اوت 2 ساعته برای درخواست اولیه
                 });
 
                 if (response.data.status === 'started') {
@@ -310,17 +328,17 @@ export default {
             }
         },
         async startLogStream() {
-            const pollInterval = 1000;
-            let isPolling = true;
+            const pollInterval = 2000; // افزایش فاصله polling به 2 ثانیه
+            this.isPolling = true;
             this.isUpdating = true;
 
             const pollStream = async () => {
-                if (!isPolling) return;
+                if (!this.isPolling) return;
 
                 try {
                     const response = await axios.get(`/api/admin/updatecore/stream`, {
                         params: { uuid: this.updateUuid },
-                        timeout: 3600000 // تایم‌اوت 1 ساعت
+                        timeout: 7200000 // تایم‌اوت 2 ساعته برای استریم
                     });
 
                     const data = response.data;
@@ -328,26 +346,11 @@ export default {
                         try {
                             const jsonStr = data.substring(data.indexOf('{'));
                             const parsedData = JSON.parse(jsonStr);
-                            
+
                             if (parsedData.output && parsedData.output !== this.output) {
-                                const formattedOutput = parsedData.output
-                                    .split('\n')
-                                    .filter(line => line.trim())
-                                    .map(line => {
-                                        if (line.includes('Installing frontend dependencies') || line.includes('Building frontend')) {
-                                            return `<span class="log-info">${line}</span>`;
-                                        } else if (line.includes('ERROR')) {
-                                            return `<span class="log-error">${line}</span>`;
-                                        } else if (line.includes('DEBUG')) {
-                                            return `<span class="log-debug">${line}</span>`;
-                                        }
-                                        return line;
-                                    })
-                                    .join('\n');
-                                
-                                this.output = formattedOutput;
+                                this.output = parsedData.output;
                             }
-                            
+
                             this.status = parsedData.status;
                         } catch (parseError) {
                             console.error('خطا در پردازش پاسخ:', parseError);
@@ -360,7 +363,7 @@ export default {
                     }
 
                     if (this.status === 'success' || this.status === 'error') {
-                        isPolling = false;
+                        this.isPolling = false;
                         this.isUpdating = false;
                         this.buttonText = this.status === 'success' 
                             ? this.$t('updateSoftware.completedButton') 
@@ -381,7 +384,7 @@ export default {
 
                 } catch (error) {
                     console.error('خطا در دریافت جریان داده:', error);
-                    isPolling = false;
+                    this.isPolling = false;
                     this.output += '\n' + this.$t('updateSoftware.streamError');
                     this.isUpdating = false;
                     this.buttonColor = 'error';
@@ -390,7 +393,6 @@ export default {
             };
 
             pollStream();
-            this.isPolling = isPolling;
         },
         async clearCache() {
             this.isClearingCache = true;
@@ -400,7 +402,7 @@ export default {
             try {
                 const response = await axios.post('/api/admin/updatecore/clear-cache', {}, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    timeout: 3600000 // تایم‌اوت 1 ساعت
+                    timeout: 7200000 // تایم‌اوت 2 ساعته
                 });
                 this.output += response.data.output || this.$t('updateSoftware.cacheClearedMessage') + '\n';
                 this.showResultDialog = true;
@@ -439,7 +441,7 @@ export default {
             try {
                 const response = await axios.post('/api/admin/updatecore/change-env', { env: this.tempSelectedEnv }, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    timeout: 3600000 // تایم‌اوت 1 ساعت
+                    timeout: 7200000 // تایم‌اوت 2 ساعته
                 });
                 this.output += response.data.output || response.data.message + '\n';
                 this.selectedEnv = this.tempSelectedEnv;
@@ -462,7 +464,7 @@ export default {
             try {
                 const response = await axios.get('/api/admin/updatecore/commits', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    timeout: 3600000 // تایم‌اوت 1 ساعت
+                    timeout: 7200000 // تایم‌اوت 2 ساعته
                 });
                 this.currentCommit = response.data.currentCommit || 'unknown';
                 this.targetCommit = response.data.targetCommit || 'unknown';
@@ -476,7 +478,7 @@ export default {
             try {
                 const response = await axios.get('/api/admin/updatecore/system-info', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    timeout: 3600000 // تایم‌اوت 1 ساعت
+                    timeout: 7200000 // تایم‌اوت 2 ساعته
                 });
                 this.systemInfo = {
                     osName: response.data.osName || 'unknown',
@@ -510,7 +512,7 @@ export default {
             try {
                 const response = await axios.get('/api/admin/updatecore/current-env', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    timeout: 3600000 // تایم‌اوت 1 ساعت
+                    timeout: 7200000 // تایم‌اوت 2 ساعته
                 });
                 this.selectedEnv = response.data.env;
                 this.tempSelectedEnv = response.data.env;
@@ -528,10 +530,10 @@ export default {
         },
         async refreshLogs() {
             this.isLoadingLogs = true;
-            tryِ try {
+            try {
                 const response = await axios.get('/api/admin/updatecore/system-logs', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    timeout: 3600000 // تایم‌اوت 1 ساعت
+                    timeout: 7200000 // تایم‌اوت 2 ساعته
                 });
                 this.systemLogs = response.data.logs || response.data.message;
             } catch (error) {
@@ -546,7 +548,7 @@ export default {
             try {
                 const response = await axios.post('/api/admin/updatecore/clear-logs', {}, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    timeout: 3600000 // تایم‌اوت 1 ساعت
+                    timeout: 7200000 // تایم‌اوت 2 ساعته
                 });
                 if (response.data.status === 'success') {
                     this.systemLogs = 'لاگ‌ها پاک شدند';
@@ -612,6 +614,8 @@ export default {
     word-wrap: break-word;
     direction: ltr;
     text-align: left;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 .system-logs-container {
@@ -680,7 +684,6 @@ export default {
     margin: 0 4px;
 }
 
-/* اسکرول‌بار سفارشی */
 .system-logs::-webkit-scrollbar {
     width: 12px;
 }
