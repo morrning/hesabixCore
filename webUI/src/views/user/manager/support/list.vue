@@ -34,7 +34,7 @@
       <v-window v-model="activeTab">
         <v-window-item value="pending">
           <v-data-table-server v-model:items-per-page="itemsPerPagePending" v-model:page="pagePending"
-            :headers="headers" :items="pendingItems" :items-length="totalPending" :loading="loading"
+          :header-props="{ class: 'custom-header' }" :headers="headers" :items="pendingItems" :items-length="totalPending" :loading="loading"
             :no-data-text="$t('table.no_data')" class="elevation-1" show-select v-model="selectedTickets"
             @update:options="loadPendingData">
             <template #item.operation="{ item }">
@@ -50,7 +50,7 @@
 
         <v-window-item value="responded">
           <v-data-table-server v-model:items-per-page="itemsPerPageResponded" v-model:page="pageResponded"
-            :headers="headers" :items="respondedItems" :items-length="totalResponded" :loading="loading"
+          :header-props="{ class: 'custom-header' }" :headers="headers" :items="respondedItems" :items-length="totalResponded" :loading="loading"
             :no-data-text="$t('table.no_data')" class="elevation-1" show-select v-model="selectedTickets"
             @update:options="loadRespondedData">
             <template #item.operation="{ item }">
@@ -66,7 +66,7 @@
 
         <v-window-item value="closed">
           <v-data-table-server v-model:items-per-page="itemsPerPageClosed" v-model:page="pageClosed" :headers="headers"
-            :items="closedItems" :items-length="totalClosed" :loading="loading" :no-data-text="$t('table.no_data')"
+          :header-props="{ class: 'custom-header' }":items="closedItems" :items-length="totalClosed" :loading="loading" :no-data-text="$t('table.no_data')"
             class="elevation-1" show-select v-model="selectedTickets" @update:options="loadClosedData">
             <template #item.operation="{ item }">
               <v-tooltip :text="$t('dialog.view')" location="bottom">

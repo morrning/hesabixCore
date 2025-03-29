@@ -16,6 +16,7 @@
         <v-data-table
           v-if="canShowForm && !initialLoading"
           :headers="headers"
+          :header-props="{ class: 'custom-header' }"
           :items="packages"
           :items-per-page="10"
           :loading="isLoading"

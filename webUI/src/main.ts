@@ -62,14 +62,17 @@ const vuetify = createVuetify({
         VTextField: {
             hideDetails: "auto",
             variant: "outlined",
-            size: "small"
+            size: "small",
+            density: "comfortable"
         },
         VTextarea: {
             hideDetails: "auto",
+            density: "comfortable"
         },
         VSelect: {
             hideDetails: "auto",
-            variant: "outlined"
+            variant: "outlined",
+            density: "comfortable"
         },
         VDialog: {
             VCard: {

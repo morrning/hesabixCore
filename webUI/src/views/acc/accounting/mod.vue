@@ -22,6 +22,7 @@
         :items="form.rows"
         class="elevation-1"
         hide-default-footer
+        :header-props="{ class: 'custom-header' }"
       >
         <template v-slot:top>
           <v-toolbar flat>

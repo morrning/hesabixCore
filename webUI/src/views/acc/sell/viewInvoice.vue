@@ -62,6 +62,15 @@ export default defineComponent({
       { title: 'تعداد', key: 'count' },
       { title: 'مبلغ کل', key: 'sumTotal' },
     ],
+    desktopHeaders: [
+      { title: 'کالا', key: 'commodity.name' },
+      { title: 'تعداد', key: 'count' },
+      { title: 'قیمت واحد', key: 'price' },
+      { title: 'تخفیف', key: 'discount' },
+      { title: 'مالیات', key: 'tax' },
+      { title: 'مبلغ کل', key: 'sumTotal' },
+      { title: 'شرح', key: 'des' },
+    ],
   }),
   computed: {
     formattedAmount() {
@@ -170,7 +179,7 @@ export default defineComponent({
     <print-options :invoice-id="$route.params.id" />
   </v-toolbar>
 
-  <v-tabs v-model="activeTab" color="primary" grow class="mt-0">
+  <v-tabs v-model="activeTab" color="primary"  grow class="mt-0 bg-gray">
     <v-tab value="person-info">اطلاعات شخص</v-tab>
     <v-tab value="invoice-info">اقلام فاکتور</v-tab>
     <v-tab value="payments">دریافت‌ها</v-tab>
@@ -216,12 +225,28 @@ export default defineComponent({
           </v-row>
 
           <v-list-subheader>اقلام</v-list-subheader>
-          <v-data-table :headers="mobileHeaders" :items="commoditys" :loading="loading" show-expand class="elevation-1">
+          <v-data-table
+            :headers="$vuetify.display.smAndDown ? mobileHeaders : desktopHeaders"
+            :items="commoditys"
+            :loading="loading"
+            :show-expand="$vuetify.display.smAndDown"
+            class="elevation-1"
+            :header-props="{ class: 'custom-header' }"
+          >
             <template v-slot:item.sumTotal="{ item }">
               {{ $filters.formatNumber(item.sumTotal) }}
             </template>
             <template v-slot:item.count="{ item }">
               {{ item.count }} {{ item.commodity.unit }}
+            </template>
+            <template v-slot:item.price="{ item }">
+              {{ $filters.formatNumber(item.price) }}
+            </template>
+            <template v-slot:item.discount="{ item }">
+              {{ $filters.formatNumber(item.discount) }}
+            </template>
+            <template v-slot:item.tax="{ item }">
+              {{ $filters.formatNumber(item.tax) }}
             </template>
             <template v-slot:expanded-row="{ item }">
               <v-list dense>
@@ -274,7 +299,7 @@ export default defineComponent({
       <!-- تب دریافت‌ها -->
       <v-window-item value="payments">
         <v-card-text>
-          <v-data-table v-if="item.relatedDocs.length" :headers="[
+          <v-data-table v-if="item.relatedDocs.length" :header-props="{ class: 'custom-header' }" :headers="[
             { title: 'مشاهده', key: 'view' },
             { title: 'شماره', key: 'code' },
             { title: 'تاریخ', key: 'date' },
@@ -318,5 +343,5 @@ export default defineComponent({
 </template>
 
 <style scoped>
-/* استایل‌ها */
+
 </style>

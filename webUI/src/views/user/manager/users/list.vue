@@ -134,6 +134,7 @@ loadFromServer();
               class="elevation-1"
               item-value="id"
               return-object
+              :header-props="{ class: 'custom-header' }"
             >
               <template #item.operation="{ item }">
                 <v-menu>

@@ -3,7 +3,8 @@
     <template v-slot:prepend>
       <v-tooltip :text="$t('dialog.back')" location="bottom">
         <template v-slot:activator="{ props }">
-          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text" icon="mdi-arrow-right" />
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+            icon="mdi-arrow-right" />
         </template>
       </v-tooltip>
     </template>
@@ -103,39 +104,18 @@
     </template>
   </v-text-field>
 
-  <v-data-table-server
-    v-model:items-per-page="serverOptions.rowsPerPage"
-    v-model:page="serverOptions.page"
-    v-model:sort-by="serverOptions.sortBy"
-    :headers="visibleHeaders"
-    :items="items"
-    :items-length="totalItems"
-    :loading="loading"
-    multi-sort
-    class="elevation-1"
-    :items-per-page-options="[5, 10, 20, 50]"
-    item-value="code"
-    items-per-page-text="تعداد سطر"
-    no-data-text="اطلاعاتی برای نمایش وجود ندارد"
-    :header-props="{ class: 'custom-header' }"
-  >
+  <v-data-table-server v-model:items-per-page="serverOptions.rowsPerPage" v-model:page="serverOptions.page"
+    v-model:sort-by="serverOptions.sortBy" :headers="visibleHeaders" :items="items" :items-length="totalItems"
+    :loading="loading" multi-sort class="elevation-1" :items-per-page-options="[5, 10, 20, 50]" item-value="code"
+    items-per-page-text="تعداد سطر" no-data-text="اطلاعاتی برای نمایش وجود ندارد"
+    :header-props="{ class: 'custom-header' }">
     <!-- ستون چک‌باکس دستی -->
     <template v-slot:header.checkbox>
-      <v-checkbox
-        v-model="selectAll"
-        @change="toggleSelectAll"
-        hide-details
-        density="compact"
-      ></v-checkbox>
+      <v-checkbox v-model="selectAll" @change="toggleSelectAll" hide-details density="compact"></v-checkbox>
     </template>
     <template v-slot:item.checkbox="{ item }">
-      <v-checkbox
-        v-model="selectedItems"
-        :value="item"
-        hide-details
-        density="compact"
-        @change="updateSelected"
-      ></v-checkbox>
+      <v-checkbox v-model="selectedItems" :value="item" hide-details density="compact"
+        @change="updateSelected"></v-checkbox>
     </template>
 
     <template v-slot:item.operation="{ item }">
@@ -202,7 +182,8 @@
       <v-card-text>
         <v-row>
           <v-col v-for="header in optionalHeaders" :key="header.value" cols="12" sm="4">
-            <v-checkbox v-model="header.visible" :label="header.title" @change="saveColumnSettings" hide-details class="mb-2"></v-checkbox>
+            <v-checkbox v-model="header.visible" :label="header.title" @change="saveColumnSettings" hide-details
+              class="mb-2"></v-checkbox>
           </v-col>
         </v-row>
       </v-card-text>
@@ -334,7 +315,18 @@ const fetchData = async () => {
         sortBy: sortBy.length > 0 ? sortBy : null,
       });
       items.value = response.data.items || [];
-      totalItems.value = response.data.total || 0;
+
+      // اگر فیلتری اعمال شده باشد، از total (تعداد فیلترشده) استفاده کن
+      // اگر فیلتری اعمال نشده باشد، از unfilteredTotal (تعداد کل) استفاده کن
+      const isFiltered =
+        searchValue.value ||
+        selectedTypes.length > 0 ||
+        selectedTransactionFilters.length > 0;
+
+      totalItems.value = isFiltered
+        ? (response.data.total || 0) // تعداد کل فیلترشده
+        : (response.data.unfilteredTotal || 0); // تعداد کل بدون فیلتر
+
       resetSelections();
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -394,7 +386,7 @@ const resetSelections = () => {
 
 // توابع خروجی
 const excellOutput = (allItems = true) => {
-  
+
   if (!allItems) {
     if (selectedItems.value.length === 0) {
       Swal.fire({
@@ -404,7 +396,7 @@ const excellOutput = (allItems = true) => {
       });
       return;
     }
-    
+
     // ارسال id و code به سرور
     const selected = selectedItems.value.map(item => ({ id: item.id, code: item.code }));
     axios({
@@ -446,7 +438,7 @@ const excellOutput = (allItems = true) => {
 };
 
 const print = (allItems = true) => {
-  
+
   if (!allItems) {
     if (selectedItems.value.length === 0) {
       Swal.fire({
@@ -456,7 +448,7 @@ const print = (allItems = true) => {
       });
       return;
     }
-    
+
     // ارسال id و code به سرور
     const selected = selectedItems.value.map(item => ({ id: item.id, code: item.code }));
     axios.post('/api/person/list/print', { items: selected }).then((response) => {
@@ -503,6 +495,4 @@ onMounted(() => {
 });
 </script>
 
-<style>
-
-</style>
+<style></style>

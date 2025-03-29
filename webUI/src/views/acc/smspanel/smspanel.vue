@@ -114,6 +114,7 @@
             :items="paysitems"
             :search="payssearchValue"
             :loading="loading"
+            :header-props="{ class: 'custom-header' }"
             loading-text="در حال بارگذاری..."
             no-data-text="اطلاعاتی برای نمایش وجود ندارد"
           >
@@ -137,6 +138,7 @@
           <v-data-table
             :headers="headers"
             :items="items"
+            :header-props="{ class: 'custom-header' }"
             :search="searchValue"
             :loading="loading"
             loading-text="در حال بارگذاری..."

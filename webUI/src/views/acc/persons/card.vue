@@ -187,7 +187,7 @@
     <v-row dense>
       <v-col cols="12">
         <v-data-table v-model="itemsSelected" :headers="headers" :items="items" :search="searchValue" :loading="loading"
-          show-select dense :items-per-page="25" class="elevation-1">
+          show-select dense :items-per-page="25" class="elevation-1" :header-props="{ class: 'custom-header' }">
           <template v-slot:top>
             <v-toolbar flat dense color="grey-lighten-4">
               <v-toolbar-title class="text-subtitle-1">{{ $t('pages.person_card.transactions') }}</v-toolbar-title>

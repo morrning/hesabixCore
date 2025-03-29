@@ -53,6 +53,8 @@
     :loading="loading"
     :search="search"
     class="elevation-1 text-center"
+    :header-props="{ class: 'custom-header' }"
+
   >
     <template v-slot:item="{ item }">
       <tr>

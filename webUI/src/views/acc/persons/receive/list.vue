@@ -115,6 +115,7 @@
       :loading="loading"
       item-value="code"
       class="elevation-1"
+      :header-props="{ class: 'custom-header' }"
       :items-per-page-options="[5, 10, 20, 50]"
       items-per-page-text="تعداد سطر در هر صفحه"
       @update:options="loadData"

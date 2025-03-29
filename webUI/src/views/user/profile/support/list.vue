@@ -24,7 +24,7 @@
 
       <v-window v-model="activeTab">
         <v-window-item value="pending">
-          <v-data-table :headers="headers" :items="pendingItems" :loading="loading" :no-data-text="$t('table.no_data')"
+          <v-data-table :header-props="{ class: 'custom-header' }" :headers="headers" :items="pendingItems" :loading="loading" :no-data-text="$t('table.no_data')"
             class="elevation-1">
             <template #item.operation="{ item }">
               <v-tooltip :text="$t('dialog.view')" location="bottom">
@@ -38,7 +38,7 @@
         </v-window-item>
 
         <v-window-item value="responded">
-          <v-data-table :headers="headers" :items="respondedItems" :loading="loading"
+          <v-data-table :header-props="{ class: 'custom-header' }" :headers="headers" :items="respondedItems" :loading="loading"
             :no-data-text="$t('table.no_data')" class="elevation-1">
             <template #item.operation="{ item }">
               <v-tooltip :text="$t('dialog.view')" location="bottom">
@@ -52,7 +52,7 @@
         </v-window-item>
 
         <v-window-item value="closed">
-          <v-data-table :headers="headers" :items="closedItems" :loading="loading" :no-data-text="$t('table.no_data')"
+          <v-data-table :header-props="{ class: 'custom-header' }" :headers="headers" :items="closedItems" :loading="loading" :no-data-text="$t('table.no_data')"
             class="elevation-1">
             <template #item.operation="{ item }">
               <v-tooltip :text="$t('dialog.view')" location="bottom">

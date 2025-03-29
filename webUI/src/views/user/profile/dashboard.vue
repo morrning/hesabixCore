@@ -83,7 +83,7 @@
               <v-col cols="12">
                 <v-card>
                   <v-card-title>{{ $t('marketing.recent_users') }}</v-card-title>
-                  <v-data-table :headers="computedHeaders" :items="recentUsers" :loading="loading" hide-default-footer
+                  <v-data-table :header-props="{ class: 'custom-header' }" :headers="computedHeaders" :items="recentUsers" :loading="loading" hide-default-footer
                     class="elevation-1">
                     <!-- اسلات سفارشی برای ستون وضعیت -->
                     <template v-slot:item.active="{ item }">
