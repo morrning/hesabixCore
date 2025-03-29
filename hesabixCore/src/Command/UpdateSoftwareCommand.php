@@ -173,7 +173,7 @@ class UpdateSoftwareCommand extends Command
                 $this->runProcess(['cp', '-r', $this->appDir . '/var/cache', $cacheBackup], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput(), 3, 3600);
                 $state['cacheBackup'] = $cacheBackup;
                 $this->runProcess(['php', 'bin/console', 'cache:clear', "--env={$this->env}"], $this->appDir, $output, 3, 3600);
-                $state['completedSteps'][] = 'cache_clear'; // اصلاح خطا: reciSteps به completedSteps تغییر کرد
+                $state['completedSteps'][] = 'cache_clear';
                 $this->saveState($uuid, $state, $output, 'Cache cleared');
             } else {
                 $cacheBackup = $state['cacheBackup'];

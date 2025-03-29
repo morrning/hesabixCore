@@ -2,7 +2,7 @@
 
 namespace App\Controller\System;
 
-use Symfony\Bundle\FrameworkBundleController\AbstractController;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -26,7 +26,7 @@ final class UpdateCoreController extends AbstractController
 
         $projectDir = $this->getParameter('kernel.project_dir');
         $uuid = uniqid();
-        $stateFile = $projectDir . '/../backup/update_state_' . $uuid . '.json';
+        $stateFile = $projectDir . '/../hesabixBackup/update_state_' . $uuid . '.json';
 
         if (!file_exists(dirname($stateFile))) {
             mkdir(dirname($stateFile), 0755, true);
@@ -45,26 +45,7 @@ final class UpdateCoreController extends AbstractController
 
         $process = new Process(['php', 'bin/console', 'hesabix:update', $stateFile], $projectDir, $env);
         $process->setTimeout(3600); // تنظیم تایم‌اوت فرآیند به 1 ساعت
-        $process->run(function ($type, $buffer) use ($stateFile) {
-            $state = json_decode(file_get_contents($stateFile), true) ?? ['uuid' => uniqid(), 'log' => ''];
-            $state['log'] .= $buffer;
-            file_put_contents($stateFile, json_encode($state));
-        });
-
-        $state = json_decode(file_get_contents($stateFile), true) ?? ['uuid' => $uuid, 'log' => ''];
-
-        if (!$process->isSuccessful()) {
-            $state['error'] = $process->getErrorOutput() ?: 'Unknown error';
-            file_put_contents($stateFile, json_encode($state));
-            return new JsonResponse([
-                'status' => 'error',
-                'message' => 'Update process failed: ' . $state['error'],
-                'uuid' => $uuid,
-            ], 500);
-        }
-
-        $state['log'] .= $process->getOutput() . $process->getErrorOutput();
-        file_put_contents($stateFile, json_encode($state));
+        $process->start();
 
         return new JsonResponse([
             'status' => 'started',
@@ -87,7 +68,7 @@ final class UpdateCoreController extends AbstractController
             ], 400);
         }
 
-        $stateFile = $this->getParameter('kernel.project_dir') . '/../backup/update_state_' . $uuid . '.json';
+        $stateFile = $this->getParameter('kernel.project_dir') . '/../hesabixBackup/update_state_' . $uuid . '.json';
 
         if (!file_exists($stateFile)) {
             return new JsonResponse([
@@ -97,7 +78,7 @@ final class UpdateCoreController extends AbstractController
             ]);
         }
 
-        $state = json_decode(file_get_contents($stateFile), true) ?? ['log' => ''];
+        $state = json_decode(file_get_contents($stateFile), true) ?? ['uuid' => $uuid, 'log' => ''];
         $output = $state['log'] ?? '';
 
         $isRunning = !isset($state['error']) &&
@@ -114,7 +95,7 @@ final class UpdateCoreController extends AbstractController
         }
 
         if (!$isRunning) {
-            $backupDir = $this->getParameter('kernel.project_dir') . '/../backup';
+            $backupDir = $this->getParameter('kernel.project_dir') . '/../hesabixBackup';
             $stateFiles = glob($backupDir . '/update_state_*.json');
             foreach ($stateFiles as $file) {
                 if (is_file($file)) {
@@ -147,7 +128,7 @@ final class UpdateCoreController extends AbstractController
             return new JsonResponse(['status' => 'error', 'message' => 'UUID is required'], 400);
         }
 
-        $stateFile = $this->getParameter('kernel.project_dir') . '/../backup/update_state_' . $uuid . '.json';
+        $stateFile = $this->getParameter('kernel.project_dir') . '/../hesabixBackup/update_state_' . $uuid . '.json';
 
         return new StreamedResponse(function () use ($stateFile) {
             header('Content-Type: text/event-stream');
@@ -378,7 +359,7 @@ final class UpdateCoreController extends AbstractController
             'message' => "حالت به $newEnv تغییر کرد، وابستگی‌ها به‌روزرسانی شدند و کش پاک شد",
             'output' => $output,
         ]);
-
+    }
 
     #[Route('/api/admin/updatecore/current-env', name: 'api_admin_updatecore_current_env', methods: ['GET'])]
     public function api_admin_updatecore_current_env(): JsonResponse
