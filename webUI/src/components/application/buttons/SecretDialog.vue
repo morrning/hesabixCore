@@ -48,14 +48,14 @@ export default {
         width: 0.08,
         height: 0.2,
         dy: 0,
-        gravity: 0.0015, // تنظیم شده برای رسپانسیو
-        jump: -0.06, // تنظیم شده برای رسپانسیو
+        gravity: 0.0015,
+        jump: -0.06,
         jumpCount: 0,
         maxJumps: 3
       },
       obstacles: [],
       score: 0,
-      bestScore: 0, // بهترین امتیاز
+      bestScore: 0,
       gameRunning: false,
       animationFrameId: null,
       dinoImg: null,
@@ -81,7 +81,6 @@ export default {
     window.addEventListener('keyup', this.handleKeyUp);
     window.addEventListener('resize', this.handleResize);
     this.loadImages();
-    // بارگذاری بهترین امتیاز از localStorage
     this.bestScore = parseInt(localStorage.getItem('bestScore') || '0', 10);
   },
   watch: {
@@ -121,7 +120,7 @@ export default {
       this.canvas = this.$refs.gameCanvas;
       this.ctx = this.canvas.getContext('2d');
       this.canvasWidth = this.canvas.parentElement.clientWidth;
-      this.canvasHeight = this.canvasWidth * 0.333; // نسبت 3:1
+      this.canvasHeight = this.canvasWidth * 0.333;
       this.canvas.width = this.canvasWidth;
       this.canvas.height = this.canvasHeight;
     },
@@ -132,15 +131,15 @@ export default {
     },
     handleKeyDown(event) {
       const gameKeys = [72, 68, 81]; // H, D, Q
-      if (gameKeys.includes(event.keyCode)) {
-        event.preventDefault();
+      if (this.showDialog && gameKeys.includes(event.keyCode)) {
+        event.preventDefault(); // فقط وقتی دیالوگ باز است
       }
 
       if (event.keyCode === 81) {
         this.isQPressed = true;
       }
       if (this.showDialog && event.keyCode === 72 && this.dino.jumpCount < this.dino.maxJumps) {
-        this.dino.dy = this.dino.jump - (this.dino.jumpCount * 0.015); // پرش‌های بعدی قوی‌تر
+        this.dino.dy = this.dino.jump - (this.dino.jumpCount * 0.015);
         this.dino.jumpCount++;
       }
       if (this.showDialog && event.keyCode === 68 && this.superModeCount > 0 && !this.superMode) {
@@ -200,7 +199,6 @@ export default {
         this.ctx.fillStyle = '#d3d3d3';
         this.ctx.fillRect(0, this.canvas.height * 0.95, this.canvas.width, this.canvas.height * 0.05);
 
-        // اعمال جاذبه و حرکت عمودی دایناسور
         this.dino.dy += this.dino.gravity;
         this.dino.y += this.dino.dy;
         if (this.dino.y >= 0.75) {
@@ -239,20 +237,19 @@ export default {
         }
 
         const now = Date.now();
-        // تنظیم فاصله و سرعت هلوها برای قابل‌کنترل بودن
-        const baseInterval = 2500; // فاصله اولیه بیشتر برای پرش راحت‌تر
-        const minInterval = 1000; // حداقل فاصله برای جلوگیری از شلوغی
-        const obstacleInterval = Math.max(minInterval, baseInterval - Math.floor(this.score / 10) * 50); // کاهش ملایم‌تر فاصله
-        const obstacleProbability = Math.min(0.05, 0.01 + this.score * 0.0002); // افزایش کندتر احتمال
+        const baseInterval = 2500;
+        const minInterval = 1000;
+        const obstacleInterval = Math.max(minInterval, baseInterval - Math.floor(this.score / 10) * 50);
+        const obstacleProbability = Math.min(0.05, 0.01 + this.score * 0.0002);
 
         if (!this.superMode && now - this.lastObstacleTime > obstacleInterval && Math.random() < obstacleProbability) {
-          const baseSpeed = 0.004; // سرعت اولیه کمتر
-          const speedIncrease = Math.floor(this.score / 100) * 0.0005; // افزایش سرعت ملایم‌تر
-          const obstacleSpeed = Math.min(baseSpeed + speedIncrease, 0.01); // حداکثر سرعت محدود
+          const baseSpeed = 0.004;
+          const speedIncrease = Math.floor(this.score / 100) * 0.0005;
+          const obstacleSpeed = Math.min(baseSpeed + speedIncrease, 0.01);
 
           this.obstacles.push({
             x: 1,
-            y: 0.75, // ارتفاع ثابت روی زمین
+            y: 0.75,
             width: 0.05,
             height: 0.1,
             speed: obstacleSpeed,
@@ -316,15 +313,14 @@ export default {
       this.gameRunning = false;
       this.hero.visible = false;
       cancelAnimationFrame(this.animationFrameId);
-      // به‌روزرسانی بهترین امتیاز
       if (Math.floor(this.score) > this.bestScore) {
         this.bestScore = Math.floor(this.score);
         localStorage.setItem('bestScore', this.bestScore);
-      }
+ lunch      }
     },
     resetGame() {
       this.gameOver();
-      this.score = 0; // ریست امتیاز کنونی
+      this.score = 0;
       this.obstacles = [];
       this.dino.y = 0.75;
       this.dino.dy = 0;
