@@ -34,7 +34,6 @@ export default defineComponent({
     },
   },
   data: () => ({
-    recListDialog: false,
     activeTab: 'invoice-info',
     loading: ref(true),
     shortlink_url: '',
@@ -159,6 +158,10 @@ export default defineComponent({
       </v-tooltip>
     </template>
     <v-spacer></v-spacer>
+    <v-btn icon :to="`/acc/sell/mod/${$route.params.id}`">
+      <v-icon>mdi-pencil</v-icon>
+      <v-tooltip activator="parent" location="bottom">ویرایش</v-tooltip>
+    </v-btn>
     <v-btn icon v-if="item.doc.id !== 0">
       <archive-upload :docid="item.doc.id" doctype="sell" cat="sell" />
       <v-tooltip activator="parent" location="bottom">آرشیو</v-tooltip>
@@ -166,10 +169,11 @@ export default defineComponent({
     <notes :stat="notes" :code="$route.params.id" type-note="sell" />
     <rec v-if="parseInt(item.doc.amount) > parseInt(totalRec)" :windows-state="PayWindowsState" :person="person.id" :original-doc="item.doc.code" :total-amount="parseInt(item.doc.amount) - parseInt(totalRec)" />
 
-    <v-btn icon color="info" class="ml-2" @click="recListDialog = true">
-      <v-icon>mdi-arrow-down-circle</v-icon>
-      <v-tooltip activator="parent" location="bottom">دریافت‌ها</v-tooltip>
-    </v-btn>
+    <rec-list 
+      :windows-state="recListWindowsState" 
+      :items="item.relatedDocs" 
+    />
+
     <share-options v-if="bid.shortlinks" :shortlink-url="shortlink_url" :mobile="person.mobile" :invoice-id="item.doc.id" />
     <print-options :invoice-id="$route.params.id" />
   </v-toolbar>
@@ -315,23 +319,33 @@ export default defineComponent({
         </v-card-text>
       </v-window-item>
     </v-window>
-    <v-dialog v-model="recListDialog" max-width="800">
-      <v-card>
-        <v-card-title>
-          <v-icon left>mdi-arrow-down-circle</v-icon>
-          دریافت‌ها
-        </v-card-title>
-        <v-card-text>
-          <rec-list :windows-state="recListWindowsState" :items="item.relatedDocs" />
-        </v-card-text>
-        <v-card-actions>
-          <v-btn color="secondary" @click="recListDialog = false">بازگشت</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
 <style scoped>
+/* استایل برای هدر جدول */
+:deep(.custom-header) th {
+  text-align: center !important;
+  justify-content: center !important;
+  white-space: nowrap;
+  font-weight: bold;
+}
 
+/* استایل برای محتوای سلول‌های جدول */
+:deep(.v-data-table-rows-item) td {
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+/* برای اطمینان از وسط چین بودن محتوای سلول‌ها */
+:deep(.v-data-table) .v-data-table__wrapper table tbody td {
+  text-align: center !important;
+}
+
+/* برای لینک‌ها و آیکون‌ها در جدول */
+:deep(.v-data-table) .v-data-table__wrapper table tbody td a,
+:deep(.v-data-table) .v-data-table__wrapper table tbody td .v-icon {
+  display: inline-flex;
+  justify-content: center;
+}
 </style>

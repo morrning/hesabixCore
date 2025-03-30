@@ -1,11 +1,5 @@
 <template>
-  <v-btn
-    v-if="totalAmount > 0"
-    icon
-    color="error"
-    class="ml-2"
-    @click="dialog = true"
-  >
+  <v-btn v-if="totalAmount > 0" icon color="error" class="ml-2" @click="dialog = true">
     <v-icon>mdi-cash</v-icon>
     <v-tooltip activator="parent" location="bottom">ثبت دریافت</v-tooltip>
   </v-btn>
@@ -50,58 +44,26 @@
       </v-toolbar>
 
       <v-card-text>
-        <v-alert
-          v-if="errorMessage"
-          type="error"
-          dismissible
-          @input="errorMessage = ''"
-          class="mb-4"
-        >
-          {{ errorMessage }}
-        </v-alert>
         <v-row>
           <v-col cols="12" md="5">
             <Hdatepicker v-model="date" label="تاریخ" />
           </v-col>
           <v-col cols="12" md="7">
-            <v-text-field
-              v-model="des"
-              label="شرح"
-              outlined
-              clearable
-              class="mb-4"
-            ></v-text-field>
+            <v-text-field v-model="des" label="شرح" outlined clearable class="mb-4"></v-text-field>
           </v-col>
         </v-row>
 
         <v-row>
           <v-col cols="12" md="6">
-            <v-text-field
-              v-model="formattedTotalPays"
-              label="مجموع"
-              readonly
-              outlined
-            ></v-text-field>
+            <v-text-field v-model="formattedTotalPays" label="مجموع" readonly outlined></v-text-field>
           </v-col>
           <v-col cols="12" md="6">
-            <v-text-field
-              v-model="formattedRemainingAmount"
-              label="باقی مانده"
-              readonly
-              outlined
-            ></v-text-field>
+            <v-text-field v-model="formattedRemainingAmount" label="باقی مانده" readonly outlined></v-text-field>
           </v-col>
         </v-row>
 
-        <v-data-table
-          :headers="headers"
-          :items="items"
-          :loading="loading"
-          class="elevation-1 mt-2"
-          :header-props="{ class: 'custom-header' }"
-          :items-per-page="-1"
-          hide-default-footer
-        >
+        <v-data-table :headers="headers" :items="items" :loading="loading" class="elevation-1 mt-2"
+          :header-props="{ class: 'custom-header' }" :items-per-page="-1" hide-default-footer>
           <template v-slot:item.type="{ item }">
             <v-icon v-if="item.type === 'bank'">mdi-bank</v-icon>
             <v-icon v-if="item.type === 'cashdesk'">mdi-cash-register</v-icon>
@@ -109,105 +71,34 @@
             <v-icon v-if="item.type === 'cheque'">mdi-checkbook</v-icon>
           </template>
           <template v-slot:item.selection="{ item }">
-            <v-select
-              v-if="item.type === 'bank'"
-              v-model="item.bank"
-              :items="listBanks"
-              item-title="name"
-              return-object
-              label="بانک"
-              outlined
-              dense
-            ></v-select>
-            <v-select
-              v-if="item.type === 'cashdesk'"
-              v-model="item.cashdesk"
-              :items="listCashdesks"
-              item-title="name"
-              return-object
-              label="صندوق"
-              outlined
-              dense
-            ></v-select>
-            <v-select
-              v-if="item.type === 'salary'"
-              v-model="item.salary"
-              :items="listSalarys"
-              item-title="name"
-              return-object
-              label="تنخواه گردان"
-              outlined
-              dense
-            ></v-select>
+            <v-select v-if="item.type === 'bank'" v-model="item.bank" :items="listBanks" item-title="name" return-object
+              label="بانک"></v-select>
+            <v-select v-if="item.type === 'cashdesk'" v-model="item.cashdesk" :items="listCashdesks" item-title="name"
+              return-object label="صندوق"></v-select>
+            <v-select v-if="item.type === 'salary'" v-model="item.salary" :items="listSalarys" item-title="name"
+              return-object label="تنخواه گردان"></v-select>
             <template v-if="item.type === 'cheque'">
-              <v-text-field
-                v-model="item.chequeNum"
-                label="شماره چک"
-                outlined
-                dense
-                required
-              ></v-text-field>
-              <v-text-field
-                v-model="item.chequeSayadNum"
-                label="شماره صیاد"
-                outlined
-                dense
-                required
-              ></v-text-field>
-              <v-text-field
-                v-model="item.chequeBank"
-                label="بانک صادرکننده"
-                outlined
-                dense
-                required
-              ></v-text-field>
-              <Hdatepicker
-                v-model="item.chequeDate"
-                label="تاریخ چک"
-                required
-              />
+              <v-text-field class="mb-2 mt-1" v-model="item.chequeNum" label="شماره چک" required></v-text-field>
+              <v-text-field class="mb-2" v-model="item.chequeSayadNum" label="شماره صیاد" dense required></v-text-field>
+              <v-text-field class="mb-2" v-model="item.chequeBank" label="بانک صادرکننده" required></v-text-field>
+              <Hdatepicker class="mb-1" v-model="item.chequeDate" label="تاریخ چک" required />
             </template>
           </template>
           <template v-slot:item.bd="{ item }">
-            <Hnumberinput
-              v-model="item.bd"
-              label="مبلغ"
-              outlined
-              dense
-              placeholder="0"
-              @update:modelValue="calc"
-            />
+            <Hnumberinput v-model="item.bd" label="مبلغ" placeholder="0" @update:modelValue="calc" />
           </template>
           <template v-slot:item.referral="{ item }">
-            <v-text-field
-              v-model="item.referral"
-              label="ارجاع"
-              outlined
-              dense
-            ></v-text-field>
+            <v-text-field v-model="item.referral" label="ارجاع"></v-text-field>
           </template>
           <template v-slot:item.des="{ item }">
-            <v-text-field
-              v-model="item.des"
-              label="شرح"
-              outlined
-              dense
-            ></v-text-field>
+            <v-text-field v-model="item.des" label="شرح"></v-text-field>
           </template>
           <template v-slot:item.actions="{ item, index }">
-            <v-btn
-              variant="plain"
-              color="primary"
-              @click="fillWithTotal(item)"
-            >
+            <v-btn variant="plain" color="primary" @click="fillWithTotal(item)">
               <v-icon>mdi-cash-100</v-icon>
               <v-tooltip activator="parent" location="bottom">کل فاکتور</v-tooltip>
             </v-btn>
-            <v-btn
-              variant="plain"
-              color="error"
-              @click="deleteItem(index)"
-            >
+            <v-btn variant="plain" color="error" @click="deleteItem(index)">
               <v-icon>mdi-trash-can</v-icon>
               <v-tooltip activator="parent" location="bottom">حذف</v-tooltip>
             </v-btn>
@@ -223,6 +114,16 @@
       <v-overlay :model-value="loading" contained class="align-center justify-center">
         <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
       </v-overlay>
+    </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="successDialog" max-width="400">
+    <v-card color="success">
+      <v-card-text class="text-center pa-4">
+        <v-icon size="large" color="white" class="mb-4">mdi-check-circle</v-icon>
+        <div class="text-h6 text-white mb-2">ثبت موفق</div>
+        <div class="text-white">{{ successMessage }}</div>
+      </v-card-text>
     </v-card>
   </v-dialog>
 </template>
@@ -261,7 +162,9 @@ export default defineComponent({
     listCashdesks: [],
     totalPays: 0,
     loading: false,
-    errorMessage: ''
+    errorMessage: '',
+    successDialog: false,
+    successMessage: ''
   }),
   computed: {
     headers() {
@@ -278,17 +181,17 @@ export default defineComponent({
       return this.totalAmount - this.totalPays
     },
     formattedTotalPays() {
-      return this.formatNumber(this.totalPays)
+      return this.formatNumber(this.totalPays) || '۰';
     },
     formattedRemainingAmount() {
-      return this.formatNumber(this.remainingAmount)
+      return this.formatNumber(this.remainingAmount) || '۰';
     }
   },
   methods: {
     formatNumber(value: number | string): string {
-      if (!value) return ''
-      const num = parseInt(value.toString().replace(/[^\d]/g, ''))
-      return num.toLocaleString('fa-IR')
+      if (value === undefined || value === null || value === '') return '۰';
+      const num = parseInt(value.toString().replace(/[^\d]/g, ''));
+      return num.toLocaleString('fa-IR') || '۰';
     },
     fillWithTotal(pay) {
       pay.bd = this.totalAmount - this.totalPays
@@ -423,26 +326,42 @@ export default defineComponent({
           related: this.originalDoc
         })
 
-        if (response.data.result === '1') {
+        if (response.data.result === 1) {
           this.submitedDoc = response.data.doc
-          this.windowsState.submited = true
-          this.dialog = false
-        } else if (response.data.result === '4') {
-          this.errorMessage = response.data.msg
+
+          if (this.windowsState) {
+            this.windowsState.submited = true
+          }
+
+          this.successMessage = 'سند دریافت با موفقیت ثبت شد'
+          this.successDialog = true
+
+          setTimeout(() => {
+            this.successDialog = false
+            this.dialog = false
+          }, 2000)
+
+          this.$emit('submit-success', response.data.doc)
+        } else {
+          this.errorMessage = response.data.msg || 'خطا در ثبت سند'
         }
       } catch (error) {
-        this.errorMessage = 'خطا در ثبت سند'
+        this.errorMessage = error.response?.data?.message || 'خطا در ثبت سند'
       } finally {
         this.loading = false
       }
     }
   },
-  mounted() {
-    this.loadData()
+  async mounted() {
+    await this.loadData()
+    const response = await axios.get('/api/year/get')
+    this.date = response.data.now // تاریخ جاری شمسی
   }
 })
 </script>
 
 <style scoped>
-/* استایل‌های دلخواه */
+.v-card.success {
+  background-color: #4caf50 !important;
+}
 </style>

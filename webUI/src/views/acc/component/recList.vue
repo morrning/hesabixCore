@@ -7,87 +7,175 @@ import axios from "axios";
 export default defineComponent({
   name: "recList",
   props: {
-    items: Array,
-    windowsState: Object
-  },
-  data: () => {
-    return {
-      searchValue: '',
-      loading: ref(false),
-      headers: [
-        { text: "شماره سند", value: "code", sortable: true },
-        { text: "تاریخ", value: "date", sortable: true },
-        { text: "شرح", value: "des", sortable: true },
-        { text: "مبلغ", value: "amount", sortable: true },
-        { text: "نوع", value: "type", sortable: true },
-        { text: "عملیات", value: "operation" },
-      ]
+    items: {
+      type: Array,
+      required: true
+    },
+    windowsState: {
+      type: Object,
+      required: true
     }
   },
+  data: () => ({
+    dialog: false,
+    searchValue: '',
+    loading: false,
+    headers: [
+      {
+        title: 'شماره سند',
+        key: 'code',
+        sortable: true,
+        align: 'center'
+      },
+      {
+        title: 'تاریخ',
+        key: 'date',
+        sortable: true,
+        align: 'center'
+      },
+      {
+        title: 'شرح',
+        key: 'des',
+        sortable: true,
+        align: 'center'
+      },
+      {
+        title: 'مبلغ',
+        key: 'amount',
+        sortable: true,
+        align: 'center'
+      },
+      {
+        title: 'نوع',
+        key: 'type',
+        sortable: true,
+        align: 'center'
+      },
+      {
+        title: 'عملیات',
+        key: 'operation',
+        sortable: false,
+        align: 'center'
+      }
+    ]
+  }),
   methods: {
-    deleteItem(code) {
-      Swal.fire({
-        text: 'آیا برای حذف این مورد مطمئن هستید؟',
-        showCancelButton: true,
-        confirmButtonText: 'بله',
-        cancelButtonText: `خیر`,
-        icon: 'warning'
-      }).then((result) => {
-        /* Read more about isConfirmed, isDenied below */
+    async deleteItem(code: string) {
+      try {
+        const result = await Swal.fire({
+          text: 'آیا برای حذف این مورد مطمئن هستید؟',
+          showCancelButton: true,
+          confirmButtonText: 'بله',
+          cancelButtonText: 'خیر',
+          icon: 'warning'
+        })
+
         if (result.isConfirmed) {
-          axios.post('/api/accounting/remove', {
-            'code': code
+          const response = await axios.post('/api/accounting/remove', { code })
+
+          if (response.data.result === 1) {
+            await Swal.fire({
+              text: 'سند دریافت فاکتور با موفقیت حذف شد.',
+              icon: 'success',
+              confirmButtonText: 'قبول'
+            })
+            this.windowsState.submited = true
           }
-          ).then((response) => {
-            if (response.data.result == 1) {
-              Swal.fire({
-                text: 'سند دریافت فاکتور با موفقیت حذف شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              }).then((result) => {
-                this.$props.windowsState.submited = true;
-              });
-            }
-            if (response.data.result == 2) {
-              Swal.fire({
-                text: response.data.message,
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              });
-            }
-          })
+
+          if (response.data.result === 2) {
+            await Swal.fire({
+              text: response.data.message,
+              icon: 'success',
+              confirmButtonText: 'قبول'
+            })
+          }
         }
-      })
+      } catch (error) {
+        console.error('Error deleting item:', error)
+        await Swal.fire({
+          text: 'خطا در حذف سند',
+          icon: 'error',
+          confirmButtonText: 'قبول'
+        })
+      }
     }
   }
 })
 </script>
 
 <template>
-  <div class="mb-1">
-    <div class="input-group input-group-sm">
-      <span class="input-group-text"><i class="fa fa-search"></i></span>
-      <input v-model="searchValue" class="form-control" type="text" placeholder="جست و جو ...">
-    </div>
-  </div>
-  <EasyDataTable table-class-name="customize-table" show-index alternating :search-value="searchValue" :headers="headers" :items="this.$props.items"
-    theme-color="#1d90ff" header-text-direction="center" body-text-direction="center" rowsPerPageMessage="تعداد سطر"
-    emptyMessage="اطلاعاتی برای نمایش وجود ندارد" rowsOfPageSeparatorMessage="از" :loading="loading">
-    <template #item-operation="{ code, type }">
-      <span v-if="type == 'sell_receive' || type == 'buy_send'" class="text-danger px-1">
-        <span class="text-danger px-1" @click="deleteItem(code)">
-          <i class="fa fa-trash"></i>
-        </span>
-      </span>
-    </template>
-    <template #item-type="{ type }">
-      <span v-if="type == 'sell_receive' || type == 'buy_send'" class="text-danger px-1">سند حسابداری</span>
-      <span v-else class="text-success px-1">پرداخت آنلاین</span>
-    </template>
-    <template #item-amount="{ amount }">
-      <span>{{ $filters.formatNumber(amount) }}</span>
-    </template>
-  </EasyDataTable>
+  <!-- دکمه نمایش لیست -->
+  <v-btn icon color="info" class="ml-2" @click="dialog = true">
+    <v-icon>mdi-format-list-bulleted</v-icon>
+    <v-tooltip activator="parent" location="bottom">لیست دریافت‌ها</v-tooltip>
+  </v-btn>
+
+  <!-- دیالوگ نمایش لیست -->
+  <v-dialog v-model="dialog" max-width="900" persistent>
+    <v-card>
+      <v-toolbar color="grey-lighten-4" flat>
+        <v-toolbar-title>
+          <v-icon color="info" class="ml-2">mdi-format-list-bulleted</v-icon>
+          لیست دریافت‌ها
+        </v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn icon @click="dialog = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-toolbar>
+
+      <v-card-text class="pa-0">
+        <v-data-table
+          :headers="headers"
+          :items="items"
+          :search="searchValue"
+          :loading="loading"
+          class="elevation-1"
+          :header-props="{ class: 'custom-header' }"
+          hover
+        >
+          <!-- ستون نوع -->
+          <template v-slot:item.type="{ item }">
+            <v-chip
+              :color="item.type === 'sell_receive' || item.type === 'buy_send' ? 'error' : 'success'"
+              size="small"
+              variant="flat"
+            >
+              {{ item.type === 'sell_receive' || item.type === 'buy_send' ? 'سند حسابداری' : 'پرداخت آنلاین' }}
+            </v-chip>
+          </template>
+
+          <!-- ستون مبلغ -->
+          <template v-slot:item.amount="{ item }">
+            {{ $filters.formatNumber(item.amount) }}
+          </template>
+
+          <!-- ستون عملیات -->
+          <template v-slot:item.operation="{ item }">
+            <v-btn
+              v-if="item.type === 'sell_receive' || item.type === 'buy_send'"
+              color="error"
+              size="default"
+              variant="plain"
+              @click="deleteItem(item.code)"
+            >
+              <v-icon>mdi-trash-can</v-icon>
+              <v-tooltip activator="parent" location="top">حذف</v-tooltip>
+            </v-btn>
+          </template>
+
+          <!-- نمایش پیام خالی بودن جدول -->
+          <template v-slot:no-data>
+            <v-alert type="info" variant="tonal" class="ma-2">
+              اطلاعاتی برای نمایش وجود ندارد
+            </v-alert>
+          </template>
+        </v-data-table>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>
 
-<style scoped></style>
+<style scoped>
+
+</style>

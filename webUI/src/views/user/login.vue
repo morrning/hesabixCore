@@ -77,7 +77,7 @@ export default {
       loading: false,
       captchaLoading: false,
       dialog: false,
-      siteName:'',
+      siteName: '',
       showCaptcha: false,
       errorMsg: self.$t('login.input_fail'),
       captchaImage: '',
@@ -155,20 +155,21 @@ export default {
           const response = await axios.post("/api/user/login", userData, {
             withCredentials: true,
           });
-          if (response.data.Success === true) {
+          if (response.data.Success == true) {
             this.setTokenAndRedirect(response);
           }
-        } catch (error) {
-          const errorData = (error as any).response?.data || {};
-          this.errorMsg = errorData.error || this.$t('login.input_fail');
-          this.dialog = true;
-
-          if (errorData.captcha_required) {
+          if (response.data?.data?.captcha_required == true) {
             this.showCaptcha = true;
             await this.loadCaptcha();
           } else {
             this.showCaptcha = false;
           }
+        } catch (error) {
+          const errorData = (error as any).response?.data || {};
+          this.showCaptcha = true;
+          await this.loadCaptcha();
+          this.errorMsg = errorData.message || errorData.error || this.$t('login.input_fail');
+          this.dialog = true;
         } finally {
           this.loading = false;
         }
@@ -190,7 +191,7 @@ export default {
   mounted() {
     // کپچا در ابتدا نمایش داده نمی‌شه
   },
-  async created(){
+  async created() {
     this.siteName = await getSiteName();
   },
 };

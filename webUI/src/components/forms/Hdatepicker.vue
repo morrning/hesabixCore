@@ -1,9 +1,9 @@
 <template>
   <div>
     <v-text-field v-model="displayDate" :label="label" prepend-inner-icon="mdi-calendar" persistent-placeholder
-      class="v-date-input" :rules="rules" @input="updateDateFromInput" @click:prepend="togglePicker"></v-text-field>
+      :class="['v-date-input', `date-input-${uniqueId}`]" :rules="rules" @input="updateDateFromInput" @click:prepend="togglePicker"></v-text-field>
     <date-picker v-model="displayDate" type="date" format="jYYYY/jMM/jDD" display-format="jYYYY/jMM/jDD"
-      :min="minDatePersian" :max="maxDatePersian" custom-input=".v-date-input" :input-mode="false"
+      :min="minDatePersian" :max="maxDatePersian" :custom-input="`.date-input-${uniqueId}`" :input-mode="true"
       :editable="pickerActive" @close="pickerActive = false"></date-picker>
   </div>
 </template>
@@ -14,7 +14,7 @@ import moment from 'jalali-moment';
 
 export default {
   props: {
-    value: {
+    modelValue: {
       type: String,
       default: '',
     },
@@ -29,42 +29,52 @@ export default {
   },
   data() {
     return {
-      displayDate: '', // تاریخ به فرمت شمسی
+      displayDate: this.modelValue, // مقداردهی اولیه از prop
       pickerActive: false, // کنترل باز شدن تقویم
       minDatePersian: '', // تاریخ شروع سال مالی (شمسی برای پکیج)
       maxDatePersian: '', // تاریخ پایان سال مالی (شمسی برای پکیج)
+      uniqueId: '', // شناسه یکتا برای هر نمونه
+      isInitialized: false, // فلگ برای کنترل مقداردهی اولیه
     };
   },
+  created() {
+    // ایجاد شناسه یکتا برای هر نمونه از کامپوننت
+    this.uniqueId = Math.random().toString(36).substring(2, 15);
+  },
   watch: {
-    displayDate(newVal) {
-      if (newVal) {
-        this.$emit('input', newVal); // ارسال تاریخ شمسی به والد
-      } else {
-        this.$emit('input', '');
+    displayDate(newVal, oldVal) {
+      if (newVal !== oldVal) {
+        this.$emit('update:modelValue', newVal);
       }
     },
-    value(newVal) {
-      if (newVal) {
-        this.displayDate = newVal;
-      } else {
-        this.displayDate = '';
+    modelValue: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal && newVal !== this.displayDate) {
+          this.displayDate = newVal;
+        }
       }
-    },
+    }
   },
   async mounted() {
     await this.fetchYearData();
-    if (!this.value && this.displayDate) {
-      this.$emit('input', this.displayDate);
-    }
   },
   methods: {
     async fetchYearData() {
-
-      axios.get('/api/year/get').then((response) => {
-        this.minDatePersian = response.data.start; // فرمت YYYY/MM/DD شمسی
-        this.maxDatePersian = response.data.end; // فرمت YYYY/MM/DD شمسی
-        this.displayDate = response.data.now; // تاریخ جاری شمسی
-      });
+      try {
+        const response = await axios.get('/api/year/get');
+        this.minDatePersian = response.data.start;
+        this.maxDatePersian = response.data.end;
+        
+        // فقط اگر مقدار اولیه نداریم، از تاریخ جاری استفاده کنیم
+        if (!this.modelValue && !this.isInitialized) {
+          this.displayDate = response.data.now;
+          this.$emit('update:modelValue', response.data.now);
+          this.isInitialized = true;
+        }
+      } catch (error) {
+        console.error('خطا در دریافت اطلاعات سال:', error);
+      }
     },
     updateDateFromInput(value) {
       // بررسی و اعتبارسنجی تاریخ وارد شده توسط کاربر
