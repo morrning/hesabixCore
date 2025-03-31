@@ -1,76 +1,117 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button" class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa fa-history"></i>
-        تاریخچه رویدادها </h3>
+    <!-- هدر -->
+    <v-toolbar color="toolbar" title="تاریخچه رویدادها" flat>
+      <template v-slot:prepend>
+        <v-tooltip text="بازگشت" location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text" icon="mdi-arrow-right" />
+          </template>
+        </v-tooltip>
+      </template>
+      
+    </v-toolbar>
 
-    </div>
-    <div class="block-content pt-0">
-      <div class="row">
-        <div class="col-sm-12 col-md-12">
-          <div class="my-1">
-            <div class="input-group input-group-sm">
-              <span class="input-group-text"><i class="fa fa-search"></i></span>
-              <input v-model="searchValue" class="form-control" type="text" placeholder="جست و جو ...">
-            </div>
-          </div>
-          <EasyDataTable table-class-name="customize-table"
-              :headers="headers"
-              :items="items"
-              alternating
-              :search-value="searchValue"
-              theme-color="#1d90ff"
-              header-text-direction="center"
-              body-text-direction="center"
-              rowsPerPageMessage="تعداد سطر"
-              emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-              rowsOfPageSeparatorMessage="از"
-              :loading="loading"
-          />
-        </div>
-      </div>
-    </div>
-  </div>
+    <v-text-field
+            v-model="search"
+            prepend-inner-icon="mdi-magnify"
+            label="جست و جو ..."
+            variant="outlined"
+            density="compact"
+            hide-details
+            class="mb-0"
+            :rounded="0"
+          ></v-text-field>
+
+      <!-- جدول -->
+      <v-data-table
+        :headers="headers"
+        :items="items"
+        :search="search"
+        :loading="loading"
+        hover
+        :header-props="{ class: 'custom-header' }"
+        class="elevation-1"
+      >
+        <!-- لودینگ -->
+        <template v-slot:loading>
+          <v-skeleton-loader
+            type="table-row"
+            class="my-2"
+          ></v-skeleton-loader>
+        </template>
+
+        <!-- پیام خالی بودن -->
+        <template v-slot:no-data>
+          اطلاعاتی برای نمایش وجود ندارد
+        </template>
+
+        <!-- پیام نتیجه جستجو -->
+        <template v-slot:no-results>
+          نتیجه‌ای یافت نشد
+        </template>
+      </v-data-table>
 </template>
 
 <script>
-
-import axios from "axios";
-import hitable from "../component/hitable.vue";
-import {ref} from "vue";
+import { ref } from 'vue'
+import axios from 'axios'
 
 export default {
-  name: "logs",
-  data: ()=>{return {
-    searchValue: '',
-    loading: ref(true),
-    items:[],
-    headers: [
-      { text: "تاریخ", value: "date" },
-      { text: "کاربر", value: "user"},
-      { text: "توضیحات", value: "des"},
-      { text: "بخش", value: "part"},
-      { text: "آی پی آدرس", value: "ipaddress"},
-    ]
-  }},
-  methods: {
-    loadData(){
-      axios.post('/api/business/logs/' + localStorage.getItem('activeBid'))
-          .then((response)=>{
-            this.items = response.data;
-            this.loading=false;
-          })
+  name: 'logs',
+  data() {
+    return {
+      search: '',
+      loading: true,
+      items: [],
+      headers: [
+        { 
+          title: 'تاریخ',
+          align: 'center',
+          key: 'date',
+        },
+        {
+          title: 'کاربر',
+          align: 'center',
+          key: 'user',
+        },
+        {
+          title: 'توضیحات',
+          align: 'center',
+          key: 'des',
+        },
+        {
+          title: 'بخش',
+          align: 'center',
+          key: 'part',
+        },
+        {
+          title: 'آی پی آدرس',
+          align: 'center',
+          key: 'ipaddress',
+        },
+      ],
     }
   },
-  beforeMount() {
-    this.loadData();
+  methods: {
+    async loadData() {
+      try {
+        const response = await axios.post('/api/business/logs/' + localStorage.getItem('activeBid'))
+        this.items = response.data
+      } catch (error) {
+        console.error('خطا در دریافت اطلاعات:', error)
+      } finally {
+        this.loading = false
+      }
+    }
+  },
+  mounted() {
+    this.loadData()
   }
 }
 </script>
-<style scoped>
 
+<style>
+.v-data-table th {
+  white-space: nowrap;
+}
 </style>

@@ -1,127 +1,171 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button" class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa fa-plug-circle-plus"></i>
-        دسترسی توسعه دهندگان</h3>
-      <div class="block-options">
-        <div class="block-options-item">
-          <button @click="submitNew()" class="btn btn-sm btn-success">ایجاد رابط جدید</button>
-        </div>
-      </div>
-    </div>
-    <div class="block-content pt-1 pb-3">
-      <div class="row">
-        <div class="col-sm-12 col-md-12 m-0 p-0">
-          <div class="mb-1">
-            <div class="input-group input-group-sm">
-              <span class="input-group-text"><i class="fa fa-search"></i></span>
-              <input v-model="searchValue" class="form-control" type="text" placeholder="جست و جو ...">
-            </div>
-          </div>
-          <EasyDataTable table-class-name="customize-table"
-              show-index
-              alternating
+<!-- هدر -->
+<v-toolbar color="toolbar" flat>
+      <template v-slot:prepend>
+        <v-tooltip text="بازگشت" location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text" icon="mdi-arrow-right" />
+          </template>
+        </v-tooltip>
+      </template>
+      <v-toolbar-title>
+        دسترسی توسعه دهندگان
+      </v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn color="success" @click="submitNew" prepend-icon="mdi-plus">
+        ایجاد رابط جدید
+      </v-btn>
+    </v-toolbar>
+  <v-text-field
+            v-model="search"
+            prepend-inner-icon="mdi-magnify"
+            label="جست و جو ..."
+            variant="outlined"
+            density="compact"
+            hide-details
+            class="mb-0"
+            :rounded="0"
+          ></v-text-field>
+   
+      <!-- جدول -->
+      <v-data-table
+        :headers="headers"
+        :items="items"
+        :search="search"
+        :loading="loading"
+        hover
+        :header-props="{ class: 'custom-header' }"
 
-              :search-value="searchValue"
-              :headers="headers"
-              :items="items"
-              theme-color="#1d90ff"
-              header-text-direction="center"
-              body-text-direction="center"
-              rowsPerPageMessage="تعداد سطر"
-              emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-              rowsOfPageSeparatorMessage="از"
-              :loading = "loading"
+        class="elevation-1"
+      >
+        <!-- ستون عملیات -->
+        <template v-slot:item.operation="{ item }">
+          <v-btn
+            icon="mdi-delete"
+            color="error"
+            size="small"
+            variant="text"
+            @click="deleteItem(item.raw.token)"
           >
-            <template #item-operation="{ token }">
-              <span  class="text-danger px-1" @click="deleteItem(token)">
-                <i class="fa fa-trash"></i>
-              </span>
-            </template>
-          </EasyDataTable>
-        </div>
-      </div>
-    </div>
-  </div>
+          </v-btn>
+        </template>
+
+        <!-- لودینگ -->
+        <template v-slot:loading>
+          <v-skeleton-loader
+            type="table-row"
+            class="my-2"
+          ></v-skeleton-loader>
+        </template>
+
+        <!-- پیام خالی بودن -->
+        <template v-slot:no-data>
+          اطلاعاتی برای نمایش وجود ندارد
+        </template>
+
+        <!-- پیام نتیجه جستجو -->
+        <template v-slot:no-results>
+          نتیجه‌ای یافت نشد
+        </template>
+      </v-data-table>
 </template>
 
 <script>
-import axios from "axios";
-import Swal from "sweetalert2";
-import {ref} from "vue";
+import { ref } from 'vue'
+import axios from 'axios'
+import Swal from 'sweetalert2'
+
 export default {
-  name: "list",
-  data: ()=>{return {
-    searchValue: '',
-    loading: ref(true),
-    items:[],
-    headers: [
-      { text: "توکن دسترسی", value: "token" , sortable: true},
-      { text: "مهر زمان انقضا", value: "dateExpire"},
-      { text: "عملیات", value: "operation"},
-    ]
-  }},
+  name: 'list',
+  data() {
+    return {
+      search: '',
+      loading: true,
+      items: [],
+      headers: [
+        { 
+          title: 'توکن دسترسی',
+          align: 'center',
+          key: 'token',
+          sortable: true
+        },
+        {
+          title: 'مهر زمان انقضا',
+          align: 'center',
+          key: 'dateExpire'
+        },
+        {
+          title: 'عملیات',
+          align: 'center',
+          key: 'operation',
+          sortable: false
+        }
+      ]
+    }
+  },
   methods: {
-    loadData(){
-      this.loading = true;
-      axios.post('/api/business/api/list')
-          .then((response)=>{
-            this.items = response.data;
-            this.loading = false;
-          })
+    async loadData() {
+      this.loading = true
+      try {
+        const response = await axios.post('/api/business/api/list')
+        this.items = response.data
+      } catch (error) {
+        console.error('خطا در دریافت اطلاعات:', error)
+      } finally {
+        this.loading = false
+      }
     },
-    submitNew(){
-      this.loading = true;
-      axios.post('/api/business/api/new')
-          .then((response)=>{
-            this.items.push(response.data);
-            this.loading = false;
-            Swal.fire({
-              text:'توکن ایجاد شد. رابط توکن: ' + response.data.token,
-              confirmButtonText: 'قبول',
-            })
-          })
+
+    async submitNew() {
+      this.loading = true
+      try {
+        const response = await axios.post('/api/business/api/new')
+        this.items.push(response.data)
+        await Swal.fire({
+          text: 'توکن ایجاد شد. رابط توکن: ' + response.data.token,
+          confirmButtonText: 'قبول',
+        })
+      } catch (error) {
+        console.error('خطا در ایجاد توکن:', error)
+      } finally {
+        this.loading = false
+      }
     },
-    deleteItem(token){
-      Swal.fire({
+
+    async deleteItem(token) {
+      const result = await Swal.fire({
         text: 'آیا برای این مورد مطمئن هستید؟ دسترسی برنامه‌هایی که از این رابط استفاده می‌کنند قطع خواهد شد.',
         showCancelButton: true,
         confirmButtonText: 'بله',
-        cancelButtonText: `خیر`,
-        icon:'warning'
-      }).then((result) => {
-        /* Read more about isConfirmed, isDenied below */
-        if (result.isConfirmed) {
-          axios.post('/api/business/api/remove/' + token).then((response)=>{
-            if(response.data.result == 1){
-              let index = 0;
-              for(let z=0; z<this.items.length; z++){
-                index ++;
-                if(this.items[z]['token'] == token){
-                  this.items.splice(index -1 ,1);
-                }
-              }
-              Swal.fire({
-                text: 'توکن با موفقیت حذف شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              });
-            }
-          })
-        }
+        cancelButtonText: 'خیر',
+        icon: 'warning'
       })
+
+      if (result.isConfirmed) {
+        try {
+          const response = await axios.post('/api/business/api/remove/' + token)
+          if (response.data.result === 1) {
+            this.items = this.items.filter(item => item.token !== token)
+            await Swal.fire({
+              text: 'توکن با موفقیت حذف شد.',
+              icon: 'success',
+              confirmButtonText: 'قبول'
+            })
+          }
+        } catch (error) {
+          console.error('خطا در حذف توکن:', error)
+        }
+      }
     }
   },
-  beforeMount() {
-    this.loadData();
+  mounted() {
+    this.loadData()
   }
 }
 </script>
 
-<style scoped>
-
+<style>
+.v-data-table th {
+  white-space: nowrap;
+}
 </style>
