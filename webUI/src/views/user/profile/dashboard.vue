@@ -148,7 +148,7 @@ import { required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
 import { ref } from "vue";
 import VueApexCharts from "vue3-apexcharts";
-
+import { getBasePath } from "@/hesabixConfig.js";
 export default {
   name: "Dashboard",
   components: {
@@ -261,15 +261,51 @@ export default {
         this.errorDialog = true;
         return;
       }
-      navigator.clipboard
-        .writeText(this.referralLink)
-        .then(() => {
+
+      // روش اول: استفاده از Clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(this.referralLink)
+          .then(() => {
+            this.copySuccessDialog = true;
+          })
+          .catch(() => {
+            // اگر روش اول شکست خورد، از روش دوم استفاده می‌کنیم
+            this.fallbackCopyToClipboard(this.referralLink);
+          });
+      } else {
+        // اگر Clipboard API در دسترس نیست، از روش دوم استفاده می‌کنیم
+        this.fallbackCopyToClipboard(this.referralLink);
+      }
+    },
+    fallbackCopyToClipboard(text) {
+      try {
+        // ایجاد یک المان موقت
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        
+        // تنظیمات استایل برای مخفی کردن المان
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.opacity = '0';
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        // تلاش برای کپی کردن
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
           this.copySuccessDialog = true;
-        })
-        .catch(() => {
-          this.errorMessage = this.$t("user.copy_failed");
-          this.errorDialog = true;
-        });
+        } else {
+          throw new Error('Copy failed');
+        }
+      } catch (err) {
+        this.errorMessage = this.$t("user.copy_failed");
+        this.errorDialog = true;
+      }
     },
     async fetchMarketingData() {
       try {
@@ -321,17 +357,17 @@ export default {
     },
   },
   async mounted() {
-    try {
+   
       const res = await axios.post("/api/user/current/info");
       this.user_email = res.data.email;
       this.user_fullname = res.data.fullname;
       this.user_mobile = res.data.mobile;
       this.referralCode = res.data.invateCode || "";
       this.referralLink = this.referralCode
-        ? `${window.location.origin}/ms/${this.referralCode}`
+        ? `${window.location.origin + getBasePath()}ms/${this.referralCode}`
         : "";
       await this.fetchMarketingData();
-    } catch (error) {
+     try {} catch (error) {
       this.errorMessage =
         error.response?.data?.message || this.$t("dialog.error_unknown");
       this.errorDialog = true;
