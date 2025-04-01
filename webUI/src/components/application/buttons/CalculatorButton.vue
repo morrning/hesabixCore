@@ -59,6 +59,7 @@
         previous: "",
         operation: null,
         activeButton: null,
+        waitingForPercent: false,
         numberButtons: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."], // دکمه‌های اعداد
         operatorButtons: ["+", "-", "*", "/", "%"], // دکمه‌های عملگر
         actionButtons: ["C", "="], // دکمه‌های عملیاتی
@@ -104,12 +105,25 @@
       },
       setOperation(op) {
         if (this.current === "") return;
-        if (this.previous !== "") {
-          this.calculate();
+
+        if (op === "%") {
+          if (this.operation === "+" || this.operation === "-") {
+            const base = parseFloat(this.previous);
+            const percentage = (base * parseFloat(this.current)) / 100;
+            this.current = percentage.toString();
+            this.calculate();
+          } else {
+            const curr = parseFloat(this.current);
+            this.current = (curr / 100).toString();
+          }
+        } else {
+          if (this.previous !== "") {
+            this.calculate();
+          }
+          this.operation = op;
+          this.previous = this.current;
+          this.current = "";
         }
-        this.operation = op;
-        this.previous = this.current;
-        this.current = "";
       },
       calculate() {
         if (this.current === "" || this.previous === "") return;
@@ -131,9 +145,10 @@
           case "/":
             result = curr !== 0 ? prev / curr : "خطا";
             break;
-          case "%":
-            result = (prev * curr) / 100;
-            break;
+        }
+  
+        if (typeof result === 'number' && !Number.isInteger(result)) {
+          result = parseFloat(result.toFixed(4));
         }
   
         this.display = result.toString();
@@ -164,12 +179,11 @@
           event.preventDefault();
         }
       },
-      // تعیین رنگ دکمه‌ها بر اساس نوع
       getButtonColor(btn) {
-        if (this.numberButtons.includes(btn)) return "blue darken-5"; // رنگ اعداد
-        if (this.operatorButtons.includes(btn)) return "gray darken-1"; // رنگ عملگرها
-        if (this.actionButtons.includes(btn)) return "red lighten-1"; // رنگ دکمه‌های عملیاتی
-        return "grey lighten-4"; // رنگ پیش‌فرض
+        if (this.numberButtons.includes(btn)) return "blue darken-5";
+        if (this.operatorButtons.includes(btn)) return "gray darken-1";
+        if (this.actionButtons.includes(btn)) return "red lighten-1";
+        return "grey lighten-4";
       },
     },
   };
@@ -186,9 +200,8 @@
     box-shadow: none !important;
   }
   
-  /* تغییر رنگ لحظه‌ای دکمه */
   .active-btn {
-    background-color: #0288d1 !important; /* آبی تیره‌تر برای حالت فعال */
+    background-color: #0288d1 !important;
     color: white !important;
     transition: background-color 0.1s ease;
   }

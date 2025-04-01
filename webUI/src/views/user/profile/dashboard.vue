@@ -83,8 +83,8 @@
               <v-col cols="12">
                 <v-card>
                   <v-card-title>{{ $t('marketing.recent_users') }}</v-card-title>
-                  <v-data-table :header-props="{ class: 'custom-header' }" :headers="computedHeaders" :items="recentUsers" :loading="loading" hide-default-footer
-                    class="elevation-1">
+                  <v-data-table :header-props="{ class: 'custom-header' }" :headers="computedHeaders"
+                    :items="recentUsers" :loading="loading" hide-default-footer class="elevation-1">
                     <!-- اسلات سفارشی برای ستون وضعیت -->
                     <template v-slot:item.active="{ item }">
                       <v-icon :color="item.active ? 'green' : 'red'" small>
@@ -282,21 +282,21 @@ export default {
         // ایجاد یک المان موقت
         const textArea = document.createElement("textarea");
         textArea.value = text;
-        
+
         // تنظیمات استایل برای مخفی کردن المان
         textArea.style.position = 'fixed';
         textArea.style.top = '0';
         textArea.style.left = '0';
         textArea.style.opacity = '0';
-        
+
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        
+
         // تلاش برای کپی کردن
         const successful = document.execCommand('copy');
         document.body.removeChild(textArea);
-        
+
         if (successful) {
           this.copySuccessDialog = true;
         } else {
@@ -357,7 +357,7 @@ export default {
     },
   },
   async mounted() {
-   
+    try {
       const res = await axios.post("/api/user/current/info");
       this.user_email = res.data.email;
       this.user_fullname = res.data.fullname;
@@ -367,7 +367,7 @@ export default {
         ? `${window.location.origin + getBasePath()}ms/${this.referralCode}`
         : "";
       await this.fetchMarketingData();
-     try {} catch (error) {
+    } catch (error) {
       this.errorMessage =
         error.response?.data?.message || this.$t("dialog.error_unknown");
       this.errorDialog = true;
