@@ -102,16 +102,7 @@
           <v-card-text>
             <v-row>
               <v-col cols="12" md="4">
-                <v-select
-                  v-model="item.id"
-                  :items="formattedCostItems"
-                  item-title="label"
-                  item-value="id"
-                  label="مرکز هزینه"
-                  variant="outlined"
-                  density="compact"
-                  return-object
-                ></v-select>
+                <Htabletreeselect v-model="item.id" :items="listscosts" label="مرکز هزینه" />
               </v-col>
               <v-col cols="12" md="4">
                 <Hnumberinput
@@ -203,19 +194,18 @@ import 'vue-loading-overlay/dist/css/index.css';
 import archiveUpload from "../component/archive/archiveUpload.vue";
 import Hdatepicker from "@/components/forms/Hdatepicker.vue";
 import Hnumberinput from "@/components/forms/Hnumberinput.vue";
-import Treeselect from 'vue3-treeselect'
+import Htabletreeselect from '@/components/forms/Htabletreeselect.vue'
 // import the styles
-import 'vue3-treeselect/dist/vue3-treeselect.css'
 import quickAdd from "../component/person/quickAdd.vue";
 export default {
   name: "mod",
   components: {
     Loading,
-    Treeselect,
     archiveUpload,
     quickAdd,
     Hdatepicker,
-    Hnumberinput
+    Hnumberinput,
+    Htabletreeselect,
   },
   data: () => {
     return {

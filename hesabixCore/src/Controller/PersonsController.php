@@ -543,15 +543,11 @@ class PersonsController extends AbstractController
             }
 
             if ($include) {
-                $response[] = [
-                    'id' => $person->getId(),
-                    'name' => $person->getName(),
-                    'nikename' => $person->getNikename(),
-                    'code' => $person->getCode(),
-                    'bs' => $bs, // بستانکار
-                    'bd' => $bd, // بدهکار
-                    'balance' => $balance, // تراز
-                ];
+                $result =  Explore::ExplorePerson($person, $entityManager->getRepository(PersonType::class)->findAll());
+                $result['bs'] = $bs;
+                $result['bd'] = $bd;
+                $result['balance'] = $balance;
+                $response[] = $result;
             }
         }
 
@@ -1059,14 +1055,14 @@ class PersonsController extends AbstractController
         if (!$acc) {
             throw $this->createAccessDeniedException();
         }
-    
+
         // دریافت پارامترها
         $params = json_decode($request->getContent(), true) ?? [];
         $page = (int) ($params['page'] ?? 1);
         $itemsPerPage = (int) ($params['itemsPerPage'] ?? 10);
         $search = $params['search'] ?? '';
         $dateFilter = $params['dateFilter'] ?? 'all';
-    
+
         // کوئری پایه برای اسناد
         $queryBuilder = $entityManager->getRepository(HesabdariDoc::class)
             ->createQueryBuilder('d')
@@ -1078,13 +1074,13 @@ class PersonsController extends AbstractController
             ->andWhere('d.year = :year')
             ->andWhere('d.money = :money')
             ->setParameters([
-                'bid' => $acc['bid'],
-                'type' => 'person_receive',
-                'year' => $acc['year'],
-                'money' => $acc['money'],
-            ])
+                    'bid' => $acc['bid'],
+                    'type' => 'person_receive',
+                    'year' => $acc['year'],
+                    'money' => $acc['money'],
+                ])
             ->orderBy('d.id', 'DESC');
-    
+
         // جست‌وجو
         if (!empty($search)) {
             $queryBuilder->andWhere(
@@ -1095,7 +1091,7 @@ class PersonsController extends AbstractController
                 )
             )->setParameter('search', "%$search%");
         }
-    
+
         // فیلتر تاریخ
         $today = $jdate->GetTodayDate();
         switch ($dateFilter) {
@@ -1123,14 +1119,14 @@ class PersonsController extends AbstractController
             default:
                 break;
         }
-    
+
         // محاسبه تعداد کل
         $totalQuery = (clone $queryBuilder)
             ->select('COUNT(DISTINCT d.id) as total')
             ->getQuery()
             ->getSingleResult();
         $total = (int) $totalQuery['total'];
-    
+
         // گرفتن اسناد با صفحه‌بندی
         $docs = $queryBuilder
             ->setFirstResult(($page - 1) * $itemsPerPage)
@@ -1173,7 +1169,7 @@ class PersonsController extends AbstractController
                 'persons' => $persons[$doc['id']] ?? [],
             ];
         }
-    
+
         return $this->json([
             'items' => $items,
             'total' => $total,
