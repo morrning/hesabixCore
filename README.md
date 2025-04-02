@@ -1,61 +1,105 @@
-# **hesabix Core**
+# **هسابیکس**
 
+هسابیکس اولین نرم‌افزار حسابداری متن‌باز به زبان فارسی با رابط کاربری تحت وب است.
+این پروژه فقط سرور API برای استفاده با رابط کاربری وب است. برای مشاهده رابط کاربری به [https://github.com/morrning/hesabixUI](https://github.com/morrning/hesabixUI) مراجعه کنید.
+برای مشاهده نسخه نمایشی پروژه به وب‌سایت [https://hesabix.ir](https://hesabix.ir) مراجعه کنید.
 
-Hesabix is first open source accounting software in persian language with web interface.
-This project is just API server for use with web user interface visit [https://github.com/morrning/hesabixUI](https://github.com/morrning/hesabixUI)
-for see full project Demo see project website at [https://hesabix.ir](https://hesabix.ir)
+## پیش‌نیازهای نصب
 
-## Before Installation
+برای نصب هسته هسابیکس به ابزارهای زیر نیاز دارید:
 
-For install hesabixCore you need this tools
-
-* Web server : Apache,NginX,...
-* Database: Mysql, mariaDB,PostgreSql,....
-* PHP: php : +8.1
-* php extentions: php-Intl, php-mbstring, php-http, php-raphf, php-zip, php-gd
+* وب سرور: Apache، NginX و...
+* پایگاه داده: Mysql، mariaDB، PostgreSql و...
+* PHP: نسخه 8.1 به بالا
+* افزونه‌های PHP: php-Intl، php-mbstring، php-http، php-raphf، php-zip، php-gd
 * composer
 
-## Installation
+## نصب
 
-* Copy or clone project in web server directory . if you use shared hosting panels like cpanel or directadmin copy files in root directory and public_html folder will be rewrited.
-* create database in your DBMS and edit .env file in root of project
-* Install dependencies with run this command
+* پروژه را در پوشه وب سرور کپی یا کلون کنید. اگر از کنترل پنل‌های اشتراکی مانند cpanel یا directadmin استفاده می‌کنید، فایل‌ها را در پوشه اصلی کپی کنید و پوشه public_html بازنویسی خواهد شد.
+* در سیستم مدیریت پایگاه داده خود یک پایگاه داده ایجاد کنید و فایل .env را در پوشه اصلی پروژه ویرایش کنید.
+* وابستگی‌ها را با اجرای این دستور نصب کنید:
 
 ```
 composer install
 ```
 
-* edit .env file and set database connection string with your username and password and name of database
-* create local env file with run this command
+* فایل .env را ویرایش کرده و رشته اتصال پایگاه داده را با نام کاربری، رمز عبور و نام پایگاه داده خود تنظیم کنید.
+* فایل محیط محلی را با اجرای این دستور ایجاد کنید:
 
 ```
 composer dump-env prod
-composer dump-env prod  //only for development
+composer dump-env dev  // فقط برای محیط توسعه
 ```
 
-* login to your database managment like phpmyadmin and import file located in hesabixBackup/databaseFiles/hesabix-db-default.sql
-* go to hesabixCore folder in cli and update database with this command
+* وارد سیستم مدیریت پایگاه داده خود مانند phpmyadmin شوید و فایل موجود در hesabixBackup/databaseFiles/hesabix-db-default.sql را وارد کنید.
+* در خط فرمان به پوشه hesabixCore بروید و پایگاه داده را با این دستور به‌روز کنید:
 
 ```
 php bin/console doctrine:schema:update --force --complete
 ```
 
-open root domain address in browser you should see hesabix api main page.
+آدرس دامنه اصلی را در مرورگر باز کنید، باید صفحه اصلی API هسابیکس را مشاهده کنید.
 
-## Connect to email service
+## اتصال به سرویس ایمیل
 
-For connect hesabix to your email service edit .env.local.php file located in hesabixCore folder and set your email server connection string in MAILER_DSN parameter. for more information about connection strings see symfony mailer documents.  [Click Here](https://symfony.com/doc/current/mailer.html#transport-setup)
+برای اتصال هسابیکس به سرویس ایمیل خود، فایل .env.local.php را در پوشه hesabixCore ویرایش کنید و رشته اتصال سرور ایمیل خود را در پارامتر MAILER_DSN تنظیم کنید. برای اطلاعات بیشتر درباره رشته‌های اتصال به مستندات symfony mailer مراجعه کنید. [اینجا کلیک کنید](https://symfony.com/doc/current/mailer.html#transport-setup)
 
-after set connection string edit mailer.yaml located in configs folder and set header for send emails.
+پس از تنظیم رشته اتصال، فایل mailer.yaml را در پوشه configs ویرایش کرده و هدر برای ارسال ایمیل‌ها را تنظیم کنید.
 
-## update software
+## به‌روزرسانی نرم‌افزار
 
-For update software with last changes that published in hesabixCore folder run this command
+برای به‌روزرسانی نرم‌افزار با آخرین تغییرات منتشر شده در پوشه hesabixCore، این دستور را اجرا کنید:
 
 ```
 php bin/console hesabix:update
 ```
-## Donation
 
-for Donate developers please use this link
+## حمایت مالی
+
+برای حمایت مالی از توسعه‌دهندگان لطفاً از این لینک استفاده کنید:
 [https://zarinp.al/hesabix.ir](https://zarinp.al/hesabix.ir)
+
+## فرآیند ساخت رابط کاربری
+
+## راه‌اندازی پروژه
+
+```sh
+npm install
+```
+
+### کامپایل و بارگذاری خودکار برای توسعه
+
+```sh
+npm run dev
+npm run dev -- --host // برای استفاده در شبکه‌های خارجی
+```
+
+پس از اجرای این دستور می‌توانید با آدرس [http://localhost:5173](http://localhost:5173) در مرورگر خود دسترسی داشته باشید.
+
+### پیکربندی آدرس API در hesabixConfig.js
+به صورت پیش‌فرض، آدرس API در مسیر اصلی (/) و رابط کاربری وب در زیرپوشه /u/ قرار دارد.
+
+مثال:
+- آدرس API: https://myaddress.com
+- آدرس رابط کاربری وب: https://myaddress.com/u/
+
+اگر شما یک توسعه‌دهنده هستید و می‌خواهید با دستورات `npm run dev` یا `npm run dev --host` کار کنید، باید متغیری با نام `dev_api_url` تعریف کنید که آدرس API خارجی را مشخص می‌کند، مثلاً:
+
+```js
+return 'https://next.hesabix.ir';
+```
+
+### بررسی نوع، کامپایل و فشرده‌سازی برای تولید
+
+```sh
+npm run build-only
+```
+
+**تمام فایل‌های خروجی در پوشه public_html/u تولید خواهند شد که قابل اجرا روی وب سرور خواهند بود**
+
+### مشارکت‌کنندگان
+
+<a href="https://github.com/morrning/hesabixUI/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=morrning/hesabixUI" />
+</a>
