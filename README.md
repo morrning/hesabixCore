@@ -1,12 +1,11 @@
-# **هسابیکس**
+# **حسابیکس**
 
-هسابیکس اولین نرم‌افزار حسابداری متن‌باز به زبان فارسی با رابط کاربری تحت وب است.
-این پروژه فقط سرور API برای استفاده با رابط کاربری وب است. برای مشاهده رابط کاربری به [https://github.com/morrning/hesabixUI](https://github.com/morrning/hesabixUI) مراجعه کنید.
+حسابیکس اولین نرم‌افزار حسابداری متن‌باز به زبان فارسی با رابط کاربری تحت وب است.
 برای مشاهده نسخه نمایشی پروژه به وب‌سایت [https://hesabix.ir](https://hesabix.ir) مراجعه کنید.
 
 ## پیش‌نیازهای نصب
 
-برای نصب هسته هسابیکس به ابزارهای زیر نیاز دارید:
+برای نصب هسته حسابیکس به ابزارهای زیر نیاز دارید:
 
 * وب سرور: Apache، NginX و...
 * پایگاه داده: Mysql، mariaDB، PostgreSql و...
@@ -39,11 +38,11 @@ composer dump-env dev  // فقط برای محیط توسعه
 php bin/console doctrine:schema:update --force --complete
 ```
 
-آدرس دامنه اصلی را در مرورگر باز کنید، باید صفحه اصلی API هسابیکس را مشاهده کنید.
+آدرس دامنه اصلی را در مرورگر باز کنید، باید صفحه اصلی API حسابیکس را مشاهده کنید.
 
 ## اتصال به سرویس ایمیل
 
-برای اتصال هسابیکس به سرویس ایمیل خود، فایل .env.local.php را در پوشه hesabixCore ویرایش کنید و رشته اتصال سرور ایمیل خود را در پارامتر MAILER_DSN تنظیم کنید. برای اطلاعات بیشتر درباره رشته‌های اتصال به مستندات symfony mailer مراجعه کنید. [اینجا کلیک کنید](https://symfony.com/doc/current/mailer.html#transport-setup)
+برای اتصال حسابیکس به سرویس ایمیل خود، فایل .env.local.php را در پوشه hesabixCore ویرایش کنید و رشته اتصال سرور ایمیل خود را در پارامتر MAILER_DSN تنظیم کنید. برای اطلاعات بیشتر درباره رشته‌های اتصال به مستندات symfony mailer مراجعه کنید. [اینجا کلیک کنید](https://symfony.com/doc/current/mailer.html#transport-setup)
 
 پس از تنظیم رشته اتصال، فایل mailer.yaml را در پوشه configs ویرایش کرده و هدر برای ارسال ایمیل‌ها را تنظیم کنید.
 
@@ -55,10 +54,6 @@ php bin/console doctrine:schema:update --force --complete
 php bin/console hesabix:update
 ```
 
-## حمایت مالی
-
-برای حمایت مالی از توسعه‌دهندگان لطفاً از این لینک استفاده کنید:
-[https://zarinp.al/hesabix.ir](https://zarinp.al/hesabix.ir)
 
 ## فرآیند ساخت رابط کاربری
 
@@ -77,7 +72,7 @@ npm run dev -- --host // برای استفاده در شبکه‌های خارج
 
 پس از اجرای این دستور می‌توانید با آدرس [http://localhost:5173](http://localhost:5173) در مرورگر خود دسترسی داشته باشید.
 
-### پیکربندی آدرس API در hesabixConfig.js
+### پیکربندی آدرس API در حالت توسعه
 به صورت پیش‌فرض، آدرس API در مسیر اصلی (/) و رابط کاربری وب در زیرپوشه /u/ قرار دارد.
 
 مثال:
@@ -103,3 +98,8 @@ npm run build-only
 <a href="https://github.com/morrning/hesabixUI/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=morrning/hesabixUI" />
 </a>
+
+## حمایت مالی
+
+برای حمایت مالی از توسعه‌دهندگان لطفاً از این لینک استفاده کنید:
+[https://zarinp.al/hesabix.ir](https://zarinp.al/hesabix.ir)
