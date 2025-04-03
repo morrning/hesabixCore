@@ -219,7 +219,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import axios from 'axios'
-import { VDataTable } from 'vuetify/components'
+import { VDataTable as DataTable } from 'vuetify/components'
 import Hdatepicker from '@/components/forms/Hdatepicker.vue'
 import Hnumberinput from '@/components/forms/Hnumberinput.vue'
 
@@ -243,7 +243,7 @@ interface Item {
 export default defineComponent({
   name: 'Rec',
   components: {
-    VDataTable,
+    DataTable,
     Hdatepicker,
     Hnumberinput
   },
