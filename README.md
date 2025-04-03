@@ -98,7 +98,9 @@ npm run build-only
 <a href="https://github.com/morrning/hesabixUI/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=morrning/hesabixUI" />
 </a>
-
+<a href="https://github.com/morrning/hesabixCore/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=morrning/hesabixCore" />
+</a>
 ## حمایت مالی
 
 برای حمایت مالی از توسعه‌دهندگان لطفاً از این لینک استفاده کنید:
