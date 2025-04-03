@@ -423,55 +423,55 @@ export default {
         return;
       }
       
-      //submit data
-      this.loading = true;
+        //submit data
+        this.loading = true;
       let data = {
-        'bid': localStorage.getItem('activeBid'),
-        'name': this.content.name,
-        'legal_name': this.content.legal_name,
-        'field': this.content.field,
-        'type': this.content.type,
-        'shenasemeli': this.content.shenasemeli,
-        'codeeqtesadi': this.content.codeeqtesadi,
-        'shomaresabt': this.content.shomaresabt,
-        'country': this.content.country,
-        'ostan': this.content.ostan,
-        'shahrestan': this.content.shahrestan,
-        'postalcode': this.content.postalcode,
-        'tel': this.content.tel,
-        'mobile': this.content.mobile,
-        'address': this.content.address,
-        'website': this.content.website,
-        'email': this.content.email,
-        'arzmain': this.content.arzmain,
-        'maliyatafzode': this.content.maliyatafzode,
-        'shortlinks': this.content.shortlinks,
-        'walletEnabled': this.content.walletEnabled,
-        'walletMatchBank': this.content.walletMatchBank,
-        'year': this.content.year,
-        'commodityUpdateBuyPriceAuto': this.content.updateBuyPrice,
-        'commodityUpdateSellPriceAuto': this.content.updateSellPrice,
-        'profitCalcType': this.content.profitCalcType
+          'bid': localStorage.getItem('activeBid'),
+          'name': this.content.name,
+          'legal_name': this.content.legal_name,
+          'field': this.content.field,
+          'type': this.content.type,
+          'shenasemeli': this.content.shenasemeli,
+          'codeeqtesadi': this.content.codeeqtesadi,
+          'shomaresabt': this.content.shomaresabt,
+          'country': this.content.country,
+          'ostan': this.content.ostan,
+          'shahrestan': this.content.shahrestan,
+          'postalcode': this.content.postalcode,
+          'tel': this.content.tel,
+          'mobile': this.content.mobile,
+          'address': this.content.address,
+          'website': this.content.website,
+          'email': this.content.email,
+          'arzmain': this.content.arzmain,
+          'maliyatafzode': this.content.maliyatafzode,
+          'shortlinks': this.content.shortlinks,
+          'walletEnabled': this.content.walletEnabled,
+          'walletMatchBank': this.content.walletMatchBank,
+          'year': this.content.year,
+          'commodityUpdateBuyPriceAuto': this.content.updateBuyPrice,
+          'commodityUpdateSellPriceAuto': this.content.updateSellPrice,
+          'profitCalcType': this.content.profitCalcType
       };
 
       axios.post('/api/business/insert', data)
-        .then((response) => {
-          this.loading = false;
-          if (response.data.result == 1) {
-            Swal.fire({
-              text: 'با موفقیت ثبت شد.',
-              icon: 'success',
-              confirmButtonText: 'قبول',
-            })
-          }
-          else if (response.data.result === 0) {
-            Swal.fire({
-              text: 'تکمیل موارد ستاره دار الزامی است.',
-              icon: 'error',
-              confirmButtonText: 'قبول'
-            });
-          }
-        })
+          .then((response) => {
+            this.loading = false;
+            if (response.data.result == 1) {
+              Swal.fire({
+                text: 'با موفقیت ثبت شد.',
+                icon: 'success',
+                confirmButtonText: 'قبول',
+              })
+            }
+            else if (response.data.result === 0) {
+              Swal.fire({
+                text: 'تکمیل موارد ستاره دار الزامی است.',
+                icon: 'error',
+                confirmButtonText: 'قبول'
+              });
+            }
+          })
         .catch((error) => {
           this.loading = false;
           Swal.fire({

@@ -63,6 +63,11 @@
         <v-btn v-bind="props" icon="mdi-table-cog" color="primary" @click="dialogColumns = true" />
       </template>
     </v-tooltip>
+    <v-tooltip :text="$t('dialog.delete_group')" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" icon="mdi-trash-can" color="red" @click="deleteGroup" />
+      </template>
+    </v-tooltip>
   </v-toolbar>
 
   <v-text-field :loading="loading" color="green" class="mb-0 pt-0 rounded-0" hide-details="auto" density="compact"
@@ -493,6 +498,53 @@ onMounted(() => {
   fetchPersonTypes();
   fetchData();
 });
+
+const deleteGroup = async () => {
+  if (selectedItems.value.length === 0) {
+    Swal.fire({
+      text: 'هیچ شخصی برای حذف انتخاب نشده است',
+      icon: 'warning',
+      confirmButtonText: 'قبول',
+    });
+    return;
+  }
+
+  const result = await Swal.fire({
+    text: 'آیا از حذف اشخاص انتخاب‌شده اطمینان دارید؟',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'بله',
+    cancelButtonText: 'خیر',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      loading.value = true;
+      const codes = selectedItems.value.map(item => item.code);
+      const response = await axios.post('/api/person/deletegroup', { codes });
+      if (response.data.Success) {
+        Swal.fire({
+          text: response.data.result.ignored
+            ? 'برخی اشخاص به دلیل استفاده در اسناد حذف نشدند'
+            : 'اشخاص با موفقیت حذف شدند',
+          icon: response.data.result.ignored ? 'warning' : 'success',
+          confirmButtonText: 'قبول',
+        });
+        selectedItems.value = [];
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      Swal.fire({
+        text: 'خطا در حذف گروهی: ' + (error.response?.data?.detail || error.message),
+        icon: 'error',
+        confirmButtonText: 'قبول',
+      });
+    } finally {
+      loading.value = false;
+    }
+  }
+};
 </script>
 
 <style></style>

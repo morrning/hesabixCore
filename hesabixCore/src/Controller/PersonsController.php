@@ -1465,4 +1465,68 @@ class PersonsController extends AbstractController
         }
         return new Response(json_encode($rows));
     }
+
+    #[Route('/api/person/deletegroup', name: 'app_persons_delete_group', methods: ['POST'])]
+    public function app_persons_delete_group(
+        Extractor $extractor,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
+        $acc = $access->hasRole('person');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = json_decode($request->getContent(), true);
+        if (!isset($params['codes']) || !is_array($params['codes'])) {
+            return $this->json(['Success' => false, 'message' => 'لیست کدهای اشخاص ارسال نشده است'], 400);
+        }
+
+        $hasIgnored = false;
+        $deletedCount = 0;
+
+        foreach ($params['codes'] as $code) {
+            $person = $entityManager->getRepository(Person::class)->findOneBy([
+                'bid' => $acc['bid'],
+                'code' => $code
+            ]);
+
+            if (!$person) {
+                $hasIgnored = true;
+                continue;
+            }
+
+            // بررسی اسناد حسابداری
+            $docs = $entityManager->getRepository(HesabdariRow::class)->findBy(['bid' => $acc['bid'], 'person' => $person]);
+            if (count($docs) > 0) {
+                $hasIgnored = true;
+                continue;
+            }
+
+            // بررسی اسناد انبار
+            $storeDocs = $entityManager->getRepository(StoreroomTicket::class)->findBy(['bid' => $acc['bid'], 'Person' => $person]);
+            if (count($storeDocs) > 0) {
+                $hasIgnored = true;
+                continue;
+            }
+
+            $personName = $person->getNikename();
+            $entityManager->remove($person);
+            $log->insert('اشخاص', 'شخص با نام ' . $personName . ' حذف شد.', $this->getUser(), $acc['bid']->getId());
+            $deletedCount++;
+        }
+
+        $entityManager->flush();
+
+        return $this->json([
+            'Success' => true,
+            'result' => [
+                'ignored' => $hasIgnored,
+                'deletedCount' => $deletedCount,
+                'message' => $hasIgnored ? 'برخی اشخاص به دلیل استفاده در اسناد حذف نشدند' : 'همه اشخاص با موفقیت حذف شدند'
+            ]
+        ]);
+    }
 }

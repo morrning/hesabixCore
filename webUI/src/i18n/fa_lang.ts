@@ -268,6 +268,7 @@ const fa_lang = {
     count: "تعداد",
   },
   dialog: {
+    delete_group: 'حذف گروهی',
     acc_price: 'مبلغ',
     des: 'شرح',
     warning: 'هشدار',
