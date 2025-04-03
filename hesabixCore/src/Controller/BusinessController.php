@@ -235,7 +235,7 @@ class BusinessController extends AbstractController
                     if (array_key_exists('walletMatchBank', $params)) {
                         $bank = $entityManager->getRepository(BankAccount::class)->findOneBy([
                             'bid' => $business->getId(),
-                            'id' => $params['walletMatchBank']['id']
+                            'id' => $params['walletMatchBank']
                         ]);
                         if ($bank) {
                             $business->setWalletEnable($params['walletEnabled']);

@@ -364,13 +364,26 @@ export default {
         maliyatafzode: 9,
         shortlinks: false,
         walletEnabled: false,
-        walletMatchBank: '',
-        year: {},
+        walletMatchBank: null,
+        year: {
+          startShamsi: '',
+          endShamsi: '',
+          label: ''
+        },
         updateSellPrice: false,
         updateBuyPrice: false,
         profitCalcType: 'lis'
       },
       listBanks: [],
+    }
+  },
+  watch: {
+    'content.year.endShamsi': {
+      handler(newVal) {
+        if (newVal) {
+          this.content.year.label = `سال مالی منتهی به ${newVal}`;
+        }
+      }
     }
   },
   methods: {
@@ -399,6 +412,7 @@ export default {
           icon: 'error',
           confirmButtonText: 'قبول'
         });
+        return;
       }
       if (this.content.walletEnabled && (this.content.walletMatchBank === undefined || this.content.walletMatchBank === null)) {
         Swal.fire({
@@ -406,57 +420,66 @@ export default {
           icon: 'error',
           confirmButtonText: 'قبول'
         });
+        return;
       }
-      else {
-        //submit data
-        this.loading = true;
-        let data = axios.post('/api/business/insert', {
-          'bid': localStorage.getItem('activeBid'),
-          'name': this.content.name,
-          'legal_name': this.content.legal_name,
-          'field': this.content.field,
-          'type': this.content.type,
-          'shenasemeli': this.content.shenasemeli,
-          'codeeqtesadi': this.content.codeeqtesadi,
-          'shomaresabt': this.content.shomaresabt,
-          'country': this.content.country,
-          'ostan': this.content.ostan,
-          'shahrestan': this.content.shahrestan,
-          'postalcode': this.content.postalcode,
-          'tel': this.content.tel,
-          'mobile': this.content.mobile,
-          'address': this.content.address,
-          'website': this.content.website,
-          'email': this.content.email,
-          'arzmain': this.content.arzmain,
-          'maliyatafzode': this.content.maliyatafzode,
-          'shortlinks': this.content.shortlinks,
-          'walletEnabled': this.content.walletEnabled,
-          'walletMatchBank': this.content.walletMatchBank,
-          'year': this.content.year,
-          'commodityUpdateBuyPriceAuto': this.content.updateBuyPrice,
-          'commodityUpdateSellPriceAuto': this.content.updateSellPrice,
-          'profitCalcType': this.content.profitCalcType
-        })
-          .then((response) => {
-            this.loading = false;
-            if (response.data.result == 1) {
-              Swal.fire({
-                text: 'با موفقیت ثبت شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول',
+      
+      //submit data
+      this.loading = true;
+      let data = {
+        'bid': localStorage.getItem('activeBid'),
+        'name': this.content.name,
+        'legal_name': this.content.legal_name,
+        'field': this.content.field,
+        'type': this.content.type,
+        'shenasemeli': this.content.shenasemeli,
+        'codeeqtesadi': this.content.codeeqtesadi,
+        'shomaresabt': this.content.shomaresabt,
+        'country': this.content.country,
+        'ostan': this.content.ostan,
+        'shahrestan': this.content.shahrestan,
+        'postalcode': this.content.postalcode,
+        'tel': this.content.tel,
+        'mobile': this.content.mobile,
+        'address': this.content.address,
+        'website': this.content.website,
+        'email': this.content.email,
+        'arzmain': this.content.arzmain,
+        'maliyatafzode': this.content.maliyatafzode,
+        'shortlinks': this.content.shortlinks,
+        'walletEnabled': this.content.walletEnabled,
+        'walletMatchBank': this.content.walletMatchBank,
+        'year': this.content.year,
+        'commodityUpdateBuyPriceAuto': this.content.updateBuyPrice,
+        'commodityUpdateSellPriceAuto': this.content.updateSellPrice,
+        'profitCalcType': this.content.profitCalcType
+      };
 
-              })
-            }
-            else if (response.data.result === 0) {
-              Swal.fire({
-                text: 'تکمیل موارد ستاره دار الزامی است.',
-                icon: 'error',
-                confirmButtonText: 'قبول'
-              });
-            }
-          })
-      }
+      axios.post('/api/business/insert', data)
+        .then((response) => {
+          this.loading = false;
+          if (response.data.result == 1) {
+            Swal.fire({
+              text: 'با موفقیت ثبت شد.',
+              icon: 'success',
+              confirmButtonText: 'قبول',
+            })
+          }
+          else if (response.data.result === 0) {
+            Swal.fire({
+              text: 'تکمیل موارد ستاره دار الزامی است.',
+              icon: 'error',
+              confirmButtonText: 'قبول'
+            });
+          }
+        })
+        .catch((error) => {
+          this.loading = false;
+          Swal.fire({
+            text: 'خطا در ثبت اطلاعات',
+            icon: 'error',
+            confirmButtonText: 'قبول'
+          });
+        });
     }
   },
   async beforeMount() {
@@ -467,17 +490,21 @@ export default {
       this.content.arzmain = this.moneys[0];
     })
 
+    //get list of banks
+    await axios.post('/api/bank/list').then((response) => {
+      this.listBanks = response.data;
+    });
+
     //get business info
-    let data = axios.post('/api/business/get/info/' + localStorage.getItem('activeBid'))
+    let data = await axios.post('/api/business/get/info/' + localStorage.getItem('activeBid'))
       .then((response) => {
         this.content = response.data;
+        // اگر walletMatchBank یک آبجکت است، فقط id آن را نگه می‌داریم
+        if (this.content.walletMatchBank && typeof this.content.walletMatchBank === 'object') {
+          this.content.walletMatchBank = this.content.walletMatchBank.id;
+        }
         this.loading = false;
       });
-    //get list of banks
-    axios.post('/api/bank/list').then((response) => {
-      this.listBanks = response.data;
-    })
-
   }
 }
 </script>
