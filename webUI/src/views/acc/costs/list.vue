@@ -69,7 +69,7 @@
     </v-tooltip>
   </v-toolbar>
 
-  <v-text-field :loading="loading" color="green" class="mb-0 pt-0 rounded-0" hide-details="auto" density="compact"
+  <v-text-field :rounded="false" :loading="loading" color="green" class="mb-0 pt-0 rounded-0" hide-details="auto" density="compact"
     :placeholder="$t('dialog.search_txt')" v-model="searchQuery" type="text" clearable>
     <template v-slot:prepend-inner>
       <v-tooltip location="bottom" :text="$t('dialog.search')">

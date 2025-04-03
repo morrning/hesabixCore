@@ -58,14 +58,14 @@
         </v-list-item>
       </v-list>
     </v-menu>
-    <v-tooltip :text="$t('dialog.column_settings')" location="bottom">
-      <template v-slot:activator="{ props }">
-        <v-btn v-bind="props" icon="mdi-table-cog" color="primary" @click="dialogColumns = true" />
-      </template>
-    </v-tooltip>
     <v-tooltip :text="$t('dialog.delete_group')" location="bottom">
       <template v-slot:activator="{ props }">
         <v-btn v-bind="props" icon="mdi-trash-can" color="red" @click="deleteGroup" />
+      </template>
+    </v-tooltip>
+    <v-tooltip :text="$t('dialog.column_settings')" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" icon="mdi-table-cog" color="primary" @click="dialogColumns = true" />
       </template>
     </v-tooltip>
   </v-toolbar>

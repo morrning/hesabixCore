@@ -11,7 +11,6 @@
       </template>
       <v-spacer></v-spacer>
 
-      <archive-upload v-if="$route.params.id" :docid="$route.params.id" doctype="cost" cat="cost" />
 
       <v-menu>
         <template v-slot:activator="{ props }">
@@ -53,11 +52,13 @@
           </v-list-item>
         </v-list>
       </v-menu>
+      <archive-upload v-if="$route.params.id" :docid="$route.params.id" doctype="cost" cat="cost" />
 
-      <v-btn color="primary" :disabled="!canSubmit" @click="save()" class="ms-2">
-        <v-icon>mdi-content-save</v-icon>
-        ثبت
-      </v-btn>
+      <v-tooltip :text="$t('dialog.save')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" color="primary" :disabled="!canSubmit" @click="save()" class="ms-2" icon="mdi-content-save" />
+        </template>
+      </v-tooltip>
     </v-toolbar>
 
     <!-- محتوا -->
@@ -174,7 +175,157 @@
             </v-row>
           </v-card-text>
         </v-card>
-                          </template>
+      </template>
+
+      <!-- صندوق -->
+      <template v-for="(item, index) in cashdesks" :key="'cashdesk'+index">
+        <v-card class="mb-4">
+          <v-toolbar color="grey-lighten-3" density="compact">
+            <v-toolbar-title>
+              <span class="me-2">{{ index + 1 }}</span>
+              <v-icon>mdi-cash-register</v-icon>
+                    صندوق
+            </v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-btn icon color="error" @click="removeCashdesk(index)">
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </v-toolbar>
+
+          <v-card-text>
+            <v-row>
+              <v-col cols="12" md="4">
+                <v-autocomplete
+                  v-model="item.person"
+                  :items="listCashdesks"
+                  item-title="name"
+                  item-value="id"
+                  label="صندوق"
+                  variant="outlined"
+                  density="compact"
+                ></v-autocomplete>
+              </v-col>
+              <v-col cols="12" md="4">
+                <Hnumberinput
+                  v-model="item.amount"
+                  label="مبلغ"
+                  variant="outlined"
+                  density="compact"
+                  @update:model-value="calc"
+                />
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="item.des"
+                  label="شرح"
+                  variant="outlined"
+                  density="compact"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </template>
+
+      <!-- تنخواه گردان -->
+      <template v-for="(item, index) in salarys" :key="'salary'+index">
+        <v-card class="mb-4">
+          <v-toolbar color="grey-lighten-3" density="compact">
+            <v-toolbar-title>
+              <span class="me-2">{{ index + 1 }}</span>
+              <v-icon>mdi-wallet</v-icon>
+                    تنخواه گردان
+            </v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-btn icon color="error" @click="removeSalary(index)">
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </v-toolbar>
+
+          <v-card-text>
+            <v-row>
+              <v-col cols="12" md="4">
+                <v-autocomplete
+                  v-model="item.person"
+                  :items="listSalarys"
+                  item-title="name"
+                  item-value="id"
+                  label="تنخواه گردان"
+                  variant="outlined"
+                  density="compact"
+                ></v-autocomplete>
+              </v-col>
+              <v-col cols="12" md="4">
+                <Hnumberinput
+                  v-model="item.amount"
+                  label="مبلغ"
+                  variant="outlined"
+                  density="compact"
+                  @update:model-value="calc"
+                />
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="item.des"
+                  label="شرح"
+                  variant="outlined"
+                  density="compact"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </template>
+
+      <!-- شخص -->
+      <template v-for="(item, index) in persons" :key="'person'+index">
+        <v-card class="mb-4">
+          <v-toolbar color="grey-lighten-3" density="compact">
+            <v-toolbar-title>
+              <span class="me-2">{{ index + 1 }}</span>
+              <v-icon>mdi-account</v-icon>
+                    شخص
+            </v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-btn icon color="error" @click="removePerson(index)">
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </v-toolbar>
+
+          <v-card-text>
+            <v-row>
+              <v-col cols="12" md="4">
+                <v-autocomplete
+                  v-model="item.person"
+                  :items="listPersons"
+                  item-title="name"
+                  item-value="id"
+                  label="شخص"
+                  variant="outlined"
+                  density="compact"
+                ></v-autocomplete>
+              </v-col>
+              <v-col cols="12" md="4">
+                <Hnumberinput
+                  v-model="item.amount"
+                  label="مبلغ"
+                  variant="outlined"
+                  density="compact"
+                  @update:model-value="calc"
+                />
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model="item.des"
+                  label="شرح"
+                  variant="outlined"
+                  density="compact"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </template>
 
       <!-- سایر بخش‌ها به همین صورت -->
     </v-container>
@@ -457,17 +608,17 @@ export default {
         }
       });
       this.salarys.forEach((item) => {
-        if (item.id == null || item.id == '') {
+        if (item.person == null || item.person == '') {
           sideOK = false;
         }
       })
       this.cashdesks.forEach((item) => {
-        if (item.id == null || item.id == '') {
+        if (item.person == null || item.person == '') {
           sideOK = false;
         }
       })
       this.persons.forEach((item) => {
-        if (item.id == null || item.id == '') {
+        if (item.person == null || item.person == '') {
           sideOK = false;
         }
       })
@@ -510,7 +661,7 @@ export default {
         this.banks.forEach((item) => {
           if (item.des == '') item.des = 'هزینه'
           rows.push({
-            id: item.id.id,
+            id: item.id,
             bs: parseInt(item.amount),
             bd: 0,
             des: item.des,
@@ -522,7 +673,7 @@ export default {
         this.salarys.forEach((item) => {
           if (item.des == '') item.des = 'هزینه'
           rows.push({
-            id: item.id.id,
+            id: item.person,
             bs: parseInt(item.amount),
             bd: 0,
             des: item.des,
@@ -534,7 +685,7 @@ export default {
         this.cashdesks.forEach((item) => {
           if (item.des == '') item.des = 'هزینه'
           rows.push({
-            id: item.id.id,
+            id: item.person,
             bs: parseInt(item.amount),
             bd: 0,
             des: item.des,
@@ -546,7 +697,7 @@ export default {
         this.persons.forEach((item) => {
           if (item.des == '') item.des = 'هزینه'
           rows.push({
-            id: item.id.id,
+            id: item.person,
             bs: parseInt(item.amount),
             bd: 0,
             des: item.des,

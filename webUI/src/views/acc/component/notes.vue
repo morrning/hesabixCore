@@ -129,16 +129,21 @@ export default defineComponent({
               :disabled="loading"
               @keyup.enter="save"
               :loading="loading"
-            ></v-text-field>
-            <v-btn
-              color="success"
-              @click="save"
-              class="mt-2"
-              :loading="loading"
             >
-              <v-icon left>mdi-content-save</v-icon>
-              ثبت یادداشت
-            </v-btn>
+              <template v-slot:append>
+                <v-btn
+                  color="success"
+                  @click="save"
+                  :loading="loading"
+                  icon
+                  variant="text"
+                  density="comfortable"
+                >
+                  <v-icon>mdi-content-save</v-icon>
+                  <v-tooltip activator="parent" location="bottom">ثبت یادداشت</v-tooltip>
+                </v-btn>
+              </template>
+            </v-text-field>
           </v-col>
         </v-row>
 

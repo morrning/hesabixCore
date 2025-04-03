@@ -8,16 +8,16 @@ export default defineComponent({
     docCode: String
   },
   data: ()=>{return {
-    logPermision : ref(false),
-    itemsSelected: [],
-    searchValue: '',
+    dialog: false,
     loading: ref(true),
     items:[],
     headers: [
-      { text: "تاریخ", value: "date"},
-      { text: "کاربر", value: "user"},
-      { text: "شرح", value: "des"},
-    ]
+      { title: "تاریخ", key: "date", align: "center" as const},
+      { title: "کاربر", key: "user", align: "center" as const},
+      { title: "شرح", key: "des", align: "center" as const},
+    ],
+    searchValue: '',
+    logPermision: ref(false)
   }},
   methods:{
     loadData(){
@@ -31,7 +31,6 @@ export default defineComponent({
             });
           }
       });
-
     }
   },
   mounted(){
@@ -41,47 +40,56 @@ export default defineComponent({
 </script>
 
 <template>
-  <!-- Button trigger modal -->
-  <button v-show="this.logPermision" title="تاریخچه سند" type="button" class="btn btn-sm btn-info mx-2" data-bs-toggle="modal" data-bs-target="#staticBackdrop" >
-    <i class="fa fa-history me-2" aria-hidden="true"></i>
-    <span class="">تاریخچه</span>
-  </button>
+  <!-- دکمه در تولبار -->
+  <v-btn v-show="logPermision" icon color="info" class="ml-2" @click="dialog = true">
+    <v-icon>mdi-history</v-icon>
+    <v-tooltip activator="parent" location="bottom">تاریخچه سند</v-tooltip>
+  </v-btn>
 
-  <!-- Modal -->
-  <div class="modal modal-lg fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header bg-info-light text-dark">
-          <h1 class="modal-title fs-5" id="staticBackdropLabel">
-            <i class="fa fa-history me-2" aria-hidden="true"></i>
-            تاریخچه تغییرات سند
-          </h1>
-          <div class="block-options">
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-        </div>
-        <div class="modal-body">
-          <EasyDataTable table-class-name="customize-table"
-              show-index
-              alternating
-              :search-value="searchValue"
-              :headers="headers"
-              :items="items"
-              theme-color="#1d90ff"
-              header-text-direction="center"
-              body-text-direction="center"
-              rowsPerPageMessage="تعداد سطر"
-              emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-              rowsOfPageSeparatorMessage="از"
-              :loading = "loading"
-          >
-          </EasyDataTable>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- دیالوگ تاریخچه -->
+  <v-dialog v-model="dialog" max-width="800" persistent>
+    <v-card>
+      <v-toolbar color="toolbar" flat dark>
+        <v-toolbar-title>
+          <v-icon color="info" left>mdi-history</v-icon>
+          تاریخچه تغییرات سند
+        </v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn icon @click="dialog = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-toolbar>
+
+      <v-card-text class="pa-0">
+        <v-data-table
+          :headers="headers"
+          :items="items"
+          :loading="loading"
+          :search="searchValue"
+          density="compact"
+          hover
+          class="elevation-1"
+        >
+          <template v-slot:loading>
+            <v-progress-circular
+              indeterminate
+              color="primary"
+            ></v-progress-circular>
+          </template>
+          <template v-slot:no-data>
+            <div class="text-center py-4">
+              اطلاعاتی برای نمایش وجود ندارد
+            </div>
+          </template>
+        </v-data-table>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>
-
+.v-data-table {
+  --v-table-header-height: 40px;
+  --v-table-row-height: 40px;
+}
 </style>
