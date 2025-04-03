@@ -105,6 +105,8 @@ export default defineComponent({
         { text: 'به روز رسانی هسته', url: '/profile/manager/update-core', icon: 'mdi-undo', visible: true },
         { text: 'تغییرات', url: '/profile/manager/changes/list', icon: 'mdi-cellphone-arrow-down', visible: true },
         { text: 'تاریخچه سیستم', url: '/profile/manager/logs/list', icon: 'mdi-history', visible: true },
+        { text: 'کیف پول', url: '/profile/manager/wallet/list', icon: 'mdi-wallet', visible: true },
+
       ],
       adminSettings: [
         { text: 'پیامک', url: '/profile/manager/system/sms/settings', icon: 'mdi-message-alert', visible: true },

@@ -90,6 +90,7 @@ const fa_lang = {
     }
   },
   drawer: {
+    wallets: "کیف پول‌ها",
     ultimate_package: 'بسته‌های نامحدود',
     sell_chart: "فروش هفته گذشته",
     bankaccounts_transactions: "کارت حساب بانک",

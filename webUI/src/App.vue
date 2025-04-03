@@ -112,4 +112,25 @@ export default {
   background: rgba(0, 0, 0, 0.4);
   /* رنگ هنگام هاور */
 }
+
+.v-data-table {
+  overflow-x: auto;
+}
+
+.expanded-row {
+  background-color: #f5f5f5 !important;
+  padding: 8px;
+}
+
+.custom-header {
+  background-color: #213e8b !important;
+  color: #ffffff !important;
+  text-align: center !important;
+}
+
+.v-data-table, .v-data-table-server, .v-data-table-header__content {
+  margin: 0 auto;
+  width: fit-content;
+  text-align: center !important;
+}
 </style>

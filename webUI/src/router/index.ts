@@ -147,6 +147,14 @@ const router = createRouter({
                     }
                 },
                 {
+                    path: 'manager/wallet/list',
+                    component: () => import('../views/user/manager/wallet/list.vue'),
+                    meta: {
+                        'title': 'کیف پول',
+                        'login': true
+                    }
+                },
+                {
                     path: 'manager/changes/list',
                     component: () => import('../views/user/manager/reportchange/list.vue'),
                     meta: {

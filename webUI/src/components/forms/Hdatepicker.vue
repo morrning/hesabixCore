@@ -3,8 +3,12 @@
     <v-text-field v-model="displayDate" :label="label" prepend-inner-icon="mdi-calendar" persistent-placeholder
       :class="['v-date-input', `date-input-${uniqueId}`]" :rules="rules" @input="updateDateFromInput" @click:prepend="togglePicker"></v-text-field>
     <date-picker v-model="displayDate" type="date" format="jYYYY/jMM/jDD" display-format="jYYYY/jMM/jDD"
-      :min="minDatePersian" :max="maxDatePersian" :custom-input="`.date-input-${uniqueId}`" :input-mode="true"
-      :editable="pickerActive" @close="pickerActive = false"></date-picker>
+      :min="ignoreYearRange ? (min || null) : minDatePersian" 
+      :max="ignoreYearRange ? null : maxDatePersian" 
+      :custom-input="`.date-input-${uniqueId}`" 
+      :input-mode="true"
+      :editable="pickerActive" 
+      @close="pickerActive = false"></date-picker>
   </div>
 </template>
 
@@ -26,6 +30,14 @@ export default {
       type: Array,
       default: () => [],
     },
+    ignoreYearRange: {
+      type: Boolean,
+      default: false
+    },
+    min: {
+      type: String,
+      default: null
+    }
   },
   data() {
     return {
@@ -79,15 +91,7 @@ export default {
     updateDateFromInput(value) {
       // بررسی و اعتبارسنجی تاریخ وارد شده توسط کاربر
       if (value && moment(value, 'YYYY/MM/DD', 'fa', true).isValid()) {
-        const parsedDate = moment(value, 'YYYY/MM/DD').locale('fa');
-        if (
-          parsedDate.isSameOrAfter(moment(this.minDatePersian, 'YYYY/MM/DD')) &&
-          parsedDate.isSameOrBefore(moment(this.maxDatePersian, 'YYYY/MM/DD'))
-        ) {
-          this.displayDate = value;
-        } else {
-          this.displayDate = ''; // یا خطا نمایش بدید
-        }
+        this.displayDate = value;
       }
     },
     togglePicker() {
