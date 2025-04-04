@@ -533,7 +533,7 @@ class Explore
             'smsCharge' => $item->getSmsCharge(),
             'shortlinks' => $item->isShortlinks(),
             'walletEnabled' => $item->isWalletEnable(),
-            'walletMatchBank' => $item->getWalletMatchBank()->getId(),
+            'walletMatchBank' => $item->getWalletMatchBank() ? $item->getWalletMatchBank()->getId() : null,
             'updateSellPrice' => $item->isCommodityUpdateSellPriceAuto(),
             'updateBuyPrice' => $item->isCommodityUpdateBuyPriceAuto(),
         ];
