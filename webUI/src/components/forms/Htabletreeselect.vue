@@ -76,7 +76,7 @@ export default {
   name: 'CostTreeSelect',
   props: {
     modelValue: {
-      type: [Object, Number],
+      type: [Object, Number, String],
       default: null
     },
     label: {
