@@ -426,11 +426,12 @@ class HesabdariController extends AbstractController
                 $entityManager->flush();
                 $hesabdariRow->setCheque($cheque);
             } elseif ($row['type'] == 'bank') {
-                $bank = $entityManager->getRepository(BankAccount::class)->find($row['id']);
+                $bank = $entityManager->getRepository(BankAccount::class)->findOneBy([
+                    'id' => $row['id'],
+                    'bid' => $acc['bid']
+                ]);
                 if (!$bank)
                     throw $this->createNotFoundException('bank not found');
-                elseif ($bank->getBid()->getId() != $acc['bid']->getId())
-                    throw $this->createAccessDeniedException('bank is not in this business');
                 $hesabdariRow->setBank($bank);
             } elseif ($row['type'] == 'salary') {
                 $salary = $entityManager->getRepository(Salary::class)->find($row['id']);

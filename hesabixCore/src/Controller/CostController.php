@@ -12,6 +12,13 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use App\Service\Provider;
 use App\Entity\HesabdariDoc;
+use App\Entity\HesabdariRow;
+use App\Entity\HesabdariTable;
+use App\Entity\BankAccount;
+use App\Entity\Cashdesk;
+use App\Entity\Salary;
+use App\Entity\Person;
+use App\Service\Log;
 
 class CostController extends AbstractController
 {
@@ -467,8 +474,6 @@ class CostController extends AbstractController
                         $paymentCenter = $row->getCashdesk()->getName();
                     } elseif ($row->getSalary()) {
                         $paymentCenter = $row->getSalary()->getName();
-                    } elseif ($row->getCommodity()) {
-                        $paymentCenter = $row->getCommodity()->getName();
                     } elseif ($row->getPerson()) {
                         $paymentCenter = $row->getPerson()->getNikename();
                     }
@@ -491,5 +496,139 @@ class CostController extends AbstractController
         $writer->save($filePath);
 
         return new BinaryFileResponse($filePath);
+    }
+
+    #[Route('/api/cost/doc/insert', name: 'app_cost_doc_insert', methods: ['POST'])]
+    public function insertCostDoc(
+        Request $request,
+        Access $access,
+        EntityManagerInterface $entityManager,
+        Provider $provider,
+        Log $log,
+        Jdate $jdate
+    ): JsonResponse {
+        $acc = $access->hasRole('cost');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = json_decode($request->getContent(), true) ?? [];
+
+        // بررسی پارامترهای ضروری
+        if (!isset($params['rows']) || count($params['rows']) < 2) {
+            return $this->json(['result' => 0, 'message' => 'حداقل دو ردیف برای سند هزینه الزامی است'], 400);
+        }
+
+        if (!isset($params['date']) || !isset($params['des'])) {
+            return $this->json(['result' => 0, 'message' => 'تاریخ و شرح سند الزامی است'], 400);
+        }
+
+        // تنظیم نوع سند به cost
+        $params['type'] = 'cost';
+
+        // بررسی وجود سند برای ویرایش
+        if (isset($params['update']) && $params['update'] != '') {
+            $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                'bid' => $acc['bid'],
+                'year' => $acc['year'],
+                'code' => $params['update'],
+                'money' => $acc['money']
+            ]);
+            if (!$doc) {
+                return $this->json(['result' => 0, 'message' => 'سند مورد نظر یافت نشد'], 404);
+            }
+        }
+
+        // ایجاد سند جدید
+        $doc = new HesabdariDoc();
+        $doc->setBid($acc['bid']);
+        $doc->setYear($acc['year']);
+        $doc->setDes($params['des']);
+        $doc->setDateSubmit(time());
+        $doc->setType('cost');
+        $doc->setDate($params['date']);
+        $doc->setSubmitter($this->getUser());
+        $doc->setMoney($acc['money']);
+        $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
+
+        $entityManager->persist($doc);
+        $entityManager->flush();
+
+        // پردازش ردیف‌های سند
+        $amount = 0;
+        foreach ($params['rows'] as $row) {
+            $row['bs'] = str_replace(',', '', $row['bs']);
+            $row['bd'] = str_replace(',', '', $row['bd']);
+
+            $hesabdariRow = new HesabdariRow();
+            $hesabdariRow->setBid($acc['bid']);
+            $hesabdariRow->setYear($acc['year']);
+            $hesabdariRow->setDoc($doc);
+            $hesabdariRow->setBs($row['bs']);
+            $hesabdariRow->setBd($row['bd']);
+
+            // تنظیم مرکز هزینه
+            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
+                'code' => $row['table']
+            ]);
+            $hesabdariRow->setRef($ref);
+
+            // تنظیم مرکز پرداخت (بانک، صندوق، تنخواه، شخص)
+            if ($row['type'] == 'bank') {
+                $bank = $entityManager->getRepository(BankAccount::class)->findOneBy([
+                    'id' => $row['id'],
+                    'bid' => $acc['bid']
+                ]);
+                if (!$bank) {
+                    return $this->json(['result' => 0, 'message' => 'حساب بانکی مورد نظر یافت نشد'], 404);
+                }
+                $hesabdariRow->setBank($bank);
+            } elseif ($row['type'] == 'cashdesk') {
+                $cashdesk = $entityManager->getRepository(Cashdesk::class)->find($row['id']);
+                if (!$cashdesk) {
+                    return $this->json(['result' => 0, 'message' => 'صندوق مورد نظر یافت نشد'], 404);
+                }
+                $hesabdariRow->setCashdesk($cashdesk);
+            } elseif ($row['type'] == 'salary') {
+                $salary = $entityManager->getRepository(Salary::class)->find($row['id']);
+                if (!$salary) {
+                    return $this->json(['result' => 0, 'message' => 'تنخواه مورد نظر یافت نشد'], 404);
+                }
+                $hesabdariRow->setSalary($salary);
+            } elseif ($row['type'] == 'person') {
+                $person = $entityManager->getRepository(Person::class)->findOneBy([
+                    'id' => $row['id'],
+                    'bid' => $acc['bid']
+                ]);
+                if (!$person) {
+                    return $this->json(['result' => 0, 'message' => 'شخص مورد نظر یافت نشد'], 404);
+                }
+                $hesabdariRow->setPerson($person);
+            }
+
+            if (isset($row['des'])) {
+                $hesabdariRow->setDes($row['des']);
+            }
+
+            $entityManager->persist($hesabdariRow);
+            $amount += $row['bs'];
+        }
+
+        $doc->setAmount($amount);
+        $entityManager->persist($doc);
+        $entityManager->flush();
+
+        $log->insert(
+            'حسابداری',
+            'سند هزینه شماره ' . $doc->getCode() . ' ثبت شد.',
+            $this->getUser(),
+            $acc['bid'],
+            $doc
+        );
+
+        return $this->json([
+            'result' => 1,
+            'doc' => $provider->Entity2Array($doc, 0)
+        ]);
     }
 }

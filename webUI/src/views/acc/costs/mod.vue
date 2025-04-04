@@ -295,15 +295,7 @@
           <v-card-text>
             <v-row>
               <v-col cols="12" md="4">
-                <v-autocomplete
-                  v-model="item.person"
-                  :items="listPersons"
-                  item-title="name"
-                  item-value="id"
-                  label="شخص"
-                  variant="outlined"
-                  density="compact"
-                ></v-autocomplete>
+                <Hpersonsearch v-model="item.id" label="شخص" />  
               </v-col>
               <v-col cols="12" md="4">
                 <Hnumberinput
@@ -346,6 +338,7 @@ import archiveUpload from "../component/archive/archiveUpload.vue";
 import Hdatepicker from "@/components/forms/Hdatepicker.vue";
 import Hnumberinput from "@/components/forms/Hnumberinput.vue";
 import Htabletreeselect from '@/components/forms/Htabletreeselect.vue'
+import Hpersonsearch from '@/components/forms/Hpersonsearch.vue'
 // import the styles
 import quickAdd from "../component/person/quickAdd.vue";
 export default {
@@ -357,6 +350,7 @@ export default {
     Hdatepicker,
     Hnumberinput,
     Htabletreeselect,
+    Hpersonsearch,
   },
   data: () => {
     return {
@@ -486,7 +480,7 @@ export default {
     },
     addPerson() {
       this.persons.push({
-        person: '',
+        id: '',
         amount: '',
         des: ''
       })
@@ -575,11 +569,6 @@ export default {
       axios.post('/api/salary/list').then((response) => {
         this.listSalarys = response.data;
       });
-
-      //get list of persons
-      axios.post('/api/person/list/search').then((response) => {
-        this.listPersons = response.data;
-      });
     },
     save() {
       let haszero = false;
@@ -618,7 +607,7 @@ export default {
         }
       })
       this.persons.forEach((item) => {
-        if (item.person == null || item.person == '') {
+        if (item.id == null || item.id == '') {
           sideOK = false;
         }
       })
@@ -697,7 +686,7 @@ export default {
         this.persons.forEach((item) => {
           if (item.des == '') item.des = 'هزینه'
           rows.push({
-            id: item.person,
+            id: item.id,
             bs: parseInt(item.amount),
             bd: 0,
             des: item.des,

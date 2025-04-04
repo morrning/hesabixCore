@@ -137,6 +137,14 @@ export default {
       try {
         const response = await axios.get('/api/accounting/table/childs/cost');
         this.treeItems = response.data;
+        
+        if (this.modelValue) {
+          if (this.returnObject) {
+            this.selectedItem = this.modelValue;
+          } else {
+            this.selectedItem = this.findItemById(this.treeItems, this.modelValue);
+          }
+        }
       } catch (error) {
         console.error('خطا در دریافت داده‌ها:', error);
         this.$toast.error('خطا در بارگذاری داده‌ها');
