@@ -246,7 +246,7 @@
             <v-row>
               <v-col cols="12" md="4">
                 <v-autocomplete
-                  v-model="item.person"
+                  v-model="item.id"
                   :items="listSalarys"
                   item-title="name"
                   item-value="id"
@@ -470,7 +470,8 @@ export default {
     },
     addSalary() {
       this.salarys.push({
-        person: '',
+        id: '',
+        salary: null,
         amount: '',
         des: ''
       })
@@ -481,6 +482,7 @@ export default {
     addPerson() {
       this.persons.push({
         id: '',
+        person: null,
         amount: '',
         des: ''
       })
@@ -525,14 +527,16 @@ export default {
             }
             else if (item.type == 'salary') {
               this.salarys.push({
-                id: item.salary,
+                id: item.salary.id,
+                salary: item.salary,
                 amount: item.bs,
                 des: item.des
               });
             }
             else if (item.type == 'person') {
               this.persons.push({
-                id: item.person,
+                id: item.person.id,
+                person: item.person,
                 amount: item.bs,
                 des: item.des
               });
