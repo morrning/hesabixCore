@@ -88,7 +88,7 @@
       <!-- مرکز هزینه -->
       <template v-for="(item, index) in costs" :key="'cost'+index">
         <v-card class="mb-4">
-          <v-toolbar color="grey-darken-3" density="compact">
+          <v-toolbar color="primary" density="compact">
             <v-toolbar-title class="text-white text--secondary">
               <span class="text-error me-2">{{ index + 1 }}</span>
               <v-icon color="white">mdi-ticket</v-icon>
@@ -130,7 +130,7 @@
       <!-- حساب بانکی -->
       <template v-for="(item, index) in banks" :key="'bank'+index">
         <v-card class="mb-4">
-          <v-toolbar color="grey-lighten-3" density="compact">
+          <v-toolbar color="grey-lighten-2" density="compact">
             <v-toolbar-title>
               <span class="me-2">{{ index + 1 }}</span>
               <v-icon>mdi-bank</v-icon>
@@ -408,20 +408,20 @@ export default {
     calc() {
       this.sum = 0;
       this.costs.forEach((item) => {
-        this.sum = parseInt(this.sum) + parseInt(item.amount);
+        this.sum = parseInt(this.sum) + (parseInt(item.amount) || 0);
       });
       let side = 0;
       this.banks.forEach((item) => {
-        side = parseInt(side) + parseInt(item.amount);
+        side = parseInt(side) + (parseInt(item.amount) || 0);
       });
       this.salarys.forEach((item) => {
-        side = parseInt(side) + parseInt(item.amount);
+        side = parseInt(side) + (parseInt(item.amount) || 0);
       });
       this.cashdesks.forEach((item) => {
-        side = parseInt(side) + parseInt(item.amount);
+        side = parseInt(side) + (parseInt(item.amount) || 0);
       });
       this.persons.forEach((item) => {
-        side = parseInt(side) + parseInt(item.amount);
+        side = parseInt(side) + (parseInt(item.amount) || 0);
       });
 
       this.balance = parseInt(this.sum) - parseInt(side);
@@ -471,7 +471,6 @@ export default {
     addSalary() {
       this.salarys.push({
         id: '',
-        salary: null,
         amount: '',
         des: ''
       })
@@ -513,14 +512,14 @@ export default {
             }
             else if (item.type == 'bank') {
               this.banks.push({
-                id: item.bank,
+                id: item.bank.id,
                 amount: item.bs,
                 des: item.des
               });
             }
             else if (item.type == 'cashdesk') {
               this.cashdesks.push({
-                id: item.cashdesk,
+                person: item.cashdesk.id,
                 amount: item.bs,
                 des: item.des
               });
@@ -528,7 +527,6 @@ export default {
             else if (item.type == 'salary') {
               this.salarys.push({
                 id: item.salary.id,
-                salary: item.salary,
                 amount: item.bs,
                 des: item.des
               });
@@ -542,6 +540,7 @@ export default {
               });
             }
           })
+          this.calc();
         });
       }
       else {
@@ -601,20 +600,20 @@ export default {
         }
       });
       this.salarys.forEach((item) => {
-        if (item.person == null || item.person == '') {
+        if (item.id == null || item.id == '') {
           sideOK = false;
         }
-      })
+      });
       this.cashdesks.forEach((item) => {
         if (item.person == null || item.person == '') {
           sideOK = false;
         }
-      })
+      });
       this.persons.forEach((item) => {
         if (item.id == null || item.id == '') {
           sideOK = false;
         }
-      })
+      });
       if (sideOK == false) {
         Swal.fire({
           text: 'یکی از طرف‌های حساب انتخاب نشده است.',
@@ -666,12 +665,13 @@ export default {
         this.salarys.forEach((item) => {
           if (item.des == '') item.des = 'هزینه'
           rows.push({
-            id: item.person,
+            id: item.id,
             bs: parseInt(item.amount),
             bd: 0,
             des: item.des,
             type: 'salary',
-            table: 124
+            table: 124,
+            salary: this.listSalarys.find(s => s.id === item.id)
           });
         })
 

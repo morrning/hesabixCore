@@ -496,7 +496,6 @@ export default {
           this.totalItems = 0;
         }
         
-        console.log('آیتم‌های ذخیره شده:', this.items);
         
         if (this.modelValue) {
           if (this.returnObject) {
@@ -506,7 +505,6 @@ export default {
           }
         }
       } catch (error) {
-        console.error('خطا در دریافت داده‌ها:', error);
         this.showMessage('خطا در بارگذاری داده‌ها', 'error');
         this.items = [];
         this.totalItems = 0;

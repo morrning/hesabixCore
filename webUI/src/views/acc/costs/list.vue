@@ -146,12 +146,11 @@
     <template #expanded-row="{ columns, item }">
       <tr>
         <td :colspan="columns.length" class="expanded-row">
-          <v-container>
+          <v-container class="pa-0 ma-0">
             <v-row>
               <v-col cols="12">
-                <h4>مراکز هزینه</h4>
-                <v-list dense>
-                  <v-list-item v-for="(center, index) in item.costCenters" :key="index">
+                <v-list density="compact" class="pa-0 ma-0">
+                  <v-list-item :border="true" v-for="(center, index) in item.costCenters" :key="index">
                     <v-list-item-title>
                       {{ center.name }}
                       {{ $t('dialog.acc_price') }} : {{ $filters.formatNumber(center.amount) }}
