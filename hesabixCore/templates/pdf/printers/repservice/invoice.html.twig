@@ -1,196 +1,298 @@
-<!DOCTYPE html>
-<html lang="fa" direction="rtl"></html>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<head>
-	<style>
-		.center {
-			text-align: center;
-		}
-		.text-white {
-			color: white;
-		}
-		.stimol td,
-		.stimol th {
-			border: 1px solid black;
-		}
-		.item {
-			height: 40px;
-		}
-		.det tr	{
-			height: 40px;
-		}
-	</style>
-</head>
-<body style="direction:rtl; width:100%">
-	<div class="block-content pt-1 pb-3 d-none d-sm-block">
-		<div class="c-print container-xl">
-			<div class="tg-wrap" style="width:100%; border:1px solid black;border-radius: 8px;">
-				<table class="rounded" style="width:100%;">
-					<thead>
+{% block content %}
+	<!DOCTYPE html>
+	<html lang="fa" direction="rtl">
+		<head>
+			<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+			<style>
+				@page {
+					margin: 5mm;
+					padding: 0;
+				}
+				* {
+					margin: 0;
+					padding: 0;
+					box-sizing: border-box;
+					font-family: 'B Nazanin', Arial, sans-serif;
+				}
+				body {
+					direction: rtl;
+					width: 100%;
+					padding: 3px;
+					font-size: 12px;
+					line-height: 1.5;
+				}
+				.container {
+					width: 100%;
+					max-width: 100%;
+					margin: 0 auto;
+				}
+				.header {
+					width: 100%;
+					border: 1px solid #000;
+					border-radius: 4px;
+					margin-bottom: 2px;
+				}
+				.header table {
+					width: 100%;
+					border-collapse: collapse;
+				}
+				.header td {
+					padding: 4px;
+					vertical-align: middle;
+				}
+				.header img {
+					max-width: 35px;
+					height: auto;
+				}
+				.header h3 {
+					font-size: 14px;
+					margin: 0;
+				}
+				.header h4 {
+					font-size: 12px;
+					margin: 0;
+				}
+				.section {
+					width: 100%;
+					border: 1px solid #000;
+					border-radius: 4px;
+					margin-bottom: 2px;
+				}
+				.section-header {
+					background-color: #666;
+					color: white;
+					padding: 4px;
+					border-radius: 4px 4px 0 0;
+					text-align: center;
+				}
+				.section table {
+					width: 100%;
+					border-collapse: collapse;
+				}
+				.section td {
+					padding: 4px;
+					line-height: 1.8;
+				}
+				.section p {
+					margin-bottom: 8px;
+				}
+				.bottom-container {
+					width: 100%;
+					margin-top: 2px;
+				}
+				.notes {
+					width: 58%;
+					border: 1px solid #000;
+					border-radius: 4px;
+					float: right;
+				}
+				.notes table {
+					width: 100%;
+					border-collapse: collapse;
+				}
+				.notes td {
+					padding: 4px;
+					line-height: 1.8;
+				}
+				.notes p {
+					margin-bottom: 8px;
+				}
+				.notes-content {
+					width: 100%;
+				}
+				.notes-content * {
+					unicode-bidi: embed;
+				}
+				.notes-content .ltr {
+					direction: ltr !important;
+					text-align: left !important;
+					unicode-bidi: embed !important;
+				}
+				.notes-content .rtl {
+					direction: rtl !important;
+					text-align: right !important;
+					unicode-bidi: embed !important;
+				}
+				.signature {
+					width: 40%;
+					border: 1px solid #000;
+					border-radius: 4px;
+					float: left;
+				}
+				.signature table {
+					width: 100%;
+					border-collapse: collapse;
+				}
+				.signature td {
+					padding: 4px;
+					vertical-align: middle;
+					line-height: 1.8;
+				}
+				.signature-text {
+					text-align: right;
+					width: 60%;
+				}
+				.signature-seal {
+					text-align: center;
+					width: 40%;
+				}
+				.signature img {
+					max-width: 120px;
+					height: auto;
+				}
+				.clearfix::after {
+					content: "";
+					clear: both;
+					display: table;
+				}
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="header">
+					<table>
 						<tr>
 							<td style="width:20%">
-								<img src="{{ url('front_avatar_file_get', {id: bid.id},)}}" width="65"/>
+								<img src="{{ url('front_avatar_file_get', {id: bid.id}) }}" alt="لوگو" style="max-width: 35px; height: auto;"/>
 							</td>
 							<td style="width:60%; text-align:center">
-								<h3 class="">{{ bid.name }}</h3>
-								<br/>
-								<h4 class="">رسید تحویل کالا</h4>
+								<h3>{{ bid.name }}</h3>
+								<h4>رسید تحویل کالا</h4>
+								<h4>{{bid.name}}</h4>
 							</td>
 							<td style="width:20%">
 								<h4>
 									<b>تاریخ:</b>
 									{{ doc.date }}</h4>
-								<br/>
 								<h4>
 									<b>شماره:</b>
 									{{ doc.code }}</h4>
-
 							</td>
 						</tr>
-						<tr>
-							<td style="width:100%" colspan="3">
-								<p>
-									<b>آدرس:
-									</b>
-									استان
-									{{ bid.ostan }}، شهر
-									{{ bid.shahrestan }}،
-									{{ bid.address }}
-								</p>
-							<p>
-							<b>تلفن تماس:</b>{{ bid.tel }}
-							</p>
-							</td>
-						</tr>
-					</thead>
-				</table>
-			</div>
-			<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
-				<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
-					<b style="color:white;">مشتری</b>
+					</table>
 				</div>
-				<table style="width:100%;">
-					<tbody>
-						<tr style="text-align:center;">
-							<td class="">
-								<p>
-									<b>نام:
-									</b>
-									{{ doc.person.nikename }}
-								</p>
-							</td>
-							<td class="center">
-								<p>
-									<b>تلفن همراه</b>
-									{{  doc.person.mobile }}
-								</p>
-							</td>
-						</tr>
+
+				<div class="section">
+					<div class="section-header">
+						<b>اطلاعات {{bid.type}}</b>
+					</div>
+					<table>
 						<tr>
-							<td class="" colspan="2">
-								<p>
-									<b>آدرس:
-									</b>
-									{{ doc.person.address }}
-								</p>
+							<td style="width:50%">
+								<p><b>نام فروشگاه:</b> {{ bid.legalName }}</p>
+								<p><b>آدرس:</b> استان {{ bid.ostan }}، شهر {{ bid.shahrestan }}، {{ bid.address }}</p>
+							</td>
+							<td style="width:50%">
+								<p><b>تلفن تماس:</b> {{ bid.tel }}</p>
+								<p><b>کد اقتصادی:</b> {{ bid.codeeghtesadi }}</p>
 							</td>
 						</tr>
-					</tbody>
-				</table>
-			</div>
-			<div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
-				<div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
-					<b style="color:white;">اطلاعات</b>
+					</table>
 				</div>
-				<table style="width:100%;">
-					<tbody class="det">
-						<tr style="text-align:center;">
-							<td class="">
+
+				<div class="section">
+					<div class="section-header">
+						<b>مشتری</b>
+					</div>
+					<table>
+						<tr>
+							<td>
 								<p>
-									<b>نام کالا:
-									</b>
-									{{ doc.commodity.name }}
-								</p>
+									<b>نام:</b>
+									{{ doc.person.nikename }}</p>
 							</td>
-							<td class="center">
+							<td>
 								<p>
-									<b> مدل:
-									</b>
-									{{ doc.model }}
-								</p>
-							</td>
-							<td class="center">
-								<p>
-									<b> رنگ:
-									</b>
-									{{ doc.color }}
-								</p>
-							</td>
-							<td class="center">
-								<p>
-									<b> سریال:
-									</b>
-									{{ doc.serial }}
-								</p>
-							</td>
-							<td class="center">
-								<p>
-									<b> پلاک:
-									</b>
-									{{ doc.pelak }}
-								</p>
+									<b>تلفن همراه:</b>
+									{{ doc.person.mobile }}</p>
 							</td>
 						</tr>
 						<tr>
-							<td class="" colspan="4">
+							<td colspan="2">
 								<p>
-									<b>شرح:
-									</b>
-									{{ doc.des }}
-								</p>
+									<b>آدرس:</b>
+									{{ doc.person.address }}</p>
 							</td>
-							<td class="" colspan="1">
+						</tr>
+					</table>
+				</div>
+
+				<div class="section">
+					<div class="section-header">
+						<b>اطلاعات کالا</b>
+					</div>
+					<table>
+						<tr>
+							<td>
+								<b>نام کالا:</b>
+								{{ doc.commodity.name is empty ? '×' : doc.commodity.name }}</td>
+							<td>
+								<b>مدل:</b>
+								{{ doc.model is empty ? '×' : doc.model }}</td>
+							<td>
+								<b>رنگ:</b>
+								{{ doc.color is empty ? '×' : doc.color }}</td>
+							<td>
+								<b>سریال:</b>
+								{{ doc.serial is empty ? '×' : doc.serial }}</td>
+							<td>
+								<b>پلاک:</b>
+								{{ doc.pelak is empty ? '×' : doc.pelak }}</td>
+						</tr>
+						<tr>
+							<td colspan="4">
 								<p>
-									<b>متعلقات:
-									</b>
-									{{ doc.motaleghat }}
-								</p>
+									<b>شرح:</b>
+									{{ doc.des is empty ? '×' : doc.des }}</p>
+							</td>
+							<td>
+								<p>
+									<b>متعلقات:</b>
+									{{ doc.motaleghat is empty ? '×' : doc.motaleghat }}</p>
 							</td>
 						</tr>
-					</tbody>
-				</table>
-			</div>
-			<div style="width:40%;margin-top:20px;text-align:center;float:left;">
-				<table style="width:100%;">
-					<tbody>
-						<tr class="">
-							<td class="center" style="height:90px">
-								<h4>
-									مهر و امضا تحویل گیرنده
-									<br>
-									<b>{{ doc.submitter.fullname }}</b>
-									<br>
-									<img src="{{ url('front_seal_file_get', {id: bid.id},)}}" width="80"/>
-								</h4>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
+					</table>
+				</div>
 
-			<div style="width:60%;margin-top:5px;text-align:left;float:right;">
-				<table style="width:100%;">
-					<tbody>
-						<tr class="">
-							<td class="" style="">
-								{{ printOptions.repserviceNoteString}}
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</body>
-</body>
+				<div class="bottom-container">
+					<div class="signature">
+						<div class="section-header">
+							<b>مهر و امضا</b>
+						</div>
+						<table>
+							<tr>
+								<td class="signature-text">
+									<h4>
+										تحویل گیرنده
+										<br>
+										<b>{{ doc.submitter.fullname }}</b>
+									</h4>
+								</td>
+								<td class="signature-seal">
+									<img src="{{ url('front_seal_file_get', {id: bid.id}) }}" alt="مهر" style="max-width: 120px; height: auto;"/>
+								</td>
+							</tr>
+						</table>
+					</div>
 
-</html>
+					<div class="notes">
+						<div class="section-header">
+							<b>توضیحات</b>
+						</div>
+						<table>
+							<tr>
+								<td>
+									<div class="notes-content">
+										{{ printOptions.repserviceNoteString | raw }}
+									</div>
+								</td>
+							</tr>
+						</table>
+					</div>
+					<div class="clearfix"></div>
+				</div>
+			</div>
+		</body>
+	</html>
+{% endblock %}

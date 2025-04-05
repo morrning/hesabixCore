@@ -146,12 +146,12 @@ import money from 'v-money3';
 import Vue3PersianDatetimePicker from 'vue3-persian-datetime-picker';
 import Swal from "sweetalert2";
 import { getApiUrl } from "@/hesabixConfig";
-const app = createApp(App)
-app.component('EasyDataTable', Vue3EasyDataTable);
-app.component('DatePicker', Vue3PersianDatetimePicker);
 import vSelect from 'vue-select'
 import 'vue-select/dist/vue-select.css';
 
+const app = createApp(App)
+app.component('EasyDataTable', Vue3EasyDataTable);
+app.component('DatePicker', Vue3PersianDatetimePicker);
 app.component('v-cob', vSelect)
 import Hdatepicker from "@/components/forms/Hdatepicker.vue";
 import calendarLocalConfig from "@/i18n/calendarLocalConfig";
