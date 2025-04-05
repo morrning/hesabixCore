@@ -45,15 +45,8 @@
         </v-col>
       </v-row>
 
-      <v-data-table
-        :headers="headers"
-        :items="item.rows"
-        :loading="isLoading"
-        class="mt-4"
-        :header-props="{ class: 'custom-header' }"
-        hide-default-footer
-        :items-per-page="-1"
-      >
+      <v-data-table :headers="headers" :items="item.rows" :loading="isLoading" class="mt-4"
+        :header-props="{ class: 'custom-header' }" hide-default-footer :items-per-page="-1">
         <template v-slot:item="{ item, index }">
           <tr>
             <td class="text-center">{{ index + 1 }}</td>
@@ -77,6 +70,7 @@ import ArchiveUpload from '../component/archive/archiveUpload.vue'
 import DocumentLogButton from '../component/documentLogButton.vue'
 import Notes from '../component/notes.vue'
 import { getCurrentInstance } from 'vue'
+import { getApiUrl } from '@/hesabixConfig'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()
@@ -112,7 +106,10 @@ const loadData = async () => {
 }
 
 const print = () => {
-  window.print()
+
+  axios.post('/api/hesabdari/print/' + route.params.id).then((response) => {
+    window.open(getApiUrl() + '/front/print/' + response.data.data, '_blank', 'noreferrer');
+  });
 }
 
 onBeforeMount(() => {

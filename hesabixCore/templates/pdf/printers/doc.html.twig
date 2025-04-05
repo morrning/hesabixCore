@@ -1,0 +1,126 @@
+{% extends 'pdf/base.html.twig' %}
+
+{% block body %}
+	<div style="width:100%;margin-top:20px;text-align:center;">
+		<div style="width:100%;margin-top:5px;margin-bottom:10px;text-align:center;">
+			<table style="width:100%; border-radius: 8px;">
+				<tbody>
+					<tr style="font-size:12px;">
+						<td class="right" style="border: 1px solid black;">
+							<p>
+								<b>شماره سند:</b>
+								{{ doc.code }}
+							</p>
+						</td>
+						<td class="right" style="border: 1px solid black;">
+							<p>
+								<b>نوع سند:</b>
+								{% if doc.type == 'cost' %}
+									هزینه
+								{% elseif doc.type == 'income' %}
+									درآمد
+								{% elseif doc.type == 'sell' %}
+									فروش
+								{% elseif doc.type == 'buy' %}
+									خرید
+								{% elseif doc.type == 'rfbuy' %}
+									برگشت از خرید
+								{% elseif doc.type == 'rfsell' %}
+									برگشت از فروش
+								{% else %}
+									سند پایه
+								{% endif %}
+							</p>
+						</td>
+					</tr>
+					<tr style="font-size:12px;">
+						<td class="right" colspan="2" style="border: 1px solid black;">
+							<p>
+								<b>توضیحات:</b>
+								{{ doc.des }}
+							</p>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div style="width:100%;margin-top:0px;text-align:center;">
+		<table style="width:100%;">
+			<thead>
+				<tr class="stimol" style="background-color:gray;">
+					<th class="text-white">ردیف</th>
+					<th class="text-white">جدول حساب</th>
+					<th class="text-white">مرجع</th>
+					<th class="text-white">تفضیل</th>
+					<th class="text-white">بستانکار</th>
+					<th class="text-white">بدهکار</th>
+					<th class="text-white">توضیحات</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% set rowIndex = 0 %}
+				{% for item in rows%}
+					{% set rowIndex = rowIndex + 1 %}
+					<tr class="stimol">
+						<td class="center item">{{ rowIndex }}</td>
+						<td class="center item">{{ item.ref.name }}</td>
+						<td class="center item">
+							{% if item.person %}
+								شخص
+							{% elseif item.commodity %}
+								کالا و خدمات
+							{% elseif item.bank %}
+								بانک
+							{% elseif item.cashdesk %}
+								تنخواه گردان
+							{% elseif item.salary %}
+								صندوق
+							{% else %}
+								حسابها
+							{% endif %}
+						</td>
+						<td class="center item">
+							{% if item.person %}
+								{{item.person.nikename}}
+							{% elseif item.commodity %}
+								{{item.commodity.name}}
+							{% elseif item.bank %}
+								{{item.bank.name}}
+							{% elseif item.cashdesk %}
+								{{item.salary.name}}
+							{% elseif item.salary %}
+								{{item.cashdesk.name}}
+							{% else %}
+								{{item.ref.name}}
+							{% endif %}
+						</td>
+						<td class="center item">{{ item.bs | number_format(0, '.', ',') }}</td>
+						<td class="center item">{{ item.bd | number_format(0, '.', ',') }}</td>
+						<td class="center item">{{ item.des }}</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+	<div style="width:40%;margin-top:0px;text-align:center;float:left;">
+		<table style="width:100%;">
+			<tbody>
+				<tr class="">
+					<td class="center" style="height:90px">
+						<h4>
+							مهر و امضا حسابدار
+						</h4>
+					</td>
+					<td class="center" style="height:90px">
+						<h4>
+							مهر و امضا مدیر مالی
+						</h4>
+						<br>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+{% endblock %}

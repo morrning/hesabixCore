@@ -20,6 +20,7 @@ use App\Entity\StoreroomTicket;
 use App\Service\Access;
 use App\Service\AccountingPermissionService;
 use App\Service\Explore;
+use App\Service\Extractor;
 use App\Service\Jdate;
 use App\Service\JsonResp;
 use App\Service\Log;
@@ -1091,5 +1092,46 @@ class HesabdariController extends AbstractController
 
         return $this->json(['result' => 1, 'id' => $code]);
     }
+    #[Route('/api/hesabdari/print/{id}', name: 'app_hesabdari_print', methods: ['POST'])]
+    public function app_hesabdari_print(Request $request, Provider $provider, Extractor $extractor, Access $access, EntityManagerInterface $entityManager, $id): JsonResponse
+    {
+        $acc = $access->hasRole('accounting');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
 
+        $params = $request->getPayload()->all();
+
+        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy(['bid' => $acc['bid'], 'code' => $id]);
+        if (!$doc) {
+            return $this->json($extractor->notFound());
+        }
+        
+        $printOptions = [
+            'paper' => 'A4-L'
+        ];
+        if (array_key_exists('printOptions', $params)) {
+            if (array_key_exists('paper', $params['printOptions'])) {
+                $printOptions['paper'] = $params['printOptions']['paper'];
+            }
+        }
+
+        $pdfPid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/printers/doc.html.twig', [
+                'doc' => $doc,
+                'bid' => $acc['bid'],
+                'page_title' => 'سند حسابداری',
+                'rows' => $doc->getHesabdariRows(),
+                'printOptions' => $printOptions,
+                'invoiceDate' => $doc->getDate(),
+            ]),
+            false,
+            $printOptions['paper']
+        );
+
+        return $this->json($extractor->operationSuccess($pdfPid));
+        
+    }
 }
