@@ -1,193 +1,198 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button" class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa fa-money-check-dollar px-2"></i>
-         چک‌های بانکی </h3>
-      <div class="block-options">
-      
-      </div>
-    </div>
-    <div class="block-content pt-0 pb-3">
-      <div class="row">
-        <div class="col-sm-12 col-md-12 m-0 p-0">
-          <div class="block-content p-0">
-            <div class="col-sm-12 col-md-12 m-0 p-0">
-              <ul class="nav nav-pills flex-column flex-sm-row border border-secondary" id="myTab" role="tablist">
-                <button class="flex-sm-fill text-sm-center nav-link rounded-0 active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">
-                  <i class="fa fa-file-export me-2"></i>
-                  چک‌های دریافتی
-                </button>
-                <button class="flex-sm-fill text-sm-center nav-link rounded-0" id="pays-tab" data-bs-toggle="tab" data-bs-target="#pays" type="button" role="tab" aria-controls="pays" aria-selected="false">
-                  <i class="fa fa-file-import me-2"></i>
-                  چک‌‌های واگذار شده
-                </button>
-              </ul>
-              <div class="tab-content p-0" id="myTabContent">
-                <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                  <div class="my-1">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text"><i class="fa fa-search"></i></span>
-                      <input v-model="searchValueInput" class="form-control" type="text" placeholder="جست و جو ...">
-                    </div>
-                  </div>
-                  <EasyDataTable table-class-name="customize-table"
-                      multi-sort
-                      show-index
-                      alternating
-                      :search-value="searchValueInput"
-                      :headers="headersInput"
-                      :items="itemsInput"
-                      theme-color="#1d90ff"
-                      header-text-direction="center"
-                      body-text-direction="center"
-                      rowsPerPageMessage="تعداد سطر"
-                      emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-                      rowsOfPageSeparatorMessage="از"
-                      :loading="loading"
-                  >
-                    <template #item-operation="{ id,locked,rejected }">
-                      <passCheck v-if="!locked" :windowsState="this.passChequeWindowsState" :id="id"/>
+  <v-toolbar color="toolbar" title="چک‌ها">
+    <template v-slot:prepend>
+      <v-tooltip :text="$t('dialog.back')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+            icon="mdi-arrow-right" />
+        </template>
+      </v-tooltip>
+    </template>
+    <template v-slot:extension>
+      <v-tabs v-model="tab" color="primary" class="bg-light" grow>
+        <v-tab value="input" block>
+          <v-icon start>mdi-file-export</v-icon>
+          چک‌های دریافتی
+        </v-tab>
+        <v-tab value="output" block>
+          <v-icon start>mdi-file-import</v-icon>
+          چک‌های واگذار شده
+        </v-tab>
+      </v-tabs>
+    </template>
+    <v-spacer />
+    <v-menu>
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" color="primary" variant="text" icon="mdi-plus" />
+      </template>
 
-                      <a v-if="!rejected && !locked" @click="rejectCheque(id)" class="btn btn-sm btn-link text-danger" title="برگشت چک">
-                        <i class="fa fa-arrow-left px-2"></i>
-                      </a>
-                    </template>
-                    <template #item-status="{ status }">
-                      <div v-show="status=='پاس شده'" class="text-success">{{ status }}</div>
-                      <div v-show="status=='پاس نشده'" class="text-dark">{{ status }}</div>
-                      <div v-show="status=='برگشت خورده'" class="text-danger">{{ status }}</div>
-                    </template>
-                  </EasyDataTable>
-                </div>
-                <div class="tab-pane fade" id="pays" role="tabpanel" aria-labelledby="pays-tab">
-                  <div class="my-1">
-                    <div class="input-group input-group-sm">
-                      <span class="input-group-text"><i class="fa fa-search"></i></span>
-                      <input v-model="searchValueOutput" class="form-control" type="text" placeholder="جست و جو ...">
-                    </div>
-                  </div>
-                  <EasyDataTable table-class-name="customize-table"
-                      multi-sort
-                      show-index
-                      alternating
-                      :search-value="searchValueOutput"
-                      :headers="headersInput"
-                      :items="itemsOutput"
-                      theme-color="#1d90ff"
-                      header-text-direction="center"
-                      body-text-direction="center"
-                      rowsPerPageMessage="تعداد سطر"
-                      emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-                      rowsOfPageSeparatorMessage="از"
-                      :loading="loading"
-                  >
-                    <template #item-operation="{ id,locked,rejected }">
-                      <passCheck v-if="!locked" :windowsState="this.passChequeWindowsState" :id="id"/>
+      <v-list>
+        <v-list-item @click="$router.push('/acc/cheque/input')">
+          <template v-slot:prepend>
+            <v-icon>mdi-file-export</v-icon>
+          </template>
+          <v-list-item-title>چک دریافتی</v-list-item-title>
+        </v-list-item>
 
-                      <a v-if="!rejected && !locked" @click="rejectCheque(id)" class="btn btn-sm btn-link text-danger" title="برگشت چک">
-                        <i class="fa fa-arrow-left px-2"></i>
-                      </a>
-                    </template>
-                    <template #item-status="{ status }">
-                      <div v-show="status=='پاس شده'" class="text-success">{{ status }}</div>
-                      <div v-show="status=='پاس نشده'" class="text-dark">{{ status }}</div>
-                      <div v-show="status=='برگشت خورده'" class="text-danger">{{ status }}</div>
-                    </template>
-                  </EasyDataTable>
-                </div>
+        <v-list-item @click="$router.push('/acc/cheque/output')">
+          <template v-slot:prepend>
+            <v-icon>mdi-file-import</v-icon>
+          </template>
+          <v-list-item-title>چک پرداختی</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+  </v-toolbar>
+
+  <v-card>
+    <v-card-text>
+      <v-window v-model="tab">
+        <v-window-item value="input">
+          <v-text-field v-model="searchValueInput" prepend-inner-icon="mdi-magnify" label="جست و جو" variant="outlined"
+            density="compact" class="mb-4"></v-text-field>
+
+          <v-data-table :headers="headersInput" :items="itemsInput" :search="searchValueInput" :loading="loading"
+            show-index density="comfortable" class="elevation-1" :header-props="{ class: 'custom-header' }">
+            <template v-slot:item.operation="{ item }">
+              <div class="d-flex">
+                <pass-check v-if="!item.locked" :windows-state="passChequeWindowsState" :id="item.id" />
+                <v-btn v-if="!item.rejected && !item.locked" icon variant="text" color="error" size="small"
+                  @click="rejectCheque(item.id)" title="برگشت چک">
+                  <v-icon>mdi-arrow-left</v-icon>
+                </v-btn>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+            </template>
+
+            <template v-slot:item.status="{ item }">
+              <v-chip :color="getStatusColor(item.status)" size="small">
+                {{ item.status }}
+              </v-chip>
+            </template>
+          </v-data-table>
+        </v-window-item>
+
+        <v-window-item value="output">
+          <v-text-field v-model="searchValueOutput" prepend-inner-icon="mdi-magnify" label="جست و جو" variant="outlined"
+            density="compact" class="mb-4"></v-text-field>
+
+          <v-data-table :headers="headersInput" :items="itemsOutput" :search="searchValueOutput" :loading="loading"
+            show-index density="comfortable" class="elevation-1" :header-props="{ class: 'custom-header' }">
+            <template v-slot:item.operation="{ item }">
+              <div class="d-flex">
+                <pass-check v-if="!item.locked" :windows-state="passChequeWindowsState" :id="item.id" />
+                <v-btn v-if="!item.rejected && !item.locked" icon variant="text" color="error" size="small"
+                  @click="rejectCheque(item.id)" title="برگشت چک">
+                  <v-icon>mdi-arrow-left</v-icon>
+                </v-btn>
+              </div>
+            </template>
+
+            <template v-slot:item.status="{ item }">
+              <v-chip :color="getStatusColor(item.status)" size="small">
+                {{ item.status }}
+              </v-chip>
+            </template>
+          </v-data-table>
+        </v-window-item>
+      </v-window>
+    </v-card-text>
+  </v-card>
 </template>
 
 <script>
 import axios from "axios";
 import Swal from "sweetalert2";
-import {ref} from "vue";
-import passCheck from "../component/cheque/passCheck.vue"
+import { ref } from "vue";
+import passCheck from "../component/cheque/passCheck.vue";
+
 export default {
   name: "list",
-  components:{
-    passCheck:passCheck
+  components: {
+    passCheck
   },
-  watch:{
-    'passChequeWindowsState.submited'(newValue,oldValue) {
+  watch: {
+    'passChequeWindowsState.submited'(newValue) {
       this.passChequeWindowsState.submited = false;
-      if(newValue){
+      if (newValue) {
         this.loadData();
       }
     }
   },
-  data: ()=>{return {
-    passChequeWindowsState:{
-      submited:false
+  data: () => ({
+    tab: 'input',
+    passChequeWindowsState: {
+      submited: false
     },
     loading: ref(true),
     searchValueInput: '',
-    itemsInput:[],
-    itemsOutput:[],
-    searchValueOutput:'',
+    searchValueOutput: '',
+    itemsInput: [],
+    itemsOutput: [],
     headersInput: [
-      { text: "عملیات", value: "operation", width: "100"},
-      { text: "شماره", value: "number", width: "100px" },
-      { text: "کد صیاد", value: "sayadNum", width: "120px"},
-      { text: "مبلغ(ریال)", value: "amount", width: "140px"},
-      { text: "تاریخ", value: "datePay", width: "150px"},
-      { text: "پرداخت کننده", value: "person.nikename", width: "150px"},
-      { text: "بانک", value: "chequeBank", width: "150px"},
-      { text: "وضعیت", value: "status", width: "150px", sortable: true},
-      { text: "تاریخ وصول", value: "date", width: "150px"},
-      { text: "توضیحات", value: "des", width: "150px"},
+      { title: "عملیات", key: "operation", width: "100" },
+      { title: "شماره", key: "number", width: "100" },
+      { title: "کد صیاد", key: "sayadNum", width: "120" },
+      { title: "مبلغ(ریال)", key: "amount", width: "140" },
+      { title: "تاریخ", key: "datePay", width: "150" },
+      { title: "پرداخت کننده", key: "person.nikename", width: "150" },
+      { title: "بانک", key: "chequeBank", width: "150" },
+      { title: "وضعیت", key: "status", width: "150", sortable: true },
+      { title: "تاریخ وصول", key: "date", width: "150" },
+      { title: "توضیحات", key: "des", width: "150" },
     ]
-  }},
+  }),
   methods: {
-    loadData(){
-      axios.post('/api/cheque/list')
-          .then((response)=>{
-            this.itemsInput = response.data.input;
-            this.itemsInput.forEach((item)=>{
-              item.amount = this.$filters.formatNumber(item.amount);
-            });
-            this.itemsOutput = response.data.output;
-            this.itemsOutput.forEach((item)=>{
-              item.amount = this.$filters.formatNumber(item.amount);
-            });
-            this.loading = false;
-          });
+    getStatusColor(status) {
+      switch (status) {
+        case 'پاس شده':
+          return 'success';
+        case 'پاس نشده':
+          return 'grey';
+        case 'برگشت خورده':
+          return 'error';
+        default:
+          return 'grey';
+      }
     },
-    rejectCheque(id){
+    loadData() {
+      axios.post('/api/cheque/list')
+        .then((response) => {
+          this.itemsInput = response.data.input;
+          this.itemsInput.forEach((item) => {
+            item.amount = this.$filters.formatNumber(item.amount);
+          });
+          this.itemsOutput = response.data.output;
+          this.itemsOutput.forEach((item) => {
+            item.amount = this.$filters.formatNumber(item.amount);
+          });
+          this.loading = false;
+        });
+    },
+    rejectCheque(id) {
       this.loading = true;
-      axios.post('/api/cheque/info/' + id).then((response)=>{
-            this.loading = false;
-            Swal.fire({
-              title: "آیا برای تغییر وضعیت چک به برگشتی مطمئن هستید؟",
-              icon: "question",
-              confirmButtonText: "بله",
-              cancelButtonText: "خیر",
-              showCancelButton: true,
-              showCloseButton: true
-            }).then((result)=>{
-              if(result.isConfirmed){
-                this.loading = true;
-                axios.post('/api/cheque/reject/' + id).then((response)=>{
-                    this.loading = false;
-                    Swal.fire({
-                      title: "وضعیت چک تغییر یافت",
-                      icon: "success",
-                      confirmButtonText: "بله",
-                    });
-                    this.loadData();
+      axios.post('/api/cheque/info/' + id).then(() => {
+        this.loading = false;
+        Swal.fire({
+          title: "آیا برای تغییر وضعیت چک به برگشتی مطمئن هستید؟",
+          icon: "question",
+          confirmButtonText: "بله",
+          cancelButtonText: "خیر",
+          showCancelButton: true,
+          showCloseButton: true
+        }).then((result) => {
+          if (result.isConfirmed) {
+            this.loading = true;
+            axios.post('/api/cheque/reject/' + id).then(() => {
+              this.loading = false;
+              Swal.fire({
+                title: "وضعیت چک تغییر یافت",
+                icon: "success",
+                confirmButtonText: "بله",
               });
-              }
+              this.loadData();
             });
+          }
+        });
       });
     }
   },
@@ -198,5 +203,7 @@ export default {
 </script>
 
 <style scoped>
-
+.v-data-table {
+  direction: rtl;
+}
 </style>

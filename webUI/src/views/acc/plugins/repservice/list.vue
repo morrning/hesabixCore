@@ -1,218 +1,263 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button"
-          class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        درخواست‌ها
-      </h3>
-      <div class="block-options">
-        <div class="dropdown-center">
-          <button aria-expanded="false" aria-haspopup="true" class="btn btn-sm btn-link" data-bs-toggle="dropdown"
-            id="dropdown-align-center-alt-primary" type="button">
-            <i class="fa-solid fa-ellipsis"></i>
-          </button>
-          <div aria-labelledby="dropdown-align-center-outline-primary" class="dropdown-menu dropdown-menu-end" style="">
-            <router-link class="dropdown-item" to="/acc/plugin/repservice/order/mod/">
-              <i class="fa fa-plus text-success pe-2"></i>
-              درخواست جدید
-            </router-link>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" id="changeSingleStateModal" tabindex="-1" aria-labelledby="changeSingleStateModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5" id="changeSingleStateModalLabel">تغییر وضعیت درخواست</h1>
-            <div class="block-options">
-              <button type="button" class="btn-close btn-close-change-state" data-bs-dismiss="modal"
-                aria-label="Close"></button>
-            </div>
-          </div>
-          <div class="modal-body">
-            <div class="row">
-              <div class="col-sm-12 col-md-12 mb-2">
-                <span class="form-check form-switch  form-check-inline">
-                  <input :disabled="this.singleChangeStateSelected.person.mobile == ''"
-                    v-model="singleChangeStateSelected.sms" class="form-check-input" type="checkbox">
-                  <label class="form-check-label">ارسال پیامک</label>
-                </span>
-              </div>
-              <div class="col-sm-12 col-md-6 mb-2">
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text">مشتری</span>
-                  <input type="text" readonly="readonly" class="form-control"
-                    v-model="singleChangeStateSelected.person.nikename">
-                </div>
-              </div>
-              <div class="col-sm-12 col-md-6 mb-2">
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text">کالا</span>
-                  <input type="text" readonly="readonly" class="form-control"
-                    v-model="singleChangeStateSelected.commodity.name">
-                </div>
-              </div>
-              <div class="col-sm-12 col-md-12 mb-2">
-                <div class="input-group input-group-sm">
-                  <label class="input-group-text bg-success text-light">وضعیت</label>
-                  <select v-model="singleChangeStateSelected.state" class="form-select">
-                    <option v-for="item in orderStates" :value="item">{{ item.label }}</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بازگشت</button>
-            <button @click="changeStateSingle()" type="button" data-bs-dismiss="modal"
-              class="btn btn-primary">ثبت</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" id="historyModal" tabindex="-1" aria-labelledby="historyModalModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5" id="historyModalModalLabel">تاریخچه</h1>
-            <div class="block-options">
-              <button type="button" class="btn-close btn-close-change-state" data-bs-dismiss="modal"
-                aria-label="Close"></button>
-            </div>
-          </div>
-          <div class="modal-body">
-            <EasyDataTable table-class-name="customize-table" multi-sort show-index alternating :headers="logHeaders"
-              :items="logItems" theme-color="#1d90ff" header-text-direction="center" body-text-direction="center"
-              rowsPerPageMessage="تعداد سطر" emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-              rowsOfPageSeparatorMessage="از" :loading="loading">
-            </EasyDataTable>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بازگشت</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="block-content pt-1 pb-3">
-      <div class="row">
-        <div class="col-sm-12 col-md-12 m-0 p-0">
-          <div class="mb-1">
-            <div class="input-group input-group-sm">
-              <span class="input-group-text"><i class="fa fa-search"></i></span>
-              <input v-model="searchValue" class="form-control" type="text" placeholder="جست و جو ...">
-            </div>
-          </div>
-          <div class="col-sm-12 col-md-12 border rounded mb-2 px-2 py-1">
-            <div v-for="(item, index) in orderStates" class="form-check form-check-inline">
-              <input @change="filterTable()" v-model="orderStates[index].checked" checked="" class="form-check-input"
-                type="checkbox">
-              <label class="form-check-label">{{ item.label }}</label>
-            </div>
-          </div>
-          <EasyDataTable table-class-name="customize-table" multi-sort show-index alternating :headers="headers"
-            :items="items" theme-color="#1d90ff" header-text-direction="center" body-text-direction="center"
-            rowsPerPageMessage="تعداد سطر" emptyMessage="اطلاعاتی برای نمایش وجود ندارد" rowsOfPageSeparatorMessage="از"
-            :loading="loading">
-            <template #item-operation="{ code }">
-              <div class="dropdown-center" style="z-index: 1000;">
-                <button aria-expanded="false" aria-haspopup="true" class="btn btn-sm btn-link" data-bs-toggle="dropdown"
-                  id="dropdown-align-center-alt-primary" type="button">
-                  <i class="fa-solid fa-ellipsis"></i>
-                </button>
-                <div aria-labelledby="dropdown-align-center-outline-primary" class="dropdown-menu dropdown-menu-end"
-                  style="">
-                  <router-link class="dropdown-item" :to="'/acc/plugin/repservice/order/mod/' + code">
-                    <i class="fa fa-edit pe-2"></i>
-                    ویرایش
-                  </router-link>
-                  <button type="button" class="dropdown-item" data-bs-toggle="modal"
-                    data-bs-target="#changeSingleStateModal" :data-bs-whatever="code">
-                    <i class="fa-solid fa-bolt pe-2"></i>
-                    تغییر وضعیت
-                  </button>
-                  <button type="button" class="dropdown-item" data-bs-toggle="modal"
-                    @click="printInvoice(code)">
-                    <i class="fa-solid fa-print pe-2"></i>
-                    چاپ قبض رسید
-                  </button>
-                  <button type="button" class="dropdown-item" data-bs-toggle="modal"
-                    data-bs-target="#changeSingleStateModal" :data-bs-whatever="code">
-                    <i class="fa-solid fa-bolt pe-2"></i>
-                    تغییر وضعیت
-                  </button>
-                  <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#historyModal"
-                    @click="changeItem(code)" :data-bs-whatever="code">
-                    <i class="fa fa-list pe-2"></i>
-                    تاریخچه
-                  </button>
-                  <button type="button" class="dropdown-item" @click="deleteItem(code)">
-                    <i class="fa fa-trash text-danger pe-2"></i>
-                    حذف
-                  </button>
-                </div>
-              </div>
+  <v-toolbar color="toolbar" title="درخواست‌ها">
+    <template v-slot:prepend>
+      <v-tooltip :text="$t('dialog.back')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+            icon="mdi-arrow-right" />
+        </template>
+      </v-tooltip>
+    </template>
+    <template v-slot:append>
+      <v-tooltip :text="$t('dialog.new')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" color="success" @click="$router.push('/acc/plugin/repservice/order/mod/')" icon="mdi-plus" />
+        </template>
+      </v-tooltip>
+    </template>
+  </v-toolbar>
+
+  <v-dialog v-model="changeStateDialog" persistent max-width="800">
+    <v-toolbar title="تغییر وضعیت درخواست" color="toolbar" density="compact">
+      <v-spacer></v-spacer>
+      <v-switch
+        v-model="singleChangeStateSelected.sms"
+        :disabled="!singleChangeStateSelected.person.mobile"
+        label="ارسال پیامک"
+        color="primary"
+        density="compact"
+        hide-details
+        class="me-4"
+      ></v-switch>
+      <v-tooltip text="ثبت تغییرات" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn :loading="loading" v-bind="props" color="success" @click="changeStateSingle" icon="mdi-content-save" />
+        </template>
+      </v-tooltip>
+      <v-tooltip :text="$t('dialog.close')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-close" variant="text" @click="changeStateDialog = false" />
+        </template>
+      </v-tooltip>
+    </v-toolbar>
+    <v-card :rounded="false">
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="singleChangeStateSelected.person.nikename"
+              label="مشتری"
+              readonly
+              density="compact"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="singleChangeStateSelected.commodity.name"
+              label="کالا"
+              readonly
+              density="compact"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12">
+            <v-select
+              v-model="singleChangeStateSelected.state"
+              :items="orderStates"
+              item-title="label"
+              item-value="value"
+              label="وضعیت"
+              density="compact"
+              color="success"
+              return-object
+            ></v-select>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="historyDialog" persistent>
+    <v-toolbar title="تاریخچه" color="toolbar" density="compact">
+      <v-spacer></v-spacer>
+      <v-tooltip :text="$t('dialog.close')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-close" variant="text" @click="historyDialog = false" />
+        </template>
+      </v-tooltip>
+    </v-toolbar>
+    <v-card :rounded="false">
+      <v-card-text  class="pa-0 ma-0">
+        <v-data-table
+          :headers="logHeaders"
+          :items="logItems"
+          :loading="loading"
+          density="compact"
+          class="elevation-1"
+          :header-props="{ class: 'custom-header' }"
+        ></v-data-table>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="deleteDialog" persistent max-width="400">
+    <v-card>
+      <v-card-title>حذف درخواست</v-card-title>
+      <v-card-text>آیا برای حذف درخواست مطمئن هستید؟</v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="error" variant="text" @click="deleteDialog = false">خیر</v-btn>
+        <v-btn color="success" variant="text" @click="confirmDelete">بله</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <v-snackbar
+    v-model="snackbar.show"
+    :color="snackbar.color"
+    :timeout="3000"
+  >
+    {{ snackbar.text }}
+    <template v-slot:actions>
+      <v-btn
+        variant="text"
+        @click="snackbar.show = false"
+      >
+        بستن
+      </v-btn>
+    </template>
+  </v-snackbar>
+
+  <v-row>
+        <v-col cols="12" class="pb-0 mb-0">
+          <v-text-field
+            v-model="searchValue"
+            :rounded="false"
+            prepend-inner-icon="mdi-magnify"
+            label="جست و جو ..."
+            density="compact"
+            hide-details
+          >
+            <template v-slot:append-inner>
+              <v-menu>
+                <template v-slot:activator="{ props: menuProps }">
+                  <v-tooltip text="فیلتر درخواست‌ها" location="bottom">
+                    <template v-slot:activator="{ props: tooltipProps }">
+                      <v-btn
+                        v-bind="{ ...menuProps, ...tooltipProps }"
+                        icon="mdi-filter"
+                        variant="text"
+                        color="primary"
+                      ></v-btn>
+                    </template>
+                  </v-tooltip>
+                </template>
+                <v-list>
+                  <v-list-item v-for="(item, index) in orderStates" :key="index">
+                    <v-checkbox
+                      v-model="item.checked"
+                      :label="item.label"
+                      density="compact"
+                      hide-details
+                      @change="filterTable"
+                    ></v-checkbox>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
             </template>
-            <template #item-person="{ person }">
-              <router-link :to="'/acc/persons/card/view/' + person.code">
-                {{ person.nikename }}
+          </v-text-field>
+        </v-col>
+        <v-col cols="12" class="py-0 my-0">
+          <v-data-table
+            :headers="headers"
+            :items="items"
+            :loading="loading"
+            show-expand
+            class="elevation-1"
+            :header-props="{ class: 'custom-header' }"
+          >
+            <template v-slot:item.operation="{ item }">
+              <v-menu>
+                <template v-slot:activator="{ props }">
+          <v-btn variant="text" size="small" color="error" icon="mdi-menu" v-bind="props" />
+        </template>
+                <v-list>
+                  <v-list-item :to="'/acc/plugin/repservice/order/mod/' + item.code">
+                    <template v-slot:prepend>
+                      <v-icon class="me-2">mdi-pencil</v-icon>
+                    </template>
+                    <v-list-item-title>ویرایش</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item @click="openChangeStateDialog(item.code)">
+                    <template v-slot:prepend>
+                      <v-icon class="me-2">mdi-lightning-bolt</v-icon>
+                    </template>
+                    <v-list-item-title>تغییر وضعیت</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item @click="printInvoice(item.code)">
+                    <template v-slot:prepend>
+                      <v-icon class="me-2">mdi-printer</v-icon>
+                    </template>
+                    <v-list-item-title>چاپ قبض رسید</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item @click="openHistoryDialog(item.code)">
+                    <template v-slot:prepend>
+                      <v-icon class="me-2">mdi-history</v-icon>
+                    </template>
+                    <v-list-item-title>تاریخچه</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item @click="deleteItem(item.code)">
+                    <template v-slot:prepend>
+                      <v-icon color="error" class="me-2">mdi-delete</v-icon>
+                    </template>
+                    <v-list-item-title>حذف</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </template>
+            <template v-slot:item.person="{ item }">
+              <router-link :to="'/acc/persons/card/view/' + item.person.code">
+                {{ item.person.nikename }}
               </router-link>
             </template>
-            <template #item-commodity="{ commodity }">
-              {{ commodity.name }}
+            <template v-slot:item.commodity="{ item }">
+              {{ item.commodity.name }}
             </template>
-            <template #item-state="{ state }">
-              {{ state.label }}
+              <template v-slot:item.state="{ item }">
+                {{ item.state.label }}
+              </template>
+              <template v-slot:item.date="{ item }">
+                {{ item.date }}
+              </template>
+              <template v-slot:item.dateOut="{ item }">
+                {{ item.dateOut ? item.dateOut : 'تحویل تعمیرگاه' }}
+              </template>
+            <template v-slot:expanded-row="{ columns, item }">
+              <v-container fluid>
+                    <v-row>
+                      <v-col cols="12" sm="12" md="6" class="text-right">
+                        <strong>شرح: </strong>{{ item.des }}
+                      </v-col>
+                      <v-col cols="12" sm="12" md="6" class="text-right">
+                        <strong>متعلقات: </strong>{{ item.motaleghat }}
+                      </v-col>
+                      <v-col cols="12" sm="12" md="6" class="text-right">
+                        <strong>پلاک: </strong>{{ item.pelak }}
+                      </v-col>
+                      <v-col cols="12" sm="12" md="6" class="text-right">
+                        <strong>سریال: </strong>{{ item.serial }}
+                      </v-col>
+                      <v-col cols="12" sm="12" md="6" class="text-right">
+                        <strong>مدل: </strong>{{ item.model }}
+                      </v-col>
+                      <v-col cols="12" sm="12" md="6" class="text-right">
+                        <strong>رنگ: </strong>{{ item.color }}
+                      </v-col>
+                    </v-row>
+                  </v-container>
             </template>
-            <template #expand="{ des, motaleghat, serial, pelak, model, color }">
-              <div class="container text-start">
-                <div class="row my-1">
-                  <div class="col">
-                    <strong>شرح: </strong>
-                    {{ des }}
-                  </div>
-                </div>
-                <div class="row mb-1">
-                  <div class="col">
-                    <strong>متعلقات: </strong>
-                    {{ motaleghat }}
-                  </div>
-                </div>
-                <div class="row mb-1">
-                  <div class="col">
-                    <strong>پلاک: </strong>
-                    {{ pelak }}
-                  </div>
-                </div>
-                <div class="row mb-1">
-                  <div class="col">
-                    <strong>سریال: </strong>
-                    {{ serial }}
-                  </div>
-                </div>
-                <div class="row mb-1">
-                  <div class="col">
-                    <strong>مدل: </strong>
-                    {{ model }}
-                  </div>
-                </div>
-                <div class="row mb-1">
-                  <div class="col">
-                    <strong>رنگ: </strong>
-                    {{ color }}
-                  </div>
-                </div>
-              </div>
-            </template>
-          </EasyDataTable>
-        </div>
-      </div>
-    </div>
-  </div>
+          </v-data-table>
+        </v-col>
+      </v-row>
 </template>
 
 <script>
@@ -222,131 +267,103 @@ import { ref } from "vue";
 
 export default {
   name: "list",
-  components: {
-    history
-  },
-  watch: {
-    'singleChangeStateSelected.code'(newValue, oldValue) {
-      this.items.forEach((item) => {
-        if (item.code == newValue) {
-          this.singleChangeStateSelected = item;
-          if (this.singleChangeStateSelected.person.mobile == '') {
-            this.singleChangeStateSelected.sms = false;
-          }
-        }
-      });
+  data: () => ({
+    orderStates: [],
+    singleChangeStateSelected: {
+      code: 0,
+      person: {
+        nikename: ''
+      },
+      commodity: {
+        name: ''
+      }
     },
-    'searchValue'(newValue, oldValue) {
+    searchValue: '',
+    loading: ref(true),
+    items: [],
+    orgItems: [],
+    changeStateDialog: false,
+    historyDialog: false,
+    headers: [
+      { title: "عملیات", key: "operation", sortable: false },
+      { title: "کد", key: "code" },
+      { title: "مشتری", key: "person", sortable: true },
+      { title: "کالا", key: "commodity", sortable: true },
+      { title: "تاریخ", key: "date", sortable: true },
+      { title: "وضعیت", key: "state", sortable: true },
+      { title: "تاریخ تحویل", key: "dateOut", sortable: true },
+    ],
+    logItems: [],
+    logHeaders: [
+      { title: "تاریخ", key: "date" },
+      { title: "شرح", key: "des" },
+      { title: "ثبت کننده", key: "user" },
+    ],
+    deleteDialog: false,
+    deleteCode: null,
+    snackbar: {
+      show: false,
+      text: '',
+      color: 'success'
+    }
+  }),
+  watch: {
+    'singleChangeStateSelected.code'(newValue) {
+      const item = this.items.find(item => item.code === newValue);
+      if (item) {
+        this.singleChangeStateSelected = { ...item };
+        if (!this.singleChangeStateSelected.person.mobile) {
+          this.singleChangeStateSelected.sms = false;
+        }
+      }
+    },
+    searchValue() {
       this.searchTable();
     }
   },
-  data: () => {
-    return {
-      orderStates: [],
-      singleChangeStateSelected: {
-        code: 0,
-        person: {
-          nikename: ''
-        },
-        commodity: {
-          name: ''
-        }
-      },
-      searchValue: '',
-      loading: ref(true),
-      items: [],
-      orgItems: [],
-      headers: [
-        { text: "عملیات", value: "operation" },
-        { text: "کد", value: "code" },
-        { text: "مشتری", value: "person", sortable: true, width: 150 },
-        { text: "کالا", value: "commodity", sortable: true, width: 150 },
-        { text: "تاریخ", value: "date", sortable: true, width: 100 },
-        { text: "وضعیت", value: "state", sortable: true, width: 150 },
-        { text: "تاریخ تحویل", value: "dateOut", sortable: true, width: 100 },
-      ],
-      logItems: [],
-      logHeaders: [
-        { text: "تاریخ", value: "date" },
-        { text: "شرح", value: "des" },
-        { text: "ثبت کننده", value: "user" },
-      ]
-    }
-  },
   methods: {
+    openChangeStateDialog(code) {
+      this.singleChangeStateSelected.code = code;
+      this.changeStateDialog = true;
+    },
+    openHistoryDialog(code) {
+      this.changeItem(code);
+      this.historyDialog = true;
+    },
     changeItem(code) {
       this.loading = true;
-      axios.post('/api/plug/repservice/order/logs/' + code).then((response) => {
-        this.loading = false;
-        this.logItems = response.data;
-      });
+      axios.post('/api/plug/repservice/order/logs/' + code)
+        .then((response) => {
+          this.loading = false;
+          this.logItems = response.data;
+        });
     },
     filterTable() {
       this.loading = true;
-      let calcItems = [];
-      let isAll = true;
-      let selectedTypes = [];
-      this.orderStates.forEach((item) => {
-        if (item.checked == true) {
-          isAll = false;
-          selectedTypes.push(item);
-        }
-      });
-      if (isAll) {
+      const selectedTypes = this.orderStates.filter(item => item.checked);
+      
+      if (selectedTypes.length === 0) {
         this.items = this.orgItems;
+      } else {
+        this.items = this.orgItems.filter(item => 
+          selectedTypes.some(st => st.code === item.state.code)
+        );
       }
-      else {
-        this.orgItems.forEach((item) => {
-          selectedTypes.forEach((st) => {
-            if (st.code == item.state.code) {
-              let existBefore = false;
-              calcItems.forEach((ri) => {
-                if (item.state.code == ri.code) {
-                  existBefore = true;
-                }
-              })
-              if (existBefore == false) {
-                calcItems.push(item);
-              }
-            }
-          });
-        });
-        this.items = calcItems;
-      }
-
       this.loading = false;
     },
     searchTable() {
       this.loading = true;
-      let calcItems = [];
-      let isAll = false;
-      if(this.searchValue == ''){isAll = true;}
-      if (isAll) {
+      if (!this.searchValue) {
         this.items = this.orgItems;
-      }
-      else {
-        this.orgItems.forEach((item) => {
-          let addItem = false;
-          if(item.commodity.name.includes(this.searchValue)){
-            addItem = true
-          }
-          else if(item.person.nikename.includes(this.searchValue)){
-            addItem = true
-          }
-          else if(item.des.includes(this.searchValue)){
-            addItem = true
-          }
-          else if(item.state.label.includes(this.searchValue)){
-            addItem = true
-          }
-          else if(item.date.includes(this.searchValue)){
-            addItem = true
-          }
-          if(addItem){
-            calcItems.push(item);
-          }
-        });
-        this.items = calcItems;
+      } else {
+        const searchLower = this.searchValue.toLowerCase();
+        this.items = this.orgItems.filter(item => 
+          item.commodity.name.toLowerCase().includes(searchLower) ||
+          item.person.nikename.toLowerCase().includes(searchLower) ||
+          item.des.toLowerCase().includes(searchLower) ||
+          item.state.label.toLowerCase().includes(searchLower) ||
+          item.date.toLowerCase().includes(searchLower)
+        );
       }
       this.loading = false;
     },
@@ -364,76 +381,67 @@ export default {
     },
     changeStateSingle() {
       this.loading = true;
-      axios.post('/api/plug/repservice/order/state/change', this.singleChangeStateSelected).then((response) => {
-        this.loading = false;
-        if (response.data.code == '0') {
-          Swal.fire({
-            text: 'وضعیت درخواست به روز شد.',
-            icon: 'success',
-            confirmButtonText: 'قبول'
-          });
-        }
-        this.loadData();
-      });
+      axios.post('/api/plug/repservice/order/state/change', this.singleChangeStateSelected)
+        .then((response) => {
+          this.loading = false;
+          if (response.data.Success == true) {
+            this.snackbar = {
+              show: true,
+              text: `وضعیت درخواست ${this.singleChangeStateSelected.person.prelabel ? this.singleChangeStateSelected.person.prelabel + ' ' : ''} ${this.singleChangeStateSelected.person.nikename} برای کالای ${this.singleChangeStateSelected.commodity.name} به ${this.singleChangeStateSelected.state.label} تغییر یافت.`,
+              color: 'success'
+            };
+          } else {
+            this.snackbar = {
+              show: true,
+              text: 'متأسفانه تغییر وضعیت با مشکل مواجه شد. لطفاً دوباره تلاش کنید.',
+              color: 'error'
+            };
+          }
+          this.changeStateDialog = false;
+          this.loadData();
+        })
+        .catch(() => {
+          this.loading = false;
+          this.snackbar = {
+            show: true,
+            text: 'متأسفانه ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.',
+            color: 'error'
+          };
+        });
     },
     deleteItem(code) {
-      Swal.fire({
-        text: 'آیا برای حذف درخواست مطمئن هستید؟',
-        showCancelButton: true,
-        confirmButtonText: 'بله',
-        cancelButtonText: `خیر`,
-      }).then((result) => {
-        /* Read more about isConfirmed, isDenied below */
-        if (result.isConfirmed) {
-          axios.post('/api/repservice/order/remove/' + code).then((response) => {
-            if (response.data.result == 1) {
-              let index = 0;
-              for (let z = 0; z < this.items.length; z++) {
-                index++;
-                if (this.items[z]['code'] == code) {
-                  this.items.splice(index - 1, 1);
-                }
-              }
-              Swal.fire({
-                text: 'درخواست با موفقیت حذف شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              });
-            }
-          })
-        }
-      })
+      this.deleteCode = code;
+      this.deleteDialog = true;
+    },
+    confirmDelete() {
+      axios.post('/api/repservice/order/remove/' + this.deleteCode)
+        .then((response) => {
+          if (response.data.result === 1) {
+            this.items = this.items.filter(item => item.code !== this.deleteCode);
+            this.snackbar = {
+              show: true,
+              text: 'درخواست با موفقیت حذف شد.',
+              color: 'success'
+            };
+          }
+          this.deleteDialog = false;
+        });
     },
     printInvoice(code) {
       this.loading = true;
-      axios.post('/api/repservice/print/invoice', { 
-        'code': code
-       }).then((response) => {
-        this.loading = false;
-        window.open(this.$API_URL + '/front/print/' + response.data.id, '_blank', 'noreferrer');
-      });
+      axios.post('/api/repservice/print/invoice', { code })
+        .then((response) => {
+          this.loading = false;
+          window.open(this.$API_URL + '/front/print/' + response.data.id, '_blank', 'noreferrer');
+        });
     },
   },
   mounted() {
     this.loadData();
-    const changeStateSingleModal = document.getElementById('changeSingleStateModal');
-    if (changeStateSingleModal) {
-      changeStateSingleModal.addEventListener('show.bs.modal', event => {
-        // Button that triggered the modal
-        const button = event.relatedTarget
-        // Extract info from data-bs-* attributes
-        this.singleChangeStateSelected.code = button.getAttribute('data-bs-whatever');
-        // If necessary, you could initiate an Ajax request here
-        // and then do the updating in a callback.
-
-        // Update the modal's content.
-        const modalTitle = changeStateSingleModal.querySelector('.modal-title')
-        modalTitle.textContent = `تغییر وضعیت درخواست  ${this.singleChangeStateSelected.code}`
-
-      })
-    }
   }
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+
+</style>

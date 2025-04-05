@@ -558,10 +558,16 @@ const router = createRouter({
                         import('../views/acc/commodity/mod.vue'),
                 },
                 {
-                    path: 'cheque/mod/:id?',
-                    name: 'cheque_mod',
+                    path: 'cheque/input/:id?',
+                    name: 'cheque_input',
                     component: () =>
-                        import('../views/acc/cheque/mod.vue'),
+                        import('../views/acc/cheque/input.vue'),
+                },
+                {
+                    path: 'cheque/output/:id?',
+                    name: 'cheque_output',
+                    component: () =>
+                        import('../views/acc/cheque/output.vue'),
                 },
                 {
                     path: 'cheque/list',
