@@ -268,7 +268,9 @@ const fa_lang = {
     count: "تعداد",
   },
   dialog: {
+    download: 'دانلود',
     delete_group: 'حذف گروهی',
+    add_new_transfer: 'سند انتقال جدید',
     acc_price: 'مبلغ',
     des: 'شرح',
     warning: 'هشدار',

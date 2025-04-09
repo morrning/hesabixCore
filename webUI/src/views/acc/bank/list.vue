@@ -35,6 +35,7 @@
     class="mb-0 pt-0 rounded-0"
     hide-details="auto"
     density="compact"
+    :rounded="false"
     :placeholder="$t('dialog.search_txt')"
     clearable
   >

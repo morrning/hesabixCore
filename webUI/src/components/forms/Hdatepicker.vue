@@ -41,16 +41,15 @@ export default {
   },
   data() {
     return {
-      displayDate: this.modelValue, // مقداردهی اولیه از prop
-      pickerActive: false, // کنترل باز شدن تقویم
-      minDatePersian: '', // تاریخ شروع سال مالی (شمسی برای پکیج)
-      maxDatePersian: '', // تاریخ پایان سال مالی (شمسی برای پکیج)
-      uniqueId: '', // شناسه یکتا برای هر نمونه
-      isInitialized: false, // فلگ برای کنترل مقداردهی اولیه
+      displayDate: '', // مقداردهی اولیه خالی
+      pickerActive: false,
+      minDatePersian: '',
+      maxDatePersian: '',
+      uniqueId: '',
+      isInitialized: false,
     };
   },
   created() {
-    // ایجاد شناسه یکتا برای هر نمونه از کامپوننت
     this.uniqueId = Math.random().toString(36).substring(2, 15);
   },
   watch: {
@@ -62,7 +61,7 @@ export default {
     modelValue: {
       immediate: true,
       handler(newVal) {
-        if (newVal && newVal !== this.displayDate) {
+        if (newVal) {
           this.displayDate = newVal;
         }
       }
@@ -78,8 +77,8 @@ export default {
         this.minDatePersian = response.data.start;
         this.maxDatePersian = response.data.end;
         
-        // فقط اگر مقدار اولیه نداریم، از تاریخ جاری استفاده کنیم
-        if (!this.modelValue && !this.isInitialized) {
+        // فقط اگر مقدار اولیه نداریم و هنوز مقداردهی نشده، از تاریخ جاری استفاده کنیم
+        if (!this.modelValue && !this.displayDate && !this.isInitialized) {
           this.displayDate = response.data.now;
           this.$emit('update:modelValue', response.data.now);
           this.isInitialized = true;

@@ -1,270 +1,122 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button"
-          class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        انتقال
-      </h3>
-      <div class="block-options">
-        <archive-upload v-if="this.$route.params.id != ''" :docid="this.$route.params.id" doctype="transfer"
-          cat="transfer"></archive-upload>
-        <button @click="save()" type="button" class="btn btn-sm btn-alt-primary"><i class="fa fa-save"></i> ثبت</button>
-      </div>
-    </div>
-    <div class="block-content py-3 vl-parent">
-      <loading color="blue" loader="dots" v-model:active="isLoading" :is-full-page="false" />
-      <div class="container">
-        <div class="row">
-          <div class="col-sm-12 col-md-6">
-            <div class="form-control">
-              <label class="form-label">تاریخ:</label>
-              <date-picker class="" v-model="this.date" format="jYYYY/jMM/jDD" display-format="jYYYY/jMM/jDD"
-                :min="this.year.start" :max="this.year.end" />
-            </div>
-          </div>
-          <div class="col-sm-12 col-md-6">
-            <div class="form-floating mb-4">
-              <input v-model="this.des" class="form-control" type="text">
-              <label class="form-label">توضیحات</label>
-            </div>
-          </div>
-        </div>
-        <hr>
-        <div class="row">
-          <div class="col-sm-12 col-md-6">
-            <h3>از:</h3>
-            <div class="btn-group d-flex" role="group" aria-label="Basic radio toggle button group">
-              <input :checked="this.sideOne.content == 'bank'" @change="this.changeFrom('bank')" type="radio"
-                class="btn-check" name="btnradio" id="btnradio1" autocomplete="off" checked>
-              <label class="btn btn-outline-primary" for="btnradio1">بانک</label>
+  <v-toolbar color="toolbar" :title="$t('drawer.transfer')">
+    <template v-slot:prepend>
+      <v-tooltip :text="$t('dialog.back')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+            icon="mdi-arrow-right" />
+        </template>
+      </v-tooltip>
+    </template>
+    <v-spacer></v-spacer>
 
-              <input :checked="this.sideOne.content == 'cashdesk'" @change="this.changeFrom('cashdesk')" type="radio"
-                v-model="this.sideOne.content" class="btn-check" name="btnradio" id="btnradio2" autocomplete="off">
-              <label class="btn btn-outline-primary" for="btnradio2">صندوق</label>
+    <archive-upload v-if="this.$route.params.id != ''" :docid="this.$route.params.id" doctype="transfer"
+      cat="transfer"></archive-upload>
+    <v-tooltip :text="$t('dialog.save')" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" color="primary" @click="save()" variant="text" icon="mdi-content-save" />
+      </template>
+    </v-tooltip>
 
-              <input :checked="this.sideOne.content == 'salary'" @change="this.changeFrom('salary')" type="radio"
-                class="btn-check" name="btnradio" id="btnradio3" autocomplete="off">
-              <label class="btn btn-outline-primary" for="btnradio3">تنخواه</label>
-            </div>
-            <div class="row mt-2">
-              <div class="col-12">
-                <div v-if="this.sideOne.content == 'bank'" class="">
-                  <label class="form-label">بانک</label>
-                  <div class="form-floating mb-2">
-                    <v-cob dir="rtl" :options="banks" label="name" v-model="this.sideOne.bank">
-                      <template #no-options="{ search, searching, loading }">
-                        نتیجه‌ای یافت نشد!
-                      </template>
-                      <template #option="option">
-                        <div class="row">
-                          <div class="col-12">
-                            <i class="fa fa-bank"></i>
-                            {{ option.name }}
-                          </div>
-                          <div class="col-12">
-                            موجودی:
-                            {{ $filters.formatNumber(option.balance) }}
-                            <span class="text-danger" v-if="option.balance < 0">بدهکار</span>
-                            <span class="text-success" v-if="option.balance > 0">بستانکار</span>
-                          </div>
-                        </div>
-                      </template>
-                    </v-cob>
+  </v-toolbar>
+  <v-container>
+    <v-row>
+      <v-col cols="12" md="6">
+        <Hdatepicker v-model="date" label="تاریخ" />
+      </v-col>
+      <v-col cols="12" md="6">
+        <v-text-field v-model="this.des" label="توضیحات" variant="outlined"></v-text-field>
+      </v-col>
+    </v-row>
 
-                  </div>
-                </div>
-                <div v-if="this.sideOne.content == 'cashdesk'" class="">
-                  <label class="form-label">صندوق</label>
-                  <div class="form-floating mb-2">
-                    <v-cob dir="rtl" :options="cashdesks" label="name" v-model="this.sideOne.cashdesk">
-                      <template #no-options="{ search, searching, loading }">
-                        نتیجه‌ای یافت نشد!
-                      </template>
-                      <template #option="option">
-                        <div class="row">
-                          <div class="col-12">
-                            <i class="fa fa-bank"></i>
-                            {{ option.name }}
-                          </div>
-                          <div class="col-12">
-                            موجودی:
-                            {{ $filters.formatNumber(option.balance) }}
-                            <span class="text-danger" v-if="option.balance < 0">بدهکار</span>
-                            <span class="text-success" v-if="option.balance > 0">بستانکار</span>
-                          </div>
-                        </div>
-                      </template>
-                    </v-cob>
-                  </div>
-                </div>
-                <div v-if="this.sideOne.content == 'salary'" class="">
-                  <label class="form-label">تنخواه گردان</label>
-                  <div class="form-floating mb-2">
-                    <v-cob dir="rtl" :options="salarys" label="name" v-model="this.sideOne.salary">
-                      <template #no-options="{ search, searching, loading }">
-                        نتیجه‌ای یافت نشد!
-                      </template>
-                      <template #option="option">
-                        <div class="row">
-                          <div class="col-12">
-                            <i class="fa fa-bank"></i>
-                            {{ option.name }}
-                          </div>
-                          <div class="col-12">
-                            موجودی:
-                            {{ $filters.formatNumber(option.balance) }}
-                            <span class="text-danger" v-if="option.balance < 0">بدهکار</span>
-                            <span class="text-success" v-if="option.balance > 0">بستانکار</span>
-                          </div>
-                        </div>
-                      </template>
-                    </v-cob>
-                  </div>
-                </div>
-                <div class="form-floating mb-2">
-                  <money3 v-bind="currencyConfig" min=0 class="form-control" v-model="this.sideOne.bs" />
-                  <label class="form-label">مبلغ</label>
-                </div>
-                <div class="form-floating mb-2">
-                  <money3 v-bind="currencyConfig" min=0 class="form-control" v-model="this.sideOne.tax" />
-                  <label class="form-label">کارمزد خدمات بانکی</label>
-                </div>
-                <div class="form-floating mb-2">
-                  <input v-model="this.sideOne.reference" class="form-control" type="text">
-                  <label class="form-label">ارجاع</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-sm-12 col-md-6">
-            <h3>به:</h3>
-            <div class="btn-group d-flex" role="group" aria-label="Basic radio toggle button group">
-              <input v-model="this.sideTwo.content" :checked="this.sideTwo.content == 'bank'"
-                @change="this.changeDes('bank')" type="radio" class="btn-check" name="btnradio1" id="btnradio4"
-                autocomplete="off" checked>
-              <label class="btn btn-outline-warning" for="btnradio4">بانک</label>
+    <v-row>
+      <v-col cols="12" md="6">
+        <h3 class="text-primary text-h6 mb-4">از:</h3>
+        <v-btn-group class="divided mb-4" :border="true">
+          <v-btn :color="sideOne.type === 'bank' ? 'primary' : 'outlined'" @click="changeFrom('bank')">بانک</v-btn>
+          <v-btn :color="sideOne.type === 'cashdesk' ? 'primary' : 'outlined'"
+            @click="changeFrom('cashdesk')">صندوق</v-btn>
+          <v-btn :color="sideOne.type === 'salary' ? 'primary' : 'outlined'"
+            @click="changeFrom('salary')">تنخواه</v-btn>
+        </v-btn-group>
 
-              <input v-model="this.sideTwo.content" :checked="this.sideTwo.content == 'cashdesk'"
-                @change="this.changeDes('cashdesk')" type="radio" class="btn-check" name="btnradio1" id="btnradio5"
-                autocomplete="off">
-              <label class="btn btn-outline-warning" for="btnradio5">صندوق</label>
+        <v-row>
+          <v-col cols="12">
+            <v-select :hide-details="false" v-if="sideOne.type === 'bank'" v-model="sideOne.id" :items="banks"
+              item-title="name" item-value="id" label="بانک" variant="outlined" :item-props="bankItemProps"></v-select>
 
-              <input v-model="this.sideTwo.content" :checked="this.sideTwo.content == 'salary'"
-                @change="this.changeDes('salary')" type="radio" class="btn-check" name="btnradio1" id="btnradio6"
-                autocomplete="off">
-              <label class="btn btn-outline-warning" for="btnradio6">تنخواه</label>
-            </div>
-            <div class="row mt-2">
-              <div class="col-12">
-                <div v-if="this.sideTwo.content == 'bank'" class="">
-                  <label class="form-label">بانک</label>
-                  <div class="form-floating mb-2">
-                    <v-cob dir="rtl" :options="banks" label="name" v-model="this.sideTwo.bank">
-                      <template #no-options="{ search, searching, loading }">
-                        نتیجه‌ای یافت نشد!
-                      </template>
-                      <template #option="option">
-                        <div class="row">
-                          <div class="col-12">
-                            <i class="fa fa-bank"></i>
-                            {{ option.name }}
-                          </div>
-                          <div class="col-12">
-                            موجودی:
-                            {{ $filters.formatNumber(option.balance) }}
-                            <span class="text-danger" v-if="option.balance < 0">بدهکار</span>
-                            <span class="text-success" v-if="option.balance > 0">بستانکار</span>
-                          </div>
-                        </div>
-                      </template>
-                    </v-cob>
-                  </div>
-                </div>
-                <div v-if="this.sideTwo.content == 'cashdesk'" class="">
-                  <label class="form-label">صندوق</label>
-                  <div class="form-floating mb-2">
-                    <v-cob dir="rtl" :options="cashdesks" label="name" v-model="this.sideTwo.cashdesk">
-                      <template #no-options="{ search, searching, loading }">
-                        نتیجه‌ای یافت نشد!
-                      </template>
-                      <template #option="option">
-                        <div class="row">
-                          <div class="col-12">
-                            <i class="fa fa-bank"></i>
-                            {{ option.name }}
-                          </div>
-                          <div class="col-12">
-                            موجودی:
-                            {{ $filters.formatNumber(option.balance) }}
-                            <span class="text-danger" v-if="option.balance < 0">بدهکار</span>
-                            <span class="text-success" v-if="option.balance > 0">بستانکار</span>
-                          </div>
-                        </div>
-                      </template>
-                    </v-cob>
-                  </div>
-                </div>
-                <div v-if="this.sideTwo.content == 'salary'" class="">
-                  <label class="form-label">تنخواه گردان</label>
-                  <div class="form-floating mb-2">
-                    <v-cob dir="rtl" :options="salarys" label="name" v-model="this.sideTwo.salary">
-                      <template #no-options="{ search, searching, loading }">
-                        نتیجه‌ای یافت نشد!
-                      </template>
-                      <template #option="option">
-                        <div class="row">
-                          <div class="col-12">
-                            <i class="fa fa-bank"></i>
-                            {{ option.name }}
-                          </div>
-                          <div class="col-12">
-                            موجودی:
-                            {{ $filters.formatNumber(option.balance) }}
-                            <span class="text-danger" v-if="option.balance < 0">بدهکار</span>
-                            <span class="text-success" v-if="option.balance > 0">بستانکار</span>
-                          </div>
-                        </div>
-                      </template>
-                    </v-cob>
-                  </div>
-                </div>
-                <div class="form-floating mb-2">
-                  <money3 readonly="readonly" v-bind="currencyConfig" min=0 class="form-control"
-                    v-model="this.sideTwo.bd" />
-                  <label class="form-label">مبلغ</label>
-                </div>
-                <div class="form-floating mb-2">
-                  <money3 readonly="readonly" v-bind="currencyConfig" min=0 class="form-control"
-                    v-model="this.sideTwo.tax" />
-                  <label class="form-label">کارمزد خدمات بانکی</label>
-                </div>
-                <div class="form-floating mb-2">
-                  <input v-model="this.sideTwo.reference" class="form-control" type="text">
-                  <label class="form-label">ارجاع</label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+            <v-select :hide-details="false" v-if="sideOne.type === 'cashdesk'" v-model="sideOne.id"
+              :items="cashdesks" item-title="name" item-value="id" label="صندوق" variant="outlined"
+              :item-props="cashdeskItemProps"></v-select>
+
+            <v-select :hide-details="false" v-if="sideOne.type === 'salary'" v-model="sideOne.id"
+              :items="salarys" item-title="name" item-value="id" label="تنخواه گردان" variant="outlined"
+              :item-props="salaryItemProps"></v-select>
+
+            <Hnumberinput :hide-details="false" v-model="sideOne.bs" label="مبلغ" variant="outlined" />
+
+            <Hnumberinput :hide-details="false" v-model="sideOne.tax" label="کارمزد خدمات بانکی" variant="outlined" />
+
+            <v-text-field :hide-details="false" v-model="sideOne.reference" label="ارجاع"
+              variant="outlined"></v-text-field>
+
+            <v-text-field v-model="sideOne.des" label="شرح" variant="outlined"></v-text-field>
+          </v-col>
+        </v-row>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <h3 class="text-primary text-h6 mb-4">به:</h3>
+        <v-btn-group class="divided mb-4" :border="true">
+          <v-btn :color="sideTwo.type === 'bank' ? 'primary' : 'outlined'" @click="changeDes('bank')">بانک</v-btn>
+          <v-btn :color="sideTwo.type === 'cashdesk' ? 'primary' : 'outlined'"
+            @click="changeDes('cashdesk')">صندوق</v-btn>
+          <v-btn :color="sideTwo.type === 'salary' ? 'primary' : 'outlined'"
+            @click="changeDes('salary')">تنخواه</v-btn>
+        </v-btn-group>
+
+        <v-row>
+          <v-col cols="12">
+            <v-select :hide-details="false" v-if="sideTwo.type === 'bank'" v-model="sideTwo.id" :items="banks"
+              item-title="name" item-value="id" label="بانک" variant="outlined" :item-props="bankItemProps"></v-select>
+
+            <v-select :hide-details="false" v-if="sideTwo.type === 'cashdesk'" v-model="sideTwo.id"
+              :items="cashdesks" item-title="name" item-value="id" label="صندوق" variant="outlined"
+              :item-props="cashdeskItemProps"></v-select>
+
+            <v-select :hide-details="false" v-if="sideTwo.type === 'salary'" v-model="sideTwo.id"
+              :items="salarys" item-title="name" item-value="id" label="تنخواه گردان" variant="outlined"
+              :item-props="salaryItemProps"></v-select>
+
+            <Hnumberinput :hide-details="false" v-model="sideTwo.bd" label="مبلغ" variant="outlined" readonly />
+
+            <Hnumberinput :hide-details="false" v-model="sideTwo.tax" label="کارمزد خدمات بانکی" variant="outlined"
+              readonly />
+
+            <v-text-field :hide-details="false" v-model="sideTwo.reference" label="ارجاع"
+              variant="outlined"></v-text-field>
+
+            <v-text-field v-model="sideTwo.des" label="شرح" variant="outlined"></v-text-field>
+          </v-col>
+        </v-row>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
 import axios from "axios";
-import Loading from "vue-loading-overlay";
 import Swal from "sweetalert2";
 import archiveUpload from "../component/archive/archiveUpload.vue";
+import Hdatepicker from "../../../components/forms/Hdatepicker.vue";
+import Hnumberinput from "../../../components/forms/Hnumberinput.vue";
 
 export default {
   name: "mod",
   components: {
-    Loading,
-    archiveUpload
+    archiveUpload,
+    Hdatepicker,
+    Hnumberinput
   },
   watch: {
     'sideOne.bs': function () {
@@ -274,78 +126,75 @@ export default {
       this.sideTwo.tax = this.sideOne.tax;
     },
     'sideOne.bank': function () {
-      this.sideOne.id = this.sideOne.bank.id;
+      this.sideOne.id = this.sideOne.bank?.id;
     },
     'sideOne.salary': function () {
-      this.sideOne.id = this.sideOne.salary.id;
+      this.sideOne.id = this.sideOne.salary?.id;
     },
     'sideOne.cashdesk': function () {
-      this.sideOne.id = this.sideOne.cashdesk.id;
+      this.sideOne.id = this.sideOne.cashdesk?.id;
     },
     'sideTwo.bank': function () {
-      this.sideTwo.id = this.sideTwo.bank.id;
+      this.sideTwo.id = this.sideTwo.bank?.id;
     },
     'sideTwo.salary': function () {
-      this.sideTwo.id = this.sideTwo.salary.id;
+      this.sideTwo.id = this.sideTwo.salary?.id;
     },
     'sideTwo.cashdesk': function () {
-      this.sideTwo.id = this.sideTwo.cashdesk.id;
+      this.sideTwo.id = this.sideTwo.cashdesk?.id;
     },
   },
-  data: () => {
-    return {
-      isLoading: false,
-      currencyConfig: {
-        masked: false,
-        prefix: '',
-        suffix: 'ریال',
-        thousands: ',',
-        decimal: '.',
-        precision: 0,
-        disableNegative: false,
-        disabled: false,
-        min: 0,
-        max: null,
-        allowBlank: false,
-        minimumNumberOfCharacters: 0,
-        shouldRound: true,
-        focusOnRight: false,
-      },
-      year: {},
-      date: '',
-      des: '',
-      sideOne: {
-        content: 'bank',
-        bank: undefined,
-        cashdesk: undefined,
-        salary: undefined,
-        bs: 0,
-        bd: 0,
-        tax: 0,
-        reference: '',
-        table: 5,
-        id: '',
-        des: 'انتقال بین حساب‌های بانکی،صندوق،تنخواه گردان'
-      },
-      sideTwo: {
-        content: 'bank',
-        bank: undefined,
-        cashdesk: undefined,
-        salary: undefined,
-        bs: 0,
-        bd: 0,
-        tax: 0,
-        reference: '',
-        table: 5,
-        id: '',
-        des: 'انتقال بین حساب‌های بانکی،صندوق،تنخواه گردان'
-      },
-      banks: [],
-      cashdesks: [],
-      salarys: []
-    }
-  },
+  data: () => ({
+    year: {},
+    date: '',
+    des: '',
+    sideOne: {
+      type: 'bank',
+      bank: undefined,
+      cashdesk: undefined,
+      salary: undefined,
+      bs: 0,
+      bd: 0,
+      tax: 0,
+      reference: '',
+      id: '',
+      des: 'انتقال بین حساب‌های بانکی،صندوق،تنخواه گردان'
+    },
+    sideTwo: {
+      type: 'bank',
+      bank: undefined,
+      cashdesk: undefined,
+      salary: undefined,
+      bs: 0,
+      bd: 0,
+      tax: 0,
+      reference: '',
+      id: '',
+      des: ''
+    },
+    banks: [],
+    cashdesks: [],
+    salarys: []
+  }),
   methods: {
+    bankItemProps(item) {
+      return {
+        title: item.name,
+        subtitle: `موجودی: ${this.$filters.formatNumber(item.balance)} ${item.balance < 0 ? 'بدهکار' : 'بستانکار'}`
+      }
+    },
+    cashdeskItemProps(item) {
+      return {
+        title: item.name,
+        subtitle: `موجودی: ${this.$filters.formatNumber(item.balance)} ${item.balance < 0 ? 'بدهکار' : 'بستانکار'}`
+      }
+    },
+    salaryItemProps(item) {
+      return {
+        title: item.name,
+        subtitle: `موجودی: ${this.$filters.formatNumber(item.balance)} ${item.balance < 0 ? 'بدهکار' : 'بستانکار'}`
+      }
+    },
     loadData() {
       axios.post('/api/bank/list').then((response) => {
         this.banks = response.data;
@@ -356,7 +205,6 @@ export default {
       axios.post('/api/salary/list').then((response) => {
         this.salarys = response.data;
       });
-      //load year
       axios.post('/api/year/get').then((response) => {
         this.year = response.data;
         this.date = response.data.now;
@@ -365,10 +213,12 @@ export default {
         axios.post('/api/accounting/doc/get', {
           code: this.$route.params.id
         }).then((response) => {
+          this.des = response.data.doc.des;
+          this.date = response.data.doc.date;
+
           let taxAmount = 0;
           response.data.rows.forEach((item, key) => {
             if (item.refCode == '108') {
-              //item is tax
               taxAmount = item.bd;
               response.data.rows[key].id = 'ignore';
             }
@@ -379,61 +229,65 @@ export default {
               response.data.rows[key].id = 'ignore';
             }
           });
-          response.data.rows.forEach((item, key) => {
 
-            if (item.bs != 0 && item.tableCode == 5 && item.id != 'ignore') {
+          response.data.rows.forEach((item) => {
+            if (item.bs != 0 && item.id != 'ignore') {
               let opt = {
-                content: '',
+                type: '',
                 bank: undefined,
                 cashdesk: undefined,
                 salary: undefined,
                 bs: item.bs,
                 bd: item.bd,
                 tax: taxAmount,
-                reference: '',
-                table: 5,
+                reference: item.referral,
                 id: '',
                 des: item.des
               };
-              if (item.bank != undefined) {
+              if (item.bank) {
                 opt.bank = item.bank;
-                opt.content = 'bank';
+                opt.type = 'bank';
+                opt.id = item.bank.id;
               }
-              else if (item.cashdesk != undefined) {
+              else if (item.cashdesk) {
                 opt.cashdesk = item.cashdesk;
-                opt.content = 'cashdesk';
+                opt.type = 'cashdesk';
+                opt.id = item.cashdesk.id;
               }
-              else if (item.salary != undefined) {
+              else if (item.salary) {
                 opt.salary = item.salary;
-                opt.content = 'salary';
+                opt.type = 'salary';
+                opt.id = item.salary.id;
               }
-              this.sideOne = opt
+              this.sideOne = opt;
             }
-            if (parseInt(item.bd) != 0 && parseInt(item.tableCode) == 5 && item.id != 'ignore') {
+            else if (parseInt(item.bd) != 0 && item.id != 'ignore') {
               let opt = {
-                content: '',
+                type: '',
                 bank: undefined,
                 cashdesk: undefined,
                 salary: undefined,
                 bs: item.bs,
                 bd: item.bd,
                 tax: taxAmount,
-                reference: '',
-                table: 5,
+                reference: item.referral,
                 id: '',
                 des: item.des
               };
-              if (item.bank != undefined) {
+              if (item.bank) {
                 opt.bank = item.bank;
-                opt.content = 'bank';
+                opt.type = 'bank';
+                opt.id = item.bank.id;
               }
-              else if (item.cashdesk != undefined) {
+              else if (item.cashdesk) {
                 opt.cashdesk = item.cashdesk;
-                opt.content = 'cashdesk';
+                opt.type = 'cashdesk';
+                opt.id = item.cashdesk.id;
               }
-              else if (item.salary != undefined) {
+              else if (item.salary) {
                 opt.salary = item.salary;
-                opt.content = 'salary';
+                opt.type = 'salary';
+                opt.id = item.salary.id;
               }
               this.sideTwo = opt;
             }
@@ -448,114 +302,99 @@ export default {
           icon: 'error',
           confirmButtonText: 'قبول'
         });
+        return;
       }
-      else if (
-        (this.sideOne.content == 'bank' && this.sideOne.bank == undefined) ||
-        (this.sideOne.content == 'salary' && this.sideOne.salary == undefined) ||
-        (this.sideOne.content == 'cashdesk' && this.sideOne.cashdesk == undefined)
+
+      if (
+        (this.sideOne.type == 'bank' && !this.sideOne.id) ||
+        (this.sideOne.type == 'salary' && !this.sideOne.id) ||
+        (this.sideOne.type == 'cashdesk' && !this.sideOne.id)
       ) {
         Swal.fire({
           text: 'انتقال دهنده انتخاب نشده است.',
           icon: 'error',
           confirmButtonText: 'قبول'
         });
+        return;
       }
-      else if (
-        (this.sideTwo.content == 'bank' && this.sideTwo.bank == undefined) ||
-        (this.sideTwo.content == 'salary' && this.sideTwo.salary == undefined) ||
-        (this.sideTwo.content == 'cashdesk' && this.sideTwo.cashdesk == undefined)
+
+      if (
+        (this.sideTwo.type == 'bank' && !this.sideTwo.id) ||
+        (this.sideTwo.type == 'salary' && !this.sideTwo.id) ||
+        (this.sideTwo.type == 'cashdesk' && !this.sideTwo.id)
       ) {
         Swal.fire({
           text: 'انتقال گیرنده انتخاب نشده است.',
           icon: 'error',
           confirmButtonText: 'قبول'
         });
+        return;
       }
-      else {
-        let PushData = {
-          date: this.date,
-          des: this.des,
-          type: 'transfer',
-          update: this.$route.params.id,
-          rows: [
-            {
-              bs: this.sideOne.bs,
-              bd: 0,
-              type: this.sideOne.content,
-              bank: this.sideOne.bank,
-              salary: this.sideOne.salary,
-              cashdesk: this.sideOne.cashdesk,
-              table: this.sideOne.table,
-              id: this.sideOne.id,
-              des: this.sideOne.des,
-              referral: this.sideOne.reference
-            },
-            {
-              bd: this.sideTwo.bd,
-              bs: 0,
-              type: this.sideTwo.content,
-              bank: this.sideTwo.bank,
-              salary: this.sideTwo.salary,
-              cashdesk: this.sideTwo.cashdesk,
-              table: this.sideTwo.table,
-              id: this.sideTwo.id,
-              des: this.sideTwo.des,
-              referral: this.sideTwo.reference
-            }
-          ]
-        };
-        if (this.sideOne.tax != 0) {
-          PushData.rows.push({
-            bd: this.sideOne.tax,
-            bs: 0,
-            type: 'calc',
-            table: 108,
-            des: 'کارمزد هزینه‌های بانکی'
-          });
-          PushData.rows.push({
-            bs: this.sideOne.tax,
+
+      let PushData = {
+        date: this.date,
+        des: this.des,
+        update: this.$route.params.id,
+        rows: [
+          {
+            bs: this.sideOne.bs,
             bd: 0,
-            type: this.sideOne.content,
-            bank: this.sideOne.bank,
-            salary: this.sideOne.salary,
-            cashdesk: this.sideOne.cashdesk,
-            table: this.sideOne.table,
+            type: this.sideOne.type,
             id: this.sideOne.id,
-            des: 'کارمزد هزینه‌های بانکی'
-          })
-        }
-        axios.post('/api/accounting/insert', PushData).then((response) => {
-          if (response.data.result == '1') {
-            Swal.fire({
-              text: 'سند انتقال با موفقیت ثبت شد.',
-              icon: 'success',
-              confirmButtonText: 'قبول'
-            }).then((res) => {
-              this.$router.push('/acc/transfer/list');
-            });
+            referral: this.sideOne.reference,
+            des: this.sideOne.des,
+          },
+          {
+            bd: this.sideTwo.bd,
+            bs: 0,
+            type: this.sideTwo.type,
+            id: this.sideTwo.id,
+            referral: this.sideTwo.reference,
+            des: this.sideTwo.des,
           }
-          else if (response.data.result == '4') {
-            Swal.fire({
-              text: response.data.msg,
-              icon: 'error',
-              confirmButtonText: 'قبول'
-            });
-          }
+        ]
+      };
+
+      if (this.sideOne.tax != 0) {
+        PushData.rows.push({
+          bd: this.sideOne.tax,
+          bs: 0,
+          type: 'calc',
+          des: 'کارمزد هزینه‌های بانکی'
+        });
+        PushData.rows.push({
+          bs: this.sideOne.tax,
+          bd: 0,
+          type: this.sideOne.type,
+          id: this.sideOne.id,
+          des: 'کارمزد هزینه‌های بانکی'
         });
       }
 
+      axios.post('/api/transfer/insert', PushData).then((response) => {
+        if (response.data.result == '1') {
+          Swal.fire({
+            text: 'سند انتقال با موفقیت ثبت شد.',
+            icon: 'success',
+            confirmButtonText: 'قبول'
+          }).then(() => {
+            this.$router.push('/acc/transfer/list');
+          });
+        }
+        else if (response.data.result == '4') {
+          Swal.fire({
+            text: response.data.msg,
+            icon: 'error',
+            confirmButtonText: 'قبول'
+          });
+        }
+      });
     },
-    changeDes(content) {
-      this.sideTwo.content = content;
-      if (content == ' bank') { this.sideTwo.table = 5; }
-      else if (content == ' salary') { this.sideTwo.table = 122; }
-      else if (content == ' cashdesk') { this.sideTwo.table = 121; }
+    changeDes(type) {
+      this.sideTwo.type = type;
     },
-    changeFrom(content) {
-      this.sideOne.content = content;
-      if (content == ' bank') { this.sideOne.table = 5; }
-      else if (content == ' salary') { this.sideOne.table = 122; }
-      else if (content == ' cashdesk') { this.sideOne.table = 121; }
+    changeFrom(type) {
+      this.sideOne.type = type;
     },
   },
   mounted() {
@@ -564,4 +403,8 @@ export default {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.v-navigation-bar {
+  direction: rtl;
+}
+</style>

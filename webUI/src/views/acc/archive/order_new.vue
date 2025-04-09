@@ -1,57 +1,88 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button"
-          class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa fa-shopping-bag px-2"></i>
-        سفارش فضای ذخیره سازی
-      </h3>
-      <div class="block-options">
-        <button :disabled="this.loading" @click="this.submit()" type="button" class="btn btn-sm btn-primary">
-          <div v-show="this.loading" class="spinner-grow spinner-grow-sm me-2" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <i class="fa fa-bank"></i>
-          پرداخت آنلاین
-        </button>
-      </div>
-    </div>
-    <div class="block-content pt-1 pb-3">
-      <div class="row">
-        <div class="col-sm-12 col-md-12 p-1">
-          <div class="alert">
-            برای سفارش فضای ذخیره سازی ابتدا حجم مورد نظر را انتخاب و روی دکمه پرداخت کلیک کنید.
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-12">
-            <label for="customRange3" class="form-label">فضای مورد نیاز بر حسب گیگابایت:</label>
-            <input :disabled="this.loading" v-model="this.space" type="range" class="form-range" min="1" max="5"
-              step="1" id="customRange3">
-          </div>
-          <div class="col">
-            <label>فضا(گیگابایت)</label>
-            <input type="text" class="form-control" v-model="this.space" readonly="readonly" />
-          </div>
-          <div class="col">
-            <label>زمان</label>
-            <select :disabled="this.loading" v-model="this.month" class="form-select" aria-label="ماه">
-              <option value="1" selected>یک ماه</option>
-              <option value="3">سه ماه</option>
-              <option value="6">شش ماه</option>
-              <option value="12">یک سال</option>
-            </select>
-          </div>
-          <div class="col">
-            <label>مبلغ نهایی (ریال)</label>
-            <input type="text" class="form-control text-danger" v-model="this.priceTotal" readonly="readonly" />
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="d-flex flex-column">
+    <v-toolbar title="سفارش فضای ذخیره سازی" color="toolbar">
+      <template v-slot:prepend>
+        <v-btn icon @click="$router.back()">
+          <v-icon>mdi-arrow-right</v-icon>
+        </v-btn>
+      </template>
+      <v-spacer></v-spacer>
+      <v-btn
+        :loading="loading"
+        :disabled="loading"
+        @click="submit()"
+        color="success"
+        prepend-icon="mdi-credit-card-check"
+        variant="elevated"
+        class="px-4"
+      >
+        <template v-slot:prepend>
+          <v-icon size="20" class="ml-2"></v-icon>
+        </template>
+        پرداخت آنلاین
+        <v-tooltip activator="parent" location="bottom">
+          پرداخت آنلاین از طریق درگاه بانکی
+        </v-tooltip>
+      </v-btn>
+    </v-toolbar>
+
+    <v-container>
+      <v-alert
+        type="info"
+        class="mb-4"
+      >
+        برای سفارش فضای ذخیره سازی ابتدا حجم مورد نظر را انتخاب و روی دکمه پرداخت کلیک کنید.
+      </v-alert>
+
+      <v-row>
+        <v-col cols="12">
+          <v-label>فضای مورد نیاز بر حسب گیگابایت:</v-label>
+          <v-slider
+            v-model="space"
+            :disabled="loading"
+            min="1"
+            max="5"
+            step="1"
+            thumb-label
+            class="mt-2"
+          ></v-slider>
+        </v-col>
+
+        <v-col cols="12" sm="4">
+          <v-text-field
+            v-model="space"
+            label="فضا (گیگابایت)"
+            readonly
+            variant="outlined"
+          ></v-text-field>
+        </v-col>
+
+        <v-col cols="12" sm="4">
+          <v-select
+            v-model="month"
+            :disabled="loading"
+            :items="[
+              { title: 'یک ماه', value: 1 },
+              { title: 'سه ماه', value: 3 },
+              { title: 'شش ماه', value: 6 },
+              { title: 'یک سال', value: 12 }
+            ]"
+            label="زمان"
+            variant="outlined"
+          ></v-select>
+        </v-col>
+
+        <v-col cols="12" sm="4">
+          <v-text-field
+            v-model="priceTotal"
+            label="مبلغ نهایی (ریال)"
+            readonly
+            variant="outlined"
+            color="error"
+          ></v-text-field>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 

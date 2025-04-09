@@ -3,6 +3,15 @@ import { defineComponent } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
+interface FileItem {
+  id: number;
+  filename: string;
+  filesize: number;
+  dateSubmit: string;
+  fileType: string;
+  fileBin?: string;
+}
+
 export default defineComponent({
   name: 'archiveUpload',
   props: {
@@ -13,7 +22,7 @@ export default defineComponent({
   data() {
     return {
       dialog: false, // برای باز و بسته کردن دیالوگ
-      fileStack: [],
+      fileStack: [] as FileItem[],
       des: '',
       media: {
         saved: [],
@@ -26,6 +35,24 @@ export default defineComponent({
     this.getFilesList();
   },
   methods: {
+    getFileIconColor(fileType: string): string {
+      if (!fileType) return 'grey';
+      const type = fileType.toLowerCase();
+      if (type.includes('pdf')) return 'red';
+      if (type.includes('word') || type.includes('doc')) return 'blue';
+      if (type.includes('excel') || type.includes('sheet')) return 'green';
+      if (type.includes('image')) return 'purple';
+      return 'grey';
+    },
+    getFileIcon(fileType: string): string {
+      if (!fileType) return 'mdi-file';
+      const type = fileType.toLowerCase();
+      if (type.includes('pdf')) return 'mdi-file-pdf-box';
+      if (type.includes('word') || type.includes('doc')) return 'mdi-file-word-box';
+      if (type.includes('excel') || type.includes('sheet')) return 'mdi-file-excel-box';
+      if (type.includes('image')) return 'mdi-file-image-box';
+      return 'mdi-file';
+    },
     changeMedia(media) {
       this.media = media;
     },
@@ -42,13 +69,15 @@ export default defineComponent({
       }).then((resp) => {
         this.media.added = [];
         this.fileStack = resp.data;
-        this.fileStack.forEach((item) => {
-          axios
-            .post(`${this.$filters.getApiUrl()}/api/archive/file/get/${item.id}`, { responseType: 'arraybuffer' })
-            .then((response) => {
-              const b64 = btoa(String.fromCharCode(...new Uint8Array(response.data)));
-              item.fileBin = `data:${response.headers['content-type']};base64,${b64}`;
-            });
+        this.fileStack.forEach((item: FileItem) => {
+          if (item.fileType && item.fileType.startsWith('image/')) {
+            axios
+              .get(`${this.$filters.getApiUrl()}/api/archive/file/get/${item.id}`, { responseType: 'arraybuffer' })
+              .then((response) => {
+                const b64 = btoa(String.fromCharCode(...new Uint8Array(response.data)));
+                item.fileBin = `data:${response.headers['content-type']};base64,${b64}`;
+              });
+          }
         });
       });
     },
@@ -74,19 +103,30 @@ export default defineComponent({
       });
     },
     downloadFile(item) {
-      axios
-        .post(`${this.$filters.getApiUrl()}/api/archive/file/get/${item.id}`, { responseType: 'arraybuffer' })
-        .then((response) => {
-          const blob = new Blob([response.data], { type: item.fileType });
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = item.filename;
-          link.click();
-          URL.revokeObjectURL(link.href);
-        });
+      axios.get(`${this.$filters.getApiUrl()}/api/archive/file/get/${item.id}`, {
+        responseType: 'blob'
+      }).then(response => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', item.filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      });
     },
     submitArchive() {
-      const formData = new FormData(document.getElementById('archive-file-upload'));
+      if (this.media.added.length === 0) {
+        Swal.fire({
+          text: 'لطفا حداقل یک فایل انتخاب کنید',
+          icon: 'warning',
+          confirmButtonText: 'قبول',
+        });
+        return;
+      }
+
+      const formData = new FormData(document.getElementById('archive-file-upload') as HTMLFormElement);
       axios
         .post('/api/archive/file/save', formData, {
           headers: {
@@ -133,7 +173,7 @@ export default defineComponent({
   </v-btn>
 
   <!-- دیالوگ آرشیو -->
-  <v-dialog v-model="dialog" max-width="800" persistent>
+  <v-dialog v-model="dialog" max-width="800" scrollable>
     <v-card>
       <v-toolbar color="grey-lighten-4" flat>
         <v-toolbar-title>
@@ -170,17 +210,27 @@ export default defineComponent({
                 outlined
                 name="des"
                 class="mt-2"
-              ></v-text-field>
-              <v-btn type="submit" color="success" class="mt-2">
-                <v-icon left>mdi-content-save</v-icon>
-                بارگذاری فایل‌ها
-              </v-btn>
+                hide-details
+              >
+                <template v-slot:append>
+                  <v-btn 
+                    type="submit" 
+                    color="success" 
+                    icon
+                    variant="flat"
+                    class="ml-2"
+                    height="100%"
+                  >
+                    <v-icon>mdi-content-save</v-icon>
+                    <v-tooltip activator="parent" location="bottom">
+                      ثبت بارگذاری و ذخیره فایل‌ها
+                    </v-tooltip>
+                  </v-btn>
+                </template>
+              </v-text-field>
             </form>
           </v-col>
         </v-row>
-
-        <v-divider class="my-4"></v-divider>
-
         <!-- لیست فایل‌ها -->
         <v-row>
           <v-col cols="12">
@@ -190,7 +240,7 @@ export default defineComponent({
                 <tr>
                   <th class="text-center">پیش‌نمایش</th>
                   <th class="text-center">نام فایل</th>
-                  <th class="text-center">سایز فایل (مگابایت)</th>
+                  <th class="text-center">سایز (MB)</th>
                   <th class="text-center">تاریخ</th>
                   <th class="text-center">عملیات</th>
                 </tr>
@@ -198,18 +248,37 @@ export default defineComponent({
               <tbody>
                 <tr v-for="item in fileStack" :key="item.id">
                   <td class="text-center">
-                    <v-img :src="item.fileBin" max-width="50" max-height="50" class="mx-auto" alt="پیش‌نمایش" />
+                    <template v-if="item.fileType && item.fileType.startsWith('image/')">
+                      <v-img 
+                        :src="item.fileBin" 
+                        max-width="50" 
+                        max-height="50" 
+                        class="mx-auto" 
+                        alt="پیش‌نمایش"
+                        cover
+                      />
+                    </template>
+                    <template v-else>
+                      <v-icon 
+                        size="50" 
+                        :color="getFileIconColor(item.fileType)"
+                      >
+                        {{ getFileIcon(item.fileType) }}
+                      </v-icon>
+                    </template>
                   </td>
                   <td class="text-center">{{ item.filename }}</td>
                   <td class="text-center">{{ item.filesize }}</td>
                   <td class="text-center">{{ item.dateSubmit }}</td>
                   <td class="text-center">
-                    <v-btn icon small color="primary" @click="downloadFile(item)">
-                      <v-icon>mdi-download</v-icon>
-                    </v-btn>
-                    <v-btn icon small color="error" class="ml-2" @click="deleteItem(item)">
-                      <v-icon>mdi-trash-can</v-icon>
-                    </v-btn>
+                    <div class="d-flex justify-center">
+                      <v-btn variant="text" color="primary" @click="downloadFile(item)" class="px-1">
+                        <v-icon>mdi-download</v-icon>
+                      </v-btn>
+                      <v-btn variant="text" color="error" @click="deleteItem(item)" class="px-1">
+                        <v-icon>mdi-trash-can</v-icon>
+                      </v-btn>
+                    </div>
                   </td>
                 </tr>
                 <tr v-if="fileStack.length === 0">
@@ -226,4 +295,8 @@ export default defineComponent({
 
 <style scoped>
 /* استایل‌های اضافی اگه نیاز باشه */
+:deep(.v-table .v-table__wrapper > table > thead > tr > th) {
+  background-color: #1d90ff !important;
+  color: white !important;
+}
 </style>

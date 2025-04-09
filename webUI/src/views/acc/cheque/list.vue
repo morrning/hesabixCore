@@ -44,12 +44,10 @@
     </v-menu>
   </v-toolbar>
 
-  <v-card>
-    <v-card-text>
-      <v-window v-model="tab">
+  <v-window v-model="tab">
         <v-window-item value="input">
-          <v-text-field v-model="searchValueInput" prepend-inner-icon="mdi-magnify" label="جست و جو" variant="outlined"
-            density="compact" class="mb-4"></v-text-field>
+          <v-text-field class="pt-1" v-model="searchValueInput" prepend-inner-icon="mdi-magnify" label="جست و جو" variant="outlined"
+          density="compact" :rounded="false"></v-text-field>
 
           <v-data-table :headers="headersInput" :items="itemsInput" :search="searchValueInput" :loading="loading"
             show-index density="comfortable" class="elevation-1" :header-props="{ class: 'custom-header' }">
@@ -72,8 +70,8 @@
         </v-window-item>
 
         <v-window-item value="output">
-          <v-text-field v-model="searchValueOutput" prepend-inner-icon="mdi-magnify" label="جست و جو" variant="outlined"
-            density="compact" class="mb-4"></v-text-field>
+          <v-text-field class="pt-1" v-model="searchValueOutput" prepend-inner-icon="mdi-magnify" label="جست و جو" variant="outlined"
+            density="compact" :rounded="false"></v-text-field>
 
           <v-data-table :headers="headersInput" :items="itemsOutput" :search="searchValueOutput" :loading="loading"
             show-index density="comfortable" class="elevation-1" :header-props="{ class: 'custom-header' }">
@@ -95,8 +93,6 @@
           </v-data-table>
         </v-window-item>
       </v-window>
-    </v-card-text>
-  </v-card>
 </template>
 
 <script>
