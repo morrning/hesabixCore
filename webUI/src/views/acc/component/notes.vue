@@ -2,22 +2,40 @@
 import { defineComponent } from 'vue';
 import axios from 'axios';
 
+interface Note {
+  id: number;
+  des: string;
+}
+
+interface Stat {
+  count: number;
+}
+
 export default defineComponent({
   name: 'Notes',
   props: {
-    stat: Object,
-    code: String,
-    typeNote: String,
+    stat: {
+      type: Object as () => Stat,
+      required: true
+    },
+    code: {
+      type: String,
+      required: true
+    },
+    typeNote: {
+      type: String,
+      required: true
+    },
   },
   data() {
     return {
       dialog: false, // برای باز و بسته کردن دیالوگ
       loading: false,
-      items: [],
+      items: [] as Note[],
       des: '',
       snackbar: false, // برای نمایش اسنک‌بار
       snackbarText: '', // متن پیام اسنک‌بار
-      snackbarColor: 'success', // رنگ اسنک‌بار (success, error)
+      snackbarColor: 'success' as 'success' | 'error', // رنگ اسنک‌بار (success, error)
     };
   },
   mounted() {
@@ -37,7 +55,7 @@ export default defineComponent({
           this.loading = false;
         });
     },
-    remove(id) {
+    remove(id: number) {
       this.loading = true;
       axios.post(`/api/notes/remove/${id}`).then((response) => {
         this.loading = false;
@@ -65,7 +83,7 @@ export default defineComponent({
           .post('/api/notes/add', {
             des: this.des,
             type: this.$props.typeNote,
-            code: this.$route.params.id,
+            code: this.$props.code,
           })
           .then((response) => {
             this.loading = false;
