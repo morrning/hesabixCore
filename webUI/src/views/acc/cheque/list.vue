@@ -21,7 +21,7 @@
       </v-tabs>
     </template>
     <v-spacer />
-    <v-menu>
+    <v-menu  v-if="1===2">
       <template v-slot:activator="{ props }">
         <v-btn v-bind="props" color="primary" variant="text" icon="mdi-plus" />
       </template>
@@ -45,54 +45,54 @@
   </v-toolbar>
 
   <v-window v-model="tab">
-        <v-window-item value="input">
-          <v-text-field class="pt-1" v-model="searchValueInput" prepend-inner-icon="mdi-magnify" label="جست و جو" variant="outlined"
-          density="compact" :rounded="false"></v-text-field>
+    <v-window-item value="input">
+      <v-text-field class="pt-1" v-model="searchValueInput" prepend-inner-icon="mdi-magnify" label="جست و جو"
+        variant="outlined" density="compact" :rounded="false"></v-text-field>
 
-          <v-data-table :headers="headersInput" :items="itemsInput" :search="searchValueInput" :loading="loading"
-            show-index density="comfortable" class="elevation-1" :header-props="{ class: 'custom-header' }">
-            <template v-slot:item.operation="{ item }">
-              <div class="d-flex">
-                <pass-check v-if="!item.locked" :windows-state="passChequeWindowsState" :id="item.id" />
-                <v-btn v-if="!item.rejected && !item.locked" icon variant="text" color="error" size="small"
-                  @click="rejectCheque(item.id)" title="برگشت چک">
-                  <v-icon>mdi-arrow-left</v-icon>
-                </v-btn>
-              </div>
-            </template>
+      <v-data-table :headers="headersInput" :items="itemsInput" :search="searchValueInput" :loading="loading" show-index
+        density="comfortable" class="elevation-1" :header-props="{ class: 'custom-header' }">
+        <template v-slot:item.operation="{ item }">
+          <div class="d-flex">
+            <pass-check v-if="!item.locked" :windows-state="passChequeWindowsState" :id="item.id" />
+            <v-btn v-if="!item.rejected && !item.locked" icon variant="text" color="error" size="small"
+              @click="rejectCheque(item.id)" title="برگشت چک">
+              <v-icon>mdi-arrow-left</v-icon>
+            </v-btn>
+          </div>
+        </template>
 
-            <template v-slot:item.status="{ item }">
-              <v-chip :color="getStatusColor(item.status)" size="small">
-                {{ item.status }}
-              </v-chip>
-            </template>
-          </v-data-table>
-        </v-window-item>
+        <template v-slot:item.status="{ item }">
+          <v-chip :color="getStatusColor(item.status)" size="small">
+            {{ item.status }}
+          </v-chip>
+        </template>
+      </v-data-table>
+    </v-window-item>
 
-        <v-window-item value="output">
-          <v-text-field class="pt-1" v-model="searchValueOutput" prepend-inner-icon="mdi-magnify" label="جست و جو" variant="outlined"
-            density="compact" :rounded="false"></v-text-field>
+    <v-window-item value="output">
+      <v-text-field class="pt-1" v-model="searchValueOutput" prepend-inner-icon="mdi-magnify" label="جست و جو"
+        variant="outlined" density="compact" :rounded="false"></v-text-field>
 
-          <v-data-table :headers="headersInput" :items="itemsOutput" :search="searchValueOutput" :loading="loading"
-            show-index density="comfortable" class="elevation-1" :header-props="{ class: 'custom-header' }">
-            <template v-slot:item.operation="{ item }">
-              <div class="d-flex">
-                <pass-check v-if="!item.locked" :windows-state="passChequeWindowsState" :id="item.id" />
-                <v-btn v-if="!item.rejected && !item.locked" icon variant="text" color="error" size="small"
-                  @click="rejectCheque(item.id)" title="برگشت چک">
-                  <v-icon>mdi-arrow-left</v-icon>
-                </v-btn>
-              </div>
-            </template>
+      <v-data-table :headers="headersInput" :items="itemsOutput" :search="searchValueOutput" :loading="loading"
+        show-index density="comfortable" class="elevation-1" :header-props="{ class: 'custom-header' }">
+        <template v-slot:item.operation="{ item }">
+          <div class="d-flex">
+            <pass-check v-if="!item.locked" :windows-state="passChequeWindowsState" :id="item.id" />
+            <v-btn v-if="!item.rejected && !item.locked" icon variant="text" color="error" size="small"
+              @click="rejectCheque(item.id)" title="برگشت چک">
+              <v-icon>mdi-arrow-left</v-icon>
+            </v-btn>
+          </div>
+        </template>
 
-            <template v-slot:item.status="{ item }">
-              <v-chip :color="getStatusColor(item.status)" size="small">
-                {{ item.status }}
-              </v-chip>
-            </template>
-          </v-data-table>
-        </v-window-item>
-      </v-window>
+        <template v-slot:item.status="{ item }">
+          <v-chip :color="getStatusColor(item.status)" size="small">
+            {{ item.status }}
+          </v-chip>
+        </template>
+      </v-data-table>
+    </v-window-item>
+  </v-window>
 </template>
 
 <script>
