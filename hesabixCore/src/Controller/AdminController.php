@@ -340,10 +340,13 @@ class AdminController extends AbstractController
         $resp['fromNum'] = $registryMGR->get('sms', 'fromNum');
         $resp['sharefaktor'] = $registryMGR->get('sms', 'sharefaktor');
         $resp['plan'] = $registryMGR->get('sms', 'plan');
+        $resp['chequeInput'] = $registryMGR->get('sms', 'chequeInput');
+        $resp['passChequeInput'] = $registryMGR->get('sms', 'passChequeInput');
+        $resp['rejectChequeInput'] = $registryMGR->get('sms', 'rejectChequeInput');
         $resp['plugRepservice'] = [
             'get' => $registryMGR->get('sms', 'plugRepserviceStateGet'),
             'getback' => $registryMGR->get('sms', 'plugRepserviceStateGetback'),
-            'repired' => $registryMGR->get('sms', 'plugRepserviceStateRepaired'),
+            'repaired' => $registryMGR->get('sms', 'plugRepserviceStateRepaired'),
             'unrepaired' => $registryMGR->get('sms', 'plugRepserviceStateUnrepired'),
             'creating' => $registryMGR->get('sms', 'plugRepserviceStateCreating'),
             'created' => $registryMGR->get('sms', 'plugRepserviceStateCreated')
@@ -352,6 +355,9 @@ class AdminController extends AbstractController
             'sharefaktor' => $registryMGR->get('sms', 'plugAccproSharefaktor'),
             'storeroomSmsOther' => $registryMGR->get('sms', 'plugAccproStoreroomSmsOther'),
             'storeroomSmsBarbari' => $registryMGR->get('sms', 'plugAccproStoreroomSmsBarbari'),
+            'chequeInput' => $registryMGR->get('sms', 'plugAccproChequeInput'),
+            'passChequeInput' => $registryMGR->get('sms', 'plugAccproPassChequeInput'),
+            'rejectChequeInput' => $registryMGR->get('sms', 'plugAccproRejectChequeInput')
         ];
         return $this->json($resp);
     }
@@ -389,12 +395,18 @@ class AdminController extends AbstractController
             $registryMGR->update('sms', 'sharefaktor', $params['sharefaktor']);
         if (array_key_exists('plan', $params))
             $registryMGR->update('sms', 'plan', $params['plan']);
+        if (array_key_exists('chequeInput', $params))
+            $registryMGR->update('sms', 'chequeInput', $params['chequeInput']);
+        if (array_key_exists('passChequeInput', $params))
+            $registryMGR->update('sms', 'passChequeInput', $params['passChequeInput']);
+        if (array_key_exists('rejectChequeInput', $params))
+            $registryMGR->update('sms', 'rejectChequeInput', $params['rejectChequeInput']);
 
         if (array_key_exists('plugRepservice', $params)) {
             if (array_key_exists('get', $params['plugRepservice']))
                 $registryMGR->update('sms', 'plugRepserviceStateGet', $params['plugRepservice']['get']);
-            if (array_key_exists('repired', $params['plugRepservice']))
-                $registryMGR->update('sms', 'plugRepserviceStateRepaired', $params['plugRepservice']['repired']);
+            if (array_key_exists('repaired', $params['plugRepservice']))
+                $registryMGR->update('sms', 'plugRepserviceStateRepaired', $params['plugRepservice']['repaired']);
             if (array_key_exists('unrepaired', $params['plugRepservice']))
                 $registryMGR->update('sms', 'plugRepserviceStateUnrepired', $params['plugRepservice']['unrepaired']);
             if (array_key_exists('getback', $params['plugRepservice']))
@@ -411,6 +423,12 @@ class AdminController extends AbstractController
                 $registryMGR->update('sms', 'plugAccproStoreroomSmsBarbari', $params['plugAccpro']['storeroomSmsBarbari']);
             if (array_key_exists('storeroomSmsOther', $params['plugAccpro']))
                 $registryMGR->update('sms', 'plugAccproStoreroomSmsOther', $params['plugAccpro']['storeroomSmsOther']);
+            if (array_key_exists('chequeInput', $params['plugAccpro']))
+                $registryMGR->update('sms', 'plugAccproChequeInput', $params['plugAccpro']['chequeInput']);
+            if (array_key_exists('passChequeInput', $params['plugAccpro']))
+                $registryMGR->update('sms', 'plugAccproPassChequeInput', $params['plugAccpro']['passChequeInput']);
+            if (array_key_exists('rejectChequeInput', $params['plugAccpro']))
+                $registryMGR->update('sms', 'plugAccproRejectChequeInput', $params['plugAccpro']['rejectChequeInput']);
         }
 
         return $this->json(JsonResp::success());

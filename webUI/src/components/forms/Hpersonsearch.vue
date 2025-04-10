@@ -482,9 +482,7 @@ export default {
           transactionFilters: null,
           sortBy: null
         });
-        
-        console.log('پاسخ API:', response.data);
-        
+                
         if (response.data && Array.isArray(response.data)) {
           this.items = response.data;
           this.totalItems = response.data.length;

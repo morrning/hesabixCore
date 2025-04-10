@@ -576,6 +576,12 @@ const router = createRouter({
                         import('../views/acc/cheque/list.vue'),
                 },
                 {
+                    path: 'cheque/transfer/:id',
+                    name: 'cheque_transfer',
+                    component: () =>
+                        import('../views/acc/cheque/transfer.vue'),
+                },
+                {
                     path: 'buy/mod/:id?',
                     name: 'buy_mod',
                     component: () =>
