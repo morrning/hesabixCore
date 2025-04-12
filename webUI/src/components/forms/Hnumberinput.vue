@@ -4,9 +4,11 @@
     v-bind="$attrs"
     type="text"
     :rules="combinedRules"
+    :error-messages="errorMessages"
     @keypress="restrictToNumbers"
     dir="ltr"
     dense
+    hide-details="auto"
   />
 </template>
 
@@ -28,14 +30,15 @@ export default {
 
   data() {
     return {
-      inputValue: ''
+      inputValue: '',
+      errorMessages: []
     }
   },
 
   computed: {
     combinedRules() {
       return [
-        v => !v || /^\d+$/.test(v.replace(/[^0-9]/g, '')) || 'فقط عدد انگلیسی مجاز است',
+        v => !v || /^\d+$/.test(v.replace(/[^0-9]/g, '')) || this.$t('numberinput.invalid_number'),
         ...this.rules
       ]
     }
@@ -55,11 +58,17 @@ export default {
     },
     inputValue(newVal) {
       if (newVal === '' || newVal === null || newVal === undefined) {
-        this.$emit('update:modelValue', 0) // وقتی خالی است، صفر ارسال شود
+        this.$emit('update:modelValue', 0)
+        this.errorMessages = []
       } else {
         const cleaned = String(newVal).replace(/[^0-9]/g, '')
-        const numericValue = cleaned ? Number(cleaned) : 0
-        this.$emit('update:modelValue', numericValue)
+        if (/^\d+$/.test(cleaned)) {
+          const numericValue = cleaned ? Number(cleaned) : 0
+          this.$emit('update:modelValue', numericValue)
+          this.errorMessages = []
+        } else {
+          this.errorMessages = [this.$t('numberinput.invalid_number')]
+        }
       }
     }
   },

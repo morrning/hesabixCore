@@ -56,6 +56,7 @@ const fa_lang = {
     fetch_data: "خطا در دریافت داده‌ها: ",
     initial_load: "خطا در بارگذاری اولیه: ",
     title: "خطا",
+    connection_error: "اتصال با سرویس دهنده برقرار نشد. لطفا اتصال اینترنت خود را بررسی نمایید."
   },
   "dashboard": {
     "costs": {
@@ -266,6 +267,11 @@ const fa_lang = {
     wallet: "کیف پول",
     deposit: "موجودی",
     count: "تعداد",
+    site_name: "حسابیکس",
+    site_slogan: "حسابیکس سامانه جامع مدیریت کسب‌و‌کار",
+    dev_mode_message: "شما در حالت توسعه هستید و به آدرس زیر متصل می‌شوید:",
+    invalid_server_response: "پاسخ نامعتبر از سرور",
+    fetch_data_error: "خطا در گرفتن داده از {url}"
   },
   dialog: {
     download: 'دانلود',
@@ -398,7 +404,30 @@ const fa_lang = {
     search_txt: "جست و جو ...",
     prev_page: "صفحه قبل",
     next_page: "صفحه بعد",
-    change_password: "تغییر کلمه عبور",
+    change_password: {
+      title: "تغییر کلمه عبور",
+      new_password: "کلمه عبور جدید",
+      confirm_password: "تکرار کلمه عبور",
+      notify_user: "اطلاع رسانی به کاربر",
+      save: "ذخیره",
+      cancel: "لغو",
+      close: "بستن",
+      validation: {
+        required: "کلمه عبور الزامی است",
+        min_length: "کلمه عبور باید حداقل ۶ کاراکتر باشد",
+        confirm_required: "تکرار کلمه عبور الزامی است",
+        match: "کلمه عبور و تکرار آن باید یکسان باشند"
+      },
+      error: {
+        title: "خطا",
+        message: "لطفاً تمام فیلدها را به درستی پر کنید",
+        change_error: "خطا در تغییر کلمه عبور"
+      },
+      success: {
+        title: "موفقیت",
+        message: "کلمه عبور با موفقیت تغییر یافت"
+      }
+    },
     settings: "تنظیمات",
     sms: "پیامک",
     system: "سیستم",
@@ -632,7 +661,11 @@ const fa_lang = {
       "income": "درآمد",
       "sell_receive": "دریافت فاکتور فروش",
       "buy_send": "پرداخت فاکتور فروش",
-      "detail": "تفضیل"
+      "detail": "تفضیل",
+      "reject_cheque": "برگشت چک",
+      "modify_cheque": "ثبت چک",
+      "modify_cheque_output": "دریافت چک",
+      "pass_cheque": "واگذاری چک"
     },
     dashboard: {
       admin_area: "ناحیه مدیریت",
@@ -747,6 +780,23 @@ const fa_lang = {
       credit: "بستانکار",
       quantity: "تعداد"
     }
-  }
+  },
+  editor: {
+    bold: "پررنگ",
+    italic: "ایتالیک",
+    bullet_list: "لیست نقطه‌ای",
+    ordered_list: "لیست شماره‌دار",
+    right_align: "راست‌چین",
+    center_align: "وسط‌چین",
+    left_align: "چپ‌چین"
+  },
+  datepicker: {
+    label: "تاریخ",
+    invalid_date: "تاریخ نامعتبر است",
+    fetch_error: "خطا در دریافت اطلاعات سال:"
+  },
+  numberinput: {
+    invalid_number: "فقط عدد انگلیسی مجاز است"
+  },
 };
 export default fa_lang

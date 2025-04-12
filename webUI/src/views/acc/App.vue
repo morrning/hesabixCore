@@ -860,9 +860,13 @@ export default {
       <span class="d-none d-sm-flex">{{ business.name }}</span>
     </v-app-bar-title>
     <v-spacer></v-spacer>
-    <v-btn class="d-none d-sm-flex" stacked @click="showShortcutsDialog = true; isEditingShortcuts = false">
-      <v-icon>mdi-help-circle</v-icon>
+    <v-tooltip text="جادوگر" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn class="d-none d-sm-flex" stacked v-bind="props" to="/acc/wizard/home">
+      <v-icon>mdi-wizard-hat</v-icon>
     </v-btn>
+      </template>
+    </v-tooltip>
     <CalculatorButton />
     <SecretDialog />
     <v-dialog v-model="showShortcutsDialog" max-width="800" scrollable>

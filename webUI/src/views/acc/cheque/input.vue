@@ -17,7 +17,6 @@
                 <v-icon icon="mdi-message-text" :color="form.sendSms ? 'primary' : 'grey'"></v-icon>
               </template>
             </v-switch>
-
           </div>
         </template>
       </v-tooltip>
@@ -31,7 +30,7 @@
   <v-container>
     <v-row>
       <v-col cols="12">
-        <v-form @submit.prevent="submitForm">
+        <v-form ref="form" @submit.prevent="submitForm" v-model="valid">
           <v-row>
             <v-col cols="12" md="6">
               <Hpersonsearch v-model="form.personId" label="شخص" :rules="[v => !!v || 'شخص الزامی است']" required>
@@ -48,8 +47,8 @@
             </v-col>
 
             <v-col cols="12" md="6">
-              <v-text-field v-model="form.amount" label="مبلغ" type="number" :rules="[v => !!v || 'مبلغ الزامی است']"
-                required></v-text-field>
+              <Hnumberinput v-model="form.amount" label="مبلغ" :rules="[v => !!v || 'مبلغ الزامی است']"
+                required></Hnumberinput>
             </v-col>
 
             <v-col cols="12" md="6">
@@ -75,15 +74,18 @@
 <script>
 import Hdatepicker from '@/components/forms/Hdatepicker.vue'
 import Hpersonsearch from '@/components/forms/Hpersonsearch.vue'
+import Hnumberinput from '@/components/forms/Hnumberinput.vue'
 import axios from 'axios'
 export default {
   components: {
     Hdatepicker,
-    Hpersonsearch
+    Hpersonsearch,
+    Hnumberinput
   },
   data() {
     return {
       loading: false,
+      valid: false,
       form: {
         chequeNumber: '',
         bankoncheque: '',
@@ -99,6 +101,12 @@ export default {
 
   methods: {
     async submitForm() {
+      const { valid } = await this.$refs.form.validate()
+      
+      if (!valid) {
+        return
+      }
+
       try {
         this.loading = true
         // ذخیره تنظیمات در localStorage
@@ -111,7 +119,6 @@ export default {
             date: this.form.dueDate,
             person: { code: this.form.personId },
             sayadNumber: this.form.sayadNumber,
-            date: this.form.dueDate,
             description: this.form.description,
             bankoncheque: this.form.bankoncheque,
             sendSms: this.form.sendSms
@@ -124,7 +131,6 @@ export default {
             date: this.form.dueDate,
             person: { code: this.form.personId },
             sayadNumber: this.form.sayadNumber,
-            date: this.form.dueDate,
             description: this.form.description,
             bankoncheque: this.form.bankoncheque,
             sendSms: this.form.sendSms
@@ -148,7 +154,7 @@ export default {
           chequeNumber: chequeData.number,
           bankoncheque: chequeData.bankoncheque,
           amount: chequeData.amount,
-          dueDate: chequeData.dueDate,
+          dueDate: chequeData.date,
           description: chequeData.description,
           sayadNumber: chequeData.sayadNumber,
           personId: chequeData.person.id,

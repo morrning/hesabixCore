@@ -73,14 +73,23 @@ class PersonsController extends AbstractController
         $types = $entityManager->getRepository(PersonType::class)->findAll();
         $response = Explore::ExplorePerson($person, $types);
         $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-            'person' => $person
+            'person' => $person,
+            'bid' => $acc['bid']
         ]);
         $bs = 0;
         $bd = 0;
         foreach ($rows as $row) {
-            if ($row->getDoc()->getMoney() == $acc['money']) {
-                $bs += $row->getBs();
-                $bd += $row->getBd();
+            try {
+                $doc = $row->getDoc();
+                if ($doc && $doc->getMoney() && $doc->getYear() && 
+                    $doc->getMoney()->getId() == $acc['money']->getId() &&
+                    $doc->getYear()->getId() == $acc['year']->getId()) {
+                    $bs += (float) $row->getBs(); // بستانکار
+                    $bd += (float) $row->getBd(); // بدهکار
+                }
+            } catch (\Exception $e) {
+                // در صورت بروز خطا، این ردیف را نادیده می‌گیریم و به ردیف بعدی می‌رویم
+                continue;
             }
         }
         $response['bs'] = $bs;
@@ -392,6 +401,7 @@ class PersonsController extends AbstractController
             ];
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
                 'person' => $person,
+                'bid' => $acc['bid']
             ]);
             $bs = 0;
             $bd = 0;
@@ -439,7 +449,8 @@ class PersonsController extends AbstractController
                 'mobile' => $person->getMobile()
             ];
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person' => $person
+                'person' => $person,
+                'bid' => $acc['bid']
             ]);
             $bs = 0;
             $bd = 0;
@@ -514,13 +525,15 @@ class PersonsController extends AbstractController
         foreach ($persons as $person) {
             $rows = $entityManager->getRepository(\App\Entity\HesabdariRow::class)->findBy([
                 'person' => $person,
-                'bid' => $acc['bid'],
+                'bid' => $acc['bid']
             ]);
             $bs = 0; // بستانکار
             $bd = 0; // بدهکار
             foreach ($rows as $row) {
-                if ($row->getDoc()->getMoney()->getId() == $acc['money']->getId() &&
-                    $row->getDoc()->getYear()->getId() == $acc['year']->getId()) {
+                $doc = $row->getDoc();
+                if ($doc && $doc->getMoney() && $doc->getYear() && 
+                    $doc->getMoney()->getId() == $acc['money']->getId() &&
+                    $doc->getYear()->getId() == $acc['year']->getId()) {
                     $bs += (float) $row->getBs(); // بستانکار
                     $bd += (float) $row->getBd(); // بدهکار
                 }
@@ -585,7 +598,8 @@ class PersonsController extends AbstractController
         $response = $provider->ArrayEntity2Array($persons, 0);
         foreach ($persons as $key => $person) {
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person' => $person
+                'person' => $person,
+                'bid' => $acc['bid']
             ]);
             $bs = 0;
             $bd = 0;
@@ -618,7 +632,8 @@ class PersonsController extends AbstractController
         $response = $provider->ArrayEntity2Array($persons, 0);
         foreach ($persons as $key => $person) {
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person' => $person
+                'person' => $person,
+                'bid' => $acc['bid']
             ]);
             $bs = 0;
             $bd = 0;
@@ -672,7 +687,8 @@ class PersonsController extends AbstractController
         $response = $provider->ArrayEntity2Array($persons, 0);
         foreach ($persons as $key => $person) {
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person' => $person
+                'person' => $person,
+                'bid' => $acc['bid']
             ]);
             $bs = 0;
             $bd = 0;
@@ -717,7 +733,8 @@ class PersonsController extends AbstractController
         $response = Explore::ExplorePersons($res, $entityManager->getRepository(PersonType::class)->findAll());
         foreach ($res as $key => $person) {
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person' => $person
+                'person' => $person,
+                'bid' => $acc['bid']
             ]);
             $bs = 0;
             $bd = 0;
@@ -748,7 +765,8 @@ class PersonsController extends AbstractController
         $response = $provider->ArrayEntity2Array($persons, 0);
         foreach ($persons as $key => $person) {
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                'person' => $person
+                'person' => $person,
+                'bid' => $acc['bid']
             ]);
             $bs = 0;
             $bd = 0;
@@ -1429,11 +1447,17 @@ class PersonsController extends AbstractController
         if (!$person)
             throw $this->createNotFoundException();
         //check accounting docs
-        $docs = $entityManager->getRepository(HesabdariRow::class)->findby(['bid' => $acc['bid'], 'person' => $person]);
-        if (count($docs) > 0)
+        $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+            'person' => $person,
+            'bid' => $acc['bid']
+        ]);
+        if (count($rows) > 0)
             return $this->json(['result' => 2]);
         //check for storeroom docs
-        $storeDocs = $entityManager->getRepository(StoreroomTicket::class)->findby(['bid' => $acc['bid'], 'Person' => $person]);
+        $storeDocs = $entityManager->getRepository(StoreroomTicket::class)->findBy([
+            'bid' => $acc['bid'],
+            'Person' => $person
+        ]);
         if (count($storeDocs) > 0)
             return $this->json(['result' => 2]);
         //check in repservice
@@ -1499,14 +1523,20 @@ class PersonsController extends AbstractController
             }
 
             // بررسی اسناد حسابداری
-            $docs = $entityManager->getRepository(HesabdariRow::class)->findBy(['bid' => $acc['bid'], 'person' => $person]);
-            if (count($docs) > 0) {
+            $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'person' => $person,
+                'bid' => $acc['bid']
+            ]);
+            if (count($rows) > 0) {
                 $hasIgnored = true;
                 continue;
             }
 
             // بررسی اسناد انبار
-            $storeDocs = $entityManager->getRepository(StoreroomTicket::class)->findBy(['bid' => $acc['bid'], 'Person' => $person]);
+            $storeDocs = $entityManager->getRepository(StoreroomTicket::class)->findBy([
+                'bid' => $acc['bid'],
+                'Person' => $person
+            ]);
             if (count($storeDocs) > 0) {
                 $hasIgnored = true;
                 continue;

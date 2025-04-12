@@ -373,6 +373,10 @@ export default {
         income: '/acc/accounting/view/',
         sell_receive: '/acc/accounting/view/',
         buy_send: '/acc/accounting/view/',
+        reject_cheque: '/acc/accounting/view/',
+        modify_cheque: '/acc/accounting/view/',
+        modify_cheque_output: '/acc/accounting/view/',
+        pass_cheque: '/acc/accounting/view/',
       };
       return routes[type] + code;
     },
@@ -388,6 +392,10 @@ export default {
         income: this.$t('pages.person_card.income'),
         sell_receive: this.$t('pages.person_card.sell_receive'),
         buy_send: this.$t('pages.person_card.buy_send'),
+        reject_cheque: this.$t('pages.person_card.reject_cheque'),
+        modify_cheque: this.$t('pages.person_card.modify_cheque'),
+        pass_cheque: this.$t('pages.person_card.pass_cheque'),
+        modify_cheque_output: this.$t('pages.person_card.modify_cheque_output'),
       };
       return labels[type] || type;
     },

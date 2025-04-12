@@ -77,13 +77,13 @@
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item v-if="!item.rejected && item.status !== 'پاس شده'" @click="$router.push(`/acc/cheque/input/${item.id}`)">
+                <v-list-item v-if="!item.locked" @click="$router.push(`/acc/cheque/input/${item.id}`)">
                   <template v-slot:prepend>
                     <v-icon color="primary">mdi-pencil</v-icon>
                   </template>
                   <v-list-item-title>ویرایش چک</v-list-item-title>
                 </v-list-item>
-                <v-list-item v-if="!item.locked && !item.rejected" @click="deleteCheque(item)">
+                <v-list-item @click="deleteCheque(item)">
                   <template v-slot:prepend>
                     <v-icon color="error">mdi-delete</v-icon>
                   </template>
@@ -93,7 +93,7 @@
                   <template v-slot:prepend>
                     <v-icon color="success">mdi-bank-check</v-icon>
                   </template>
-                  <v-list-item-title>پاس کردن چک</v-list-item-title>
+                  <v-list-item-title>وصول کردن چک</v-list-item-title>
                 </v-list-item>
                 <v-list-item v-if="item.rejected" @click="unrejectCheque(item)">
                   <template v-slot:prepend>
@@ -101,13 +101,7 @@
                   </template>
                   <v-list-item-title>رفع برگشت</v-list-item-title>
                 </v-list-item>
-                <v-list-item v-else-if="!item.locked" @click="rejectCheque(item)">
-                  <template v-slot:prepend>
-                    <v-icon color="error">mdi-arrow-left</v-icon>
-                  </template>
-                  <v-list-item-title>برگشت چک</v-list-item-title>
-                </v-list-item>
-                <v-list-item v-if="!item.locked && !item.rejected" @click="$router.push(`/acc/cheque/transfer/${item.id}`)">
+                <v-list-item v-else-if="!item.locked" @click="$router.push(`/acc/cheque/transfer/${item.id}`)">
                   <template v-slot:prepend>
                     <v-icon color="info">mdi-account-arrow-right</v-icon>
                   </template>
@@ -141,13 +135,13 @@
                 </v-btn>
               </template>
               <v-list>
-                <v-list-item v-if="!item.rejected && item.status !== 'پاس شده'" @click="$router.push(`/acc/cheque/input/${item.id}`)">
+                <v-list-item v-if="item.locked == false" @click="$router.push(`/acc/cheque/output/${item.id}`)">
                   <template v-slot:prepend>
                     <v-icon color="primary">mdi-pencil</v-icon>
                   </template>
                   <v-list-item-title>ویرایش چک</v-list-item-title>
                 </v-list-item>
-                <v-list-item v-if="!item.locked && !item.rejected" @click="deleteCheque(item)">
+                <v-list-item @click="deleteCheque(item)">
                   <template v-slot:prepend>
                     <v-icon color="error">mdi-delete</v-icon>
                   </template>
@@ -157,25 +151,7 @@
                   <template v-slot:prepend>
                     <v-icon color="success">mdi-bank-check</v-icon>
                   </template>
-                  <v-list-item-title>پاس کردن چک</v-list-item-title>
-                </v-list-item>
-                <v-list-item v-if="item.rejected" @click="unrejectCheque(item)">
-                  <template v-slot:prepend>
-                    <v-icon color="success">mdi-arrow-right</v-icon>
-                  </template>
-                  <v-list-item-title>رفع برگشت</v-list-item-title>
-                </v-list-item>
-                <v-list-item v-else-if="!item.locked" @click="rejectCheque(item)">
-                  <template v-slot:prepend>
-                    <v-icon color="error">mdi-arrow-left</v-icon>
-                  </template>
-                  <v-list-item-title>برگشت چک</v-list-item-title>
-                </v-list-item>
-                <v-list-item v-if="!item.locked && !item.rejected" @click="$router.push(`/acc/cheque/transfer/${item.id}`)">
-                  <template v-slot:prepend>
-                    <v-icon color="info">mdi-account-arrow-right</v-icon>
-                  </template>
-                  <v-list-item-title>واگذاری چک</v-list-item-title>
+                  <v-list-item-title>وصول کردن چک</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>
@@ -191,10 +167,10 @@
     </v-window-item>
   </v-window>
 
-  <!-- دیالوگ پاس کردن چک -->
+  <!-- دیالوگ وصول کردن چک -->
   <v-dialog v-model="passDialog" max-width="500px">
     <v-card>
-      <v-toolbar color="toolbar" title="پاس کردن چک">
+      <v-toolbar color="toolbar" title="وصول کردن چک">
         <template v-slot:append>
           <v-tooltip text="ثبت" location="bottom">
             <template v-slot:activator="{ props }">
@@ -344,14 +320,14 @@ export default {
       { title: "شماره", key: "number", width: "100" },
       { title: "کد صیاد", key: "sayadNum", width: "120" },
       { title: "مبلغ(ریال)", key: "amount", width: "140" },
-      { title: "تاریخ", key: "datePay", width: "150" },
+      { title: "تاریخ", key: "date", width: "150" },
       { title: "پرداخت کننده", key: "person.nikename", width: "150" },
       { title: "بانک", key: "chequeBank", width: "150" },
       { title: "وضعیت", key: "status", width: "150", sortable: true },
-      { title: "تاریخ وصول", key: "date", width: "150" },
+      { title: "تاریخ وصول", key: "datePay", width: "150" },
       { title: "توضیحات", key: "des", width: "150" },
     ],
-    // متغیرهای مربوط به پاس کردن چک
+    // متغیرهای مربوط به وصول کردن چک
     passDialog: false,
     passLoading: false,
     passDate: '',
@@ -381,9 +357,9 @@ export default {
   methods: {
     getStatusColor(status) {
       switch (status) {
-        case 'پاس شده':
+        case 'وصول شده':
           return 'success';
-        case 'پاس نشده':
+        case 'وصول نشده':
           return 'grey';
         case 'برگشت خورده':
           return 'error';
@@ -456,7 +432,7 @@ export default {
         this.loading = false;
       }
     },
-    // متدهای مربوط به پاس کردن چک
+    // متدهای مربوط به وصول کردن چک
     async openPassDialog(id) {
       this.selectedChequeId = id;
       this.passDialog = true;
@@ -497,11 +473,11 @@ export default {
 
       try {
         this.passLoading = true;
-        await axios.post(`/api/cheque/pass/${this.selectedChequeId}`, {
+        await axios.post(`/api/cheque/pass/${this.tab}/${this.selectedChequeId}`, {
           bank: this.bankSelected,
           date: this.passDate,
           des: this.passDescription,
-          sendSms: this.sendPassSms
+          sendSms: this.sendPassSms,
         });
 
         this.snackbar = {

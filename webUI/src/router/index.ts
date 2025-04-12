@@ -678,6 +678,12 @@ const router = createRouter({
                         import('../views/acc/rfsell/viewInvoice.vue'),
                 },
                 {
+                    path: 'wizard/home',
+                    name: 'wizard_home',
+                    component: () =>
+                        import('../views/wizard/home.vue'),
+                },
+                {
                     path: 'plugin-center/list',
                     name: 'plugin_center_list',
                     component: () =>

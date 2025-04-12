@@ -454,7 +454,14 @@ class Explore
             'date' => $cheque->getDate(),
             'locked' => $cheque->isLocked(),
             'rejected' => $cheque->isRejected(),
-            'label' => $label
+            'label' => $label,
+            'bankoncheque' => $cheque->getBankoncheque(),
+            'sayadNumber' => $cheque->getSayadNum(),
+            'dueDate' => $cheque->getPayDate(),
+            'description' => $cheque->getDes(),
+            'dateSubmit' => $cheque->getDateSubmit(),
+            'dateStamp' => $cheque->getDateStamp(),
+            
         ];
     }
 

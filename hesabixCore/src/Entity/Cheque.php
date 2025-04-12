@@ -74,6 +74,15 @@ class Cheque
     #[ORM\Column(nullable: true)]
     private ?bool $rejected = null;
 
+    #[ORM\ManyToOne]
+    private ?Money $money = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $transfered = null;
+
+    #[ORM\Column(length: 25, nullable: true)]
+    private ?string $transferDate = null;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -326,6 +335,42 @@ class Cheque
     public function setRejected(?bool $rejected): static
     {
         $this->rejected = $rejected;
+
+        return $this;
+    }
+
+    public function getMoney(): ?Money
+    {
+        return $this->money;
+    }
+
+    public function setMoney(?Money $money): static
+    {
+        $this->money = $money;
+
+        return $this;
+    }
+
+    public function isTransfered(): ?bool
+    {
+        return $this->transfered;
+    }
+
+    public function setTransfered(?bool $transfered): static
+    {
+        $this->transfered = $transfered;
+
+        return $this;
+    }
+
+    public function getTransferDate(): ?string
+    {
+        return $this->transferDate;
+    }
+
+    public function setTransferDate(?string $transferDate): static
+    {
+        $this->transferDate = $transferDate;
 
         return $this;
     }

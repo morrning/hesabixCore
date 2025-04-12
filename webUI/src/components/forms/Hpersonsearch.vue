@@ -6,8 +6,8 @@
           v-bind="props"
           v-model="displayValue"
           variant="outlined"
-          hide-details
-          density="compact"
+          :error-messages="errorMessages"
+          :rules="combinedRules"
           :label="label"
           class=""
           prepend-inner-icon="mdi-account"
@@ -15,6 +15,7 @@
           @click:clear="clearSelection"
           :loading="loading"
           @keydown.enter="handleEnter"
+          hide-details="auto"
         >
           <template v-slot:append-inner>
             <v-icon>{{ menu ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
@@ -338,6 +339,10 @@ export default {
     returnObject: {
       type: Boolean,
       default: false
+    },
+    rules: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -360,6 +365,7 @@ export default {
         text: '',
         color: 'success'
       },
+      errorMessages: [],
       newPerson: {
         nikename: '',
         name: '',
@@ -419,6 +425,12 @@ export default {
         return ['شماره موبایل دوم باید با 09 شروع شود و 11 رقم باشد'];
       }
       return [];
+    },
+    combinedRules() {
+      return [
+        v => !!v || 'انتخاب شخص الزامی است',
+        ...this.rules
+      ]
     }
   },
   watch: {
@@ -583,11 +595,13 @@ export default {
       this.searchQuery = item.nikename;
       this.$emit('update:modelValue', this.returnObject ? item : item.id);
       this.menu = false;
+      this.errorMessages = [];
     },
     clearSelection() {
       this.selectedItem = null;
       this.searchQuery = '';
       this.$emit('update:modelValue', null);
+      this.errorMessages = ['انتخاب شخص الزامی است'];
     },
     handleEnter() {
       if (!this.loading && this.filteredItems.length === 0) {

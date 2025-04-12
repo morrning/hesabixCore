@@ -60,8 +60,15 @@
                 <v-form @submit.prevent="submitForm" class="mt-4">
                     <v-row>
                         <v-col cols="12">
-                            <v-select v-model="selectedPerson" :items="persons" item-title="name" item-value="id"
-                                label="شخص گیرنده" :rules="[v => !!v || 'انتخاب شخص گیرنده الزامی است']" required />
+                            <v-switch
+                                v-model="sendSms"
+                                label="ارسال پیامک به گیرنده"
+                                color="primary"
+                                hide-details
+                            ></v-switch>
+                        </v-col>
+                        <v-col cols="12">
+                            <Hpersonsearch v-model="selectedPerson" label="شخص گیرنده" :rules="[v => !!v || 'انتخاب شخص گیرنده الزامی است']" required />
                         </v-col>
 
                         <v-col cols="12">
@@ -91,17 +98,20 @@
 <script>
 import axios from "axios";
 import Hdatepicker from '@/components/forms/Hdatepicker.vue';
+import Hpersonsearch from '@/components/forms/Hpersonsearch.vue';
 
 export default {
     name: "cheque-transfer",
     components: {
-        Hdatepicker
+        Hdatepicker,
+        Hpersonsearch
     },
     data: () => ({
         loading: false,
         selectedPerson: null,
         transferDate: '',
         description: '',
+        sendSms: false,
         persons: [],
         year: {
             start: '',
@@ -152,6 +162,10 @@ export default {
                     },
                     chequeBank: chequeResponse.data.bankoncheque
                 };
+
+                // Load SMS notification preference from localStorage
+                const smsPreference = localStorage.getItem('chequeTransferSmsNotification');
+                this.sendSms = smsPreference === 'true';
             } catch (error) {
                 console.error('خطا در بارگذاری اطلاعات:', error);
                 this.snackbar = {
@@ -175,10 +189,14 @@ export default {
 
             try {
                 this.loading = true;
+                // Save SMS notification preference to localStorage
+                localStorage.setItem('chequeTransferSmsNotification', this.sendSms);
+
                 await axios.post(`/api/cheque/transfer/${this.$route.params.id}`, {
                     personId: this.selectedPerson,
                     date: this.transferDate,
-                    description: this.description
+                    description: this.description,
+                    sendSms: this.sendSms
                 });
 
                 this.snackbar = {
