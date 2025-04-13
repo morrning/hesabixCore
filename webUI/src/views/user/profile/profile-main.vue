@@ -106,6 +106,7 @@ export default defineComponent({
         { text: 'تغییرات', url: '/profile/manager/changes/list', icon: 'mdi-cellphone-arrow-down', visible: true },
         { text: 'تاریخچه سیستم', url: '/profile/manager/logs/list', icon: 'mdi-history', visible: true },
         { text: 'کیف پول', url: '/profile/manager/wallet/list', icon: 'mdi-wallet', visible: true },
+        { text: 'اطلاعیه‌ها', url: '/profile/manager/statments/list', icon: 'mdi-bell', visible: true },
 
       ],
       adminSettings: [

@@ -39,12 +39,6 @@ class GeneralController extends AbstractController
         ]);
     }
 
-    #[Route('/api/general/statements', name: 'general_statement')]
-    public function general_statement(EntityManagerInterface $entityManager): JsonResponse
-    {
-        return $this->json($entityManager->getRepository(Statment::class)->findBy([], ['id' => 'DESC']));
-    }
-
     #[Route('/api/general/get/time', name: 'general_get_time')]
     public function general_get_time(Jdate $jdate, Request $request): JsonResponse
     {
