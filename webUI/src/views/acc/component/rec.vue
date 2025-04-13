@@ -36,9 +36,6 @@
             <v-list-item @click="addItem('salary')">
               <v-list-item-title>تنخواه گردان</v-list-item-title>
             </v-list-item>
-            <v-list-item @click="addItem('cheque')">
-              <v-list-item-title>چک</v-list-item-title>
-            </v-list-item>
           </v-list>
         </v-menu>
 
