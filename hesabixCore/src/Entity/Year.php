@@ -6,6 +6,7 @@ use App\Repository\YearRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\Ignore;
 
 #[ORM\Entity(repositoryClass: YearRepository::class)]
@@ -14,9 +15,11 @@ class Year
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['year:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['year:read'])]
     private ?string $label = null;
 
     #[ORM\ManyToOne(inversedBy: 'years')]
@@ -25,6 +28,7 @@ class Year
     private ?Business $bid = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['year:read'])]
     private ?bool $head = null;
 
     #[ORM\OneToMany(mappedBy: 'year', targetEntity: HesabdariDoc::class, orphanRemoval: true)]
@@ -32,12 +36,15 @@ class Year
     private Collection $hesabdariDocs;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['year:read'])]
     private ?string $start = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['year:read'])]
     private ?string $end = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['year:read'])]
     private ?string $now = null;
 
     #[ORM\OneToMany(mappedBy: 'year', targetEntity: HesabdariRow::class, orphanRemoval: true)]

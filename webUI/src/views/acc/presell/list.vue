@@ -19,28 +19,6 @@
         <v-btn v-bind="props" icon="mdi-delete" color="danger" @click="deleteItems()"></v-btn>
       </template>
     </v-tooltip>
-    <v-menu>
-      <template v-slot:activator="{ props }">
-        <v-btn v-bind="props" icon="" color="green">
-          <v-tooltip activator="parent" :text="$t('dialog.change_labels')" location="bottom" />
-          <v-icon icon="mdi-dots-horizontal-circle"></v-icon>
-        </v-btn>
-      </template>
-      <v-list>
-        <v-list-subheader color="primary">{{ $t('dialog.change_labels') }}</v-list-subheader>
-        <v-list-item v-for="item in types" class="text-dark" :title="$t('dialog.change_to') + ' ' + item.label"
-          @click="changeLabel(item)">
-          <template v-slot:prepend>
-            <v-icon color="green-darken-4" icon="mdi-label"></v-icon>
-          </template>
-        </v-list-item>
-        <v-list-item class="text-dark" :title="$t('dialog.delete_labels')" @click="changeLabel('clear')">
-          <template v-slot:prepend>
-            <v-icon color="red" icon="mdi-undo"></v-icon>
-          </template>
-        </v-list-item>
-      </v-list>
-    </v-menu>
   </v-toolbar>
   <v-row class="pa-1">
     <v-col>
@@ -52,30 +30,6 @@
               <v-icon v-bind="props" color="danger" icon="mdi-magnify"></v-icon>
             </template>
           </v-tooltip>
-        </template>
-        <template v-slot:append-inner>
-          <v-menu :close-on-content-click="false">
-            <template v-slot:activator="{ props }">
-              <v-icon size="sm" v-bind="props" icon="" color="primary">
-                <v-tooltip activator="parent" variant="plain" :text="$t('dialog.filters')" location="bottom" />
-                <v-icon icon="mdi-filter"></v-icon>
-              </v-icon>
-            </template>
-            <v-list>
-              <v-list-subheader color="primary">
-                <v-icon icon="mdi-filter"></v-icon>
-                {{ $t('dialog.filters') }}</v-list-subheader>
-              <v-list-item v-for="(item, index) in types" class="text-dark">
-                <template v-slot:title>
-                  <div class="form-check form-check-inline mx-1">
-                    <input @change="filterTable()" v-model="types[index].checked" checked="" class="form-check-input"
-                      type="checkbox">
-                    <label class="form-check-label">{{ item.label }}</label>
-                  </div>
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-menu>
         </template>
       </v-text-field>
       <EasyDataTable table-class-name="customize-table" :table-class-name="tableClassName"
@@ -100,7 +54,7 @@
                   <v-icon icon="mdi-file-pdf-box"></v-icon>
                 </template>
               </v-list-item>
-              <v-list-item class="text-dark" :title="$t('dialog.edit')" @click="canEditItem(code)">
+              <v-list-item class="text-dark" :title="$t('dialog.edit')" :to="'/acc/presell/mod/' + code">
                 <template v-slot:prepend>
                   <v-icon icon="mdi-file-edit"></v-icon>
                 </template>
@@ -113,15 +67,8 @@
             </v-list>
           </v-menu>
         </template>
-        <template #item-label="{ label }">
-          <span v-if="label">
-            <span v-if="label.code == 'payed'" class="text-success">{{ label.label }}</span>
-            <span v-if="label.code == 'returned'" class="text-danger">{{ label.label }}</span>
-            <span v-if="label.code == 'accepted'" class="text-info">{{ label.label }}</span>
-          </span>
-        </template>
         <template #item-des="{ des }">
-          {{ des.replace("فاکتور فروش:", "") }}
+          {{ des.replace("پیش فاکتور فروش:", "") }}
         </template>
         <template #item-relatedDocsCount="{ relatedDocsCount, relatedDocsPays }">
           <span v-if="relatedDocsCount != '0'" class="text-success"><i class="fa fa-money"></i>
@@ -152,6 +99,11 @@
             {{ $filters.formatNumber(discountAll) }}
           </span>
         </template>
+        <template #item-totalAmount="{ totalAmount }">
+          <span class="text-dark">
+            {{ $filters.formatNumber(totalAmount) }}
+          </span>
+        </template>
         <template #item-person="{ person }">
           <router-link :to="'/acc/persons/card/view/' + person.code">
             {{ person.nikename }}
@@ -173,8 +125,6 @@
         </v-select>
         <v-switch inset v-model="printOptions.bidInfo" color="primary" :label="$t('dialog.bid_info_label')"
           hide-details></v-switch>
-        <v-switch inset v-model="printOptions.pays" color="primary" :label="$t('dialog.invoice_pays')"
-          hide-details></v-switch>
         <v-switch inset v-model="printOptions.note" color="primary" :label="$t('dialog.invoice_footer_note')"
           hide-details></v-switch>
         <v-switch inset v-model="printOptions.taxInfo" color="primary" :label="$t('dialog.tax_dexpo')"
@@ -192,12 +142,69 @@
     </v-card>
   </v-dialog>
   <!-- End Print Modal -->
+  <!-- Delete Dialog -->
+  <v-dialog v-model="deleteDialog" width="auto">
+    <v-card>
+      <v-card-title class="text-h5">
+        حذف فاکتور
+      </v-card-title>
+      <v-card-text>
+        آیا مطمئن هستید؟
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" variant="text" @click="confirmDelete">
+          بله
+        </v-btn>
+        <v-btn color="error" variant="text" @click="deleteDialog = false">
+          خیر
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Delete Group Dialog -->
+  <v-dialog v-model="deleteGroupDialog" width="auto">
+    <v-card>
+      <v-card-title class="text-h5">
+        حذف گروهی
+      </v-card-title>
+      <v-card-text>
+        آیا مطمئن هستید؟
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" variant="text" @click="confirmDeleteGroup">
+          بله
+        </v-btn>
+        <v-btn color="error" variant="text" @click="deleteGroupDialog = false">
+          خیر
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+  <!-- Snackbar -->
+  <v-snackbar
+    v-model="snackbar.show"
+    :color="snackbar.color"
+    :timeout="3000"
+  >
+    {{ snackbar.text }}
+    <template v-slot:actions>
+      <v-btn
+        color="white"
+        variant="text"
+        @click="snackbar.show = false"
+      >
+        بستن
+      </v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
 <script>
 import axios from "axios";
-import Swal from "sweetalert2";
-import { ref ,defineComponent } from "vue";
+import { ref, defineComponent } from "vue";
 
 export default defineComponent ({
   name: "list",
@@ -224,7 +231,6 @@ export default defineComponent ({
       ],
       modal: false,
       printOptions: {
-        pays: true,
         note: true,
         bidInfo: true,
         taxInfo: true,
@@ -236,7 +242,6 @@ export default defineComponent ({
       sumTotal: 0,
       itemsSelected: [],
       searchValue: '',
-      types: [],
       loading: ref(true),
       items: [],
       orgItems: [],
@@ -248,99 +253,26 @@ export default defineComponent ({
         { text: "تخفیف", value: "discountAll", sortable: true },
         { text: "حمل و نقل", value: "transferCost", sortable: true },
         { text: "مبلغ", value: "amount", sortable: true },
-        { text: "سود فاکتور", value: "profit", sortable: true },
-        { text: "پرداختی", value: "relatedDocsCount", sortable: true },
-        { text: "برچسب", value: "label", width: 100 },
+        { text: "مبلغ کل", value: "totalAmount", sortable: true },
         { text: "شرح", value: "des", sortable: true },
-      ]
+      ],
+      deleteDialog: false,
+      deleteGroupDialog: false,
+      selectedCode: null,
+      snackbar: {
+        show: false,
+        text: '',
+        color: 'success'
+      }
     }
   },
   methods: {
-    changeLabel(label) {
-      if (this.itemsSelected.length == 0) {
-        Swal.fire({
-          text: 'هیچ موردی انتخاب نشده است.',
-          icon: 'warning',
-          confirmButtonText: 'قبول'
-        });
-      }
-      else {
-        this.loading = true;
-        axios.post('/api/presell/label/change', {
-          'items': this.itemsSelected,
-          'label': label
-        }
-        ).then((response) => {
-          this.loading == false;
-          if (response.data.code == 0) {
-            Swal.fire({
-              text: 'فاکتور‌ها با موفقیت ویرایش شد.',
-              icon: 'success',
-              confirmButtonText: 'قبول'
-            });
-            this.itemsSelected = [];
-          }
-          else if (response.data.result == 2) {
-            Swal.fire({
-              text: response.data.message,
-              icon: 'warning',
-              confirmButtonText: 'قبول'
-            });
-          }
-          this.loadData();
-        })
-      }
-    },
-    filterTable() {
-      this.loading = true;
-      let calcItems = [];
-      let isAll = true;
-      let selectedTypes = [];
-      this.types.forEach((item) => {
-        if (item.checked == true) {
-          isAll = false;
-          selectedTypes.push(item);
-        }
-      });
-      if (isAll) {
-        this.items = this.orgItems;
-      }
-      else {
-        this.orgItems.forEach((item) => {
-          selectedTypes.forEach((st) => {
-            if (item.label) {
-              if (st.code == item.label.code) {
-                let existBefore = false;
-                calcItems.forEach((ri) => {
-                  if (item.label.code == ri.code) {
-                    existBefore = true;
-                  }
-                })
-                if (existBefore == false) {
-                  calcItems.push(item);
-                }
-              }
-            }
-
-          });
-        });
-        this.items = calcItems;
-      }
-
-      this.loading = false;
-    },
     loadData() {
       axios.post("/api/printers/options/info").then((response) => {
         this.printOptions = response.data.sell;
       });
 
-      axios.post('/api/invoice/types', {
-        type: 'sell'
-      }).then((response) => {
-        this.types = response.data;
-      });
-
-      axios.post('/api/presell/docs/search')
+      axios.post('/api/preinvoice/docs/search')
         .then((response) => {
           this.items = response.data;
           this.orgItems = response.data;
@@ -350,53 +282,59 @@ export default defineComponent ({
           this.loading = false;
         })
     },
+    showSnackbar(text, color = 'success') {
+      this.snackbar.text = text;
+      this.snackbar.color = color;
+      this.snackbar.show = true;
+    },
     deleteItems() {
       if (this.itemsSelected.length == 0) {
-        Swal.fire({
-          text: 'هیچ موردی انتخاب نشده است.',
-          icon: 'warning',
-          confirmButtonText: 'قبول'
-        });
+        this.showSnackbar('لطفا حداقل یک پیش فاکتور را انتخاب کنید.', 'warning');
+        return;
       }
-      else {
-        Swal.fire({
-          text: 'آیا برای حذف این مورد مطمئن هستید؟ تمامی اسناد پرداخت و حواله های انبار همراه فاکتور نیز حذف خواهند شد.',
-          showCancelButton: true,
-          confirmButtonText: 'بله',
-          cancelButtonText: `خیر`,
-          icon: 'warning'
-        }).then((result) => {
-          /* Read more about isConfirmed, isDenied below */
-          if (result.isConfirmed) {
-            this.loading = true;
-            axios.post('/api/accounting/remove/group', {
-              'items': this.itemsSelected
+      this.deleteGroupDialog = true;
+    },
+    confirmDeleteGroup() {
+      this.loading = true;
+      this.deleteGroupDialog = false;
+      axios.post('/api/preinvoice/remove/group', {
+        'items': this.itemsSelected
+      }).then((response) => {
+        this.loading = false;
+        if (response.data.result == 1) {
+          this.loadData();
+          this.showSnackbar('فاکتورها با موفقیت حذف شد.', 'success');
+        }
+        else if (response.data.result == 2) {
+          this.showSnackbar(response.data.message, 'warning');
+        }
+      });
+    },
+    deleteItem(code) {
+      this.selectedCode = code;
+      this.deleteDialog = true;
+    },
+    confirmDelete() {
+      this.deleteDialog = false;
+      axios.post('/api/preinvoice/delete/' + this.selectedCode).then((response) => {
+        if (response.data.result == 1) {
+          let index = 0;
+          for (let z = 0; z < this.items.length; z++) {
+            index++;
+            if (this.items[z]['code'] == this.selectedCode) {
+              this.items.splice(index - 1, 1);
             }
-            ).then((response) => {
-              this.loading = false;
-              if (response.data.result == 1) {
-                this.loadData();
-                Swal.fire({
-                  text: 'فاکتور ها با موفقیت حذف شد.',
-                  icon: 'success',
-                  confirmButtonText: 'قبول'
-                });
-              }
-              else if (response.data.result == 2) {
-                Swal.fire({
-                  text: response.data.message,
-                  icon: 'warning',
-                  confirmButtonText: 'قبول'
-                });
-              }
-            })
           }
-        })
-      }
+          this.showSnackbar('فاکتور با موفقیت حذف شد.', 'success');
+        }
+        else if (response.data.result == 2) {
+          this.showSnackbar(response.data.message, 'warning');
+        }
+      });
     },
     printInvoice(pdf = true, cloudePrinters = true) {
       this.loading = true;
-      axios.post('/api/presell/print/invoice', {
+      axios.post('/api/preinvoice/print/invoice', {
         'code': this.printOptions.selectedPrintCode,
         'pdf': pdf,
         'printers': cloudePrinters,
@@ -406,45 +344,10 @@ export default defineComponent ({
         window.open(this.$API_URL + '/front/print/' + response.data.id, '_blank', 'noreferrer');
       });
     },
-    deleteItem(code) {
-      Swal.fire({
-        text: 'آیا برای حذف این مورد مطمئن هستید؟ تمامی اسناد پرداخت و حواله های انبار همراه فاکتور نیز حذف خواهند شد.',
-        showCancelButton: true,
-        confirmButtonText: 'بله',
-        cancelButtonText: `خیر`,
-        icon: 'warning'
-      }).then((result) => {
-        /* Read more about isConfirmed, isDenied below */
-        if (result.isConfirmed) {
-          axios.post('/api/accounting/remove', {
-            'code': code
-          }
-          ).then((response) => {
-            if (response.data.result == 1) {
-              let index = 0;
-              for (let z = 0; z < this.items.length; z++) {
-                index++;
-                if (this.items[z]['code'] == code) {
-                  this.items.splice(index - 1, 1);
-                }
-              }
-              Swal.fire({
-                text: 'فاکتور فروش با موفقیت حذف شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              });
-            }
-            else if (response.data.result == 2) {
-              Swal.fire({
-                text: response.data.message,
-                icon: 'warning',
-                confirmButtonText: 'قبول'
-              });
-            }
-          })
-        }
-      })
-    }
+    isNumeric(str) {
+      if (typeof str != "string") return false;
+      return !isNaN(str) && !isNaN(parseFloat(str));
+    },
   },
   beforeMount() {
     this.loadData();
@@ -454,11 +357,11 @@ export default defineComponent ({
       handler: function (val, oldVal) {
         this.sumSelected = 0;
         this.itemsSelected.forEach((item) => {
-          if (typeof item.amount.valueOf() === "string") {
-            this.sumSelected += parseInt(item.amount.replaceAll(",", ""))
+          if (typeof item.totalAmount.valueOf() === "string") {
+            this.sumSelected += parseInt(item.totalAmount.replaceAll(",", ""))
           }
           else {
-            this.sumSelected += item.amount;
+            this.sumSelected += item.totalAmount;
           }
         });
       },
@@ -470,26 +373,40 @@ export default defineComponent ({
           this.items = this.orgItems;
         }
         else {
+          const searchTerm = this.searchValue.toLowerCase().replace(/,/g, '');
           let temp = [];
           this.orgItems.forEach((item) => {
-            if (item.person.nikename.includes(this.searchValue)) {
-              temp.push(item)
+            // جستجو در فیلدهای متنی
+            const personFields = [
+              item.person?.nikename,
+              item.person?.name,
+              item.person?.family,
+              item.person?.mobile,
+              item.person?.phone,
+              item.person?.address
+            ].filter(Boolean); // حذف مقادیر undefined
+
+            const hasPersonMatch = personFields.some(field => 
+              field.toLowerCase().includes(searchTerm)
+            );
+
+            if (hasPersonMatch ||
+                item.des.toLowerCase().includes(searchTerm) ||
+                item.code.includes(searchTerm)) {
+              temp.push(item);
             }
-            else if (item.date.includes(this.searchValue)) {
-              temp.push(item)
-            }
-            else if (item.amount.toString().includes(this.searchValue)) {
-              temp.push(item)
-            }
-            else if (item.des.includes(this.searchValue)) {
-              temp.push(item)
-            }
-            else if (item.code.includes(this.searchValue)) {
-              temp.push(item)
-            }
-            else if (item.label) {
-              if (item.label.label.includes(this.searchValue)) {
-                temp.push(item)
+            // جستجو در فیلدهای عددی
+            else if (this.isNumeric(searchTerm)) {
+              const searchNumber = parseFloat(searchTerm);
+              if (item.amount == searchNumber ||
+                  item.totalAmount == searchNumber ||
+                  item.discountAll == searchNumber ||
+                  item.transferCost == searchNumber ||
+                  item.amount.toString().includes(searchTerm) ||
+                  item.totalAmount.toString().includes(searchTerm) ||
+                  item.discountAll.toString().includes(searchTerm) ||
+                  item.transferCost.toString().includes(searchTerm)) {
+                temp.push(item);
               }
             }
           });
@@ -502,4 +419,11 @@ export default defineComponent ({
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.v-card {
+  border-radius: 8px;
+}
+.v-dialog {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+</style>

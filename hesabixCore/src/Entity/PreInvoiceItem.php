@@ -26,28 +26,14 @@ class PreInvoiceItem
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $bd = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $discountPercent = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $discountAmount = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $des = null;
-
-    #[ORM\ManyToOne]
-    private ?Person $person = null;
-
-    #[ORM\ManyToOne]
-    private ?BankAccount $bank = null;
-
-    #[ORM\ManyToOne]
-    private ?Cashdesk $cashdesk = null;
-
-    #[ORM\ManyToOne]
-    private ?Salary $salary = null;
-
-    #[ORM\ManyToOne(inversedBy: 'preInvoiceItems')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Business $bid = null;
-
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Year $year = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $discount = null;
@@ -55,9 +41,12 @@ class PreInvoiceItem
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $tax = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    private ?bool $showPercentDiscount = null;
+
+    #[ORM\ManyToOne(inversedBy: 'preInvoiceItems')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?HesabdariTable $refID = null;
+    private ?PreInvoiceDoc $doc = null;
 
     public function getId(): ?int
     {
@@ -112,6 +101,28 @@ class PreInvoiceItem
         return $this;
     }
 
+    public function getDiscountPercent(): ?string
+    {
+        return $this->discountPercent;
+    }
+
+    public function setDiscountPercent(?string $discountPercent): static
+    {
+        $this->discountPercent = $discountPercent;
+        return $this;
+    }
+
+    public function getDiscountAmount(): ?string
+    {
+        return $this->discountAmount;
+    }
+
+    public function setDiscountAmount(?string $discountAmount): static
+    {
+        $this->discountAmount = $discountAmount;
+        return $this;
+    }
+
     public function getDes(): ?string
     {
         return $this->des;
@@ -120,78 +131,6 @@ class PreInvoiceItem
     public function setDes(?string $des): static
     {
         $this->des = $des;
-
-        return $this;
-    }
-
-    public function getPerson(): ?Person
-    {
-        return $this->person;
-    }
-
-    public function setPerson(?Person $person): static
-    {
-        $this->person = $person;
-
-        return $this;
-    }
-
-    public function getBank(): ?BankAccount
-    {
-        return $this->bank;
-    }
-
-    public function setBank(?BankAccount $bank): static
-    {
-        $this->bank = $bank;
-
-        return $this;
-    }
-
-    public function getCashdesk(): ?Cashdesk
-    {
-        return $this->cashdesk;
-    }
-
-    public function setCashdesk(?Cashdesk $cashdesk): static
-    {
-        $this->cashdesk = $cashdesk;
-
-        return $this;
-    }
-
-    public function getSalary(): ?Salary
-    {
-        return $this->salary;
-    }
-
-    public function setSalary(?Salary $salary): static
-    {
-        $this->salary = $salary;
-
-        return $this;
-    }
-
-    public function getBid(): ?Business
-    {
-        return $this->bid;
-    }
-
-    public function setBid(?Business $bid): static
-    {
-        $this->bid = $bid;
-
-        return $this;
-    }
-
-    public function getYear(): ?Year
-    {
-        return $this->year;
-    }
-
-    public function setYear(?Year $year): static
-    {
-        $this->year = $year;
 
         return $this;
     }
@@ -220,14 +159,25 @@ class PreInvoiceItem
         return $this;
     }
 
-    public function getRefID(): ?HesabdariTable
+    public function isShowPercentDiscount(): ?bool
     {
-        return $this->refID;
+        return $this->showPercentDiscount;
     }
 
-    public function setRefID(?HesabdariTable $refID): static
+    public function setShowPercentDiscount(?bool $showPercentDiscount): static
     {
-        $this->refID = $refID;
+        $this->showPercentDiscount = $showPercentDiscount;
+        return $this;
+    }
+
+    public function getDoc(): ?PreInvoiceDoc
+    {
+        return $this->doc;
+    }
+
+    public function setDoc(?PreInvoiceDoc $doc): static
+    {
+        $this->doc = $doc;
 
         return $this;
     }

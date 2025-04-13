@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\PreInvoiceDoc;
 use App\Service\Log;
 use App\Service\Access;
 use App\Service\Explore;
@@ -10,8 +9,8 @@ use App\Entity\Commodity;
 use App\Service\PluginService;
 use App\Service\Provider;
 use App\Service\Extractor;
-use App\Entity\HesabdariDoc;
-use App\Entity\HesabdariRow;
+use App\Entity\PreInvoiceDoc;
+use App\Entity\PreInvoiceItem;
 use App\Entity\HesabdariTable;
 use App\Entity\InvoiceType;
 use App\Entity\Person;
@@ -29,524 +28,282 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class PreinvoiceController extends AbstractController
 {
-    
-    #[Route('/api/presell/get/info/{code}', name: 'app_sell_get_info')]
-    public function app_sell_get_info(Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, string $code): JsonResponse
+
+    private $access;
+    private $extractor;
+
+    public function __construct(Access $access, Extractor $extractor)
     {
-        $acc = $access->hasRole('sell');
-        if (!$acc)
-            throw $this->createAccessDeniedException();
-        $doc = $entityManager->getRepository(PreInvoiceDoc::class)->findOneBy([
-            'bid' => $acc['bid'],
-            'code' => $code,
-            'money'=> $acc['money']
-        ]);
-        if (!$doc)
-            throw $this->createNotFoundException();
-        $result = Explore::ExploreSellDoc($doc);
-        $profit = 0;
-        //calculate profit
-        foreach ($doc->getHesabdariRows() as $item) {
-            if ($item->getCommodity() && $item->getCommdityCount()) {
-                if ($acc['bid']->getProfitCalctype() == 'simple') {
-                    $profit = $profit + (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceSell()) * $item->getCommdityCount());
-                }
-                elseif ($acc['bid']->getProfitCalctype() == 'lis') {
-                    $last = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
-                        'commodity' => $item->getCommodity(),
-                        'bs' => 0
-                    ], [
-                        'id' => 'DESC'
-                    ]);
-                    if ($last) {
-                        $price = $last->getBd() / $last->getCommdityCount();
-                        $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
-                    } else {
-                        $profit = $profit + $item->getBs();
-                    }
-                } else {
-                    $lasts = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                        'commodity' => $item->getCommodity(),
-                        'bs' => 0
-                    ], [
-                        'id' => 'DESC'
-                    ]);
-                    $avg = 0;
-                    $count = 0;
-                    foreach ($lasts as $last) {
-                        $avg = $avg + $last->getBd();
-                        $count = $count + $last->getCommdityCount();
-                    }
-                    if ($count != 0) {
-                        $price = $avg / $count;
-                        $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
-                    }
-                    else{
-                        $profit = $profit + $item->getBs();
-                    }
-
-                }
-
-                //round output
-                $profit = round($profit);
-            }
-        }
-        $result['profit'] = $profit;
-        return $this->json($result);
+        $this->access = $access;
+        $this->extractor = $extractor;
     }
 
-    #[Route('/api/presell/mod', name: 'app_sell_mod')]
-    public function app_sell_mod(registryMGR $registryMGR, PluginService $pluginService, SMS $SMS, Provider $provider, Extractor $extractor, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+
+    #[Route('/api/preinvoice/get/{id}', name: 'app_preinvoice_get')]
+    public function getPreinvoice(EntityManagerInterface $entityManager, int $id): JsonResponse
     {
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
+        $acc = $this->access->hasRole('preinvoice');
+        if (!$acc) {
+            return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
         }
-
-        $acc = $access->hasRole('sell');
-        if (!$acc)
-            throw $this->createAccessDeniedException();
-
-        if (!array_key_exists('update', $params)) {
-            return $this->json($extractor->paramsNotSend());
+        
+        $preinvoice = $entityManager->getRepository(PreInvoiceDoc::class)->findOneBy(['code' => $id, 'bid' => $acc['bid'], 'year' => $acc['year']]);
+        if (!$preinvoice) {
+            return new JsonResponse(['error' => 'پیش فاکتور یافت نشد'], 404);
         }
-        if ($params['update'] != '') {
-            $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-                'bid' => $acc['bid'],
-                'year' => $acc['year'],
-                'code' => $params['update'],
-                'money'=> $acc['money']
-            ]);
-            if (!$doc)
-                return $this->json($extractor->notFound());
-            
-            $rows = $doc->getHesabdariRows();
-            foreach ($rows as $row)
-                $entityManager->remove($row);
-        } else {
-            $doc = new HesabdariDoc();
-            $doc->setBid($acc['bid']);
-            $doc->setYear($acc['year']);
-            $doc->setDateSubmit(time());
-            $doc->setType('sell');
-            $doc->setSubmitter($this->getUser());
-            $doc->setMoney($acc['money']);
-            $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
-        }
-        if ($params['transferCost'] != 0) {
-            $hesabdariRow = new HesabdariRow();
-            $hesabdariRow->setDes('حمل و نقل کالا');
-            $hesabdariRow->setBid($acc['bid']);
-            $hesabdariRow->setYear($acc['year']);
-            $hesabdariRow->setDoc($doc);
-            $hesabdariRow->setBs($params['transferCost']);
-            $hesabdariRow->setBd(0);
-            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '61' // transfer cost income
-            ]);
-            $hesabdariRow->setRef($ref);
-            $entityManager->persist($hesabdariRow);
-        }
-        if ($params['discountAll'] != 0) {
-            $hesabdariRow = new HesabdariRow();
-            $hesabdariRow->setDes('تخفیف فاکتور');
-            $hesabdariRow->setBid($acc['bid']);
-            $hesabdariRow->setYear($acc['year']);
-            $hesabdariRow->setDoc($doc);
-            $hesabdariRow->setBs(0);
-            $hesabdariRow->setBd($params['discountAll']);
-            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '104' // سایر هزینه های پخش و فروش
-            ]);
-            $hesabdariRow->setRef($ref);
-            $entityManager->persist($hesabdariRow);
-        }
-        $doc->setDes($params['des']);
-        $doc->setDate($params['date']);
-        $sumTax = 0;
-        $sumTotal = 0;
-        foreach ($params['rows'] as $row) {
-            $sumTax += $row['tax'];
-            $sumTotal += $row['sumWithoutTax'];
-            $hesabdariRow = new HesabdariRow();
-            $hesabdariRow->setDes($row['des']);
-            $hesabdariRow->setBid($acc['bid']);
-            $hesabdariRow->setYear($acc['year']);
-            $hesabdariRow->setDoc($doc);
-            $hesabdariRow->setBs($row['sumWithoutTax'] + $row['tax']);
-            $hesabdariRow->setBd(0);
-            $hesabdariRow->setDiscount($row['discount']);
-            $hesabdariRow->setTax($row['tax']);
-            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '53' // sell commodity
-            ]);
-            $hesabdariRow->setRef($ref);
-            $row['count'] = str_replace(',', '', $row['count']);
-            $commodity = $entityManager->getRepository(Commodity::class)->findOneBy([
-                'id' => $row['commodity']['id'],
-                'bid' => $acc['bid']
-            ]);
-            if (!$commodity)
-                return $this->json($extractor->paramsNotSend());
-            $hesabdariRow->setCommodity($commodity);
-            $hesabdariRow->setCommdityCount($row['count']);
-            $entityManager->persist($hesabdariRow);
-
-            //update commodity price for auto update price option
-            if ($acc['bid']->isCommodityUpdateSellPriceAuto() == true && $commodity->getPriceSell() != $row['price']) {
-                $commodity->setPriceSell($row['price']);
-                $entityManager->persist($commodity);
-            }
-        }
-        //set amount of document
-        $doc->setAmount($sumTax + $sumTotal - $params['discountAll'] + $params['transferCost']);
-        //set person person
-        $hesabdariRow = new HesabdariRow();
-        $hesabdariRow->setDes('فاکتور فروش');
-        $hesabdariRow->setBid($acc['bid']);
-        $hesabdariRow->setYear($acc['year']);
-        $hesabdariRow->setDoc($doc);
-        $hesabdariRow->setBs(0);
-        $hesabdariRow->setBd($sumTax + $sumTotal + $params['transferCost'] - $params['discountAll']);
-        $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-            'code' => '3' // persons
-        ]);
-        $hesabdariRow->setRef($ref);
-        $person = $entityManager->getRepository(Person::class)->findOneBy([
-            'bid' => $acc['bid'],
-            'code' => $params['person']['code']
-        ]);
-        if (!$person)
-            return $this->json($extractor->paramsNotSend());
-        $hesabdariRow->setPerson($person);
-        $entityManager->persist($hesabdariRow);
-
-        //set tax info
-
-        $entityManager->persist($doc);
-        $entityManager->flush();
-        if(!$doc->getShortlink()){
-            $doc->setShortlink($provider->RandomString(8));
-        }
-
-        //add pair docs
-        if(array_key_exists('pair_docs',$params)){
-            foreach($params['pair_docs'] as $pairCode){
-                $pair = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-                    'bid'=>$acc['bid'],
-                    'code'=>$pairCode,
-                    'type'=>'buy'
-                ]);
-                if($pair){
-                    $doc->addPairDoc($pair);
-                }
-            }
-        }
-        $entityManager->persist($doc);
-        $entityManager->flush();
-
-        $log->insert(
-            'حسابداری',
-            'سند حسابداری شماره ' . $doc->getCode() . ' ثبت / ویرایش شد.',
-            $this->getUser(),
-            $request->headers->get('activeBid'),
-            $doc
-        );
-        //send sms to customer
-        if (array_key_exists('sms', $params)) {
-            if ($params['sms'] == true) {
-                if ($pluginService->isActive('accpro', $acc['bid']) && $person->getMobile() != '' && $acc['bid']->getTel()) {
-                    return $this->json([
-                        'result' =>
-                            $SMS->sendByBalance(
-                                [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getId(), $acc['bid']->getName(), $acc['bid']->getTel()],
-                                $registryMGR->get('sms', 'plugAccproSharefaktor'),
-                                $person->getMobile(),
-                                $acc['bid'],
-                                $this->getUser(),
-                                3
-                            )
-                    ]);
-                } else {
-                    return $this->json([
-                        'result' =>
-                            $SMS->sendByBalance(
-                                [$acc['bid']->getName(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getId()],
-                                $registryMGR->get('sms', 'sharefaktor'),
-                                $person->getMobile(),
-                                $acc['bid'],
-                                $this->getUser(),
-                                3
-                            )
-                    ]);
-                }
-            }
-        }
-        return $this->json($extractor->operationSuccess());
-    }
-
-    #[Route('/api/presell/label/change', name: 'app_sell_label_change')]
-    public function app_sell_label_change(Request $request, Access $access, Extractor $extractor, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
-        }
-
-        $acc = $access->hasRole('sell');
-        if (!$acc)
-            throw $this->createAccessDeniedException();
-        if ($params['label'] != 'clear') {
-            $label = $entityManager->getRepository(InvoiceType::class)->findOneBy([
-                'code' => $params['label']['code'],
-                'type' => 'sell'
-            ]);
-            if (!$label)
-                return $this->json($extractor->notFound());
-        }
-        foreach ($params['items'] as $item) {
-            $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-                'bid' => $acc['bid'],
-                'year' => $acc['year'],
-                'code' => $item['code'],
-                'money'=> $acc['money']
-            ]);
-            if (!$doc)
-                return $this->json($extractor->notFound());
-            if ($params['label'] != 'clear') {
-                $doc->setInvoiceLabel($label);
-                $entityManager->persist($doc);
-                $log->insert(
-                    'حسابداری',
-                    ' تغییر برچسب فاکتور‌ شماره ' . $doc->getCode() . ' به ' . $label->getLabel(),
-                    $this->getUser(),
-                    $acc['bid']->getId(),
-                    $doc
-                );
-            } else {
-                $doc->setInvoiceLabel(null);
-                $entityManager->persist($doc);
-                $log->insert(
-                    'حسابداری',
-                    ' حذف برچسب فاکتور‌ شماره ' . $doc->getCode(),
-                    $this->getUser(),
-                    $acc['bid']->getId(),
-                    $doc
-                );
-            }
-        }
-        $entityManager->flush();
-        return $this->json($extractor->operationSuccess());
-    }
-
-    #[Route('/api/presell/docs/search', name: 'app_sell_docs_search')]
-    public function app_sell_docs_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $acc = $access->hasRole('sell');
-        if (!$acc)
-            throw $this->createAccessDeniedException();
-
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
-        }
-        $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
-            'bid' => $acc['bid'],
-            'year' => $acc['year'],
-            'type' => 'sell',
-            'money'=> $acc['money']
-        ], [
-            'id' => 'DESC'
-        ]);
-
-        $dataTemp = [];
-        foreach ($data as $item) {
-            $temp = [
-                'id' => $item->getId(),
-                'dateSubmit' => $item->getDateSubmit(),
-                'date' => $item->getDate(),
-                'type' => $item->getType(),
-                'code' => $item->getCode(),
-                'des' => $item->getDes(),
-                'amount' => $item->getAmount(),
-                'submitter' => $item->getSubmitter()->getFullName(),
-            ];
-            $mainRow = $entityManager->getRepository(HesabdariRow::class)->getNotEqual($item, 'person');
-            $temp['person'] = '';
-            if ($mainRow)
-                $temp['person'] = Explore::ExplorePerson($mainRow->getPerson());
-
-            $temp['label'] = null;
-            if ($item->getInvoiceLabel()) {
-                $temp['label'] = [
-                    'code' => $item->getInvoiceLabel()->getCode(),
-                    'label' => $item->getInvoiceLabel()->getLabel()
+        
+        $data = [
+            'id' => $preinvoice->getId(),
+            'code' => $preinvoice->getCode(),
+            'date' => $preinvoice->getDate(),
+            'des' => $preinvoice->getDes(),
+            'person' => Explore::ExplorePerson($preinvoice->getPerson()),
+            'amount' => $preinvoice->getAmount(),
+            'taxPercent' => $preinvoice->getTaxPercent(),
+            'totalDiscount' => $preinvoice->getTotalDiscount(),
+            'totalDiscountPercent' => $preinvoice->getTotalDiscountPercent(),
+            'shippingCost' => $preinvoice->getShippingCost(),
+            'showPercentDiscount' => $preinvoice->isShowPercentDiscount(),
+            'showTotalPercentDiscount' => $preinvoice->isShowTotalPercentDiscount(),
+            'items' => array_map(function($item) {
+                return [
+                    'id' => $item->getId(),
+                    'commodity' => [
+                        'id' => $item->getCommodity()->getId(),
+                        'name' => $item->getCommodity()->getName()
+                    ],
+                    'count' => $item->getCommodityCount(),
+                    'price' => $item->getBs(),
+                    'discountPercent' => $item->getDiscountPercent(),
+                    'discountAmount' => $item->getDiscountAmount(),
+                    'description' => $item->getDes(),
+                    'showPercentDiscount' => $item->isShowPercentDiscount()
                 ];
-            }
+            }, $preinvoice->getPreInvoiceItems()->toArray())
+        ];
 
-            $temp['relatedDocsCount'] = count($item->getRelatedDocs());
-            $pays = 0;
-            foreach ($item->getRelatedDocs() as $relatedDoc) {
-                $pays += $relatedDoc->getAmount();
-            }
-            $temp['relatedDocsPays'] = $pays;
-            // this variable is for store profit of invoice
-            $temp['profit'] = 0;
-            foreach ($item->getHesabdariRows() as $item) {
-                if ($item->getRef()->getCode() == '104') {
-                    $temp['discountAll'] = $item->getBd();
-                } elseif ($item->getRef()->getCode() == '61') {
-                    $temp['transferCost'] = $item->getBs();
-                }
-
-                //calculate profit
-                if ($item->getCommodity() && $item->getCommdityCount()) {
-                    if ($acc['bid']->getProfitCalctype() == 'lis') {
-                        $last = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
-                            'commodity' => $item->getCommodity(),
-                            'bs' => 0
-                        ], [
-                            'id' => 'DESC'
-                        ]);
-                        if ($last) {
-                            $price = $last->getBd() / $last->getCommdityCount();
-                            $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
-                        } else {
-                            $temp['profit'] = $temp['profit'] + $item->getBs();
-                        }
-                    } else {
-                        $lasts = $entityManager->getRepository(HesabdariRow::class)->findBy([
-                            'commodity' => $item->getCommodity(),
-                            'bs' => 0
-                        ], [
-                            'id' => 'DESC'
-                        ]);
-                        $avg = 0;
-                        $count = 0;
-                        foreach ($lasts as $last) {
-                            $avg = $avg + $last->getBd();
-                            $count = $count + $last->getCommdityCount();
-                        }
-                        if ($count != 0) {
-                            $price = $avg / $count;
-                            $temp['profit'] = $temp['profit'] + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
-                        }
-                        else{
-                            $temp['profit'] = $temp['profit'] + $item->getBs();
-                        }
-                    }
-
-                    //round output
-                    $temp['profit'] = round($temp['profit']);
-                }
-
-            }
-            if (!array_key_exists('discountAll', $temp))
-                $temp['discountAll'] = 0;
-            if (!array_key_exists('transferCost', $temp))
-                $temp['transferCost'] = 0;
-            $dataTemp[] = $temp;
-        }
-        return $this->json($dataTemp);
+        return new JsonResponse($data);
     }
 
-    #[Route('/api/presell/posprinter/invoice', name: 'app_sell_posprinter_invoice')]
-    public function app_sell_posprinter_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/preinvoice/save', name: 'app_preinvoice_save')]
+    public function savePreinvoice(Access $access,Provider $provider, Log $log, EntityManagerInterface $entityManager, Request $request): JsonResponse
+    {
+        $acc = $access->hasRole('preinvoice');
+        if (!$acc) {
+            return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        
+        if (isset($data['id']) && $data['id']) {
+            $preinvoice = $entityManager->getRepository(PreInvoiceDoc::class)->findOneBy(['code' => $data['id'], 'bid' => $acc['bid'], 'year' => $acc['year']]);
+            if (!$preinvoice) {
+                return new JsonResponse(['error' => 'پیش فاکتور یافت نشد'], 404);
+            }
+        } else {
+            $preinvoice = new PreInvoiceDoc();
+            $preinvoice->setCode($this->generateCode($entityManager));
+            $preinvoice->setSubmitter($this->getUser());
+            $preinvoice->setYear($acc['year']);
+            $preinvoice->setBid($acc['bid']);
+            $preinvoice->setMoney($acc['money']);
+            $preinvoice->setStatus(1);
+
+            $preinvoice->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
+        }
+
+        $person = $entityManager->getRepository(Person::class)->find($data['person']);
+        if (!$person) {
+            return new JsonResponse(['error' => 'شخص یافت نشد'], 404);
+        }
+
+        $preinvoice->setPerson($person);
+        $preinvoice->setDate($data['date']);
+        $preinvoice->setDes($data['des']);
+        $preinvoice->setAmount($data['amount']);
+        $preinvoice->setTaxPercent($data['taxPercent']);
+        $preinvoice->setTotalDiscount($data['totalDiscount']);
+        $preinvoice->setTotalDiscountPercent($data['totalDiscountPercent']);
+        $preinvoice->setShippingCost($data['shippingCost']);
+        $preinvoice->setShowPercentDiscount($data['showPercentDiscount']);
+        $preinvoice->setShowTotalPercentDiscount($data['showTotalPercentDiscount']);
+
+        $entityManager->persist($preinvoice);
+        $entityManager->flush();
+
+        // حذف آیتم‌های قبلی
+        if (isset($data['id']) && $data['id']) {
+            foreach ($preinvoice->getPreInvoiceItems() as $oldItem) {
+                $entityManager->remove($oldItem);
+            }
+        }
+
+        // اضافه کردن آیتم‌های جدید
+        foreach ($data['items'] as $itemData) {
+            $item = new PreInvoiceItem();
+            $commodity = $entityManager->getRepository(Commodity::class)->find($itemData['commodity']);
+            if (!$commodity) {
+                continue;
+            }
+
+            $item->setCommodity($commodity);
+            $item->setCommodityCount($itemData['count']);
+            $item->setBs($itemData['price']);
+            $item->setDiscountPercent($itemData['discountPercent']);
+            $item->setDiscountAmount($itemData['discountAmount']);
+            $item->setDes($itemData['description']);
+            $item->setShowPercentDiscount($itemData['showPercentDiscount']);
+            $item->setDoc($preinvoice);
+            $entityManager->persist($item);
+        }
+
+        $entityManager->flush();
+        $log->insert(
+            'پیش فاکتور',
+            'پیش فاکتور شماره ' . $preinvoice->getCode() . ' ثبت / ویرایش شد.',
+            $this->getUser(),
+            $acc['bid'],
+        );
+        return new JsonResponse(['id' => $preinvoice->getId()]);
+    }
+
+    #[Route('/api/preinvoice/delete/{id}', name: 'app_preinvoice_delete')]
+    public function deletePreinvoice(Access $access, Log $log, EntityManagerInterface $entityManager, int $id): JsonResponse
+    {
+        $acc = $access->hasRole('preinvoice');
+        if (!$acc) {
+            return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
+        }
+
+        $preinvoice = $entityManager->getRepository(PreInvoiceDoc::class)->findOneBy(['code' => $id, 'bid' => $acc['bid'], 'year' => $acc['year']] );
+        if (!$preinvoice) {
+            return new JsonResponse(['error' => 'پیش فاکتور یافت نشد'], 404);
+        }
+
+        foreach ($preinvoice->getPreInvoiceItems() as $item) {
+            $entityManager->remove($item);
+        }
+
+        $entityManager->remove($preinvoice);
+        $entityManager->flush();
+        $log->insert(
+            'پیش فاکتور',
+            'پیش فاکتور شماره ' . $preinvoice->getCode() . ' حذف شد.',
+            $this->getUser(),
+            $acc['bid'],
+        );
+        return new JsonResponse(['message' => 'پیش فاکتور با موفقیت حذف شد']);
+    }
+
+    private function generateCode(EntityManagerInterface $entityManager): string
+    {
+        $lastPreinvoice = $entityManager->getRepository(PreInvoiceDoc::class)
+            ->findOneBy([], ['id' => 'DESC']);
+        
+        $lastNumber = $lastPreinvoice ? (int)substr($lastPreinvoice->getCode(), 1) : 0;
+        return 'P' . str_pad($lastNumber + 1, 6, '0', STR_PAD_LEFT);
+    }
+
+    #[Route('/api/preinvoice/docs/search', name: 'app_presell_search')]
+    public function searchPreinvoices(Access $access, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('preinvoice');
+        if (!$acc) {
+            return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
+        }
+
+        $preinvoices = $entityManager->getRepository(PreInvoiceDoc::class)
+            ->findBy(['bid' => $acc['bid'], 'year' => $acc['year']], ['id' => 'DESC']);
+
+        $result = [];
+        foreach ($preinvoices as $preinvoice) {
+            $totalAmount = $preinvoice->getAmount() - $preinvoice->getTotalDiscount() + $preinvoice->getShippingCost();
+            
+            $result[] = [
+                'code' => $preinvoice->getCode(),
+                'date' => $preinvoice->getDate(),
+                'des' => $preinvoice->getDes(),
+                'person' => [
+                    'code' => $preinvoice->getPerson()->getId(),
+                    'nikename' => $preinvoice->getPerson()->getNikename()
+                ],
+                'amount' => $preinvoice->getAmount(),
+                'discountAll' => $preinvoice->getTotalDiscount(),
+                'transferCost' => $preinvoice->getShippingCost(),
+                'totalAmount' => $totalAmount,
+                'label' => $preinvoice->getInvoiceLabel() ? [
+                    'code' => $preinvoice->getInvoiceLabel()->getCode(),
+                    'label' => $preinvoice->getInvoiceLabel()->getLabel()
+                ] : null
+            ];
+        }
+
+        return new JsonResponse($result);
+    }
+
+    #[Route('/api/preinvoice/remove/group', name: 'app_presell_delete_group')]
+    public function deletePreinvoiceGroup(Log $log, Access $access, EntityManagerInterface $entityManager, Request $request): JsonResponse
+    {
+        $acc = $access->hasRole('preinvoice');
+        if (!$acc) {
+            return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $items = $data['items'] ?? [];
+
+        if (empty($items)) {
+            return new JsonResponse(['result' => 2, 'message' => 'هیچ موردی انتخاب نشده است']);
+        }
+
+        foreach ($items as $itemCode) {
+            $preinvoice = $entityManager->getRepository(PreInvoiceDoc::class)
+                ->findOneBy(['code' => $itemCode['code'], 'bid' => $acc['bid'], 'year' => $acc['year']]);
+            
+            if ($preinvoice) {
+                // حذف آیتم‌های پیش فاکتور
+                foreach ($preinvoice->getPreInvoiceItems() as $item) {
+                    $entityManager->remove($item);
+                }
+
+                $entityManager->remove($preinvoice);
+            }
+            $log->insert(
+                'پیش فاکتور',
+                'پیش فاکتور شماره ' . $preinvoice->getCode() . ' حذف شد.',
+                $this->getUser(),
+                $acc['bid'],
+            );
+        }
+
+        $entityManager->flush();
+
+        return new JsonResponse(['result' => 1, 'message' => 'پیش فاکتورها با موفقیت حذف شدند']);
+    }
+
+    #[Route('/api/preinvoice/print/invoice', name: 'app_preinvoice_print_invoice')]
+    public function printPreinvoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
 
-        $acc = $access->hasRole('sell');
-        if (!$acc)
+        $acc = $access->hasRole('preinvoice');
+        if (!$acc) {
             throw $this->createAccessDeniedException();
+        }
 
-        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+        $preinvoice = $entityManager->getRepository(PreInvoiceDoc::class)->findOneBy([
             'bid' => $acc['bid'],
             'code' => $params['code'],
-            'money'=> $acc['money']
+            'year' => $acc['year']
         ]);
-        if (!$doc)
+        
+        if (!$preinvoice) {
             throw $this->createNotFoundException();
-        $pdfPid = 0;
-        if ($params['pdf']) {
-            $pdfPid = $provider->createPrint(
-                $acc['bid'],
-                $this->getUser(),
-                $this->renderView('pdf/posPrinters/presell.html.twig', [
-                    'bid' => $acc['bid'],
-                    'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
-                    'printInvoice' => $params['posPrint'],
-                    'printcashdeskRecp' => $params['posPrintRecp'],
-                ]),
-                true
-            );
         }
 
-
-        if ($params['posPrint'] == true) {
-            $pid = $provider->createPrint(
-                $acc['bid'],
-                $this->getUser(),
-                $this->renderView('pdf/posPrinters/justSell.html.twig', [
-                    'bid' => $acc['bid'],
-                    'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
-                ]),
-                true
-            );
-            $printers->addFile($pid, $acc, "fastSellInvoice");
-        }
-        if ($params['posPrintRecp'] == true) {
-            $pid = $provider->createPrint(
-                $acc['bid'],
-                $this->getUser(),
-                $this->renderView('pdf/posPrinters/cashdesk.html.twig', [
-                    'bid' => $acc['bid'],
-                    'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
-                ]),
-                true
-            );
-            $printers->addFile($pid, $acc, "fastSellCashdesk");
-        }
-
-        return $this->json(['id' => $pdfPid]);
-    }
-
-    #[Route('/api/presell/print/invoice', name: 'app_sell_print_invoice')]
-    public function app_sell_print_invoice(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
-        }
-
-        $acc = $access->hasRole('sell');
-        if (!$acc)
-            throw $this->createAccessDeniedException();
-
-        $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-            'bid' => $acc['bid'],
-            'code' => $params['code'],
-            'money'=> $acc['money']
-        ]);
-        if (!$doc)
-            throw $this->createNotFoundException();
-        $person = null;
-        $discount = 0;
-        $transfer = 0;
-        foreach ($doc->getHesabdariRows() as $item) {
-            if ($item->getPerson()) {
-                $person = $item->getPerson();
-            } elseif ($item->getRef()->getCode() == 104) {
-                $discount = $item->getBd();
-            } elseif ($item->getRef()->getCode() == 61) {
-                $transfer = $item->getBs();
-            }
-        }
         $pdfPid = 0;
         if ($params['pdf']) {
             $printOptions = [
@@ -557,6 +314,7 @@ class PreinvoiceController extends AbstractController
                 'note' => true,
                 'paper' => 'A4-L'
             ];
+
             if (array_key_exists('printOptions', $params)) {
                 if (array_key_exists('bidInfo', $params['printOptions'])) {
                     $printOptions['bidInfo'] = $params['printOptions']['bidInfo'];
@@ -577,22 +335,24 @@ class PreinvoiceController extends AbstractController
                     $printOptions['paper'] = $params['printOptions']['paper'];
                 }
             }
+
             $note = '';
             $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
             if ($printSettings) {
                 $note = $printSettings->getSellNoteString();
             }
+
             $pdfPid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
-                $this->renderView('pdf/printers/presell.html.twig', [
+                $this->renderView('pdf/printers/preinvoice.html.twig', [
                     'bid' => $acc['bid'],
-                    'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
-                    'person' => $person,
+                    'doc' => $preinvoice,
+                    'items' => $preinvoice->getPreInvoiceItems(),
+                    'person' => $preinvoice->getPerson(),
                     'printInvoice' => $params['printers'],
-                    'discount' => $discount,
-                    'transfer' => $transfer,
+                    'discount' => $preinvoice->getTotalDiscount(),
+                    'transfer' => $preinvoice->getShippingCost(),
                     'printOptions' => $printOptions,
                     'note' => $note
                 ]),
@@ -600,19 +360,21 @@ class PreinvoiceController extends AbstractController
                 $printOptions['paper']
             );
         }
+
         if ($params['printers'] == true) {
             $pid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
-                $this->renderView('pdf/posPrinters/justSell.html.twig', [
+                $this->renderView('pdf/posPrinters/justPreinvoice.html.twig', [
                     'bid' => $acc['bid'],
-                    'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
+                    'doc' => $preinvoice,
+                    'items' => $preinvoice->getPreInvoiceItems(),
                 ]),
                 false
             );
-            $printers->addFile($pid, $acc, "fastSellInvoice");
+            $printers->addFile($pid, $acc, "fastPreinvoice");
         }
+
         return $this->json(['id' => $pdfPid]);
     }
 }

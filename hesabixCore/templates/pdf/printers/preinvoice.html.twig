@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fa" direction="rtl">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<head>
+    <style>
+        .center {
+            text-align: center;
+        }
+        .text-white {
+            color: white;
+        }
+        .stimol td,
+        .stimol th {
+            border: 1px solid black;
+        }
+        .item {
+            height: 30px;
+        }
+    </style>
+</head>
+<body style="direction:rtl; width:100%">
+    <div class="block-content pt-1 pb-3 d-none d-sm-block">
+        <div class="c-print container-xl">
+            <div class="tg-wrap" style="width:100%; border:1px solid black;border-radius: 8px;">
+                <table class="rounded" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <td style="width:20%">
+                                <img src="{{ url('front_avatar_file_get', {id: bid.id}) }}" width="65"/>
+                            </td>
+                            <td style="width:60%; text-align:center">
+                                <h3 class="">پیش فاکتور فروش کالا و خدمات</h3>
+                            </td>
+                            <td style="width:20%">
+                                <h4>
+                                    <b>تاریخ:</b>
+                                    {{ doc.date }}</h4>
+                                <br/>
+                                <h4>
+                                    <b>شماره:</b>
+                                    {{ doc.code }}</h4>
+                            </td>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            {% if printOptions.bidInfo %}
+            <div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
+                <div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
+                    <b style="color:white;">فروشنده</b>
+                </div>
+                <table style="width:100%;">
+                    <tbody>
+                        <tr style="text-align:center;">
+                            <td class="">
+                                <p>
+                                    <b>نام: </b>
+                                    {{ bid.legalName }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>شناسه ملی: </b>
+                                    {{ bid.shenasemeli }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>شماره ثبت: </b>
+                                    {{ bid.shomaresabt }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>شماره اقتصادی: </b>
+                                    {{ bid.codeeghtesadi }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>تلفن / نمابر:</b>
+                                    {{ bid.tel }}
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="" colspan="1">
+                                <p>
+                                    <b>کد پستی:</b>
+                                    {{ bid.postalcode }}
+                                </p>
+                            </td>
+                            <td class="" colspan="3">
+                                <p>
+                                    <b>آدرس: </b>
+                                    استان {{ bid.ostan }}، شهر {{ bid.shahrestan }}، {{ bid.address }}
+                                </p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
+                <div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
+                    <b style="color:white;">خریدار</b>
+                </div>
+                <table style="width:100%;">
+                    <tbody>
+                        <tr style="text-align:center;">
+                            <td class="">
+                                <p>
+                                    <b>نام: </b>
+                                    {% if person.prelabel is not null %}{{ person.prelabel.label }}{% endif %}
+                                    {{ person.nikename }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>شناسه ملی: </b>
+                                    {{ person.shenasemeli }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>شماره ثبت: </b>
+                                    {{ person.sabt }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>شماره اقتصادی: </b>
+                                    {{ person.codeeghtesadi }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>تلفن / نمابر:</b>
+                                    {{ person.tel }}
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="" colspan="1">
+                                <p>
+                                    <b>کد پستی:</b>
+                                    {{ person.postalcode }}
+                                </p>
+                            </td>
+                            <td class="" colspan="3">
+                                <p>
+                                    <b>آدرس: </b>
+                                    استان {{ person.ostan }}، شهر {{ person.shahr }}، {{ person.address }}
+                                </p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="width:100%;margin-top:5px;text-align:center;">
+                <table style="width:100%;">
+                    <thead>
+                        <tr class="stimol" style="background-color:gray;">
+                            <th class="text-white" style="width:80px">ردیف</th>
+                            <th class="text-white">کالا/خدمات</th>
+                            <th class="text-white">شرح</th>
+                            <th class="text-white">تعداد / مقدار</th>
+                            <th class="text-white">مبلغ واحد</th>
+                            {% if printOptions.discountInfo %}
+                                <th class="text-white">تخفیف</th>
+                            {% endif %}
+                            {% if printOptions.taxInfo %}
+                                <th class="text-white">مالیات</th>
+                            {% endif %}
+                            <th class="text-white">مبلغ کل</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set taxAll = 0 %}
+                        {% set rowIndex = 0 %}
+                        {% for item in items %}
+                            {% if doc.taxPercent %}
+                                {% set itemTax = (item.bs * item.commodityCount * doc.taxPercent / 100) | round %}
+                            {% else %}
+                                {% set itemTax = item.tax %}
+                            {% endif %}
+                            {% set taxAll = taxAll + itemTax %}
+                            {% set rowIndex = rowIndex + 1 %}
+                            <tr class="stimol">
+                                <td class="center item">{{ rowIndex }}</td>
+                                <td class="center item">
+                                    {{ item.commodity.code }} - {{ item.commodity.name }}
+                                </td>
+                                <td class="center item">{{ item.des }}</td>
+                                <td class="center item">
+                                    {{ item.commodityCount }} {{ item.commodity.unit.name }}
+                                </td>
+                                <td class="center item">{{ item.bs|number_format(0, '.', ',', doc.money.shortName) }}</td>
+                                {% if printOptions.discountInfo %}
+                                    <td class="center item">
+                                        {% if item.showPercentDiscount %}
+                                            {{ item.discountPercent }}%
+                                            ({{ (item.bs * item.commodityCount * item.discountPercent / 100)|round|number_format(0, '.', ',', doc.money.shortName) }})
+                                        {% else %}
+                                            {{ item.discountAmount|number_format(0, '.', ',', doc.money.shortName) }}
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                                {% if printOptions.taxInfo %}
+                                    <td class="center item">
+                                        {{ itemTax|number_format(0, '.', ',', doc.money.shortName) }}
+                                    </td>
+                                {% endif %}
+                                <td class="center item">
+                                    {% if item.showPercentDiscount %}
+                                        {{ (item.bs * item.commodityCount - (item.bs * item.commodityCount * item.discountPercent / 100)|round)|number_format(0, '.', ',', doc.money.shortName) }}
+                                    {% else %}
+                                        {{ (item.bs * item.commodityCount - item.discountAmount)|number_format(0, '.', ',', doc.money.shortName) }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="width:100%;margin-top:0px;text-align:center;">
+                <table style="width:100%;">
+                    <tbody>
+                        <tr class="stimol">
+                            <td class="item" style="width:70%;padding:1%">
+                                <h4>
+                                    توضیحات: {{ doc.des }}
+                                    <br>
+                                    {% if printOptions.note == true %}
+                                        <h4 class="">یادداشت:</h4>
+                                        <ul class="">
+                                            <li class="">{{ note }}</li>
+                                        </ul>
+                                    {% endif %}
+                                </h4>
+                            </td>
+                            <td class="item" style="width:15%;padding:1%">
+                                {% set totalDiscount = doc.showTotalPercentDiscount ? (doc.amount * doc.totalDiscountPercent / 100) | round : doc.totalDiscount %}
+                                <h4>تخفیف: {{ totalDiscount|number_format(0, '.', ',', doc.money.shortName) }}</h4>
+                                <h4>مالیات: {{ taxAll|number_format(0, '.', ',', doc.money.shortName) }}</h4>
+                                <h4>حمل و نقل: {{ doc.shippingCost|number_format(0, '.', ',', doc.money.shortName) }}</h4>
+                                <h4>جمع کل: {{ doc.amount|number_format(0, '.', ',', doc.money.shortName) }}</h4>
+                                <h4>جمع کل نهایی: {{ (doc.amount + taxAll - totalDiscount + doc.shippingCost)|number_format(0, '.', ',', doc.money.shortName) }}</h4>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="width:40%;margin-top:0px;text-align:center;float:left;">
+                <table style="width:100%;">
+                    <tbody>
+                        <tr class="">
+                            <td class="center" style="height:90px">
+                                <h4>مهر و امضا خریدار</h4>
+                            </td>
+                            <td class="center" style="height:90px">
+                                <h4>مهر و امضا فروشنده:</h4>
+                                <br>
+                                <img src="{{ url('front_seal_file_get', {id: bid.id}) }}" width="160"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

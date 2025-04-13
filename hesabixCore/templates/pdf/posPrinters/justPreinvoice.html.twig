@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>پیش فاکتور {{ doc.code }}</title>
+    <style>
+        body {
+            font-family: 'B Nazanin', Arial, sans-serif;
+            direction: rtl;
+            margin: 0;
+            padding: 10px;
+            font-size: 12px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .items {
+            margin-bottom: 10px;
+        }
+        .items table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .items th, .items td {
+            padding: 3px;
+            border: 1px solid #000;
+            text-align: center;
+        }
+        .summary {
+            margin-bottom: 10px;
+        }
+        .summary table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .summary td {
+            padding: 3px;
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>پیش فاکتور فروش</h2>
+        <p>شماره: {{ doc.code }}</p>
+        <p>تاریخ: {{ doc.date }}</p>
+    </div>
+
+    <div class="items">
+        <table>
+            <thead>
+                <tr>
+                    <th>نام کالا</th>
+                    <th>تعداد</th>
+                    <th>قیمت</th>
+                    <th>جمع</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.commodity.name }}</td>
+                    <td>{{ item.commodityCount }}</td>
+                    <td>{{ item.bs|number_format }}</td>
+                    <td>{{ (item.bs * item.commodityCount)|number_format }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary">
+        <table>
+            <tr>
+                <td>جمع کل:</td>
+                <td>{{ doc.amount|number_format }}</td>
+            </tr>
+            <tr>
+                <td>تخفیف:</td>
+                <td>{{ doc.totalDiscount|number_format }}</td>
+            </tr>
+            <tr>
+                <td>مالیات:</td>
+                <td>{{ (doc.amount * doc.taxPercent / 100)|number_format }}</td>
+            </tr>
+            <tr>
+                <td>هزینه حمل:</td>
+                <td>{{ doc.shippingCost|number_format }}</td>
+            </tr>
+            <tr>
+                <td>قابل پرداخت:</td>
+                <td>{{ (doc.amount - doc.totalDiscount + doc.shippingCost + (doc.amount * doc.taxPercent / 100))|number_format }}</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html> 

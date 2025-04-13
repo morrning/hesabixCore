@@ -6,24 +6,49 @@ import { ref } from 'vue';
 import Loading from 'vue-loading-overlay';
 import 'vue-loading-overlay/dist/css/index.css';
 
+interface MostDesItem {
+  id: number;
+  des: string;
+}
+
+interface SubmitData {
+  id: number | null;
+  des: string;
+}
+
 export default defineComponent({
   name: "mostdes",
   components: {
     Loading
   },
   props: {
-    submitData: Object,
-    type: String,
+    submitData: {
+      type: Object as () => SubmitData,
+      required: true
+    },
+    type: {
+      type: String,
+      required: true
+    },
+    modelValue: {
+      type: String,
+      default: ''
+    },
+    label: {
+      type: String,
+      default: ''
+    }
   },
+  emits: ['update:modelValue'],
   watch: {
     search: {
-      handler: function (val, oldVal) {
+      handler: function (val: string, oldVal: string) {
         if (val == '') {
           this.items = this.orgItems;
         }
         else {
-          const temp = [];
-          this.orgItems.forEach((item) => {
+          const temp: MostDesItem[] = [];
+          this.orgItems.forEach((item: MostDesItem) => {
             if (item.des.includes(val)) {
               temp.push(item);
             }
@@ -37,10 +62,10 @@ export default defineComponent({
   data: () => {
     return {
       loading: ref(false),
-      items: [],
-      orgItems: [],
+      items: [] as MostDesItem[],
+      orgItems: [] as MostDesItem[],
       des: '',
-      selected: 0,
+      selected: null as MostDesItem | null,
       search: '',
       dialog: false,
     }
@@ -57,7 +82,7 @@ export default defineComponent({
         this.loading = false;
       });
     },
-    remove(id: any) {
+    remove(id: number) {
       this.loading = true;
       axios.post('/api/mostdes/remove/' + id).then((response) => {
         this.loading = false;
@@ -95,12 +120,14 @@ export default defineComponent({
           });
         })
       }
-
     },
-    selectItem(item: any) {
+    selectItem(item: MostDesItem) {
       this.selected = item;
-      this.$props.submitData.id = item.id;
-      this.$props.submitData.des = item.des;
+      if (this.$props.submitData) {
+        this.$props.submitData.id = item.id;
+        this.$props.submitData.des = item.des;
+        this.$emit('update:modelValue', item.des);
+      }
       this.dialog = false;
     }
   },
@@ -118,7 +145,7 @@ export default defineComponent({
   </v-tooltip>
   <v-dialog v-model="dialog">
     <v-card>
-      <v-card-header>
+      <v-card-title>
         <v-toolbar class="fixed-top" color="toolbar" :title="$t('dialog.most_des')">
           <template v-slot:append>
             <v-tooltip :text="$t('dialog.close')" location="bottom">
@@ -129,7 +156,7 @@ export default defineComponent({
             </v-tooltip>
           </template>
         </v-toolbar>
-      </v-card-header>
+      </v-card-title>
       <v-card-text class="mt-5">
         <v-text-field class="mb-2" v-model="search" :loading="loading" prepend-inner-icon="mdi-magnify"
           :label="$t('dialog.search')" variant="outlined" hide-details single-line></v-text-field>

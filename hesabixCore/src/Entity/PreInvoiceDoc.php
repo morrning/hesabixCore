@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PreInvoiceDocRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PreInvoiceDocRepository::class)]
@@ -46,6 +48,24 @@ class PreInvoiceDoc
     private ?string $amount = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    private ?string $taxPercent = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totalDiscount = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $totalDiscountPercent = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $shippingCost = null;
+
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    private ?bool $showPercentDiscount = null;
+
+    #[ORM\Column(type: 'boolean', nullable: true)]
+    private ?bool $showTotalPercentDiscount = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $mdate = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -65,6 +85,17 @@ class PreInvoiceDoc
 
     #[ORM\ManyToOne(inversedBy: 'preinvoiceDocsSalemans')]
     private ?Person $salesman = null;
+
+    /**
+     * @var Collection<int, PreInvoiceItem>
+     */
+    #[ORM\OneToMany(mappedBy: 'doc', targetEntity: PreInvoiceItem::class, orphanRemoval: true)]
+    private Collection $preInvoiceItems;
+
+    public function __construct()
+    {
+        $this->preInvoiceItems = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -179,6 +210,72 @@ class PreInvoiceDoc
         return $this;
     }
 
+    public function getTaxPercent(): ?string
+    {
+        return $this->taxPercent;
+    }
+
+    public function setTaxPercent(?string $taxPercent): static
+    {
+        $this->taxPercent = $taxPercent;
+        return $this;
+    }
+
+    public function getTotalDiscount(): ?string
+    {
+        return $this->totalDiscount;
+    }
+
+    public function setTotalDiscount(?string $totalDiscount): static
+    {
+        $this->totalDiscount = $totalDiscount;
+        return $this;
+    }
+
+    public function getTotalDiscountPercent(): ?string
+    {
+        return $this->totalDiscountPercent;
+    }
+
+    public function setTotalDiscountPercent(?string $totalDiscountPercent): static
+    {
+        $this->totalDiscountPercent = $totalDiscountPercent;
+        return $this;
+    }
+
+    public function getShippingCost(): ?string
+    {
+        return $this->shippingCost;
+    }
+
+    public function setShippingCost(?string $shippingCost): static
+    {
+        $this->shippingCost = $shippingCost;
+        return $this;
+    }
+
+    public function isShowPercentDiscount(): ?bool
+    {
+        return $this->showPercentDiscount;
+    }
+
+    public function setShowPercentDiscount(?bool $showPercentDiscount): static
+    {
+        $this->showPercentDiscount = $showPercentDiscount;
+        return $this;
+    }
+
+    public function isShowTotalPercentDiscount(): ?bool
+    {
+        return $this->showTotalPercentDiscount;
+    }
+
+    public function setShowTotalPercentDiscount(?bool $showTotalPercentDiscount): static
+    {
+        $this->showTotalPercentDiscount = $showTotalPercentDiscount;
+        return $this;
+    }
+
     public function getMdate(): ?string
     {
         return $this->mdate;
@@ -259,6 +356,36 @@ class PreInvoiceDoc
     public function setSalesman(?Person $salesman): static
     {
         $this->salesman = $salesman;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PreInvoiceItem>
+     */
+    public function getPreInvoiceItems(): Collection
+    {
+        return $this->preInvoiceItems;
+    }
+
+    public function addPreInvoiceItem(PreInvoiceItem $preInvoiceItem): static
+    {
+        if (!$this->preInvoiceItems->contains($preInvoiceItem)) {
+            $this->preInvoiceItems->add($preInvoiceItem);
+            $preInvoiceItem->setDoc($this);
+        }
+
+        return $this;
+    }
+
+    public function removePreInvoiceItem(PreInvoiceItem $preInvoiceItem): static
+    {
+        if ($this->preInvoiceItems->removeElement($preInvoiceItem)) {
+            // set the owning side to null (unless already changed)
+            if ($preInvoiceItem->getDoc() === $this) {
+                $preInvoiceItem->setDoc(null);
+            }
+        }
 
         return $this;
     }

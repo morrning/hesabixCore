@@ -152,7 +152,7 @@ export default {
         { path: '/acc/costs/list', key: 'G', label: this.$t('drawer.costs'), ctrl: true, shift: true, permission: () => this.permissions.cost },
         { path: '/acc/sell/fast-mod', key: 'J', label: this.$t('drawer.fast_sell'), ctrl: true, shift: true, permission: () => this.permissions.sell },
         { path: '/acc/sell/list', key: 'V', label: this.$t('drawer.sell_invoices'), ctrl: true, shift: true, permission: () => this.permissions.sell },
-        { path: '/acc/presell/list', key: 'X', label: this.$t('drawer.presells'), ctrl: true, shift: true, permission: () => this.permissions.sell && this.isPluginActive('accpro') && (1 == 2) },
+        { path: '/acc/presell/list', key: 'X', label: this.$t('drawer.presells'), ctrl: true, shift: true, permission: () => this.permissions.sell && this.isPluginActive('accpro') },
         { path: '/acc/rfsell/list', key: 'Z', label: this.$t('drawer.rfsell_invoices'), ctrl: true, shift: true, permission: () => this.permissions.plugAccproRfsell && this.isPluginActive('accpro') },
         { path: '/acc/incomes/list', key: 'A', label: this.$t('drawer.incomes'), ctrl: true, shift: true, permission: () => this.permissions.income },
         { path: '/acc/accounting/list', key: '1', label: this.$t('drawer.accounting_docs'), ctrl: true, shift: true, permission: () => this.permissions.accounting },
@@ -468,6 +468,27 @@ export default {
             {{ $t('drawer.cheques') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/cheque/list') }}</span>
           </v-list-item-title>
+          <template v-slot:append>
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-btn v-bind="props" icon="mdi-plus-box" variant="plain" @click.stop.prevent />
+              </template>
+              <v-list>
+                <v-list-item to="/acc/cheque/input">
+                  <v-list-item-title>
+                    <v-icon color="success" class="mr-2">mdi-arrow-down-bold</v-icon>
+                    {{ $t('drawer.cheque_input') }}
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item to="/acc/cheque/output">
+                  <v-list-item-title>
+                    <v-icon color="error" class="mr-2">mdi-arrow-up-bold</v-icon>
+                    {{ $t('drawer.cheque_output') }}
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </template>
         </v-list-item>
         <v-list-item v-if="permissions.bankTransfer" to="/acc/transfer/list">
           <v-list-item-title>
@@ -600,7 +621,7 @@ export default {
             </v-tooltip>
           </template>
         </v-list-item>
-        <v-list-item v-if="this.isPluginActive('accpro') && permissions.sell && (1 == 2)" to="/acc/presell/list">
+        <v-list-item v-if="this.isPluginActive('accpro') && permissions.sell" to="/acc/presell/list">
           <v-list-item-title>
             {{ $t('drawer.presells') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/presell/list') }}</span>
@@ -650,7 +671,7 @@ export default {
             {{ $t('drawer.accounting_docs') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/accounting/list') }}</span>
           </v-list-item-title>
-          <template v-slot:append v-if="isPluginActive('accpro') && 1==2">
+          <template v-slot:append v-if="isPluginActive('accpro')">
             <v-tooltip :text="$t('dialog.add_new')" location="end">
               <template v-slot:activator="{ props }">
                 <v-btn v-bind="props" icon="mdi-plus-box" variant="plain" to="/acc/accounting/mod/" />

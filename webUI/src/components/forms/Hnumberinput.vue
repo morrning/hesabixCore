@@ -9,7 +9,11 @@
     dir="ltr"
     dense
     hide-details="auto"
-  />
+  >
+    <template v-for="(_, slot) in $slots" #[slot]="props">
+      <slot :name="slot" v-bind="props" />
+    </template>
+  </v-text-field>
 </template>
 
 <script>
@@ -88,5 +92,10 @@ export default {
 :deep(.v-text-field input) {
   direction: ltr;
   text-align: left;
+}
+
+:deep(.v-text-field .v-input__prepend-inner) {
+  padding-right: 0;
+  margin-right: 0;
 }
 </style>

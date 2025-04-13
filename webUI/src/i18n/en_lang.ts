@@ -11,7 +11,10 @@ const en_lang = {
     ok: "Ok",
     cancel: "Cancel",
     save: "Save",
-    active_account:"Active Account"
+    active_account:"Active Account",
+    presell_info: "Presell Information",
+    financial_info: "Financial Information",
+    invoice_items: "Invoice Items",
   },
   app:{
     name:"Hesabix",
@@ -75,6 +78,14 @@ const en_lang = {
       businesses: "Businesses",
       business_create: "Create Business",
     }
-  }
+  },
+  drawer:{
+    cheques: "Cheques",
+    cheque: "Cheque",
+    cheque_input: "Cheque Input",
+    cheque_output: "Cheque Output",
+    presells: "Presells",
+    presell_view: "View Presell",
+  },
 };
 export default en_lang

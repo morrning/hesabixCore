@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 class YearController extends AbstractController
 {
@@ -46,7 +47,7 @@ class YearController extends AbstractController
             //no year created create first year
             $years = [$this->createDefaultYear($business,$entityManager)];
         }
-        return $this->json($years);
+        return $this->json($years, 200, [], ['groups' => ['year:read']]);
     }
 
     #[Route('/api/year/get', name: 'app_year_get')]
@@ -65,7 +66,8 @@ class YearController extends AbstractController
         $yearLoad->setStart($jdate->jdate('Y/m/d', $yearLoad->getStart()));
         $yearLoad->setEnd($jdate->jdate('Y/m/d', $yearLoad->getEnd()));
         $yearLoad->setNow($jdate->jdate('Y/m/d', time()));
-        return $this->json($yearLoad);
+        
+        return $this->json($yearLoad, 200, [], ['groups' => ['year:read']]);
     }
 
     #[Route('/api/year/lastyear/info', name: 'app_year_last_year_info')]

@@ -92,3 +92,6 @@ services:
     Printers:
         class: App\Service\Printers
         arguments: [ '@doctrine.orm.entity_manager' ]
+
+    App\Twig\NumberFormatExtension:
+        tags: ['twig.extension']
