@@ -2,13 +2,14 @@
   <v-text-field
     v-model="inputValue"
     v-bind="$attrs"
+    :class="$attrs.class"
     type="text"
     :rules="combinedRules"
     :error-messages="errorMessages"
     @keypress="restrictToNumbers"
     dir="ltr"
     dense
-    hide-details="auto"
+    :hide-details="$attrs['hide-details'] || 'auto'"
   >
     <template v-for="(_, slot) in $slots" #[slot]="props">
       <slot :name="slot" v-bind="props" />

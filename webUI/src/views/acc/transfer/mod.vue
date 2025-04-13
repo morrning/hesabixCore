@@ -14,7 +14,7 @@
       cat="transfer"></archive-upload>
     <v-tooltip :text="$t('dialog.save')" location="bottom">
       <template v-slot:activator="{ props }">
-        <v-btn v-bind="props" color="primary" @click="save()" variant="text" icon="mdi-content-save" />
+        <v-btn v-bind="props" color="primary" @click="save()" variant="text" icon="mdi-content-save" :loading="loading" />
       </template>
     </v-tooltip>
 
@@ -53,12 +53,12 @@
               :items="salarys" item-title="name" item-value="id" label="تنخواه گردان" variant="outlined"
               :item-props="salaryItemProps"></v-select>
 
-            <Hnumberinput :hide-details="false" v-model="sideOne.bs" label="مبلغ" variant="outlined" />
+            <Hnumberinput :hide-details="false" v-model="sideOne.bs" label="مبلغ" variant="outlined" class="mb-4" />
 
-            <Hnumberinput :hide-details="false" v-model="sideOne.tax" label="کارمزد خدمات بانکی" variant="outlined" />
+            <Hnumberinput :hide-details="false" v-model="sideOne.tax" label="کارمزد خدمات بانکی" variant="outlined" class="mb-4" />
 
             <v-text-field :hide-details="false" v-model="sideOne.reference" label="ارجاع"
-              variant="outlined"></v-text-field>
+              variant="outlined" class="mb-4"></v-text-field>
 
             <v-text-field v-model="sideOne.des" label="شرح" variant="outlined"></v-text-field>
           </v-col>
@@ -88,13 +88,13 @@
               :items="salarys" item-title="name" item-value="id" label="تنخواه گردان" variant="outlined"
               :item-props="salaryItemProps"></v-select>
 
-            <Hnumberinput :hide-details="false" v-model="sideTwo.bd" label="مبلغ" variant="outlined" readonly />
+            <Hnumberinput :hide-details="false" v-model="sideTwo.bd" label="مبلغ" variant="outlined" class="mb-4" readonly />
 
-            <Hnumberinput :hide-details="false" v-model="sideTwo.tax" label="کارمزد خدمات بانکی" variant="outlined"
+            <Hnumberinput :hide-details="false" v-model="sideTwo.tax" label="کارمزد خدمات بانکی" class="mb-4" variant="outlined"
               readonly />
 
             <v-text-field :hide-details="false" v-model="sideTwo.reference" label="ارجاع"
-              variant="outlined"></v-text-field>
+              variant="outlined" class="mb-4"></v-text-field>
 
             <v-text-field v-model="sideTwo.des" label="شرح" variant="outlined"></v-text-field>
           </v-col>
@@ -148,6 +148,7 @@ export default {
     year: {},
     date: '',
     des: '',
+    loading: false,
     sideOne: {
       type: 'bank',
       bank: undefined,
@@ -331,6 +332,7 @@ export default {
         return;
       }
 
+      this.loading = true;
       let PushData = {
         date: this.date,
         des: this.des,
@@ -360,18 +362,21 @@ export default {
           bd: this.sideOne.tax,
           bs: 0,
           type: 'calc',
-          des: 'کارمزد هزینه‌های بانکی'
+          des: 'کارمزد هزینه‌های بانکی',
+          referral: this.sideOne.reference
         });
         PushData.rows.push({
           bs: this.sideOne.tax,
           bd: 0,
           type: this.sideOne.type,
           id: this.sideOne.id,
-          des: 'کارمزد هزینه‌های بانکی'
+          des: 'کارمزد هزینه‌های بانکی',
+          referral: this.sideOne.reference
         });
       }
 
       axios.post('/api/transfer/insert', PushData).then((response) => {
+        this.loading = false;
         if (response.data.result == '1') {
           Swal.fire({
             text: 'سند انتقال با موفقیت ثبت شد.',
@@ -388,6 +393,13 @@ export default {
             confirmButtonText: 'قبول'
           });
         }
+      }).catch(() => {
+        this.loading = false;
+        Swal.fire({
+          text: 'خطا در ارتباط با سرور',
+          icon: 'error',
+          confirmButtonText: 'قبول'
+        });
       });
     },
     changeDes(type) {

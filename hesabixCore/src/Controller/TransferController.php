@@ -157,7 +157,6 @@ class TransferController extends AbstractController
                     throw $this->createNotFoundException('bank not found');
                 $hesabdariRow->setBank($bank);
                 $hesabdariRow->setRef($entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '5']));
-
             } elseif ($row['type'] == 'salary') {
                 $salary = $entityManager->getRepository(Salary::class)->findOneBy([
                     'id' => $row['id'],
@@ -167,7 +166,6 @@ class TransferController extends AbstractController
                     throw $this->createNotFoundException('salary not found');
                 $hesabdariRow->setSalary($salary);
                 $hesabdariRow->setRef($entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '122']));
-
             } elseif ($row['type'] == 'cashdesk') {
                 $cashdesk = $entityManager->getRepository(Cashdesk::class)->findOneBy([
                     'id' => $row['id'],
@@ -177,7 +175,8 @@ class TransferController extends AbstractController
                     throw $this->createNotFoundException('cashdesk not found');
                 $hesabdariRow->setCashdesk($cashdesk);
                 $hesabdariRow->setRef($entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '121']));
-
+            } elseif ($row['type'] == 'calc') {
+                $hesabdariRow->setRef($entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '108']));
             }
 
             $entityManager->persist($hesabdariRow);
