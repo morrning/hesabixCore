@@ -64,6 +64,32 @@ class ChequeController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        $allCheques = array_merge($chequesInput, $chequesOutput);
+        foreach ($allCheques as $cheque) {
+           $rows = $entityManager->getRepository(HesabdariRow::class)->findBy(['cheque' => $cheque]);
+           foreach ($rows as $row) {
+            $doc = $row->getDoc();
+            if(count($doc->getHesabdariRows()) == 1){
+                    $exrow = $doc->getHesabdariRows()[0];
+                    $newrow = new HesabdariRow();
+                    $newrow->setDoc($doc);
+                    $newrow->setCheque($cheque);
+                    $newrow->setYear($exrow->getYear());
+                    $newrow->setBid($acc['bid']);
+                    $newrow->setRef($entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => 126]));
+                    if($exrow->getBs() == '0'){
+                        $newrow->setBs($exrow->getBd());
+                        $newrow->setBd(0);
+                    }else{
+                        $newrow->setBs(0);
+                        $newrow->setBd($exrow->getBs());
+                    }
+                    $newrow->setDes($exrow->getDes());
+                    $entityManager->persist($newrow);
+                    $entityManager->flush();
+                }
+            }
+        }
         return $this->json([
             'input' => Explore::SerializeCheques(array_reverse($chequesInput)),
             'output' => Explore::SerializeCheques(array_reverse($chequesOutput))

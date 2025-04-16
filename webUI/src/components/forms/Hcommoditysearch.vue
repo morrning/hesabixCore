@@ -385,7 +385,7 @@ export default defineComponent({
     async fetchData() {
       this.loading = true
       try {
-        const response = await axios.post('/api/commodity/list', {
+        const response = await axios.post('/api/commodity/list/search', {
           page: this.currentPage,
           itemsPerPage: this.itemsPerPage,
           search: this.searchQuery,

@@ -30,45 +30,63 @@
   <v-container>
     <v-row>
       <v-col cols="12">
-        <v-form ref="form" @submit.prevent="submitForm" v-model="valid">
+        <v-form ref="form" @submit.prevent="submitForm" v-model="valid" :disabled="loading">
           <v-row>
             <v-col cols="12" md="6">
-              <Hpersonsearch v-model="form.personId" label="شخص" :rules="[v => !!v || 'شخص الزامی است']" required>
+              <Hpersonsearch v-model="form.personId" label="شخص" :rules="[v => !!v || 'شخص الزامی است']" required :disabled="loading">
               </Hpersonsearch>
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field v-model="form.chequeNumber" label="شماره چک" :rules="[v => !!v || 'شماره چک الزامی است']"
-                required></v-text-field>
+                required :disabled="loading"></v-text-field>
             </v-col>
 
             <v-col cols="12" md="6">
               <v-text-field v-model="form.bankoncheque" label="نام بانک" :rules="[v => !!v || 'نام بانک الزامی است']"
-                required></v-text-field>
+                required :disabled="loading"></v-text-field>
             </v-col>
 
             <v-col cols="12" md="6">
               <Hnumberinput v-model="form.amount" label="مبلغ" :rules="[v => !!v || 'مبلغ الزامی است']"
-                required></Hnumberinput>
+                required :disabled="loading"></Hnumberinput>
             </v-col>
 
             <v-col cols="12" md="6">
               <v-text-field v-model="form.sayadNumber" label="شماره صیاد" :rules="[v => !!v || 'شماره صیاد الزامی است']"
-                required></v-text-field>
+                required :disabled="loading"></v-text-field>
             </v-col>
 
             <v-col cols="12" md="6">
               <Hdatepicker v-model="form.dueDate" label="تاریخ سررسید" :rules="[v => !!v || 'تاریخ سررسید الزامی است']"
-                required></Hdatepicker>
+                required :disabled="loading"></Hdatepicker>
             </v-col>
 
             <v-col cols="12">
-              <v-textarea v-model="form.description" label="توضیحات" rows="3"></v-textarea>
+              <v-textarea v-model="form.description" label="توضیحات" rows="3" :disabled="loading"></v-textarea>
             </v-col>
           </v-row>
         </v-form>
       </v-col>
     </v-row>
   </v-container>
+
+  <v-snackbar
+    v-model="snackbar.show"
+    :color="snackbar.color"
+    :timeout="3000"
+    location="bottom"
+  >
+    {{ snackbar.text }}
+    <template v-slot:actions>
+      <v-btn
+        color="white"
+        variant="text"
+        @click="snackbar.show = false"
+      >
+        بستن
+      </v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
 <script>
@@ -86,6 +104,12 @@ export default {
     return {
       loading: false,
       valid: false,
+      isSubmitting: false,
+      snackbar: {
+        show: false,
+        text: '',
+        color: 'success'
+      },
       form: {
         chequeNumber: '',
         bankoncheque: '',
@@ -101,6 +125,8 @@ export default {
 
   methods: {
     async submitForm() {
+      if (this.isSubmitting) return;
+      
       const { valid } = await this.$refs.form.validate()
       
       if (!valid) {
@@ -108,9 +134,12 @@ export default {
       }
 
       try {
-        this.loading = true
+        this.loading = true;
+        this.isSubmitting = true;
+        
         // ذخیره تنظیمات در localStorage
         localStorage.setItem('chequeSendSms', this.form.sendSms)
+        
         if (this.$route.params.id) {
           // ویرایش چک
           await axios.put(`/api/cheque/modify/input/${this.$route.params.id}`, {
@@ -123,6 +152,7 @@ export default {
             bankoncheque: this.form.bankoncheque,
             sendSms: this.form.sendSms
           })
+          this.showSnackbar('چک با موفقیت ویرایش شد', 'success')
         } else {
           // ثبت چک جدید
           await axios.post('/api/cheque/modify/input', {
@@ -135,13 +165,25 @@ export default {
             bankoncheque: this.form.bankoncheque,
             sendSms: this.form.sendSms
           })
+          this.showSnackbar('چک با موفقیت ثبت شد', 'success')
         }
-        this.$router.push('/acc/cheque/list')
+        
+        setTimeout(() => {
+          this.$router.push('/acc/cheque/list')
+        }, 1500)
       } catch (error) {
         console.error(error)
+        this.showSnackbar('خطا در ثبت/ویرایش چک', 'error')
       } finally {
         this.loading = false
+        this.isSubmitting = false
       }
+    },
+    
+    showSnackbar(text, color) {
+      this.snackbar.text = text
+      this.snackbar.color = color
+      this.snackbar.show = true
     }
   },
 

@@ -19,45 +19,63 @@
   <v-container>
     <v-row>
       <v-col cols="12">
-        <v-form ref="form" @submit.prevent="submitForm">
+        <v-form ref="form" @submit.prevent="submitForm" :disabled="loading">
           <v-row>
             <v-col cols="12" md="6">
-              <Hpersonsearch v-model="form.personId" label="شخص گیرنده" :rules="[v => !!v || 'شخص گیرنده الزامی است']" required>
+              <Hpersonsearch v-model="form.personId" label="شخص گیرنده" :rules="[v => !!v || 'شخص گیرنده الزامی است']" required :disabled="loading">
               </Hpersonsearch>
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field v-model="form.chequeNumber" label="شماره چک" :rules="[v => !!v || 'شماره چک الزامی است']"
-                required></v-text-field>
+                required :disabled="loading"></v-text-field>
             </v-col>
 
             <v-col cols="12" md="6">
               <v-text-field v-model="form.bankoncheque" label="نام بانک" :rules="[v => !!v || 'نام بانک الزامی است']"
-                required></v-text-field>
+                required :disabled="loading"></v-text-field>
             </v-col>
 
             <v-col cols="12" md="6">
               <Hnumberinput v-model="form.amount" label="مبلغ" :rules="[v => !!v || 'مبلغ الزامی است']"
-                required></Hnumberinput>
+                required :disabled="loading"></Hnumberinput>
             </v-col>
 
             <v-col cols="12" md="6">
               <v-text-field v-model="form.sayadNumber" label="شماره صیاد" :rules="[v => !!v || 'شماره صیاد الزامی است']"
-                required></v-text-field>
+                required :disabled="loading"></v-text-field>
             </v-col>
 
             <v-col cols="12" md="6">
               <Hdatepicker v-model="form.dueDate" label="تاریخ سررسید" :rules="[v => !!v || 'تاریخ سررسید الزامی است']"
-                required format="YYYY/MM/DD"></Hdatepicker>
+                required format="YYYY/MM/DD" :disabled="loading"></Hdatepicker>
             </v-col>
 
             <v-col cols="12">
-              <v-textarea v-model="form.description" label="توضیحات" rows="3"></v-textarea>
+              <v-textarea v-model="form.description" label="توضیحات" rows="3" :disabled="loading"></v-textarea>
             </v-col>
           </v-row>
         </v-form>
       </v-col>
     </v-row>
   </v-container>
+
+  <v-snackbar
+    v-model="snackbar.show"
+    :color="snackbar.color"
+    :timeout="3000"
+    location="bottom"
+  >
+    {{ snackbar.text }}
+    <template v-slot:actions>
+      <v-btn
+        color="white"
+        variant="text"
+        @click="snackbar.show = false"
+      >
+        بستن
+      </v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
 <script>
@@ -74,6 +92,12 @@ export default {
   data() {
     return {
       loading: false,
+      isSubmitting: false,
+      snackbar: {
+        show: false,
+        text: '',
+        color: 'success'
+      },
       form: {
         chequeNumber: '',
         bankoncheque: '',
@@ -88,19 +112,19 @@ export default {
 
   methods: {
     async submitForm() {
+      if (this.isSubmitting) return;
+      
       const { valid } = await this.$refs.form.validate()
       
       if (!valid) {
-        await Swal.fire({
-          text: 'لطفا تمام فیلدهای الزامی را پر کنید',
-          icon: 'warning',
-          confirmButtonText: 'قبول'
-        })
+        this.showSnackbar('لطفا تمام فیلدهای الزامی را پر کنید', 'warning')
         return
       }
 
       try {
-        this.loading = true
+        this.loading = true;
+        this.isSubmitting = true;
+        
         if (this.$route.params.id) {
           // ویرایش واگذاری چک
           await axios.put(`/api/cheque/modify/output/${this.$route.params.id}`, {
@@ -112,6 +136,7 @@ export default {
             description: this.form.description,
             bankoncheque: this.form.bankoncheque
           })
+          this.showSnackbar('واگذاری چک با موفقیت ویرایش شد', 'success')
         } else {
           // ثبت واگذاری چک جدید
           await axios.post('/api/cheque/modify/output', {
@@ -123,18 +148,25 @@ export default {
             description: this.form.description,
             bankoncheque: this.form.bankoncheque
           })
+          this.showSnackbar('واگذاری چک با موفقیت ثبت شد', 'success')
         }
-        this.$router.push('/acc/cheque/list')
+        
+        setTimeout(() => {
+          this.$router.push('/acc/cheque/list')
+        }, 1500)
       } catch (error) {
         console.error(error)
-        await Swal.fire({
-          text: 'خطا در ثبت/ویرایش چک',
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        })
+        this.showSnackbar('خطا در ثبت/ویرایش واگذاری چک', 'error')
       } finally {
         this.loading = false
+        this.isSubmitting = false
       }
+    },
+    
+    showSnackbar(text, color) {
+      this.snackbar.text = text
+      this.snackbar.color = color
+      this.snackbar.show = true
     }
   },
 

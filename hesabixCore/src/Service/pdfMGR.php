@@ -7,20 +7,26 @@ use Twig\Environment;
 use Mpdf\Mpdf;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
+use App\Service\PluginService;
 
 class pdfMGR
 {
     private $twig;
+    private $pluginService;
 
-    public function __construct(Environment $twig)
+    public function __construct(Environment $twig, PluginService $pluginService)
     {
         $this->twig = $twig;
+        $this->pluginService = $pluginService;
     }
 
     public function generateTwig2PDF(PrinterQueue $printQueue, $configs = []): string
     {
         $template = $this->twig->load('pdf/footer.html.twig');
-        $footer = $template->render([]);
+        $footer = $template->render([
+            'pluginService' => $this->pluginService,
+            'bid' => $printQueue->getBid()
+        ]);
     
         $size = $printQueue->getPaperSize() ?: 'A4-L';
         
@@ -61,8 +67,7 @@ class pdfMGR
         $mpdf->SetAutoPageBreak(true);
         $mpdf->SetTitle('PDF Export');
     
-        // به جای Output مستقیم، محتوا رو برگردونید
-        return $mpdf->Output('', 'S'); // 'S' برای برگرداندن به صورت رشته
+        return $mpdf->Output('', 'S');
     }
     
     public function generateTwig2PDFInvoiceType(PrinterQueue $printQueue, $configs = []): string

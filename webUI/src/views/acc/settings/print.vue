@@ -15,22 +15,25 @@
     </v-btn>
     <template v-slot:extension>
       <v-tabs color="primary" class="bg-light" grow v-model="tabs">
-        <v-tab value="0">
-          {{ $t('drawer.sell') }}
+        <v-tab v-if="isPluginActive('accpro')" value="0">
+          تنظیم سراسری
         </v-tab>
         <v-tab value="1">
+          {{ $t('drawer.sell') }}
+        </v-tab>
+        <v-tab value="2">
           {{ $t('drawer.buy') }}
         </v-tab>
-        <v-tab v-if="isPluginActive('accpro')" value="2">
+        <v-tab v-if="isPluginActive('accpro')" value="3">
           {{ $t('drawer.rfbuy_invoices') }}
         </v-tab>
-        <v-tab v-if="isPluginActive('accpro')" value="3">
+        <v-tab v-if="isPluginActive('accpro')" value="4">
           {{ $t('drawer.rfsell_invoices') }}
         </v-tab>
-        <v-tab value="4">
+        <v-tab value="5">
           {{ $t('drawer.fast_sell') }}
         </v-tab>
-        <v-tab v-if="isPluginActive('repservice')" value="5">
+        <v-tab v-if="isPluginActive('repservice')" value="6">
           {{ $t('drawer.repservice') }}
         </v-tab>
       </v-tabs>
@@ -40,6 +43,26 @@
     <v-col>
       <v-tabs-window v-model="tabs">
         <v-tabs-window-item value="0">
+          <v-card>
+            <v-card-text>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="settings.global.leftFooter" label="پانویس سمت چپ" 
+                    placeholder="متن پانویس سمت چپ اسناد"
+                    hint="در صورت خالی بودن، مقدار پیش‌فرض نمایش داده می‌شود"
+                    persistent-hint></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="settings.global.rightFooter" label="پانویس سمت راست"
+                    placeholder="متن پانویس سمت راست اسناد"
+                    hint="در صورت خالی بودن، مقدار پیش‌فرض نمایش داده می‌شود"
+                    persistent-hint></v-text-field>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-tabs-window-item>
+        <v-tabs-window-item value="1">
           <v-card>
             <v-card-text>
               <v-row>
@@ -75,7 +98,7 @@
             </v-card-text>
           </v-card>
         </v-tabs-window-item>
-        <v-tabs-window-item value="1">
+        <v-tabs-window-item value="2">
           <v-card>
             <v-card-text>
               <v-row>
@@ -111,7 +134,7 @@
             </v-card-text>
           </v-card>
         </v-tabs-window-item>
-        <v-tabs-window-item value="2">
+        <v-tabs-window-item value="3">
           <v-card>
             <v-card-text>
               <v-row>
@@ -147,7 +170,7 @@
             </v-card-text>
           </v-card>
         </v-tabs-window-item>
-        <v-tabs-window-item value="3">
+        <v-tabs-window-item value="4">
           <v-card>
             <v-card-text>
               <v-row>
@@ -183,7 +206,7 @@
             </v-card-text>
           </v-card>
         </v-tabs-window-item>
-        <v-tabs-window-item value="4">
+        <v-tabs-window-item value="5">
           <v-card>
             <v-card-text>
               <v-row>
@@ -204,7 +227,7 @@
             </v-card-text>
           </v-card>
         </v-tabs-window-item>
-        <v-tabs-window-item value="5">
+        <v-tabs-window-item value="6">
           <v-card>
             <v-card-text>
               <v-row>
@@ -239,7 +262,7 @@ export default {
   },
   data: () => ({
     loading: ref(false),
-    tabs: 0,
+    tabs: ref(1),
     plugins: [],
     paperOptions: [
       { title: 'A4 افقی', value: 'A4-L' },
@@ -248,6 +271,10 @@ export default {
       { title: 'A5 عمودی', value: 'A5' }
     ],
     settings: {
+      global: {
+        leftFooter: '',
+        rightFooter: ''
+      },
       sell: {
         pays: true,
         note: true,
@@ -298,6 +325,9 @@ export default {
   methods: {
     isPluginActive(plugName) {
       return this.plugins[plugName] !== undefined;
+    },
+    getStaticData(type, key) {
+      return this.$store.getters.getStaticData(type, key);
     },
     submit() {
       this.loading = true;

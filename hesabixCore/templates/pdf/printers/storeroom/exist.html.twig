@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fa" direction="rtl">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<head>
+    <style>
+        .center {
+            text-align: center;
+        }
+        .text-white {
+            color: white;
+        }
+        .stimol td,
+        .stimol th {
+            border: 1px solid black;
+        }
+        .item {
+            height: 30px;
+        }
+    </style>
+</head>
+<body style="direction:rtl; width:100%">
+    <div class="block-content pt-1 pb-3 d-none d-sm-block">
+        <div class="c-print container-xl">
+            <div class="tg-wrap" style="width:100%; border:1px solid black;border-radius: 8px;">
+                <table class="rounded" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <td style="width:20%">
+                                <img src="{{ url('front_avatar_file_get', {id: bid.id},)}}" width="65"/>
+                            </td>
+                            <td style="width:60%; text-align:center">
+                                <h3 class="">گزارش موجودی انبار</h3>
+                            </td>
+                            <td style="width:20%">
+                                <h4>
+                                    <b>تاریخ:</b>
+                                    {{ "now"|date("Y/m/d H:i") }}</h4>
+                                <br/>
+                                <h4>
+                                    <b>انبار:</b>
+                                    {{ storeroom is defined and storeroom is not null ? storeroom.name : 'نامشخص' }}</h4>
+                            </td>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div style="width:100%; border:1px solid black;border-radius: 8px;margin-top:5px;text-align:center;">
+                <div class="tg-wrap" style="width:100%;border-radius: 8px 8px 0px 0px;text-align:center;background-color:gray">
+                    <b style="color:white;">اطلاعات انبار</b>
+                </div>
+                <table style="width:100%;">
+                    <tbody>
+                        <tr style="text-align:center;">
+                            <td class="">
+                                <p>
+                                    <b>نام انبار:</b>
+                                    {{ storeroom is defined and storeroom is not null ? storeroom.name : 'نامشخص' }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>انباردار:</b>
+                                    {{ storeroom is defined and storeroom is not null ? storeroom.manager : 'نامشخص' }}
+                                </p>
+                            </td>
+                            <td class="center">
+                                <p>
+                                    <b>آدرس:</b>
+                                    {{ storeroom is defined and storeroom is not null ? storeroom.adr : 'نامشخص' }}
+                                </p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="width:100%;margin-top:5px;text-align:center;">
+                <table style="width:100%;">
+                    <thead>
+                        <tr class="stimol" style="background-color:gray;">
+                            <th class="text-white" style="width:80px">ردیف</th>
+                            <th class="text-white">کد کالا</th>
+                            <th class="text-white">دسته بندی</th>
+                            <th class="text-white">نام کالا</th>
+                            <th class="text-white">واحد</th>
+                            <th class="text-white">ورودی</th>
+                            <th class="text-white">خروجی</th>
+                            <th class="text-white">موجودی</th>
+                            <th class="text-white">نقطه سفارش</th>
+                            <th class="text-white">وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            <tr class="stimol">
+                                <td class="center item">{{ loop.index }}</td>
+                                <td class="center item">{{ item.commodity.code }}</td>
+                                <td class="center item">{{ item.commodity.cat.name }}</td>
+                                <td class="center item">{{ item.commodity.name }}</td>
+                                <td class="center item">{{ item.commodity.unit.name }}</td>
+                                <td class="center item">{{ item.input }}</td>
+                                <td class="center item">{{ item.output }}</td>
+                                <td class="center item {% if item.existCount < 0 %}text-danger{% endif %}">
+                                    {{ item.existCount|abs }}
+                                    {% if item.existCount < 0 %}
+                                        (منفی)
+                                    {% endif %}
+                                </td>
+                                <td class="center item">{{ item.commodity.orderPoint }}</td>
+                                <td class="center item">
+                                    {% if item.existCount < item.commodity.orderPoint %}
+                                        نیاز به شارژ انبار
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="width:100%;margin-top:0px;text-align:center;">
+                <table style="width:100%;">
+                    <tbody>
+                        <tr class="stimol">
+                            <td class="item" style="width:70%;padding:1%">
+                                <h4>
+                                    توضیحات:
+                                    <br>
+                                    تعداد کل کالاها: {{ items|length }}
+                                </h4>
+                            </td>
+                            <td class="item" style="width:15%;padding:1%">
+                                <h4>
+                                    چاپ شده توسط:
+                                    {{ app.user.fullname }}
+                                </h4>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="width:40%;margin-top:0px;text-align:center;float:left;">
+                <table style="width:100%;">
+                    <tbody>
+                        <tr>
+                            <td class="center" style="height:90px">
+                                <h4>
+                                    مهر و امضا انباردار
+                                </h4>
+                            </td>
+                            <td class="center" style="height:90px">
+                                <h4>
+                                    مهر و امضا مدیر:
+                                </h4>
+                                <br>
+                                <img src="{{ url('front_seal_file_get', {id: bid.id},)}}" width="160"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

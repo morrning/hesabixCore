@@ -674,4 +674,37 @@ class StoreroomController extends AbstractController
         );
         return $this->json(['id' => $pdfPid]);
     }
+
+    #[Route('/api/storeroom/exist/print', name: 'app_storeroom_exist_print')]
+    public function app_storeroom_exist_print(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $acc = $access->hasRole('store');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        // لود کردن اطلاعات انبار از دیتابیس
+        $storeroom = $entityManager->getRepository(Storeroom::class)->find($params['storeroom']);
+        if (!$storeroom) {
+            throw $this->createNotFoundException('انبار مورد نظر یافت نشد');
+        }
+
+        $pdfPid = 0;
+        $pdfPid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/printers/storeroom/exist.html.twig', [
+                'title' => 'سنجش موجودی انبار',
+                'bid' => $acc['bid'],
+                'storeroom' => $storeroom,
+                'items' => $params['items']
+            ]),
+            false
+        );
+        return $this->json(['id' => $pdfPid]);
+    }
 }

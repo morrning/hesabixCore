@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\ChangeReport;
 use App\Entity\Plugin;
 use App\Entity\Settings;
+use App\Entity\PrintOptions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -118,4 +119,28 @@ class twigFunctions
         return $this->request->getUri();
     }
 
+    public function getFooterText(string $side, PluginService $pluginService, $bid): string
+    {
+        // اگر پلاگین accpro فعال نباشد، مقدار پیش‌فرض را برمی‌گرداند
+        if (!$pluginService->isActive('accpro', $bid)) {
+            return $side === 'left' ? $this->getStaticData('system', 'footerLeft') : $this->getStaticData('system', 'footerRight');
+        }
+
+        // دریافت تنظیمات چاپ
+        $printOptions = $this->em->getRepository(PrintOptions::class)->findOneBy(['bid' => $bid]);
+        
+        if (!$printOptions) {
+            return $side === 'left' ? $this->getStaticData('system', 'footerLeft') : $this->getStaticData('system', 'footerRight');
+        }
+
+        // دریافت متن پانویس بر اساس سمت
+        $footerText = $side === 'left' ? $printOptions->getLeftFooter() : $printOptions->getRightFooter();
+        
+        // اگر متن null یا خالی باشد، مقدار پیش‌فرض را برمی‌گرداند
+        if ($footerText === null || $footerText === '') {
+            return $side === 'left' ? $this->getStaticData('system', 'footerLeft') : $this->getStaticData('system', 'footerRight');
+        }
+
+        return $footerText;
+    }
 }

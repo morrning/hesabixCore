@@ -120,6 +120,12 @@ class PrintOptions
     #[ORM\Column(nullable: true)]
     private ?bool $fastsellCashdeskTicket = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $leftFooter = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $rightFooter = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -541,6 +547,30 @@ class PrintOptions
     public function setFastsellCashdeskTicket(?bool $fastsellCashdeskTicket): static
     {
         $this->fastsellCashdeskTicket = $fastsellCashdeskTicket;
+
+        return $this;
+    }
+
+    public function getLeftFooter(): ?string
+    {
+        return $this->leftFooter;
+    }
+
+    public function setLeftFooter(?string $leftFooter): static
+    {
+        $this->leftFooter = $leftFooter;
+
+        return $this;
+    }
+
+    public function getRightFooter(): ?string
+    {
+        return $this->rightFooter;
+    }
+
+    public function setRightFooter(?string $rightFooter): static
+    {
+        $this->rightFooter = $rightFooter;
 
         return $this;
     }

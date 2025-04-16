@@ -12,7 +12,7 @@
 						<thead>
 							<tr>
 								<td style="width:30%;text-align:center;">
-									{{ twigFunctions.getStaticData('system', 'footerLeft') }}
+									{{ twigFunctions.getFooterText('right', pluginService, bid) }}
 								</td>
 								<td style="width:40%; text-align:center">
 									صفحه:
@@ -21,14 +21,14 @@
 							            {nbpg}
 								</td>
 								<td style="width:30%;text-align:center;">
-									{{ twigFunctions.getStaticData('system', 'footerRight') }}
+									{{ twigFunctions.getFooterText('left', pluginService, bid) }}
 								</td>
 							</tr>
 						</thead>
 					</table>
 				</div>
 			</div>
-		</body>
+		</div>
 	</body>
 </html>
 

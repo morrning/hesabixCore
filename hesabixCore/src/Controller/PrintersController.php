@@ -104,6 +104,9 @@ class PrintersController extends AbstractController
             $temp['rfsell']['paper'] = 'A4-L';
         }
 
+        $temp['global']['leftFooter'] = $settings->getLeftFooter();
+        $temp['global']['rightFooter'] = $settings->getRightFooter();
+
         return $this->json($temp);
     }
 
@@ -167,6 +170,9 @@ class PrintersController extends AbstractController
         $settings->setFastsellCashdeskTicket($params['fastsell']['cashdeskTicket']);
         $settings->setFastsellInvoice($params['fastsell']['invoice']);
         $settings->setFastsellPdf($params['fastsell']['pdf']);
+
+        $settings->setLeftFooter($params['global']['leftFooter']);
+        $settings->setRightFooter($params['global']['rightFooter']);
 
         $entityManager->persist($settings);
         $entityManager->flush();
