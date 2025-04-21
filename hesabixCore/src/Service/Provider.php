@@ -189,12 +189,72 @@ class Provider
      */
     public function createExcellFromArray(array $entities, array $headers = null)
     {
-
         $spreadsheet = new Spreadsheet();
         $activeWorksheet = $spreadsheet->getActiveSheet();
-        $activeWorksheet->fromArray($entities, null, 'A1');
+        
+        // تنظیم هدرها اگر وجود داشته باشند
+        if ($headers !== null) {
+            $activeWorksheet->fromArray($headers, null, 'A1');
+            
+            // استایل‌دهی به هدرها
+            $headerStyle = [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => 'FFFFFF'],
+                    'size' => 12,
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '4472C4'],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => '000000'],
+                    ],
+                ],
+            ];
+            
+            $activeWorksheet->getStyle('A1:' . $activeWorksheet->getHighestColumn() . '1')->applyFromArray($headerStyle);
+            
+            // اضافه کردن داده‌ها از ردیف دوم
+            $activeWorksheet->fromArray($entities, null, 'A2');
+        } else {
+            $activeWorksheet->fromArray($entities, null, 'A1');
+        }
+        
+        // تنظیم جهت راست به چپ
         $activeWorksheet->setRightToLeft(true);
-        $activeWorksheet->getHeaderFooter()->setOddHeader('&CHeader of the Document');
+        
+        // تنظیم عرض ستون‌ها به صورت خودکار
+        foreach (range('A', $activeWorksheet->getHighestColumn()) as $column) {
+            $activeWorksheet->getColumnDimension($column)->setAutoSize(true);
+        }
+        
+        // فریز کردن ردیف هدر
+        $activeWorksheet->freezePane('A2');
+        
+        // تنظیم استایل برای سلول‌های داده
+        $dataStyle = [
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
+        ];
+        
+        $dataRange = 'A1:' . $activeWorksheet->getHighestColumn() . $activeWorksheet->getHighestRow();
+        $activeWorksheet->getStyle($dataRange)->applyFromArray($dataStyle);
+        
         $writer = new Xlsx($spreadsheet);
         $filePath = __DIR__ . '/../../var/' . $this->RandomString(12) . '.xlsx';
         $writer->save($filePath);

@@ -497,7 +497,31 @@ class CommodityController extends AbstractController
             throw new \Exception('هیچ کالایی برای خروجی یافت نشد');
         }
 
-        $filePath = $provider->createExcell($items);
+        $array = [];
+        foreach ($items as $item) {
+            $temp = [];
+            $temp[] = $item->isKhadamat() ? '0' : '1';
+            $temp[] = $item->isSpeedAccess() ? '1' : '0';
+            $temp[] = $item->getName();
+            $temp[] = $item->getPriceSell();
+            $temp[] = $item->getPriceBuy();
+            $temp[] = $item->getMinOrderCount();
+            $temp[] = $item->getDes();
+            $temp[] = $item->getUnit()->getName();
+            $temp[] = $item->getCat()->getName();
+            $array[] = $temp;
+        }
+        $filePath = $provider->createExcellFromArray($array, [
+            'کالا(۱) خدمات (۰)',
+            'دسترسی سریع ۱ فعال',
+            'نام کالا',
+            'قیمت فروش',
+            'قیمت خرید',
+            'حداقل سفارش',
+            'توضیحات',
+            'واحد شمارش',
+            'دسته بندی',
+        ]);
         $response = new BinaryFileResponse($filePath);
         $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'commodities.xlsx');
         $response->deleteFileAfterSend(true);
@@ -756,7 +780,6 @@ class CommodityController extends AbstractController
             'Success' => true,
             'result' => 1,
         ]);
-
     }
     #[Route('/api/commodity/mod/{code}', name: 'app_commodity_mod')]
     public function app_commodity_mod(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager, $code = 0): JsonResponse
@@ -1499,5 +1522,4 @@ class CommodityController extends AbstractController
         $log->insert('کالا/خدمات', 'قیمت تعدادی از کالا‌ها به صورت گروهی ویرایش شد.', $this->getUser(), $acc['bid']->getId());
         return $this->json($extractor->operationSuccess());
     }
-
 }
