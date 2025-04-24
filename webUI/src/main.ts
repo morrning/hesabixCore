@@ -13,10 +13,6 @@ import faIR from 'date-fns-jalali/locale/fa-IR';
 import { createPinia } from 'pinia'
 const pinia = createPinia();
 
-import CKEditor from '@ckeditor/ckeditor5-vue';
-// Import translations for the Persian language.
-import '@ckeditor/ckeditor5-build-classic/build/translations/fa';
-
 // Vuetify
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
@@ -156,7 +152,7 @@ app.component('v-cob', vSelect)
 import Hdatepicker from "@/components/forms/Hdatepicker.vue";
 import calendarLocalConfig from "@/i18n/calendarLocalConfig";
 app.component('h-date-picker', Hdatepicker);
-app.use(CKEditor)
+
 app.use(Vue3PersianDatetimePicker, {
     name: 'CustomDatePicker',
     props: {

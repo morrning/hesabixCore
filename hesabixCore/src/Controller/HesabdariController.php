@@ -1134,4 +1134,36 @@ class HesabdariController extends AbstractController
         return $this->json($extractor->operationSuccess($pdfPid));
         
     }
+
+    #[Route('/api/hesabdari/tables/{id}/children', name: 'get_hesabdari_table_children', methods: ['GET'])]
+    public function getHesabdariTableChildren(int $id, Access $access, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('accounting');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $node = $entityManager->getRepository(HesabdariTable::class)->find($id);
+        if (!$node) {
+            return $this->json(['Success' => false, 'message' => 'نود مورد نظر یافت نشد'], 404);
+        }
+
+        $children = $entityManager->getRepository(HesabdariTable::class)->findBy([
+            'upper' => $node,
+            'bid' => [$acc['bid']->getId(), null] // حساب‌های عمومی و خصوصی
+        ]);
+
+        $result = [];
+        foreach ($children as $child) {
+            $result[] = [
+                'id' => $child->getId(),
+                'name' => $child->getName(),
+                'code' => $child->getCode(),
+                'type' => $child->getType(),
+                'children' => $this->hasChild($entityManager, $child) ? [] : null
+            ];
+        }
+
+        return $this->json(['Success' => true, 'data' => $result]);
+    }
 }

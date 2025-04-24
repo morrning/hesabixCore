@@ -7,7 +7,6 @@
           v-model="showBarChart"
           :label="$t('dashboard.topCommodities.chartToggle')"
           color="primary"
-          size="small"
           density="compact"
           hide-details
         ></v-switch>

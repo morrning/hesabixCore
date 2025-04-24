@@ -1,8 +1,13 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.node.json",
-  "include": ["vite.config.*", "vitest.config.*", "cypress.config.*", "playwright.config.*"],
   "compilerOptions": {
     "composite": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "target": "esnext",
     "types": ["node"],
-  }
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true
+  },
+  "include": ["vite.config.*", "vitest.config.*", "cypress.config.*", "playwright.config.*"]
 }

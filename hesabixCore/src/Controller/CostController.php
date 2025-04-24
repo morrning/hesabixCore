@@ -19,6 +19,7 @@ use App\Entity\Cashdesk;
 use App\Entity\Salary;
 use App\Entity\Person;
 use App\Service\Log;
+use Doctrine\Common\Collections\ArrayCollection;
 
 class CostController extends AbstractController
 {
@@ -138,7 +139,10 @@ class CostController extends AbstractController
             ->andWhere('r.bd != 0')
             ->groupBy('t.id, t.name')
             ->orderBy('total_cost', 'DESC')
-            ->setParameters($parameters);
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('money', $acc['money'])
+            ->setParameter('type', 'cost')
+            ->setParameter('year', $acc['year']);
 
         // اعمال فیلتر تاریخ فقط برای امروز و ماه
         if ($period === 'today') {

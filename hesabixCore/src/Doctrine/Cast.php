@@ -5,24 +5,24 @@ use Doctrine\ORM\Query\AST\Functions\FunctionNode;
 use Doctrine\ORM\Query\Lexer;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
+use Doctrine\ORM\Query\TokenType;
 
 class Cast extends FunctionNode
 {
     private $expression;
 
-    public function parse(Parser $parser)
+    public function parse(Parser $parser): void
     {
-        $parser->match(Lexer::T_IDENTIFIER); // CAST
-        $parser->match(Lexer::T_OPEN_PARENTHESIS);
+        $parser->match(TokenType::T_IDENTIFIER); // CAST
+        $parser->match(TokenType::T_OPEN_PARENTHESIS);
         $this->expression = $parser->ArithmeticExpression();
-        $parser->match(Lexer::T_AS);
-        $parser->match(Lexer::T_IDENTIFIER); // INTEGER یا هر نوع دیگه
-        $parser->match(Lexer::T_CLOSE_PARENTHESIS);
+        $parser->match(TokenType::T_AS);
+        $parser->match(TokenType::T_IDENTIFIER); // INTEGER یا هر نوع دیگه
+        $parser->match(TokenType::T_CLOSE_PARENTHESIS);
     }
 
-    public function getSql(SqlWalker $sqlWalker)
+    public function getSql(SqlWalker $sqlWalker): string
     {
-        // به جای استفاده از $this->type، مستقیماً SIGNED رو می‌ذاریم
         return 'CAST(' . $sqlWalker->walkArithmeticPrimary($this->expression) . ' AS SIGNED)';
     }
 }

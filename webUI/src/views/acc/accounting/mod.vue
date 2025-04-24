@@ -1,4 +1,27 @@
 <template>
+  
+    <v-toolbar color="toolbar" :title="$t('dialog.accounting_doc')">
+      <template v-slot:prepend>
+        <v-tooltip :text="$t('dialog.back')" location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+              icon="mdi-arrow-right" />
+          </template>
+        </v-tooltip>
+      </template>
+      <v-spacer></v-spacer>
+      <v-tooltip text="ثبت سند" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" variant="text" icon="mdi-content-save" color="success" @click="submitForm" :loading="loading"></v-btn>
+        </template>
+      </v-tooltip>
+      <v-tooltip v-if="docId" text="حذف سند" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" variant="text" icon="mdi-delete" color="error" @click="deleteDialog = true" :loading="loading"></v-btn>
+        </template>
+      </v-tooltip>
+    </v-toolbar>
+    
   <v-container>
     <v-form @submit.prevent="submitForm">
       <v-row>
@@ -17,78 +40,137 @@
         </v-col>
       </v-row>
 
-      <v-data-table
-        :headers="headers"
-        :items="form.rows"
-        class="elevation-1"
-        hide-default-footer
-        :header-props="{ class: 'custom-header' }"
-      >
-        <template v-slot:top>
-          <v-toolbar flat>
-            <v-toolbar-title>ردیف‌های سند</v-toolbar-title>
-            <v-spacer></v-spacer>
-            <v-btn color="primary" @click="addRow">افزودن ردیف</v-btn>
-          </v-toolbar>
-        </template>
+      <v-table class="border rounded d-none d-sm-table mt-3" style="width: 100%;">
+        <thead>
+          <tr style="background-color: #0D47A1; color: white; height: 40px;">
+            <th class="text-center" style="font-size: 0.8rem; padding: 0 4px;">حساب</th>
+            <th class="text-center" style="font-size: 0.8rem; padding: 0 4px;">تفصیل</th>
+            <th class="text-center" style="font-size: 0.8rem; padding: 0 4px;">توضیحات</th>
+            <th class="text-center" style="font-size: 0.8rem; padding: 0 4px;">بدهکار</th>
+            <th class="text-center" style="font-size: 0.8rem; padding: 0 4px;">بستانکار</th>
+            <th class="text-center" style="width: 50px; font-size: 0.8rem; padding: 0 4px;">عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="(row, index) in form.rows" :key="index">
+            <tr :style="{ backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white', height: '40px' }">
+              <td class="text-center" style="min-width: 150px; padding: 0 4px;">
+                <Haccountsearch
+                  v-model="row.ref"
+                  :rules="[v => !!v || 'حساب الزامی است']"
+                  @account-selected="(account) => handleAccountSelect(row, account)"
+                />
+              </td>
+              <td class="text-center" style="min-width: 100px; padding: 0 4px;">
+              </td>
+              <td class="text-center" style="padding: 0 4px;">
+                <v-text-field 
+                  v-model="row.des" 
+                  label="توضیحات" 
+                  density="compact"
+                  class="my-0"
+                  style="font-size: 0.7rem;"
+                  hide-details
+                ></v-text-field>
+              </td>
+              <td class="text-center" style="width: 100px; padding: 0 4px;">
+                <v-text-field
+                  v-model="row.bd"
+                  label="بدهکار"
+                  type="number"
+                  density="compact"
+                  @input="calculateTotals"
+                  class="my-0"
+                  style="font-size: 0.7rem;"
+                  hide-details
+                ></v-text-field>
+              </td>
+              <td class="text-center" style="width: 100px; padding: 0 4px;">
+                <v-text-field
+                  v-model="row.bs"
+                  label="بستانکار"
+                  type="number"
+                  density="compact"
+                  @input="calculateTotals"
+                  class="my-0"
+                  style="font-size: 0.7rem;"
+                  hide-details
+                ></v-text-field>
+              </td>
+              <td class="text-center" style="width: 50px; padding: 0 4px;">
+                <v-tooltip text="حذف" location="bottom">
+                  <template v-slot:activator="{ props }">
+                    <v-btn v-bind="props" icon="mdi-delete" variant="text" size="x-small" color="error"
+                      @click="removeRow(row)" style="min-width: 30px;"></v-btn>
+                  </template>
+                </v-tooltip>
+              </td>
+            </tr>
+          </template>
+          <tr>
+            <td colspan="6" class="text-center pa-1" style="height: 40px;">
+              <v-btn color="primary" prepend-icon="mdi-plus" size="x-small" @click="addRow">افزودن سطر جدید</v-btn>
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
 
-        <template v-slot:item.ref="{ item }">
-          <v-menu offset-y>
-            <template v-slot:activator="{ props }">
-              <v-text-field
-                v-model="item.refName"
-                label="حساب"
-                dense
-                readonly
-                v-bind="props"
-                :rules="[v => !!item.ref || 'حساب الزامی است']"
+      <!-- جدول موبایل -->
+      <div class="d-sm-none">
+        <v-card v-for="(row, index) in form.rows" :key="index" class="mb-4" variant="outlined">
+          <v-card-text>
+            <div class="d-flex justify-space-between align-center mb-2">
+              <span class="text-subtitle-2 font-weight-bold">ردیف:</span>
+              <span>{{ index + 1 }}</span>
+            </div>
+            <div class="mb-2">
+              <Haccountsearch
+                v-model="row.ref"
+                :rules="[v => !!v || 'حساب الزامی است']"
+                @account-selected="(account) => handleAccountSelect(row, account)"
+              />
+            </div>
+            <div class="mb-2">
+              <v-text-field 
+                v-model="row.des" 
+                label="توضیحات" 
+                density="compact"
+                class="my-0"
+                style="font-size: 0.8rem;"
               ></v-text-field>
-            </template>
-            <v-treeview
-              :items="hesabdariTables"
-              item-key="id"
-              item-text="name"
-              item-children="children"
-              selectable
-              return-object
-              v-model="item.selectedAccounts"
-              @update:active="selectAccount(item, $event)"
-            >
-              <template v-slot:label="{ item: treeItem }">
-                {{ treeItem.name }}
-              </template>
-            </v-treeview>
-          </v-menu>
-        </template>
-
-        <template v-slot:item.bd="{ item }">
-          <v-text-field
-            v-model="item.bd"
-            label="بدهکار"
-            type="number"
-            dense
-            @input="calculateTotals"
-          ></v-text-field>
-        </template>
-
-        <template v-slot:item.bs="{ item }">
-          <v-text-field
-            v-model="item.bs"
-            label="بستانکار"
-            type="number"
-            dense
-            @input="calculateTotals"
-          ></v-text-field>
-        </template>
-
-        <template v-slot:item.des="{ item }">
-          <v-text-field v-model="item.des" label="توضیحات" dense></v-text-field>
-        </template>
-
-        <template v-slot:item.actions="{ item }">
-          <v-btn color="error" small @click="removeRow(item)">حذف</v-btn>
-        </template>
-      </v-data-table>
+            </div>
+            <div class="d-flex justify-space-between mb-2">
+              <div style="width: 48%;">
+                <v-text-field
+                  v-model="row.bd"
+                  label="بدهکار"
+                  type="number"
+                  density="compact"
+                  @input="calculateTotals"
+                  class="my-0"
+                  style="font-size: 0.8rem;"
+                ></v-text-field>
+              </div>
+              <div style="width: 48%;">
+                <v-text-field
+                  v-model="row.bs"
+                  label="بستانکار"
+                  type="number"
+                  density="compact"
+                  @input="calculateTotals"
+                  class="my-0"
+                  style="font-size: 0.8rem;"
+                ></v-text-field>
+              </div>
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn icon="mdi-delete" variant="text" color="error" @click="removeRow(row)"></v-btn>
+          </v-card-actions>
+        </v-card>
+        <v-btn color="primary" prepend-icon="mdi-plus" block class="mb-4" @click="addRow">افزودن ردیف جدید</v-btn>
+      </div>
 
       <v-row class="mt-4">
         <v-col cols="6">
@@ -110,21 +192,41 @@
       </v-row>
 
       <v-alert v-if="error" type="error" class="mt-4">{{ error }}</v-alert>
-
-      <v-btn type="submit" color="success" class="mt-4" :disabled="totalBd !== totalBs || !form.date">
-        ثبت سند
-      </v-btn>
     </v-form>
   </v-container>
+
+  <!-- دیالوگ تأیید حذف -->
+  <v-dialog v-model="deleteDialog" max-width="400">
+    <v-card>
+      <v-card-title class="text-h5">
+        حذف سند
+      </v-card-title>
+      <v-card-text>
+        آیا مطمئن هستید که می‌خواهید این سند را حذف کنید؟
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="grey-darken-1" variant="text" @click="deleteDialog = false">
+          انصراف
+        </v-btn>
+        <v-btn color="error" variant="text" @click="confirmDelete" :loading="loading">
+          حذف
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
 import axios from 'axios';
 import moment from 'jalali-moment';
 import Hdatepicker from '@/components/forms/Hdatepicker.vue';
+import Haccountsearch from '@/components/forms/Haccountsearch.vue';
+
 export default {
   components: {
     Hdatepicker,
+    Haccountsearch
   },
   props: {
     docId: {
@@ -135,7 +237,7 @@ export default {
   data() {
     return {
       form: {
-        date: '', // تاریخ به فرمت ISO (مثلاً 2025-03-24)
+        date: '',
         des: '',
         rows: [
           { ref: null, refName: '', bd: '0', bs: '0', des: '', selectedAccounts: [] },
@@ -145,13 +247,8 @@ export default {
       totalBd: 0,
       totalBs: 0,
       error: null,
-      headers: [
-        { text: 'حساب', value: 'ref' },
-        { text: 'بدهکار', value: 'bd' },
-        { text: 'بستانکار', value: 'bs' },
-        { text: 'توضیحات', value: 'des' },
-        { text: 'عملیات', value: 'actions', sortable: false },
-      ],
+      deleteDialog: false,
+      loading: false,
     };
   },
   mounted() {
@@ -173,7 +270,7 @@ export default {
     async fetchDoc() {
       try {
         const response = await axios.get(`/api/hesabdari/doc/${this.docId}`);
-        const serverDate = response.data.data.date; // فرض: تاریخ شمسی از سرور
+        const serverDate = response.data.data.date;
         this.form.date = moment(serverDate, 'YYYY/MM/DD').format('YYYY-MM-DD');
         this.form.des = response.data.data.des || '';
         this.form.rows = response.data.data.rows.map(row => ({
@@ -219,7 +316,7 @@ export default {
       }
 
       const payload = {
-        date: moment(this.form.date, 'YYYY-MM-DD').locale('fa').format('YYYY/MM/DD'), // ارسال به فرمت شمسی
+        date: moment(this.form.date, 'YYYY-MM-DD').locale('fa').format('YYYY/MM/DD'),
         des: this.form.des,
         rows: this.form.rows.map(row => ({
           ref: row.ref,
@@ -230,6 +327,7 @@ export default {
       };
 
       try {
+        this.loading = true;
         if (this.docId) {
           await axios.put(`/api/hesabdari/doc/${this.docId}`, payload);
           this.$emit('saved', 'سند با موفقیت ویرایش شد');
@@ -239,6 +337,21 @@ export default {
         }
       } catch (error) {
         this.error = error.response?.data?.message || 'خطا در ثبت سند';
+      } finally {
+        this.loading = false;
+      }
+    },
+    async confirmDelete() {
+      try {
+        this.loading = true;
+        await axios.delete(`/api/hesabdari/doc/${this.docId}`);
+        this.$router.push('/acc/accounting/list');
+      } catch (error) {
+        this.error = 'خطا در حذف سند';
+        console.error(error);
+      } finally {
+        this.loading = false;
+        this.deleteDialog = false;
       }
     },
   },

@@ -9,6 +9,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Doctrine\Common\Collections\ArrayCollection;
 
 class IncomeController extends AbstractController
 {
@@ -111,14 +112,6 @@ class IncomeController extends AbstractController
         $today = $jdate->jdate('Y/m/d', time());
         $monthStart = $jdate->jdate('Y/m/01', time());
 
-        // پارامترهای پایه
-        $parameters = [
-            'bid' => $acc['bid'],
-            'money' => $acc['money'],
-            'type' => 'income',
-            'year' => $acc['year'],
-        ];
-
         // کوئری پایه
         $qb = $entityManager->createQueryBuilder()
             ->select('t.name AS center_name, SUM(COALESCE(r.bs, 0)) AS total_income')
@@ -132,7 +125,10 @@ class IncomeController extends AbstractController
             ->andWhere('r.bs != 0') // فقط ردیف‌هایی که bs صفر نیست
             ->groupBy('t.id, t.name')
             ->orderBy('total_income', 'DESC')
-            ->setParameters($parameters);
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('money', $acc['money'])
+            ->setParameter('type', 'income')
+            ->setParameter('year', $acc['year']);
 
         // اعمال فیلتر تاریخ فقط برای امروز و ماه
         if ($period === 'today') {

@@ -39,7 +39,7 @@ class HesabdariDoc
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $type = null;
 
-    #[ORM\Column(type: Types::BIGINT)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     private ?string $code = null;
 
     #[ORM\ManyToOne(inversedBy: 'hesabdariDocs')]
@@ -50,8 +50,8 @@ class HesabdariDoc
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $des = null;
 
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    private int $amount = 0;
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $amount = 0;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -94,7 +94,7 @@ class HesabdariDoc
     #[Ignore]
     private Collection $storeroomTickets;
 
-    #[ORM\Column(type: Types::ARRAY , nullable: true)]
+    #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $tempStatus = null;
 
     #[ORM\OneToMany(mappedBy: 'doc', targetEntity: Log::class)]
@@ -375,7 +375,7 @@ class HesabdariDoc
         return $this;
     }
 
-     /**
+    /**
      * @return Collection<int, self>
      */
     public function getRelatedDocs(): Collection
@@ -398,7 +398,6 @@ class HesabdariDoc
 
         return $this;
     }
-
 
     public function getStatus(): ?string
     {

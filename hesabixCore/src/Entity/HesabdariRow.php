@@ -59,8 +59,8 @@ class HesabdariRow
     #[Ignore]
     private ?Commodity $commodity = null;
 
-    #[ORM\Column(type: 'string', length: 255,nullable: true)]
-    private ?string $commdityCount = null;
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $commdityCount = null;
 
     #[ORM\ManyToOne(inversedBy: 'hesabdariRows')]
     #[Ignore]
@@ -79,7 +79,7 @@ class HesabdariRow
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $plugin = null;
 
-    #[ORM\Column(type: Types::ARRAY, nullable: true)]
+    #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $tempData = null;
 
     #[ORM\ManyToOne(inversedBy: 'hesabdariRows')]
@@ -91,12 +91,8 @@ class HesabdariRow
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $tax = null;
 
-
-
-
     public function __construct()
     {
-
     }
 
     public function getId(): ?int
@@ -224,12 +220,12 @@ class HesabdariRow
         return $this;
     }
 
-    public function getCommdityCount(): ?string
+    public function getCommdityCount(): ?int
     {
         return $this->commdityCount;
     }
 
-    public function setCommdityCount(?string $commdityCount): self
+    public function setCommdityCount(?int $commdityCount): self
     {
         $this->commdityCount = $commdityCount;
 
