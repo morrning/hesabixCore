@@ -50,8 +50,8 @@ class HesabdariDoc
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $des = null;
 
-    #[ORM\Column(type: Types::BIGINT, nullable: true)]
-    private ?int $amount = 0;
+    #[ORM\Column(type: Types::DECIMAL, precision: 20, scale: 0, nullable: true)]
+    private ?string $amount = '0';
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -261,12 +261,12 @@ class HesabdariDoc
         return $this;
     }
 
-    public function getAmount(): ?int
+    public function getAmount(): ?string
     {
         return $this->amount;
     }
 
-    public function setAmount(?int $amount): self
+    public function setAmount(?string $amount): self
     {
         $this->amount = $amount;
 
