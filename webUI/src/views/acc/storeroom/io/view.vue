@@ -1,216 +1,310 @@
-<script lang="ts">
-import {defineComponent, ref} from 'vue'
-import axios from "axios";
-import Swal from "sweetalert2";
-export default defineComponent({
-  name: "viewInvoice",
-  components:{
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
 
-  },
-  watch:{
+interface Business {
+  legal_name: string
+}
 
-  },
-  data:()=>{return{
-    loading:ref(false),
-    bid:{
-      legal_name:'',
-    },
-    item:{
-      ticket:{
-        id:0,
-        date:null,
-        code:null,
-        des:'',
-        storeroom:{
-          manager:''
-        }
-      },
-      rows:[],
-      person:{
-        nikename: null,
-        mobile:'',
-        address:'',
-        tel:'',
-        codeeqtesadi:'',
-        keshvar:'',
-        ostan:'',
-        shahr: ''
-      },
-    },
-    headers: [
-      { text: "کالا", value: "commodity" },
-      { text: "تعداد", value: "count" },
-      { text: "مورد نیاز", value: "hesabdariCount" },
-      { text: "باقی‌مانده", value: "remain" },
-    ]
+interface Storeroom {
+  manager: string
+}
 
+interface Ticket {
+  id: number
+  date: string | null
+  code: string | null
+  des: string
+  type: string
+  typeString: string
+  storeroom: Storeroom
+}
+
+interface Person {
+  nikename: string | null
+  mobile: string
+  address: string
+  tel: string
+  codeeqtesadi: string
+  keshvar: string
+  ostan: string
+  shahr: string
+  postalcode: string
+}
+
+interface Commodity {
+  code: string
+  name: string
+  unit: {
+    name: string
   }
-  },
-  methods: {
-    loadData() {
-      this.loading = true;
-      axios.post('/api/storeroom/tickets/info/' + this.$route.params.id).then((response) => {
-        this.item.ticket = response.data.ticket;
-        this.item.person = response.data.person;
-        this.item.transferType = response.data.transferType;
-        this.item.rows = response.data.commodities;
-        this.loading = false;
-      });
-      axios.post('/api/business/get/info/' + localStorage.getItem('activeBid')).then((response) => {
-        this.bid = response.data;
-      });
-    },
-    printInvoice() {
-      axios.post('/api/storeroom/print/ticket', {
-        'code': this.$route.params.id,
-        'type': this.item.ticket.type
-      }).then((response) => {
-        this.printID = response.data.id;
-        window.open(this.$API_URL + '/front/print/' + this.printID, '_blank', 'noreferrer');
-      });
+}
+
+interface Row {
+  commodity: Commodity
+  count: number
+  hesabdariCount: number
+  remain: number
+  des: string
+  referal: string
+}
+
+interface Item {
+  ticket: Ticket
+  rows: Row[]
+  person: Person
+  transferType: any
+}
+
+const router = useRouter()
+const loading = ref(false)
+const bid = ref<Business>({ legal_name: '' })
+const item = ref<Item>({
+  ticket: {
+    id: 0,
+    date: null,
+    code: null,
+    des: '',
+    type: '',
+    typeString: '',
+    storeroom: {
+      manager: ''
     }
   },
-  mounted() {
-    this.loadData();
+  rows: [],
+  person: {
+    nikename: null,
+    mobile: '',
+    address: '',
+    tel: '',
+    codeeqtesadi: '',
+    keshvar: '',
+    ostan: '',
+    shahr: '',
+    postalcode: ''
+  },
+  transferType: null
+})
+
+const headers = [
+  { title: "", key: "data-table-expand" },
+  { title: "کالا", key: "commodity" },
+  { title: "تعداد", key: "count" },
+  { title: "مورد نیاز", key: "hesabdariCount" },
+  { title: "باقی‌مانده", key: "remain" },
+]
+
+const loadData = async () => {
+  loading.value = true
+  try {
+    const [ticketResponse, businessResponse] = await Promise.all([
+      axios.post(`/api/storeroom/tickets/info/${router.currentRoute.value.params.id}`),
+      axios.post(`/api/business/get/info/${localStorage.getItem('activeBid')}`)
+    ])
+
+    item.value.ticket = ticketResponse.data.ticket
+    item.value.person = ticketResponse.data.person
+    item.value.transferType = ticketResponse.data.transferType
+    item.value.rows = ticketResponse.data.commodities
+
+    bid.value = businessResponse.data
+  } catch (error) {
+    console.error('Error loading data:', error)
+  } finally {
+    loading.value = false
   }
+}
+
+const printInvoice = async () => {
+  try {
+    const response = await axios.post('/api/storeroom/print/ticket', {
+      code: router.currentRoute.value.params.id,
+      type: item.value.ticket.type
+    })
+    window.open(`${import.meta.env.VITE_API_URL}/front/print/${response.data.id}`, '_blank', 'noreferrer')
+  } catch (error) {
+    console.error('Error printing invoice:', error)
+  }
+}
+
+onMounted(() => {
+  loadData()
 })
 </script>
 
 <template>
-  <div class="block block-content-full">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button"
-          class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fas fa-file-invoice-dollar"></i>
-        مشاهده و چاپ حواله انبار
-      </h3>
-      <div class="block-options">
-        <button class="btn btn-sm btn-primary mx-2" @click="printInvoice()" type="button">
-          <i class="si si-printer me-1"></i>
-          <span class="d-none d-sm-inline-block">چاپ</span>
-        </button>
-      </div>
-    </div>
-    <div class="block-content pt-1 pb-3">
-      <b class="ps-2">اطلاعات حواله انبار</b>
-      <div class="row">
-        <div class="col-sm-6 col-md-2">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">شماره</span>
-            <input type="text" readonly="readonly" v-model="item.ticket.code" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-2">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">نوع</span>
-            <input type="text" readonly="readonly" v-model="item.ticket.typeString" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-2">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">تاریخ</span>
-            <input type="text" readonly="readonly" v-model="item.ticket.date" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-        <div class="col-sm-12 col-md-6">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">شرح</span>
-            <input type="text" readonly="readonly" v-model="item.ticket.des" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-      </div>
-      <b class="ps-2">طرف حساب</b>
-      <div class="row">
-        <div class="col-sm-6 col-md-4">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">نام</span>
-            <input type="text" readonly="readonly" v-model="item.person.nikename" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-4">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">موبایل</span>
-            <input type="text" readonly="readonly" v-model="item.person.mobile" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-4">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">تلفن</span>
-            <input type="text" readonly="readonly" v-model="item.person.tel" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">کد پستی</span>
-            <input type="text" readonly="readonly" v-model="item.person.postalcode" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-        <div class="col-sm-12 col-md-9">
-          <div class="input-group input-group-sm mb-3">
-            <span class="input-group-text" id="inputGroup-sizing-sm">آدرس</span>
-            <input type="text" readonly="readonly" v-model="item.person.address" class="form-control"
-              aria-describedby="inputGroup-sizing-sm">
-          </div>
-        </div>
-      </div>
-      <b class="ps-2">اقلام</b>
-      <EasyDataTable table-class-name="customize-table" :headers="headers" :items="item.rows" show-index alternating
-        theme-color="#1d90ff" header-text-direction="center" body-text-direction="center" rowsPerPageMessage="تعداد سطر"
-        emptyMessage="اطلاعاتی برای نمایش وجود ندارد" rowsOfPageSeparatorMessage="از" :loading="loading">
-        <template #item-count="{ count, commodity }">
-          {{ count }} {{ commodity.unit.name }}
+  <v-toolbar color="toolbar" title="مشاهده و چاپ حواله انبار">
+    <template v-slot:prepend>
+      <v-tooltip text="بازگشت" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text" icon="mdi-arrow-right" />
         </template>
-        <template #item-commodity="{ commodity }">
-          {{ commodity.code }} {{ commodity.name }}
-        </template>
-        <template #expand="{ des, referal }">
-          <div class="p-1 m-0 text-start">
-            شرح
-            :
-            {{ des }}
-            <br />
-            ارجاع:
-            {{ referal }}
-          </div>
-        </template>
-      </EasyDataTable>
-    </div>
-  </div>
+      </v-tooltip>
+    </template>
+    <v-spacer />
+    <v-tooltip text="چاپ" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn
+          v-bind="props"
+          @click="printInvoice"
+          color="primary"
+          icon="mdi-printer"
+        />
+      </template>
+    </v-tooltip>
+  </v-toolbar>
 
+  <v-container>
+    <v-card variant="outlined" class="mb-4">
+      <v-card-title class="text-subtitle-1 font-weight-bold">
+        <v-icon start>mdi-information</v-icon>
+        اطلاعات حواله انبار
+      </v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model="item.ticket.code"
+              label="شماره"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model="item.ticket.typeString"
+              label="نوع"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model="item.ticket.date"
+              label="تاریخ"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="item.ticket.des"
+              label="شرح"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+    <v-card variant="outlined" class="mb-4">
+      <v-card-title class="text-subtitle-1 font-weight-bold">
+        <v-icon start>mdi-account</v-icon>
+        طرف حساب
+      </v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="item.person.nikename"
+              label="نام"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="item.person.mobile"
+              label="موبایل"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-text-field
+              v-model="item.person.tel"
+              label="تلفن"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="item.person.postalcode"
+              label="کد پستی"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+          <v-col cols="12" md="9">
+            <v-text-field
+              v-model="item.person.address"
+              label="آدرس"
+              variant="outlined"
+              density="compact"
+              readonly
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+    <v-card variant="outlined">
+      <v-card-title class="text-subtitle-1 font-weight-bold">
+        <v-icon start>mdi-package-variant</v-icon>
+        اقلام
+      </v-card-title>
+      <v-card-text>
+        <v-data-table
+          :headers="headers"
+          :items="item.rows"
+          :loading="loading"
+           class="elevation-1 text-center"
+    :header-props="{ class: 'custom-header' }"
+          density="compact"
+          show-expand
+        >
+          <template v-slot:item.count="{ item }">
+            {{ item.count }} {{ item.commodity.unit.name }}
+          </template>
+          <template v-slot:item.commodity="{ item }">
+            {{ item.commodity.code }} {{ item.commodity.name }}
+          </template>
+          <template v-slot:expanded-row="{ columns, item }">
+            <tr>
+              <td :colspan="columns.length">
+                <div class="pa-2 text-right">
+                  <div>شرح: {{ item.des }}</div>
+                  <div>ارجاع: {{ item.referal }}</div>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </v-data-table>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 
 <style scoped>
-table{
-  font-size: small;
-  border: 1px solid gray;
-}
-.table-header{
-  background-color: lightgray;
-}
-.c-print{
-  background-color: white;
-}
-
-@media print
-{
+@media print {
   @page {
     margin-top: 0;
     margin-bottom: 0;
   }
-  body  {
+  body {
     padding-top: 72px;
-    padding-bottom: 72px ;
+    padding-bottom: 72px;
   }
 }
 </style>

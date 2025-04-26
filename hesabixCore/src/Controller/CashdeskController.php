@@ -135,4 +135,137 @@ class CashdeskController extends AbstractController
         $log->insert('بانکداری', '  صندوق  با نام ' . $name . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
     }
+
+    #[Route('/api/cashdesk/search', name: 'app_cashdesk_search')]
+    public function app_cashdesk_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('cashdesk');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $query = $entityManager->createQueryBuilder()
+            ->select('c')
+            ->from(Cashdesk::class, 'c')
+            ->where('c.bid = :bid')
+            ->andWhere('c.money = :money')
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('money', $acc['money']);
+
+        if (isset($params['search']) && !empty($params['search'])) {
+            $query->andWhere('c.name LIKE :search')
+                ->setParameter('search', '%' . $params['search'] . '%');
+        }
+
+        if (isset($params['page']) && isset($params['itemsPerPage'])) {
+            $query->setFirstResult(($params['page'] - 1) * $params['itemsPerPage'])
+                ->setMaxResults($params['itemsPerPage']);
+        }
+
+        $datas = $query->getQuery()->getResult();
+        
+        foreach ($datas as $data) {
+            $bs = 0;
+            $bd = 0;
+            $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'cashdesk' => $data
+            ]);
+            foreach ($items as $item) {
+                $bs += $item->getBs();
+                $bd += $item->getBd();
+            }
+            $data->setBalance($bd - $bs);
+        }
+
+        return $this->json([
+            'items' => $provider->ArrayEntity2Array($datas, 0),
+            'total' => count($datas)
+        ]);
+    }
+
+    #[Route('/api/cashdesk/balance/{code}', name: 'app_cashdesk_balance')]
+    public function app_cashdesk_balance($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('cashdesk');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $cashdesk = $entityManager->getRepository(Cashdesk::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'money' => $acc['money'],
+            'code' => $code
+        ]);
+
+        if (!$cashdesk)
+            throw $this->createNotFoundException();
+
+        $bs = 0;
+        $bd = 0;
+        $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+            'cashdesk' => $cashdesk
+        ]);
+
+        foreach ($items as $item) {
+            $bs += $item->getBs();
+            $bd += $item->getBd();
+        }
+
+        return $this->json([
+            'balance' => $bd - $bs,
+            'debit' => $bd,
+            'credit' => $bs
+        ]);
+    }
+
+    #[Route('/api/cashdesk/transactions/{code}', name: 'app_cashdesk_transactions')]
+    public function app_cashdesk_transactions($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('cashdesk');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $cashdesk = $entityManager->getRepository(Cashdesk::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'money' => $acc['money'],
+            'code' => $code
+        ]);
+
+        if (!$cashdesk)
+            throw $this->createNotFoundException();
+
+        $query = $entityManager->createQueryBuilder()
+            ->select('r')
+            ->from(HesabdariRow::class, 'r')
+            ->where('r.cashdesk = :cashdesk')
+            ->andWhere('r.bid = :bid')
+            ->setParameter('cashdesk', $cashdesk)
+            ->setParameter('bid', $acc['bid']);
+
+        if (isset($params['startDate']) && isset($params['endDate'])) {
+            $query->andWhere('r.doc.date BETWEEN :startDate AND :endDate')
+                ->setParameter('startDate', $params['startDate'])
+                ->setParameter('endDate', $params['endDate']);
+        }
+
+        if (isset($params['page']) && isset($params['itemsPerPage'])) {
+            $query->setFirstResult(($params['page'] - 1) * $params['itemsPerPage'])
+                ->setMaxResults($params['itemsPerPage']);
+        }
+
+        $transactions = $query->getQuery()->getResult();
+
+        return $this->json([
+            'items' => $provider->ArrayEntity2Array($transactions, 0),
+            'total' => count($transactions)
+        ]);
+    }
 }

@@ -1135,35 +1135,102 @@ class HesabdariController extends AbstractController
         
     }
 
-    #[Route('/api/hesabdari/tables/{id}/children', name: 'get_hesabdari_table_children', methods: ['GET'])]
-    public function getHesabdariTableChildren(int $id, Access $access, EntityManagerInterface $entityManager): JsonResponse
+    #[Route('/api/hesabdari/tables/tree', name: 'get_hesabdari_table_tree', methods: ['GET'])]
+    public function getHesabdariTableTree(Access $access, EntityManagerInterface $entityManager, Request $request): JsonResponse
     {
         $acc = $access->hasRole('accounting');
         if (!$acc) {
             throw $this->createAccessDeniedException();
         }
 
-        $node = $entityManager->getRepository(HesabdariTable::class)->find($id);
-        if (!$node) {
-            return $this->json(['Success' => false, 'message' => 'نود مورد نظر یافت نشد'], 404);
+        $depth = (int) $request->query->get('depth', 2); // عمق پیش‌فرض 2
+        $rootId = (int) $request->query->get('rootId', 1); // گره ریشه پیش‌فرض
+
+        $root = $entityManager->getRepository(HesabdariTable::class)->find($rootId);
+        if (!$root) {
+            return $this->json(['Success' => false, 'message' => 'نود ریشه یافت نشد'], 404);
         }
 
-        $children = $entityManager->getRepository(HesabdariTable::class)->findBy([
-            'upper' => $node,
-            'bid' => [$acc['bid']->getId(), null] // حساب‌های عمومی و خصوصی
-        ]);
+        $buildTree = function ($node, $depth, $currentDepth = 0) use ($entityManager, $acc, &$buildTree) {
+            if ($currentDepth >= $depth) {
+                return null;
+            }
 
-        $result = [];
-        foreach ($children as $child) {
-            $result[] = [
-                'id' => $child->getId(),
-                'name' => $child->getName(),
-                'code' => $child->getCode(),
-                'type' => $child->getType(),
-                'children' => $this->hasChild($entityManager, $child) ? [] : null
-            ];
+            $children = $entityManager->getRepository(HesabdariTable::class)->findBy([
+                'upper' => $node,
+                'bid' => [$acc['bid']->getId(), null],
+            ]);
+
+            $result = [];
+            foreach ($children as $child) {
+                $childData = [
+                    'id' => $child->getId(),
+                    'name' => $child->getName(),
+                    'code' => $child->getCode(),
+                    'type' => $child->getType(),
+                    'children' => $buildTree($child, $depth, $currentDepth + 1),
+                ];
+                $result[] = $childData;
+            }
+
+            return $result;
+        };
+
+        $tree = [
+            'id' => $root->getId(),
+            'name' => $root->getName(),
+            'code' => $root->getCode(),
+            'type' => $root->getType(),
+            'children' => $buildTree($root, $depth),
+        ];
+
+        return $this->json(['Success' => true, 'data' => $tree]);
+    }
+
+    #[Route('/api/hesabdari/tables/all', name: 'get_all_hesabdari_tables', methods: ['GET'])]
+    public function getAllHesabdariTables(Access $access, EntityManagerInterface $entityManager, Request $request): JsonResponse
+    {
+        $acc = $access->hasRole('accounting');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
         }
 
-        return $this->json(['Success' => true, 'data' => $result]);
+        $rootId = (int) $request->query->get('rootId', 1); // گره ریشه پیش‌فرض
+
+        $root = $entityManager->getRepository(HesabdariTable::class)->find($rootId);
+        if (!$root) {
+            return $this->json(['Success' => false, 'message' => 'نود ریشه یافت نشد'], 404);
+        }
+
+        $buildTree = function ($node) use ($entityManager, $acc, &$buildTree) {
+            $children = $entityManager->getRepository(HesabdariTable::class)->findBy([
+                'upper' => $node,
+                'bid' => [$acc['bid']->getId(), null],
+            ]);
+
+            $result = [];
+            foreach ($children as $child) {
+                $childData = [
+                    'id' => $child->getId(),
+                    'name' => $child->getName(),
+                    'code' => $child->getCode(),
+                    'type' => $child->getType(),
+                    'children' => $buildTree($child),
+                ];
+                $result[] = $childData;
+            }
+
+            return $result;
+        };
+
+        $tree = [
+            'id' => $root->getId(),
+            'name' => $root->getName(),
+            'code' => $root->getCode(),
+            'type' => $root->getType(),
+            'children' => $buildTree($root),
+        ];
+
+        return $this->json(['Success' => true, 'data' => $tree]);
     }
 }

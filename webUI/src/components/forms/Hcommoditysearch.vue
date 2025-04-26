@@ -9,13 +9,15 @@
           :error-messages="errorMessages"
           :rules="combinedRules"
           :label="label"
-          class=""
+          class="my-0"
           prepend-inner-icon="mdi-package-variant"
           clearable
           @click:clear="clearSelection"
           :loading="loading"
           @keydown.enter="handleEnter"
-          hide-details="auto"
+          hide-details
+          density="compact"
+          style="font-size: 0.7rem;"
         >
           <template v-slot:append-inner>
             <v-icon>{{ menu ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
@@ -23,7 +25,7 @@
         </v-text-field>
       </template>
 
-      <v-card min-width="300" max-width="400">
+      <v-card min-width="300" max-width="400" class="search-card">
         <v-card-text class="pa-2">
           <template v-if="!loading">
             <v-list density="compact" class="list-container">
@@ -68,161 +70,128 @@
 
     <v-dialog v-model="showAddDialog" :fullscreen="$vuetify.display.mobile" max-width="800">
       <v-card>
-        <v-toolbar color="primary" density="compact" class="sticky-toolbar">
-          <v-toolbar-title>افزودن کالا/خدمت جدید</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-tooltip text="بستن">
-            <template v-slot:activator="{ props }">
-              <v-btn
-                icon="mdi-close"
-                v-bind="props"
-                @click="showAddDialog = false"
-              ></v-btn>
-            </template>
-          </v-tooltip>
-          <v-tooltip text="ذخیره">
-            <template v-slot:activator="{ props }">
-              <v-btn
-                icon="mdi-content-save"
-                v-bind="props"
-                @click="saveCommodity"
-                :loading="saving"
-              ></v-btn>
-            </template>
-          </v-tooltip>
-        </v-toolbar>
-
-        <v-tabs
-          v-model="tabs"
-          color="primary"
-          show-arrows
-          class="sticky-tabs"
-        >
-          <v-tab value="basic" class="flex-grow-1">اطلاعات پایه</v-tab>
-          <v-tab value="details" class="flex-grow-1">جزئیات</v-tab>
-          <v-tab value="pricing" class="flex-grow-1">قیمت‌گذاری</v-tab>
-        </v-tabs>
-
-        <v-card-text class="content-container">
-          <v-window v-model="tabs">
-            <v-window-item value="basic">
-              <v-form @submit.prevent="saveCommodity">
-                <v-row class="mt-4">
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="newCommodity.name"
-                      label="نام کالا/خدمت *"
-                      required
-                      :error-messages="nameErrors"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="newCommodity.code"
-                      label="کد"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="newCommodity.type"
-                      :items="commodityTypes"
-                      label="نوع *"
-                      required
-                      :error-messages="typeErrors"
-                    ></v-select>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <v-select
-                      v-model="newCommodity.unit"
-                      :items="units"
-                      label="واحد اندازه‌گیری *"
-                      required
-                      :error-messages="unitErrors"
-                    ></v-select>
-                  </v-col>
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="newCommodity.description"
-                      label="توضیحات"
-                      rows="3"
-                    ></v-textarea>
-                  </v-col>
-                </v-row>
-              </v-form>
-            </v-window-item>
-
-            <v-window-item value="details">
-              <v-row class="mt-4">
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="newCommodity.brand"
-                    label="برند"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="newCommodity.model"
-                    label="مدل"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="newCommodity.barcode"
-                    label="بارکد"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="newCommodity.serial"
-                    label="سریال"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12">
-                  <v-switch
-                    v-model="newCommodity.isService"
-                    label="خدمت"
-                    color="primary"
-                  ></v-switch>
-                </v-col>
-              </v-row>
-            </v-window-item>
-
-            <v-window-item value="pricing">
-              <v-row class="mt-4">
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="newCommodity.basePrice"
-                    label="قیمت پایه"
-                    type="number"
-                    prefix="ریال"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="newCommodity.salePrice"
-                    label="قیمت فروش"
-                    type="number"
-                    prefix="ریال"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="newCommodity.minStock"
-                    label="حداقل موجودی"
-                    type="number"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="newCommodity.maxStock"
-                    label="حداکثر موجودی"
-                    type="number"
-                  ></v-text-field>
-                </v-col>
-              </v-row>
-            </v-window-item>
-          </v-window>
+        <v-card-title class="text-h5">
+          افزودن کالا/خدمت جدید
+        </v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="saveCommodity">
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.name"
+                  label="نام کالا/خدمت *"
+                  required
+                  :error-messages="nameErrors"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.code"
+                  label="کد"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="newCommodity.type"
+                  :items="commodityTypes"
+                  label="نوع *"
+                  required
+                  :error-messages="typeErrors"
+                ></v-select>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="newCommodity.unit"
+                  :items="units"
+                  label="واحد اندازه‌گیری *"
+                  required
+                  :error-messages="unitErrors"
+                ></v-select>
+              </v-col>
+              <v-col cols="12">
+                <v-textarea
+                  v-model="newCommodity.description"
+                  label="توضیحات"
+                  rows="3"
+                ></v-textarea>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.brand"
+                  label="برند"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.model"
+                  label="مدل"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.barcode"
+                  label="بارکد"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.serial"
+                  label="سریال"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12">
+                <v-switch
+                  v-model="newCommodity.isService"
+                  label="خدمت"
+                  color="primary"
+                ></v-switch>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.basePrice"
+                  label="قیمت پایه"
+                  type="number"
+                  prefix="ریال"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.salePrice"
+                  label="قیمت فروش"
+                  type="number"
+                  prefix="ریال"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.minStock"
+                  label="حداقل موجودی"
+                  type="number"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newCommodity.maxStock"
+                  label="حداکثر موجودی"
+                  type="number"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+          </v-form>
         </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey-darken-1" variant="text" @click="showAddDialog = false">
+            انصراف
+          </v-btn>
+          <v-btn color="primary" variant="text" @click="saveCommodity" :loading="saving">
+            ذخیره
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
 
@@ -281,7 +250,6 @@ export default defineComponent({
       itemsPerPage: 10,
       searchTimeout: null,
       showAddDialog: false,
-      tabs: 'basic',
       saving: false,
       commodityTypes: ['کالا', 'خدمت'],
       units: ['عدد', 'کیلوگرم', 'گرم', 'متر', 'سانتیمتر', 'لیتر', 'متر مربع', 'متر مکعب'],
@@ -349,10 +317,14 @@ export default defineComponent({
   watch: {
     modelValue: {
       handler(newVal) {
-        if (this.returnObject) {
-          this.selectedItem = newVal
+        if (newVal) {
+          if (this.returnObject) {
+            this.selectedItem = newVal;
+          } else {
+            this.selectedItem = this.items.find(item => item.id === newVal) || { id: newVal, name: 'در حال بارگذاری...' };
+          }
         } else {
-          this.selectedItem = this.items.find(item => item.id === newVal)
+          this.selectedItem = null;
         }
       },
       immediate: true
@@ -391,7 +363,7 @@ export default defineComponent({
           search: this.searchQuery,
           sortBy: null
         })
-                
+
         if (response.data && Array.isArray(response.data)) {
           this.items = response.data
           this.totalItems = response.data.length
@@ -402,12 +374,15 @@ export default defineComponent({
           this.items = []
           this.totalItems = 0
         }
-        
+
         if (this.modelValue) {
           if (this.returnObject) {
             this.selectedItem = this.modelValue
           } else {
             this.selectedItem = this.items.find(item => item.id === this.modelValue)
+            if (!this.selectedItem) {
+              await this.fetchSingleCommodity(this.modelValue)
+            }
           }
         }
       } catch (error) {
@@ -416,6 +391,26 @@ export default defineComponent({
         this.totalItems = 0
       } finally {
         this.loading = false
+      }
+    },
+    async fetchSingleCommodity(id) {
+      try {
+        const response = await axios.get(`/api/commodity/${id}`)
+        if (response.data && response.data.id) {
+          this.items.push(response.data)
+          this.selectedItem = response.data
+          this.searchQuery = response.data.name
+          this.$emit('update:modelValue', this.returnObject ? response.data : response.data.id)
+        }
+      } catch (error) {
+        this.showMessage('خطا در بارگذاری کالا', 'error')
+      }
+    },
+    async setValue(commodity) {
+      if (commodity) {
+        this.selectedItem = commodity
+        this.searchQuery = commodity.name
+        this.$emit('update:modelValue', this.returnObject ? commodity : commodity.id)
       }
     },
     async saveCommodity() {
@@ -484,44 +479,5 @@ export default defineComponent({
 .list-container {
   max-height: 300px;
   overflow-y: auto;
-}
-
-.content-container {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.sticky-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.sticky-tabs {
-  position: sticky;
-  top: 48px;
-  z-index: 1;
-  overflow-x: auto;
-  white-space: nowrap;
-}
-
-:deep(.v-menu__content) {
-  position: fixed !important;
-  z-index: 9999 !important;
-  transform-origin: center top !important;
-}
-
-:deep(.v-overlay__content) {
-  position: fixed !important;
-}
-
-@media (max-width: 600px) {
-  .content-container {
-    max-height: calc(100vh - 120px);
-  }
-  
-  .sticky-tabs {
-    -webkit-overflow-scrolling: touch;
-  }
 }
 </style>

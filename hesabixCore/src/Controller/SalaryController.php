@@ -134,4 +134,137 @@ class SalaryController extends AbstractController
         $log->insert('بانکداری', '  تنخواه‌گردان  با نام ' . $name . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
     }
+
+    #[Route('/api/salary/search', name: 'app_salary_search')]
+    public function app_salary_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('salary');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $query = $entityManager->createQueryBuilder()
+            ->select('s')
+            ->from(Salary::class, 's')
+            ->where('s.bid = :bid')
+            ->andWhere('s.money = :money')
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('money', $acc['money']);
+
+        if (isset($params['search']) && !empty($params['search'])) {
+            $query->andWhere('s.name LIKE :search')
+                ->setParameter('search', '%' . $params['search'] . '%');
+        }
+
+        if (isset($params['page']) && isset($params['itemsPerPage'])) {
+            $query->setFirstResult(($params['page'] - 1) * $params['itemsPerPage'])
+                ->setMaxResults($params['itemsPerPage']);
+        }
+
+        $datas = $query->getQuery()->getResult();
+        
+        foreach ($datas as $data) {
+            $bs = 0;
+            $bd = 0;
+            $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'salary' => $data
+            ]);
+            foreach ($items as $item) {
+                $bs += $item->getBs();
+                $bd += $item->getBd();
+            }
+            $data->setBalance($bd - $bs);
+        }
+
+        return $this->json([
+            'items' => $provider->ArrayEntity2Array($datas, 0),
+            'total' => count($datas)
+        ]);
+    }
+
+    #[Route('/api/salary/balance/{code}', name: 'app_salary_balance')]
+    public function app_salary_balance($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('salary');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $salary = $entityManager->getRepository(Salary::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'money' => $acc['money'],
+            'code' => $code
+        ]);
+
+        if (!$salary)
+            throw $this->createNotFoundException();
+
+        $bs = 0;
+        $bd = 0;
+        $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+            'salary' => $salary
+        ]);
+
+        foreach ($items as $item) {
+            $bs += $item->getBs();
+            $bd += $item->getBd();
+        }
+
+        return $this->json([
+            'balance' => $bd - $bs,
+            'debit' => $bd,
+            'credit' => $bs
+        ]);
+    }
+
+    #[Route('/api/salary/transactions/{code}', name: 'app_salary_transactions')]
+    public function app_salary_transactions($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('salary');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $salary = $entityManager->getRepository(Salary::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'money' => $acc['money'],
+            'code' => $code
+        ]);
+
+        if (!$salary)
+            throw $this->createNotFoundException();
+
+        $query = $entityManager->createQueryBuilder()
+            ->select('r')
+            ->from(HesabdariRow::class, 'r')
+            ->where('r.salary = :salary')
+            ->andWhere('r.bid = :bid')
+            ->setParameter('salary', $salary)
+            ->setParameter('bid', $acc['bid']);
+
+        if (isset($params['startDate']) && isset($params['endDate'])) {
+            $query->andWhere('r.doc.date BETWEEN :startDate AND :endDate')
+                ->setParameter('startDate', $params['startDate'])
+                ->setParameter('endDate', $params['endDate']);
+        }
+
+        if (isset($params['page']) && isset($params['itemsPerPage'])) {
+            $query->setFirstResult(($params['page'] - 1) * $params['itemsPerPage'])
+                ->setMaxResults($params['itemsPerPage']);
+        }
+
+        $transactions = $query->getQuery()->getResult();
+
+        return $this->json([
+            'items' => $provider->ArrayEntity2Array($transactions, 0),
+            'total' => count($transactions)
+        ]);
+    }
 }

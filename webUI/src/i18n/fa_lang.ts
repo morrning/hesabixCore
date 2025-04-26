@@ -277,6 +277,7 @@ const fa_lang = {
     fetch_data_error: "خطا در گرفتن داده از {url}"
   },
   dialog: {
+    change_password: 'تغییر کلمه عبور',
     download: 'دانلود',
     delete_group: 'حذف گروهی',
     add_new_transfer: 'سند انتقال جدید',

@@ -1,257 +1,455 @@
-<script lang="ts">
-import {defineComponent, ref} from 'vue'
-import recList from "../../component/recList.vue";
-import axios from "axios";
-import Swal from "sweetalert2";
-
-export default defineComponent({
-  name: "modalNew",
-  components: {},
-  watch:{
-    'item.type'(newValue,oldValue) {
-      if (newValue == 'sell') { this.$data.item.title = 'فروش'; this.$data.item.removeBeforeTicketsEnable = true; }
-      else if (newValue == 'buy') { this.$data.item.title = 'خرید'; this.$data.item.removeBeforeTicketsEnable = true; }
-      else if (newValue == 'rfbuy') { this.$data.item.title = 'برگشت از خرید'; this.$data.item.removeBeforeTicketsEnable = true; }
-      else if (newValue == 'rfsell') { this.$data.item.title = 'برگشت از فروش'; this.$data.item.removeBeforeTicketsEnable = true; }
-      else if (newValue == 'wastage') {
-        this.$data.item.title = 'ضایعات';
-        this.$data.item.removeBeforeTicketsEnable = false;
-        this.$data.item.removeBeforeTickets = false;
-      }
-      else if (newValue == 'used') {
-        this.$data.item.title = 'مصرف مستقیم';
-        this.$data.item.removeBeforeTicketsEnable = false;
-        this.$data.item.removeBeforeTickets = false;
-      }
-    },
-  },
-  data: () => {
-    return {
-      loading: ref(false),
-      storerooms: [],
-      item: {
-        storeroom: null,
-        type: 'sell',
-        title: 'فروش',
-        docSell: null,
-        docBuy: null,
-        removeBeforeTickets: true,
-        removeBeforeTicketsEnable: true
-      },
-      buys: [],
-      sells: [],
-      rfsells: [],
-      rfbuys: []
-    }
-  },
-  methods: {
-    loadData() {
-      this.loading = true;
-      axios.post('/api/storeroom/list')
-        .then((response) => {
-          this.storerooms = response.data.data;
-          this.storerooms.forEach((element) => {
-            element.name = element.name + ' انباردار : ' + element.manager
-          });
-          if (this.storerooms.length != 0) {
-            this.item.storeroom = this.storerooms[0];
-          }
-          this.loading = false;
-        });
-      axios.post('/api/storeroom/docs/get').then((response) => {
-        this.buys = response.data.buys;
-        this.sells = response.data.sells;
-        this.rfsells = response.data.rfsells;
-        this.rfbuys = response.data.rfbuys;
-      })
-    },
-    submit() {
-      this.loading = true;
-      if (this.item.storeroom == null) {
-        Swal.fire({
-          text: 'انبار انتخاب نشده است.',
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        }).then((res) => {
-          this.loading = false;
-        });
-      }
-      else if (this.item.type == 'sell' && this.item.docSell == null) {
-        Swal.fire({
-          text: 'فاکتور فروش انتخاب نشده است.',
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        }).then((res) => {
-          this.loading = false;
-        });
-      }
-      else if (this.item.type == 'buy' && this.item.docBuy == null) {
-        Swal.fire({
-          text: 'فاکتور خرید انتخاب نشده است.',
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        }).then((res) => {
-          this.loading = false;
-        });
-      }
-      else if (this.item.type == 'rfbuy' && this.item.docRfbuy == null) {
-        Swal.fire({
-          text: 'فاکتور برگشت از خرید انتخاب نشده است.',
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        }).then((res) => {
-          this.loading = false;
-        });
-      }
-      else if (this.item.type == 'rfsell' && this.item.docRfsell == null) {
-        Swal.fire({
-          text: 'فاکتور برگشت از خرید انتخاب نشده است.',
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        }).then((res) => {
-          this.loading = false;
-        });
-      }
-      else {
-        //going to save storeroom ticket
-        if (this.item.type == 'sell') {
-          this.$router.push({ name: 'storeroom_new_ticket_sell', params: { doc: this.item.docSell.code, storeID: this.item.storeroom.id } })
-        }
-        else if (this.item.type == 'buy') {
-          this.$router.push({ name: 'storeroom_new_ticket_buy', params: { doc: this.item.docBuy.code, storeID: this.item.storeroom.id } })
-        }
-        else if (this.item.type == 'rfbuy') {
-          this.$router.push({ name: 'storeroom_new_ticket_rfbuy', params: { doc: this.item.docRfbuy.code, storeID: this.item.storeroom.id } })
-        }
-        else if (this.item.type == 'rfsell') {
-          this.$router.push({ name: 'storeroom_new_ticket_rfsell', params: { doc: this.item.docRfsell.code, storeID: this.item.storeroom.id } })
-        }
-      }
-    }
-  },
-  beforeMount() {
-    this.loadData();
-  }
-})
-</script>
-
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button"
-          class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa fa-file-circle-plus"></i>
-        حواله انبار جدید
-      </h3>
-      <div class="block-options">
-        <button :disabled="this.loading" @click="submit()" type="button" class="btn btn-sm btn-alt-primary">
-          <i class="fa fa-save me-2"></i>
-          ثبت
-        </button>
-      </div>
-    </div>
-    <div class="block-content pt-1 pb-3">
-      <div class="row content">
-        <div class="col-sm-12 col-md-12">
-          <b class="alert alert-light">نوع حواله انبار را انتخاب کنید </b>
-          <div class="row mt-4">
-            <div class="col-sm-12 col-md-6 mt-2">
-              <div class="form-control mb-2">
-                <label class="form-label">انبار</label>
-                <v-cob dir="rtl" :options="storerooms" label="name" v-model="item.storeroom">
-                  <template #no-options="{ search, searching, loading }">
-                    نتیجه‌ای یافت نشد!
-                  </template>
-                </v-cob>
-              </div>
-            </div>
-            <div class="col-sm-12 col-md-6 mt-2">
-              <b class="mb-3 pb-3">نوع حواله انبار</b>
-              <div class="form-check mt-3">
-                <input v-model="this.item.type" value="sell" class="form-check-input" type="radio">
-                <label class="form-check-label">
-                  حواله برای فاکتور فروش
-                </label>
-              </div>
-              <div class="form-check">
-                <input v-model="this.item.type" value="buy" class="form-check-input" type="radio">
-                <label class="form-check-label">
-                  حواله برای فاکتور خرید
-                </label>
-              </div>
-              <div>
-                <div class="form-check">
-                  <input v-model="this.item.type" value="rfbuy" class="form-check-input" type="radio">
-                  <label class="form-check-label">
-                    حواله برای فاکتور برگشت از خرید
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input v-model="this.item.type" value="rfsell" class="form-check-input" type="radio">
-                  <label class="form-check-label">
-                    حواله برای فاکتور برگشت از فروش
-                  </label>
-                </div>
-                <div class="form-check d-none">
-                  <input v-model="this.item.type" value="wastage" class="form-check-input" type="radio">
-                  <label class="form-check-label">
-                    ضایعات
-                  </label>
-                </div>
-                <div class="form-check d-none">
-                  <input v-model="this.item.type" value="used" class="form-check-input" type="radio">
-                  <label class="form-check-label">
-                    مصرف مستقیم
-                  </label>
-                </div>
-              </div>
-            </div>
-            <div class="col-sm-12 col-md-12 mt-2">
-              <div class="rounded-2 border border-secondary bg-danger-light p-2">
-                <span>فاکتور {{ item.title }}</span>
-                <v-cob v-if="this.item.type == 'buy'" dir="rtl" :options="buys" label="des" v-model="item.docBuy"
-                  class="bg-white">
-                  <template #no-options="{ search, searching, loading }">
-                    نتیجه‌ای یافت نشد!
-                  </template>
-                </v-cob>
-                <v-cob v-if="this.item.type == 'sell'" dir="rtl" :options="sells" label="des" v-model="item.docSell"
-                  class="bg-white">
-                  <template #no-options="{ search, searching, loading }">
-                    نتیجه‌ای یافت نشد!
-                  </template>
-                </v-cob>
-                <v-cob v-if="this.item.type == 'rfsell'" dir="rtl" :options="rfsells" label="des"
-                  v-model="item.docRfsell" class="bg-white">
-                  <template #no-options="{ search, searching, loading }">
-                    نتیجه‌ای یافت نشد!
-                  </template>
-                </v-cob>
-                <v-cob v-if="this.item.type == 'rfbuy'" dir="rtl" :options="rfbuys" label="des"
-                  v-model="item.docRfbuy" class="bg-white">
-                  <template #no-options="{ search, searching, loading }">
-                    نتیجه‌ای یافت نشد!
-                  </template>
-                </v-cob>
-                <div class="form-check mt-2 ms-3">
-                  <input :disabled="!item.removeBeforeTicketsEnable" v-model="this.item.removeBeforeTickets" class="form-check-input" type="checkbox">
-                  <label class="form-check-label" >
-                    حذف حواله‌های انباری که قبلا برای این فاکتور صادر شده است.
-                  </label>
-                </div>
+  <v-toolbar color="toolbar" title="حواله انبار جدید">
+    <template v-slot:prepend>
+      <v-tooltip text="بازگشت" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text" icon="mdi-arrow-right" />
+        </template>
+      </v-tooltip>
+    </template>
+    <v-spacer />
+    <v-tooltip text="ثبت" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn
+          v-bind="props"
+          :loading="loading"
+          :disabled="loading"
+          color="primary"
+          icon="mdi-content-save"
+          @click="submit"
+        />
+      </template>
+    </v-tooltip>
+  </v-toolbar>
 
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <v-container>
+    <v-row>
+      <!-- ستون سمت راست - انتخاب انبار -->
+      <v-col cols="12" md="4">
+        <v-card variant="outlined" class="h-100">
+          <v-card-title class="text-subtitle-1 font-weight-bold">
+            <v-icon start>mdi-warehouse</v-icon>
+            انتخاب انبار
+          </v-card-title>
+          <v-card-text>
+            <v-select
+              v-model="item.storeroom"
+              :items="storerooms"
+              item-title="name"
+              item-value="id"
+              label="انبار"
+              variant="outlined"
+              density="compact"
+              :loading="loading"
+              return-object
+              class="mb-4"
+            >
+              <template v-slot:no-data>
+                <v-list-item>
+                  <v-list-item-title>
+                    نتیجه‌ای یافت نشد!
+                  </v-list-item-title>
+                </v-list-item>
+              </template>
+            </v-select>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- ستون وسط - نوع حواله -->
+      <v-col cols="12" md="4">
+        <v-card variant="outlined" class="h-100">
+          <v-card-title class="text-subtitle-1 font-weight-bold">
+            <v-icon start>mdi-file-document-edit</v-icon>
+            نوع حواله
+          </v-card-title>
+          <v-card-text>
+            <v-radio-group v-model="item.type" class="mt-0">
+              <v-radio value="sell" color="success">
+                <template v-slot:label>
+                  <div class="d-flex align-center">
+                    <v-icon color="success" class="ml-2">mdi-cart-arrow-down</v-icon>
+                    <span>حواله برای فاکتور فروش</span>
+                  </div>
+                </template>
+              </v-radio>
+              <v-radio value="buy" color="primary">
+                <template v-slot:label>
+                  <div class="d-flex align-center">
+                    <v-icon color="primary" class="ml-2">mdi-cart-arrow-up</v-icon>
+                    <span>حواله برای فاکتور خرید</span>
+                  </div>
+                </template>
+              </v-radio>
+              <v-radio value="rfbuy" color="warning">
+                <template v-slot:label>
+                  <div class="d-flex align-center">
+                    <v-icon color="warning" class="ml-2">mdi-cart-remove</v-icon>
+                    <span>حواله برای فاکتور برگشت از خرید</span>
+                  </div>
+                </template>
+              </v-radio>
+              <v-radio value="rfsell" color="error">
+                <template v-slot:label>
+                  <div class="d-flex align-center">
+                    <v-icon color="error" class="ml-2">mdi-cart-remove</v-icon>
+                    <span>حواله برای فاکتور برگشت از فروش</span>
+                  </div>
+                </template>
+              </v-radio>
+            </v-radio-group>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- ستون سمت چپ - انتخاب فاکتور -->
+      <v-col cols="12" md="4">
+        <v-card variant="outlined" class="h-100">
+          <v-card-title class="text-subtitle-1 font-weight-bold">
+            <v-icon start>mdi-file-document</v-icon>
+            انتخاب فاکتور
+          </v-card-title>
+          <v-card-text>
+            <v-select
+              v-if="item.type === 'buy'"
+              v-model="item.docBuy"
+              :items="buys"
+              item-title="des"
+              item-value="code"
+              label="فاکتور خرید"
+              variant="outlined"
+              density="compact"
+              :loading="loading"
+              return-object
+              class="mb-4"
+            >
+              <template v-slot:no-data>
+                <v-list-item>
+                  <v-list-item-title>
+                    نتیجه‌ای یافت نشد!
+                  </v-list-item-title>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-select
+              v-if="item.type === 'sell'"
+              v-model="item.docSell"
+              :items="sells"
+              item-title="des"
+              item-value="code"
+              label="فاکتور فروش"
+              variant="outlined"
+              density="compact"
+              :loading="loading"
+              return-object
+              class="mb-4"
+            >
+              <template v-slot:no-data>
+                <v-list-item>
+                  <v-list-item-title>
+                    نتیجه‌ای یافت نشد!
+                  </v-list-item-title>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-select
+              v-if="item.type === 'rfsell'"
+              v-model="item.docRfsell"
+              :items="rfsells"
+              item-title="des"
+              item-value="code"
+              label="فاکتور برگشت از فروش"
+              variant="outlined"
+              density="compact"
+              :loading="loading"
+              return-object
+              class="mb-4"
+            >
+              <template v-slot:no-data>
+                <v-list-item>
+                  <v-list-item-title>
+                    نتیجه‌ای یافت نشد!
+                  </v-list-item-title>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-select
+              v-if="item.type === 'rfbuy'"
+              v-model="item.docRfbuy"
+              :items="rfbuys"
+              item-title="des"
+              item-value="code"
+              label="فاکتور برگشت از خرید"
+              variant="outlined"
+              density="compact"
+              :loading="loading"
+              return-object
+              class="mb-4"
+            >
+              <template v-slot:no-data>
+                <v-list-item>
+                  <v-list-item-title>
+                    نتیجه‌ای یافت نشد!
+                  </v-list-item-title>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-checkbox
+              v-model="item.removeBeforeTickets"
+              :disabled="!item.removeBeforeTicketsEnable"
+              label="حذف حواله‌های انباری که قبلا برای این فاکتور صادر شده است"
+              color="warning"
+              hide-details
+            />
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+
+  <v-snackbar
+    v-model="snackbar.show"
+    :color="snackbar.color"
+    :timeout="3000"
+    location="bottom"
+  >
+    {{ snackbar.message }}
+    <template v-slot:actions>
+      <v-btn
+        variant="text"
+        @click="snackbar.show = false"
+      >
+        بستن
+      </v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
-<style scoped>
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
 
+interface Storeroom {
+  id: number;
+  name: string;
+  manager: string;
+}
+
+interface Document {
+  code: string;
+  des: string;
+}
+
+interface Item {
+  storeroom: Storeroom | null;
+  type: 'sell' | 'buy' | 'rfbuy' | 'rfsell' | 'wastage' | 'used';
+  title: string;
+  docSell: Document | null;
+  docBuy: Document | null;
+  docRfsell: Document | null;
+  docRfbuy: Document | null;
+  removeBeforeTickets: boolean;
+  removeBeforeTicketsEnable: boolean;
+}
+
+const router = useRouter()
+const loading = ref(false)
+
+// Refs
+const storerooms = ref<Storeroom[]>([])
+const buys = ref<Document[]>([])
+const sells = ref<Document[]>([])
+const rfsells = ref<Document[]>([])
+const rfbuys = ref<Document[]>([])
+
+const item = ref<Item>({
+  storeroom: null,
+  type: 'sell',
+  title: 'فروش',
+  docSell: null,
+  docBuy: null,
+  docRfsell: null,
+  docRfbuy: null,
+  removeBeforeTickets: true,
+  removeBeforeTicketsEnable: true
+})
+
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: 'primary' as 'primary' | 'error' | 'success' | 'warning'
+})
+
+// Watchers
+watch(() => item.value.type, (newValue) => {
+  if (newValue === 'sell') {
+    item.value.title = 'فروش'
+    item.value.removeBeforeTicketsEnable = true
+  } else if (newValue === 'buy') {
+    item.value.title = 'خرید'
+    item.value.removeBeforeTicketsEnable = true
+  } else if (newValue === 'rfbuy') {
+    item.value.title = 'برگشت از خرید'
+    item.value.removeBeforeTicketsEnable = true
+  } else if (newValue === 'rfsell') {
+    item.value.title = 'برگشت از فروش'
+    item.value.removeBeforeTicketsEnable = true
+  } else if (newValue === 'wastage') {
+    item.value.title = 'ضایعات'
+    item.value.removeBeforeTicketsEnable = false
+    item.value.removeBeforeTickets = false
+  } else if (newValue === 'used') {
+    item.value.title = 'مصرف مستقیم'
+    item.value.removeBeforeTicketsEnable = false
+    item.value.removeBeforeTickets = false
+  }
+})
+
+// Methods
+const loadData = async () => {
+  loading.value = true
+  try {
+    const [storeroomsResponse, docsResponse] = await Promise.all([
+      axios.post('/api/storeroom/list'),
+      axios.post('/api/storeroom/docs/get')
+    ])
+
+    storerooms.value = storeroomsResponse.data.data.map((element: Storeroom) => ({
+      ...element,
+      name: `${element.name} انباردار : ${element.manager}`
+    }))
+
+    if (storerooms.value.length > 0) {
+      item.value.storeroom = storerooms.value[0]
+    }
+
+    buys.value = docsResponse.data.buys
+    sells.value = docsResponse.data.sells
+    rfsells.value = docsResponse.data.rfsells
+    rfbuys.value = docsResponse.data.rfbuys
+  } catch (error) {
+    console.error('Error loading data:', error)
+    snackbar.value = {
+      show: true,
+      message: 'خطا در بارگذاری داده‌ها',
+      color: 'error'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const submit = async () => {
+  loading.value = true
+  try {
+    if (!item.value.storeroom) {
+      snackbar.value = {
+        show: true,
+        message: 'انبار انتخاب نشده است',
+        color: 'error'
+      }
+      return
+    }
+
+    // بررسی وجود فاکتور بر اساس نوع حواله
+    let selectedDoc: Document | null = null
+    switch (item.value.type) {
+      case 'sell':
+        selectedDoc = item.value.docSell
+        if (!selectedDoc) {
+          snackbar.value = {
+            show: true,
+            message: 'فاکتور فروش انتخاب نشده است',
+            color: 'error'
+          }
+          return
+        }
+        break
+      case 'buy':
+        selectedDoc = item.value.docBuy
+        if (!selectedDoc) {
+          snackbar.value = {
+            show: true,
+            message: 'فاکتور خرید انتخاب نشده است',
+            color: 'error'
+          }
+          return
+        }
+        break
+      case 'rfbuy':
+        selectedDoc = item.value.docRfbuy
+        if (!selectedDoc) {
+          snackbar.value = {
+            show: true,
+            message: 'فاکتور برگشت از خرید انتخاب نشده است',
+            color: 'error'
+          }
+          return
+        }
+        break
+      case 'rfsell':
+        selectedDoc = item.value.docRfsell
+        if (!selectedDoc) {
+          snackbar.value = {
+            show: true,
+            message: 'فاکتور برگشت از فروش انتخاب نشده است',
+            color: 'error'
+          }
+          return
+        }
+        break
+      default:
+        snackbar.value = {
+          show: true,
+          message: 'نوع حواله نامعتبر است',
+          color: 'error'
+        }
+        return
+    }
+
+    // Navigate to appropriate route
+    const routes = {
+      sell: { name: 'storeroom_new_ticket_sell', params: { doc: selectedDoc.code, storeID: item.value.storeroom.id } },
+      buy: { name: 'storeroom_new_ticket_buy', params: { doc: selectedDoc.code, storeID: item.value.storeroom.id } },
+      rfbuy: { name: 'storeroom_new_ticket_rfbuy', params: { doc: selectedDoc.code, storeID: item.value.storeroom.id } },
+      rfsell: { name: 'storeroom_new_ticket_rfsell', params: { doc: selectedDoc.code, storeID: item.value.storeroom.id } }
+    } as const
+
+    type RouteType = keyof typeof routes
+    const routeType = item.value.type as RouteType
+    router.push(routes[routeType])
+  } catch (error) {
+    console.error('Error submitting form:', error)
+    snackbar.value = {
+      show: true,
+      message: 'خطا در ثبت اطلاعات',
+      color: 'error'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// Lifecycle hooks
+loadData()
+</script>
+
+<style scoped>
+.v-card {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.v-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.v-radio :deep(.v-label) {
+  font-size: 0.9rem;
+}
 </style>

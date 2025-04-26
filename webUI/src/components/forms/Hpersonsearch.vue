@@ -9,13 +9,15 @@
           :error-messages="errorMessages"
           :rules="combinedRules"
           :label="label"
-          class=""
+          class="my-0"
           prepend-inner-icon="mdi-account"
           clearable
           @click:clear="clearSelection"
           :loading="loading"
           @keydown.enter="handleEnter"
-          hide-details="auto"
+          hide-details
+          density="compact"
+          style="font-size: 0.7rem;"
         >
           <template v-slot:append-inner>
             <v-icon>{{ menu ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
@@ -23,7 +25,7 @@
         </v-text-field>
       </template>
 
-      <v-card min-width="300" max-width="400">
+      <v-card min-width="300" max-width="400" class="search-card">
         <v-card-text class="pa-2">
           <template v-if="!loading">
             <v-list density="compact" class="list-container">

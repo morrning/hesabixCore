@@ -1,18 +1,18 @@
 {% extends 'pdf/base.html.twig' %}
 
 {% block body %}
-	<div style="width:100%;margin-top:20px;text-align:center;">
+	<div style="width:100%;margin-top:20px;text-align:center;border: 1px solid black;border-radius: 8px;">
 		<div style="width:100%;margin-top:5px;margin-bottom:10px;text-align:center;">
-			<table style="width:100%; border-radius: 8px;">
+			<table style="width:100%;">
 				<tbody>
 					<tr style="font-size:12px;">
-						<td class="right" style="border: 1px solid black;">
+						<td class="right">
 							<p>
 								<b>شماره سند:</b>
 								{{ doc.code }}
 							</p>
 						</td>
-						<td class="right" style="border: 1px solid black;">
+						<td class="right">
 							<p>
 								<b>نوع سند:</b>
 								{% if doc.type == 'cost' %}
@@ -34,7 +34,7 @@
 						</td>
 					</tr>
 					<tr style="font-size:12px;">
-						<td class="right" colspan="2" style="border: 1px solid black;">
+						<td class="right" colspan="2">
 							<p>
 								<b>توضیحات:</b>
 								{{ doc.des }}
@@ -88,9 +88,9 @@
 							{% elseif item.bank %}
 								{{item.bank.name}}
 							{% elseif item.cashdesk %}
-								{{item.salary.name}}
-							{% elseif item.salary %}
 								{{item.cashdesk.name}}
+							{% elseif item.salary %}
+								{{item.salary.name}}
 							{% else %}
 								{{item.ref.name}}
 							{% endif %}

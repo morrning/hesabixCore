@@ -59,6 +59,58 @@ class BankController extends AbstractController
         return $this->json($provider->ArrayEntity2Array($datas, 0));
     }
 
+    #[Route('/api/bank/search', name: 'app_bank_search')]
+    public function app_bank_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('banks');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $query = $entityManager->createQueryBuilder()
+            ->select('b')
+            ->from(BankAccount::class, 'b')
+            ->where('b.bid = :bid')
+            ->andWhere('b.money = :money')
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('money', $acc['money']);
+
+        if (isset($params['search']) && !empty($params['search'])) {
+            $query->andWhere('b.name LIKE :search')
+                ->setParameter('search', '%' . $params['search'] . '%');
+        }
+
+        if (isset($params['page']) && isset($params['itemsPerPage'])) {
+            $query->setFirstResult(($params['page'] - 1) * $params['itemsPerPage'])
+                ->setMaxResults($params['itemsPerPage']);
+        }
+
+        $datas = $query->getQuery()->getResult();
+        
+        // محاسبه موجودی برای هر حساب
+        foreach ($datas as $data) {
+            $bs = 0;
+            $bd = 0;
+            $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bank' => $data
+            ]);
+            foreach ($items as $item) {
+                $bs += $item->getBs();
+                $bd += $item->getBd();
+            }
+            $data->setBalance($bd - $bs);
+        }
+
+        return $this->json([
+            'items' => $provider->ArrayEntity2Array($datas, 0),
+            'total' => count($datas)
+        ]);
+    }
+
     #[Route('/api/bank/info/{code}', name: 'app_bank_info')]
     public function app_bank_info($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
     {
@@ -145,6 +197,88 @@ class BankController extends AbstractController
         $entityManager->remove($bank);
         $log->insert('بانکداری', ' حساب بانکی  با نام ' . $name . ' حذف شد. ', $this->getUser(), $acc['bid']->getId());
         return $this->json(['result' => 1]);
+    }
+
+    #[Route('/api/bank/balance/{code}', name: 'app_bank_balance')]
+    public function app_bank_balance($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('banks');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $bank = $entityManager->getRepository(BankAccount::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'money' => $acc['money'],
+            'code' => $code
+        ]);
+
+        if (!$bank)
+            throw $this->createNotFoundException();
+
+        $bs = 0;
+        $bd = 0;
+        $items = $entityManager->getRepository(HesabdariRow::class)->findBy([
+            'bank' => $bank
+        ]);
+
+        foreach ($items as $item) {
+            $bs += $item->getBs();
+            $bd += $item->getBd();
+        }
+
+        return $this->json([
+            'balance' => $bd - $bs,
+            'debit' => $bd,
+            'credit' => $bs
+        ]);
+    }
+
+    #[Route('/api/bank/transactions/{code}', name: 'app_bank_transactions')]
+    public function app_bank_transactions($code, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('banks');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $bank = $entityManager->getRepository(BankAccount::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'money' => $acc['money'],
+            'code' => $code
+        ]);
+
+        if (!$bank)
+            throw $this->createNotFoundException();
+
+        $query = $entityManager->createQueryBuilder()
+            ->select('r')
+            ->from(HesabdariRow::class, 'r')
+            ->where('r.bank = :bank')
+            ->andWhere('r.bid = :bid')
+            ->setParameter('bank', $bank)
+            ->setParameter('bid', $acc['bid']);
+
+        if (isset($params['startDate']) && isset($params['endDate'])) {
+            $query->andWhere('r.doc.date BETWEEN :startDate AND :endDate')
+                ->setParameter('startDate', $params['startDate'])
+                ->setParameter('endDate', $params['endDate']);
+        }
+
+        if (isset($params['page']) && isset($params['itemsPerPage'])) {
+            $query->setFirstResult(($params['page'] - 1) * $params['itemsPerPage'])
+                ->setMaxResults($params['itemsPerPage']);
+        }
+
+        $transactions = $query->getQuery()->getResult();
+
+        return $this->json([
+            'items' => $provider->ArrayEntity2Array($transactions, 0),
+            'total' => count($transactions)
+        ]);
     }
 
     /**

@@ -1,142 +1,195 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button type="button" @click="$router.back()" class="btn text-warning mx-2 px-2">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        مشخصات انبار </h3>
-      <div class="block-options">
-        <button @click="save()" type="button" class="btn btn-sm btn-alt-primary">
-          <i class="fa fa-save me-2"></i>
-          ثبت
-        </button>
-      </div>
-    </div>
-    <div class="block-content py-3 vl-parent">
-      <loading color="blue" loader="dots" v-model:active="isLoading" :is-full-page="false"/>
-      <div class="container">
-        <div class="row py-3">
-          <div class="col-sm-12 col-md-12">
-            <div>
-              <label class="me-4 text-primary">وضعیت انبار</label>
-              <div class="form-check form-check-inline">
-                <input v-model="this.data.active" class="form-check-input" type="radio" value="true">
-                <label class="form-check-label" for="inlineCheckbox1">فعال</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input v-model="this.data.active" class="form-check-input" type="radio" value="false">
-                <label class="form-check-label" for="inlineCheckbox2">غیرفعال</label>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-sm-12 col-md-6">
-            <div class="form-floating mb-4">
-              <input v-model="data.name" class="form-control" type="text">
-              <label class="form-label"><span class="text-danger">(لازم)</span> نام انبار</label>
-            </div>
-            <div class="form-floating mb-4">
-              <input v-model="data.tel" class="form-control" type="text">
-              <label class="form-label">تلفن</label>
-            </div>
-          </div>
-          <div class="col-sm-12 col-md-6">
-            <div class="form-floating mb-4">
-              <input v-model="data.manager" class="form-control" type="text">
-              <label class="form-label">انباردار</label>
-            </div>
-          </div>
-          <div class="col-sm-12 col-md-12">
-            <div class="form-floating mb-4">
-              <input v-model="data.adr" class="form-control" type="text">
-              <label class="form-label">آدرس</label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <v-toolbar color="toolbar" title="مشخصات انبار">
+    <template v-slot:prepend>
+      <v-tooltip text="بازگشت" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+            icon="mdi-arrow-right" />
+        </template>
+      </v-tooltip>
+    </template>
+    <v-spacer />
+    <v-btn-toggle
+      v-model="data.active"
+      mandatory
+      density="compact"
+      class="mx-2"
+    >
+      <v-btn
+        :value="true"
+        size="small"
+        :class="data.active ? 'bg-success' : ''"
+      >
+        <v-icon size="small" start>mdi-check-circle</v-icon>
+        فعال
+      </v-btn>
+      <v-btn
+        :value="false"
+        size="small"
+        :class="!data.active ? 'bg-error' : ''"
+      >
+        <v-icon size="small" start>mdi-close-circle</v-icon>
+        غیرفعال
+      </v-btn>
+    </v-btn-toggle>
+    <v-tooltip text="ثبت" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" color="primary" icon="mdi-content-save" @click="save" :loading="isLoading" />
+      </template>
+    </v-tooltip>
+  </v-toolbar>
+  <v-container fluid>
+    <v-row>
+      <v-col cols="12" md="6">
+        <v-text-field 
+          v-model="data.name" 
+          label="نام انبار" 
+          :rules="[v => !!v || 'نام انبار الزامی است']" 
+          required
+          variant="outlined" 
+          density="compact"
+        >
+          <template v-slot:label>
+            <span class="text-danger">(لازم)</span> نام انبار
+          </template>
+        </v-text-field>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <v-text-field 
+          v-model="data.manager" 
+          label="انباردار" 
+          variant="outlined" 
+          density="compact"
+        ></v-text-field>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <v-text-field 
+          v-model="data.tel" 
+          label="تلفن" 
+          variant="outlined" 
+          density="compact"
+        ></v-text-field>
+      </v-col>
+
+      <v-col cols="12">
+        <v-text-field 
+          v-model="data.adr" 
+          label="آدرس" 
+          variant="outlined" 
+          density="compact"
+        ></v-text-field>
+      </v-col>
+    </v-row>
+  </v-container>
+
+  <v-snackbar
+    v-model="snackbar.show"
+    :color="snackbar.color"
+    :timeout="3000"
+    location="bottom"
+  >
+    {{ snackbar.message }}
+    <template v-slot:actions>
+      <v-btn
+        variant="text"
+        @click="snackbar.show = false"
+      >
+        بستن
+      </v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
-<script>
-import axios from "axios";
-import Swal from "sweetalert2";
-import Loading from 'vue-loading-overlay';
-import 'vue-loading-overlay/dist/css/index.css';
-import {Money3} from "v-money3";
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
 
-export default {
-  name: "mod",
-  components: {
-    Loading,
-    Money3
-  },
-  data: ()=>{return{
-    isLoading: false,
-    units:'',
-    data: {
-      id:0,
-      name: '',
-      manager: '',
-      active: true,
-      tel: '',
-      adr: '',
-    },
-  }},
-  mounted() {
-    this.loadData(this.$route.params.id);
-  },
-  beforeRouteUpdate(to,from){
-    this.loadData(to.params.id);
-  },
-  methods: {
-    loadData(id = '') {
-      this.isLoading = true;
-      if (id != '') {
-        //load user info
-        this.isLoading = true;
-        axios.post('/api/storeroom/info/' + id).then((response) => {
-          this.data = response.data;
-        });
-      }
-      this.isLoading = false;
-    },
-    save() {
-      if (this.data.name.length === 0)
-        Swal.fire({
-          text: 'نام کالا یا خدمات الزامی است.',
-          icon: 'error',
-          confirmButtonText: 'قبول'
-        });
-      else {
-        this.isLoading = true;
-        axios.post('/api/storeroom/mod/' + this.data.id, this.data).then((response) => {
-          this.isLoading = false;
-          if (response.data.result == 2) {
-            Swal.fire({
-              text: 'قبلا ثبت شده است.',
-              icon: 'error',
-              confirmButtonText: 'قبول'
-            });
-          } else {
-            Swal.fire({
-              text: 'مشخصات انبار ثبت شد.',
-              icon: 'success',
-              confirmButtonText: 'قبول'
-            }).then(() => {
-              this.$router.push('/acc/storeroom/list')
-            });
-          }
-        })
-      }
+const route = useRoute();
+const router = useRouter();
 
-    }
+// Refs
+const isLoading = ref(false);
+const data = ref({
+  id: 0,
+  name: '',
+  manager: '',
+  active: true,
+  tel: '',
+  adr: '',
+});
+
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: 'primary'
+});
+
+// نمایش پیام
+const showMessage = (message, color = 'primary') => {
+  snackbar.value = {
+    show: true,
+    message,
+    color
+  };
+};
+
+// بارگذاری داده‌ها
+const loadData = async (id = '') => {
+  if (!id) return;
+
+  isLoading.value = true;
+  try {
+    const response = await axios.post('/api/storeroom/info/' + id);
+    data.value = response.data;
+  } catch (error) {
+    console.error('Error loading data:', error);
+    showMessage('خطا در بارگذاری داده‌ها: ' + error.message, 'error');
+  } finally {
+    isLoading.value = false;
   }
-}
+};
+
+// ذخیره داده‌ها
+const save = async () => {
+  if (!data.value.name) {
+    showMessage('نام انبار الزامی است.', 'error');
+    return;
+  }
+
+  isLoading.value = true;
+  try {
+    const response = await axios.post('/api/storeroom/mod/' + data.value.id, data.value);
+
+    if (response.data.result === 2) {
+      showMessage('قبلا ثبت شده است.', 'error');
+    } else {
+      showMessage('مشخصات انبار ثبت شد.', 'success');
+      // تاخیر در انتقال به صفحه لیست برای نمایش اسنک‌بار
+      setTimeout(() => {
+        router.push('/acc/storeroom/list');
+      }, 1000);
+    }
+  } catch (error) {
+    console.error('Error saving data:', error);
+    showMessage('خطا در ذخیره داده‌ها: ' + error.message, 'error');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// مانت کامپوننت
+onMounted(() => {
+  loadData(route.params.id);
+});
 </script>
 
-<style scoped>
-
+<style>
+.v-radio-group {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
 </style>
