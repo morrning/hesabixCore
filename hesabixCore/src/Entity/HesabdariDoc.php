@@ -50,7 +50,7 @@ class HesabdariDoc
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $des = null;
 
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(type: Types::BIGINT, nullable: true)]
     private ?int $amount = 0;
 
     #[ORM\ManyToOne]
