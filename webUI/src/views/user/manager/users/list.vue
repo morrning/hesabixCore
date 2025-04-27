@@ -145,7 +145,7 @@ loadFromServer();
                     <v-list-item
                       class="text-dark"
                       @click="openChangePasswordDialog(item.id)"
-                      :title="$t('dialog.change_password')"
+                      :title="$t('dialog.change_password_label')"
                       prepend-icon="mdi-lock-reset"
                     />
                   </v-list>

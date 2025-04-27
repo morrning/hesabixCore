@@ -1091,12 +1091,10 @@ class PersonsController extends AbstractController
             ->andWhere('d.type = :type')
             ->andWhere('d.year = :year')
             ->andWhere('d.money = :money')
-            ->setParameters([
-                    'bid' => $acc['bid'],
-                    'type' => 'person_receive',
-                    'year' => $acc['year'],
-                    'money' => $acc['money'],
-                ])
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('type', 'person_receive')
+            ->setParameter('year', $acc['year'])
+            ->setParameter('money', $acc['money'])
             ->orderBy('d.id', 'DESC');
 
         // جست‌وجو
@@ -1122,7 +1120,8 @@ class PersonsController extends AbstractController
                 $startOfWeek = $jdate->shamsiDate(0, 0, -$dayOfWeek);
                 $endOfWeek = $jdate->shamsiDate(0, 0, 6 - $dayOfWeek);
                 $queryBuilder->andWhere('d.date BETWEEN :start AND :end')
-                    ->setParameters(['start' => $startOfWeek, 'end' => $endOfWeek]);
+                    ->setParameter('start', $startOfWeek)
+                    ->setParameter('end', $endOfWeek);
                 break;
             case 'thisMonth':
                 $currentYear = (int) $jdate->jdate('Y', time());
@@ -1131,7 +1130,8 @@ class PersonsController extends AbstractController
                 $startOfMonth = sprintf('%d/%02d/01', $currentYear, $currentMonth);
                 $endOfMonth = sprintf('%d/%02d/%02d', $currentYear, $currentMonth, $daysInMonth);
                 $queryBuilder->andWhere('d.date BETWEEN :start AND :end')
-                    ->setParameters(['start' => $startOfMonth, 'end' => $endOfMonth]);
+                    ->setParameter('start', $startOfMonth)
+                    ->setParameter('end', $endOfMonth);
                 break;
             case 'all':
             default:
