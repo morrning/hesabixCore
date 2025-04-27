@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 #[AsCommand(
     name: 'hesabix:update',
-    description: 'نرم‌افزار را با دریافت تغییرات از GitHub، پاک کردن کش، به‌روزرسانی دیتابیس و ساخت فرانت‌اند به‌روز می‌کند.'
+    description: 'Updates the software by pulling changes from GitHub, clearing cache, updating the database, and building the frontend.'
 )]
 class UpdateSoftwareCommand extends Command
 {
@@ -43,21 +43,21 @@ class UpdateSoftwareCommand extends Command
         $this->webUIDir = $this->rootDir . '/webUI';
         $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
         $this->env = $envConfig['APP_ENV'] ?? getenv('APP_ENV') ?: 'prod';
-        $this->logger->info("محیط شناسایی شد: " . $this->env);
+        $this->logger->info("Environment detected: " . $this->env);
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->addArgument('state-file', InputArgument::OPTIONAL, 'مسیر فایل وضعیت');
+        $this->addArgument('state-file', InputArgument::OPTIONAL, 'Path to the state file');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $lock = $this->lockFactory->createLock('hesabix-update', 3600);
         if (!$lock->acquire()) {
-            $this->writeOutput($output, '<error>یک فرآیند به‌روزرسانی دیگر در حال اجراست. لطفاً بعداً تلاش کنید.</error>');
-            $this->logger->warning('تلاش برای به‌روزرسانی به دلیل قفل موجود متوقف شد.');
+            $this->writeOutput($output, '<error>Another update process is running. Please try again later.</error>');
+            $this->logger->warning('Update attempt stopped due to an existing lock.');
             return Command::FAILURE;
         }
 
@@ -76,18 +76,18 @@ class UpdateSoftwareCommand extends Command
 
         $uuid = json_decode(file_get_contents($this->stateFile), true)['uuid'];
 
-        $this->logger->info("شروع به‌روزرسانی نرم‌افزار با UUID: $uuid در حالت {$this->env}");
-        $this->writeOutput($output, "شروع به‌روزرسانی نرم‌افزار (UUID: $uuid) در حالت {$this->env}");
+        $this->logger->info("Starting software update with UUID: $uuid in {$this->env} mode");
+        $this->writeOutput($output, "Starting software update (UUID: $uuid) in {$this->env} mode");
 
         $state = $this->loadState($uuid);
         $state['log'] = $state['log'] ?? '';
 
         if ($this->isUpToDate()) {
-            $this->writeOutput($output, '<info>نرم‌افزار از قبل با مخزن ریموت به‌روز است.</info>');
-            $this->logger->info('به‌روزرسانی لازم نیست، نرم‌افزار به‌روز است.');
-            $state['log'] .= "به‌روزرسانی لازم نیست، نرم‌افزار به‌روز است.\n";
+            $this->writeOutput($output, '<info>Software is already up to date with the remote repository.</info>');
+            $this->logger->info('No update needed, software is up to date.');
+            $state['log'] .= "No update needed, software is up to date.\n";
             $state['completedSteps'] = ['post_update_test'];
-            $this->saveState($uuid, $state, $output, 'به‌روزرسانی لازم نیست');
+            $this->saveState($uuid, $state, $output, 'No update needed');
             $lock->release();
             return Command::SUCCESS;
         }
@@ -103,11 +103,11 @@ class UpdateSoftwareCommand extends Command
             if (!in_array('pre_checks', $state['completedSteps'])) {
                 $this->preUpdateChecks($output);
                 $state['completedSteps'][] = 'pre_checks';
-                $this->saveState($uuid, $state, $output, 'بررسی‌های پیش از به‌روزرسانی تکمیل شد');
+                $this->saveState($uuid, $state, $output, 'Pre-update checks completed');
             }
 
             if (!in_array('archive_backup', $state['completedSteps'])) {
-                $this->writeOutput($output, 'در حال بکاپ‌گیری از hesabixArchive...');
+                $this->writeOutput($output, 'Backing up hesabixArchive...');
                 $archiveBackupDir = $this->backupDir . '/' . Uuid::uuid4();
                 if (!is_dir($archiveBackupDir)) {
                     mkdir($archiveBackupDir, 0755, true);
@@ -118,49 +118,49 @@ class UpdateSoftwareCommand extends Command
                 $archiveHashBefore = $this->getDirectoryHash($this->archiveDir);
                 $state['archiveHashBefore'] = $archiveHashBefore;
                 $state['completedSteps'][] = 'archive_backup';
-                $this->saveState($uuid, $state, $output, 'بکاپ hesabixArchive انجام شد');
+                $this->saveState($uuid, $state, $output, 'hesabixArchive backup completed');
             } else {
                 $archiveBackup = $state['archiveBackup'];
                 $archiveHashBefore = $state['archiveHashBefore'];
             }
 
             if (!in_array('git_pull', $state['completedSteps'])) {
-                $this->writeOutput($output, 'تنظیم ردیابی برای شاخه master...');
+                $this->writeOutput($output, 'Setting up tracking for master branch...');
                 $this->runProcess(['git', 'branch', '--set-upstream-to=origin/master', 'master'], $this->rootDir, $output, 1);
-                $this->writeOutput($output, 'دریافت آخرین تغییرات از GitHub...');
+                $this->writeOutput($output, 'Fetching latest changes from GitHub...');
                 $gitHeadBefore = $this->getCurrentGitHead();
                 $this->runProcess(['git', 'pull'], $this->rootDir, $output, 3);
                 $state['gitHeadBefore'] = $gitHeadBefore;
                 $state['completedSteps'][] = 'git_pull';
-                $this->saveState($uuid, $state, $output, 'دریافت تغییرات Git تکمیل شد');
+                $this->saveState($uuid, $state, $output, 'Git changes fetched');
             } else {
                 $gitHeadBefore = $state['gitHeadBefore'];
             }
 
             if (!in_array('composer_install', $state['completedSteps'])) {
-                $this->writeOutput($output, 'نصب وابستگی‌ها...');
+                $this->writeOutput($output, 'Installing dependencies...');
                 $composerCommand = ['composer', 'install', '--optimize-autoloader'];
                 if ($this->env !== 'dev') {
                     $composerCommand[] = '--no-dev';
                 }
                 $this->runProcess($composerCommand, $this->appDir, $output, 3, true);
                 $state['completedSteps'][] = 'composer_install';
-                $this->saveState($uuid, $state, $output, 'وابستگی‌ها نصب شدند');
+                $this->saveState($uuid, $state, $output, 'Dependencies installed');
             }
 
             if (!in_array('composer_install_core', $state['completedSteps'])) {
-                $this->writeOutput($output, 'نصب وابستگی‌ها در hesabixCore...');
+                $this->writeOutput($output, 'Installing dependencies in hesabixCore...');
                 $composerCommand = ['composer', 'install', '--optimize-autoloader'];
                 if ($this->env !== 'dev') {
                     $composerCommand[] = '--no-dev';
                 }
                 $this->runProcess($composerCommand, $this->rootDir . '/hesabixCore', $output, 3, true);
                 $state['completedSteps'][] = 'composer_install_core';
-                $this->saveState($uuid, $state, $output, 'وابستگی‌ها در hesabixCore نصب شدند');
+                $this->saveState($uuid, $state, $output, 'Dependencies installed in hesabixCore');
             }
 
             if (!in_array('cache_clear', $state['completedSteps'])) {
-                $this->writeOutput($output, 'پاک کردن کش...');
+                $this->writeOutput($output, 'Clearing cache...');
                 $cacheBackupDir = $this->backupDir . '/' . Uuid::uuid4();
                 if (!is_dir($cacheBackupDir)) {
                     mkdir($cacheBackupDir, 0755, true);
@@ -170,13 +170,13 @@ class UpdateSoftwareCommand extends Command
                 $state['cacheBackup'] = $cacheBackup;
                 $this->runProcess(['php', 'bin/console', 'cache:clear', "--env={$this->env}"], $this->appDir, $output, 3);
                 $state['completedSteps'][] = 'cache_clear';
-                $this->saveState($uuid, $state, $output, 'کش پاک شد');
+                $this->saveState($uuid, $state, $output, 'Cache cleared');
             } else {
                 $cacheBackup = $state['cacheBackup'];
             }
 
             if (!in_array('db_update', $state['completedSteps'])) {
-                $this->writeOutput($output, 'به‌روزرسانی طرح دیتابیس...');
+                $this->writeOutput($output, 'Updating database schema...');
                 $dbBackupDir = $this->backupDir . '/' . Uuid::uuid4();
                 if (!is_dir($dbBackupDir)) {
                     mkdir($dbBackupDir, 0755, true);
@@ -186,7 +186,7 @@ class UpdateSoftwareCommand extends Command
                 $state['dbBackup'] = $dbBackup;
                 $this->runProcess(['php', 'bin/console', 'doctrine:schema:update', '--force', '--no-interaction'], $this->appDir, $output, 3);
                 $state['completedSteps'][] = 'db_update';
-                $this->saveState($uuid, $state, $output, 'طرح دیتابیس به‌روز شد');
+                $this->saveState($uuid, $state, $output, 'Database schema updated');
             } else {
                 $dbBackup = $state['dbBackup'];
             }
@@ -194,68 +194,68 @@ class UpdateSoftwareCommand extends Command
             if (!in_array('archive_check', $state['completedSteps'])) {
                 $archiveHashAfter = $this->getDirectoryHash($this->archiveDir);
                 if ($archiveHashBefore !== $archiveHashAfter) {
-                    $this->writeOutput($output, 'آرشیو hesabix تغییر کرده، بازگردانی از بکاپ...');
+                    $this->writeOutput($output, 'hesabixArchive has changed, restoring from backup...');
                     $this->restoreArchive($archiveBackup);
-                    $this->writeOutput($output, 'آرشیو hesabix با موفقیت بازگردانی شد.');
+                    $this->writeOutput($output, 'hesabixArchive restored successfully.');
                 } else {
-                    $this->writeOutput($output, 'آرشیو hesabix بدون تغییر، نیازی به بازگردانی نیست.');
+                    $this->writeOutput($output, 'hesabixArchive unchanged, no restoration needed.');
                 }
                 $state['completedSteps'][] = 'archive_check';
-                $this->saveState($uuid, $state, $output, 'بررسی آرشیو تکمیل شد');
+                $this->saveState($uuid, $state, $output, 'Archive check completed');
             }
 
             if (!in_array('npm_install', $state['completedSteps'])) {
                 if (!is_dir($this->webUIDir)) {
-                    throw new \RuntimeException('پوشه فرانت‌اند webUI در مسیر وجود ندارد: ' . $this->webUIDir);
+                    throw new \RuntimeException('Frontend directory webUI does not exist at: ' . $this->webUIDir);
                 }
-                $this->writeOutput($output, 'نصب پکیج‌های npm در webUI...');
+                $this->writeOutput($output, 'Installing npm packages in webUI...');
                 $this->runProcess(['npm', 'install'], $this->webUIDir, $output, 3);
                 $state['completedSteps'][] = 'npm_install';
-                $this->saveState($uuid, $state, $output, 'پکیج‌های npm در webUI نصب شدند');
+                $this->saveState($uuid, $state, $output, 'npm packages installed in webUI');
             }
 
             if (!in_array('npm_build', $state['completedSteps'])) {
-                $this->writeOutput($output, 'ساخت فرانت‌اند در webUI...');
-                $this->runProcess(['npm', 'run', 'build'], $this->webUIDir, $output, 3);
+                $this->writeOutput($output, 'Building frontend in webUI...');
+                $this->runProcess(['npm', 'run', 'build-only'], $this->webUIDir, $output, 3);
                 $state['completedSteps'][] = 'npm_build';
-                $this->saveState($uuid, $state, $output, 'فرانت‌اند در webUI ساخته شد');
+                $this->saveState($uuid, $state, $output, 'Frontend built in webUI');
             }
 
             if (!in_array('post_update_test', $state['completedSteps'])) {
-                $this->writeOutput($output, 'اجرای تست‌های پس از به‌روزرسانی...');
+                $this->writeOutput($output, 'Running post-update tests...');
                 $this->postUpdateChecks($output);
                 $state['completedSteps'][] = 'post_update_test';
-                $this->saveState($uuid, $state, $output, 'تست‌های پس از به‌روزرسانی تکمیل شد');
+                $this->saveState($uuid, $state, $output, 'Post-update tests completed');
             }
 
             $commitHash = $this->getCurrentVersion();
-            $this->writeOutput($output, "نرم‌افزار به کمیت $commitHash به‌روز شد");
+            $this->writeOutput($output, "Software updated to commit $commitHash");
             $state['commit_hash'] = $commitHash;
 
-            $this->logger->info('به‌روزرسانی نرم‌افزار با موفقیت انجام شد!');
-            $this->writeOutput($output, '<info>به‌روزرسانی نرم‌افزار با موفقیت انجام شد!</info>');
-            $this->saveState($uuid, $state, $output, 'به‌روزرسانی با موفقیت تکمیل شد');
+            $this->logger->info('Software update completed successfully!');
+            $this->writeOutput($output, '<info>Software update completed successfully!</info>');
+            $this->saveState($uuid, $state, $output, 'Update completed successfully');
 
-            $this->writeOutput($output, 'پاکسازی تمام پوشه‌های موقت...');
+            $this->writeOutput($output, 'Cleaning up all temporary directories...');
             $this->cleanupAllTempDirectories();
 
             $lock->release();
             return Command::SUCCESS;
         } catch (ProcessFailedException $e) {
             $errorMessage = $e->getProcess()->getErrorOutput() ?: $e->getMessage();
-            $this->logger->error('فرآیند ناموفق بود: ' . $errorMessage);
-            $this->writeOutput($output, '<error>خطا در فرآیند: ' . $errorMessage . '</error>');
+            $this->logger->error('Process failed: ' . $errorMessage);
+            $this->writeOutput($output, '<error>Process error: ' . $errorMessage . '</error>');
             $this->rollback($gitHeadBefore, $cacheBackup, $dbBackup, $archiveBackup, $output);
             $state['error'] = $errorMessage;
-            $this->saveState($uuid, $state, $output, 'فرآیند ناموفق بود و بازگردانی انجام شد');
+            $this->saveState($uuid, $state, $output, 'Process failed and rollback performed');
             $lock->release();
             return Command::FAILURE;
         } catch (\Exception $e) {
-            $this->logger->error('به‌روزرسانی ناموفق بود: ' . $e->getMessage());
-            $this->writeOutput($output, '<error>خطا: ' . $e->getMessage() . '</error>');
+            $this->logger->error('Update failed: ' . $e->getMessage());
+            $this->writeOutput($output, '<error>Error: ' . $e->getMessage() . '</error>');
             $this->rollback($gitHeadBefore, $cacheBackup, $dbBackup, $archiveBackup, $output);
             $state['error'] = $e->getMessage();
-            $this->saveState($uuid, $state, $output, 'به‌روزرسانی ناموفق بود و بازگردانی انجام شد');
+            $this->saveState($uuid, $state, $output, 'Update failed and rollback performed');
             $lock->release();
             return Command::FAILURE;
         } finally {
@@ -296,15 +296,15 @@ class UpdateSoftwareCommand extends Command
                     $process->mustRun();
                     $this->writeOutput($output, $process->getOutput());
                 }
-                $this->logger->info('دستور با موفقیت اجرا شد: ' . implode(' ', $command));
+                $this->logger->info('Command executed successfully: ' . implode(' ', $command));
                 return;
             } catch (ProcessFailedException $e) {
                 $attempt++;
                 $errorMessage = $e->getProcess()->getErrorOutput() ?: $e->getMessage();
-                $this->logger->warning("تلاش $attempt ناموفق برای " . implode(' ', $command) . ": $errorMessage");
-                $this->writeOutput($output, "<comment>تلاش $attempt ناموفق: $errorMessage</comment>");
+                $this->logger->warning("Attempt $attempt failed for " . implode(' ', $command) . ": $errorMessage");
+                $this->writeOutput($output, "<comment>Attempt $attempt failed: $errorMessage</comment>");
                 if ($attempt === $retries) {
-                    throw new \RuntimeException('دستور "' . implode(' ', $command) . '" پس از ' . $retries . ' تلاش ناموفق بود: ' . $errorMessage);
+                    throw new \RuntimeException('Command "' . implode(' ', $command) . '" failed after ' . $retries . ' attempts: ' . $errorMessage);
                 }
                 sleep(5);
             }
@@ -321,8 +321,8 @@ class UpdateSoftwareCommand extends Command
         $process = new Process(['git', 'rev-parse', 'HEAD'], $this->rootDir);
         $process->run();
         if (!$process->isSuccessful()) {
-            $this->logger->warning('دریافت HEAD فعلی Git ناموفق بود: ' . $process->getErrorOutput());
-            return 'ناشناخته';
+            $this->logger->warning('Failed to get current Git HEAD: ' . $process->getErrorOutput());
+            return 'unknown';
         }
         return trim($process->getOutput());
     }
@@ -336,7 +336,7 @@ class UpdateSoftwareCommand extends Command
             $status = $process->getOutput();
             return strpos($status, 'Your branch is up to date') !== false;
         } catch (\Exception $e) {
-            $this->logger->warning('بررسی به‌روز بودن نرم‌افزار ناموفق بود: ' . $e->getMessage());
+            $this->logger->warning('Failed to check if software is up to date: ' . $e->getMessage());
             return false;
         }
     }
@@ -351,7 +351,7 @@ class UpdateSoftwareCommand extends Command
         $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
         $dbUrl = $envConfig['DATABASE_URL'] ?? getenv('DATABASE_URL');
         if (!$dbUrl) {
-            throw new \RuntimeException('تعیین DATABASE_URL از .env.local.php یا محیط ممکن نبود.');
+            throw new \RuntimeException('Could not determine DATABASE_URL from .env.local.php or environment.');
         }
 
         $urlParts = parse_url($dbUrl);
@@ -384,7 +384,7 @@ class UpdateSoftwareCommand extends Command
                 putenv("PGPASSWORD=$dbPass");
             }
         } else {
-            throw new \RuntimeException("طرح دیتابیس پشتیبانی‌نشده: $dbScheme.");
+            throw new \RuntimeException("Unsupported database scheme: $dbScheme.");
         }
 
         $process = new Process($command, $this->rootDir);
@@ -392,9 +392,9 @@ class UpdateSoftwareCommand extends Command
         $process->mustRun();
 
         if (!file_exists($backupFile) || filesize($backupFile) === 0) {
-            throw new \RuntimeException('ایجاد بکاپ دیتابیس ناموفق بود.');
+            throw new \RuntimeException('Database backup creation failed.');
         }
-        $this->logger->info("بکاپ دیتابیس در مسیر ایجاد شد: $backupFile (طرح: $dbScheme)");
+        $this->logger->info("Database backup created at: $backupFile (scheme: $dbScheme)");
     }
 
     private function restoreArchive(string $backupFile): void
@@ -403,7 +403,7 @@ class UpdateSoftwareCommand extends Command
         $this->runProcess(['mkdir', $this->archiveDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
         $this->runProcess(['tar', '-xf', $backupFile, '-C', $this->rootDir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
         if (!is_dir($this->archiveDir)) {
-            throw new \RuntimeException('بازگردانی hesabixArchive از بکاپ tar ناموفق بود.');
+            throw new \RuntimeException('Restoration of hesabixArchive from tar backup failed.');
         }
     }
 
@@ -429,14 +429,14 @@ class UpdateSoftwareCommand extends Command
 
     private function rollback(?string $gitHeadBefore, ?string $cacheBackup, ?string $dbBackup, ?string $archiveBackup, OutputInterface $output): void
     {
-        $this->writeOutput($output, 'بازگردانی تغییرات...');
+        $this->writeOutput($output, 'Rolling back changes...');
 
         if ($gitHeadBefore) {
             try {
                 $this->runProcess(['git', 'reset', '--hard', $gitHeadBefore], $this->rootDir, $output);
-                $this->logger->info('Git به ' . $gitHeadBefore . ' بازگردانی شد');
+                $this->logger->info('Git rolled back to ' . $gitHeadBefore);
             } catch (\Exception $e) {
-                $this->logger->error('بازگردانی Git ناموفق بود: ' . $e->getMessage());
+                $this->logger->error('Git rollback failed: ' . $e->getMessage());
             }
         }
 
@@ -444,9 +444,9 @@ class UpdateSoftwareCommand extends Command
             try {
                 $this->runProcess(['rm', '-rf', $this->appDir . '/var/cache'], $this->rootDir, $output);
                 $this->runProcess(['cp', '-r', $cacheBackup, $this->appDir . '/var/cache'], $this->rootDir, $output);
-                $this->logger->info('کش بازگردانی شد');
+                $this->logger->info('Cache restored');
             } catch (\Exception $e) {
-                $this->logger->error('بازگردانی کش ناموفق بود: ' . $e->getMessage());
+                $this->logger->error('Cache rollback failed: ' . $e->getMessage());
             }
         }
 
@@ -455,7 +455,7 @@ class UpdateSoftwareCommand extends Command
                 $envConfig = file_exists($this->appDir . '/.env.local.php') ? require $this->appDir . '/.env.local.php' : [];
                 $dbUrl = $envConfig['DATABASE_URL'] ?? getenv('DATABASE_URL');
                 if (!$dbUrl) {
-                    throw new \RuntimeException('تعیین DATABASE_URL برای بازگردانی ممکن نبود.');
+                    throw new \RuntimeException('Could not determine DATABASE_URL for rollback.');
                 }
 
                 $urlParts = parse_url($dbUrl);
@@ -488,23 +488,23 @@ class UpdateSoftwareCommand extends Command
                     }
                     $process = new Process($command, $this->rootDir);
                 } else {
-                    throw new \RuntimeException("طرح دیتابیس پشتیبانی‌نشده برای بازگردانی: $dbScheme.");
+                    throw new \RuntimeException("Unsupported database scheme for rollback: $dbScheme.");
                 }
 
                 $process->setTimeout(3600);
                 $process->mustRun();
-                $this->logger->info('دیتابیس بازگردانی شد');
+                $this->logger->info('Database restored');
             } catch (\Exception $e) {
-                $this->logger->error('بازگردانی دیتابیس ناموفق بود: ' . $e->getMessage());
+                $this->logger->error('Database rollback failed: ' . $e->getMessage());
             }
         }
 
         if ($archiveBackup) {
             try {
                 $this->restoreArchive($archiveBackup);
-                $this->logger->info('آرشیو hesabix بازگردانی شد');
+                $this->logger->info('hesabixArchive restored');
             } catch (\Exception $e) {
-                $this->logger->error('بازگردانی آرشیو ناموفق بود: ' . $e->getMessage());
+                $this->logger->error('Archive rollback failed: ' . $e->getMessage());
             }
         }
     }
@@ -517,7 +517,7 @@ class UpdateSoftwareCommand extends Command
         foreach ($directories as $dir) {
             $dirName = basename($dir);
             if (!in_array($dirName, $protectedDirs)) {
-                $this->logger->info("حذف پوشه موقت: $dir");
+                $this->logger->info("Removing temporary directory: $dir");
                 $this->runProcess(['rm', '-rf', $dir], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
             }
         }
@@ -539,12 +539,12 @@ class UpdateSoftwareCommand extends Command
         $state['uuid'] = $uuid;
         $state['log'] = ($state['log'] ?? '') . ($output->getVerbosity() >= OutputInterface::VERBOSITY_NORMAL ? $message . "\n" : '');
         file_put_contents($this->stateFile, json_encode($state, JSON_PRETTY_PRINT));
-        $this->logger->debug('وضعیت در مسیر ذخیره شد: ' . $this->stateFile);
+        $this->logger->debug('State saved at: ' . $this->stateFile);
     }
 
     private function preUpdateChecks(OutputInterface $output): void
     {
-        $this->writeOutput($output, 'اجرای بررسی‌های پیش از به‌روزرسانی...');
+        $this->writeOutput($output, 'Running pre-update checks...');
         $this->runProcess(['git', '--version'], $this->rootDir, $output, 1);
         $this->runProcess(['composer', '--version'], $this->rootDir, $output, 1, true);
         $this->runProcess(['php', '-v'], $this->rootDir, $output, 1);
@@ -554,17 +554,17 @@ class UpdateSoftwareCommand extends Command
         $process->run();
         $user = trim($process->getOutput());
         if ($user === 'root') {
-            $this->writeOutput($output, '<warning>اجرای دستور به‌عنوان root ممکن است خطرناک باشد. توصیه می‌شود از کاربر غیر-root استفاده کنید.</warning>');
-            $this->logger->warning('دستور به‌عنوان کاربر root اجرا شده است.');
+            $this->writeOutput($output, '<warning>Running the command as root can be risky. It is recommended to use a non-root user.</warning>');
+            $this->logger->warning('Command executed as root user.');
         }
 
-        $this->writeOutput($output, 'بررسی‌های پیش از به‌روزرسانی با موفقیت تکمیل شد.');
+        $this->writeOutput($output, 'Pre-update checks completed successfully.');
     }
 
     private function postUpdateChecks(OutputInterface $output): void
     {
-        $this->writeOutput($output, 'اجرای بررسی‌های پس از به‌روزرسانی...');
+        $this->writeOutput($output, 'Running post-update checks...');
         $this->runProcess(['php', 'bin/console', 'cache:pool:clear', 'cache.global_clearer'], $this->appDir, $output, 1);
-        $this->writeOutput($output, 'بررسی‌های پس از به‌روزرسانی با موفقیت تکمیل شد.');
+        $this->writeOutput($output, 'Post-update checks completed successfully.');
     }
 }
