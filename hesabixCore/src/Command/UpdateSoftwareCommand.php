@@ -299,9 +299,6 @@ class UpdateSoftwareCommand extends Command
         }
     }
 
-    // بقیه متدها بدون تغییر باقی می‌مانند (isUpToDate, preUpdateChecks, postUpdateChecks, و غیره)
-    // برای کوتاه‌تر شدن پاسخ، آنها را تکرار نمی‌کنم، اما در کد اصلی شما باقی می‌مانند.
-
     private function getCurrentVersion(): string
     {
         return $this->getCurrentGitHead();
@@ -316,6 +313,25 @@ class UpdateSoftwareCommand extends Command
             return 'unknown';
         }
         return trim($process->getOutput());
+    }
+
+    private function isUpToDate(): bool
+    {
+        try {
+            // دریافت آخرین تغییرات از ریموت
+            $this->runProcess(['git', 'fetch', 'origin'], $this->rootDir, new \Symfony\Component\Console\Output\NullOutput());
+            
+            // بررسی وضعیت شاخه فعلی
+            $process = new Process(['git', 'status', '-uno'], $this->rootDir);
+            $process->run();
+            $status = $process->getOutput();
+            
+            // اگر پیام "Your branch is up to date" وجود داشته باشد، نرم‌افزار به‌روز است
+            return strpos($status, 'Your branch is up to date') !== false;
+        } catch (\Exception $e) {
+            $this->logger->warning('Failed to check if software is up to date: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function backupDatabaseToFile(string $backupFile, OutputInterface $output): void
