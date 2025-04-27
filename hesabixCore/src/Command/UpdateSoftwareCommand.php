@@ -564,7 +564,15 @@ class UpdateSoftwareCommand extends Command
     private function postUpdateChecks(OutputInterface $output): void
     {
         $this->writeOutput($output, 'Running post-update checks...');
+        
+        // Clear cache completely to avoid stale cache issues
+        $this->writeOutput($output, 'Clearing all caches for the current environment...');
+        $this->runProcess(['rm', '-rf', $this->appDir . '/var/cache/*'], $this->appDir, new \Symfony\Component\Console\Output\NullOutput());
+        $this->runProcess(['php', 'bin/console', 'cache:clear', "--env={$this->env}"], $this->appDir, $output, 3);
+        
+        // Clear cache pools
         $this->runProcess(['php', 'bin/console', 'cache:pool:clear', 'cache.global_clearer'], $this->appDir, $output, 1);
+        
         $this->writeOutput($output, 'Post-update checks completed successfully.');
     }
 }
