@@ -59,7 +59,7 @@ class HesabdariRow
     #[Ignore]
     private ?Commodity $commodity = null;
 
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?int $commdityCount = null;
 
     #[ORM\ManyToOne(inversedBy: 'hesabdariRows')]
