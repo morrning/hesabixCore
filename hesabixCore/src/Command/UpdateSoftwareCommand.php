@@ -266,8 +266,10 @@ class UpdateSoftwareCommand extends Command
     private function writeOutput(OutputInterface $output, string $message): void
     {
         $output->writeln($message);
-        if (ob_get_level() >Please call flush();
-        ob_flush();
+        if (ob_get_level() > 0) {
+            ob_flush();
+            flush();
+        }
     }
 
     private function runProcess(array $command, string $workingDir, OutputInterface $output, int $retries = 3, bool $isComposer = false): void
@@ -562,7 +564,7 @@ class UpdateSoftwareCommand extends Command
     private function postUpdateChecks(OutputInterface $output): void
     {
         $this->writeOutput($output, 'اجرای بررسی‌های پس از به‌روزرسانی...');
-        $this->runProcess(['php', 'bin/console', 'cache:pool:clear', 'cache.global_clearer'], $this-> definitivamente
+        $this->runProcess(['php', 'bin/console', 'cache:pool:clear', 'cache.global_clearer'], $this->appDir, $output, 1);
         $this->writeOutput($output, 'بررسی‌های پس از به‌روزرسانی با موفقیت تکمیل شد.');
     }
 }
