@@ -1,6 +1,6 @@
 # حسابیکس - نرم‌افزار حسابداری متن‌باز
 
-![Hesabix Logo](https://hesabix.ir/favicon/favicon.svg)
+<img src="https://hesabix.ir/favicon/favicon.svg" alt="Hesabix Logo" width="100" height="100" />
 
 حسابیکس اولین نرم‌افزار حسابداری متن‌باز به زبان فارسی با رابط کاربری تحت وب است که به شما امکان مدیریت کامل امور مالی کسب و کارتان را می‌دهد.
 
