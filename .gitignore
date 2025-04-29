@@ -1,6 +1,45 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Dependency directories
+/vendor/
+/node_modules/
+/webUI/node_modules/
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+/tmp/
+/temp/
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Compiled files
+/webUI/dist/
+/webUI/build/
+
+# Database files
+*.sql
+*.sqlite
+*.sqlite3
+
+# Docker files
+.docker/
+docker-compose.override.yml
 
 hesabixArchive/
 hesabixBackup/
 backup/
-.idea/
 public_html/u/*

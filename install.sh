@@ -50,7 +50,6 @@ declare -r LOG_FILE="/var/log/hesabix_install.log"
 declare -r LOG_LEVEL="DEBUG"  # Options: DEBUG, INFO, WARNING, ERROR
 declare -r REQUIRED_DISK_SPACE_MB=2000
 declare -r REQUIRED_MEMORY_MB=1024
-declare -r MIN_PHP_VERSION="8.2"
 declare -r NODE_VERSION="20"
 declare -r COMPOSER_TIMEOUT=600
 declare -r NPM_TIMEOUT=600
@@ -182,6 +181,9 @@ update_packages() {
 install_tools() {
     local tools=("curl" "coreutils" "git" "unzip")
     
+    # Update package lists first
+    update_packages
+    
     for tool in "${tools[@]}"; do
         if ! command_exists "$tool"; then
             log_message "INFO" "Installing $tool..."
@@ -213,77 +215,25 @@ get_installed_php_versions() {
 
 # Function to check if all required extensions are installed for all PHP versions
 check_required_extensions() {
-    local missing_extensions=()
+    local missing_packages=()
     local installed_versions
     installed_versions=($(get_installed_php_versions))
     
     for version in "${installed_versions[@]}"; do
-        log_message "INFO" "Checking required extensions for PHP $version..."
-        for ext in raphf http dom xml gd curl simplexml xmlwriter zip; do
-            if ! php"$version" -m | grep -q "$ext"; then
-                missing_extensions+=("php${version}-${ext}")
-                log_message "WARNING" "Extension $ext is missing for PHP $version"
+        log_message "INFO" "Checking required packages for PHP $version..."
+        for pkg in php${version}-raphf php${version}-http php${version}-dom php${version}-xml php${version}-gd php${version}-curl php${version}-simplexml php${version}-xmlwriter php${version}-zip; do
+            if ! dpkg -l | grep -q "^ii  $pkg "; then
+                missing_packages+=("$pkg")
+                log_message "WARNING" "Package $pkg is missing"
             fi
         done
     done
     
-    if [[ ${#missing_extensions[@]} -gt 0 ]]; then
-        echo -e "\nWarning: The following extensions are missing:"
-        printf '%s\n' "${missing_extensions[@]}"
-        echo -e "\nDo you want to install them now?"
-        read -p "Install missing extensions? (y/n) [y]: " response
-        
-        if [[ "$response" =~ ^[Yy]$ ]] || [[ -z "$response" ]]; then
-            log_message "INFO" "Installing missing extensions..."
-            
-            # First try to install from default repositories
-            if ! apt-get install -y "${missing_extensions[@]}"; then
-                log_message "WARNING" "Failed to install from default repositories. Trying custom repositories..."
-                
-                # Add custom repository
-                LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php || log_message "WARNING" "PPA already exists"
-                update_packages
-                
-                # Try installing again
-                apt-get install -y "${missing_extensions[@]}" || {
-                    log_message "ERROR" "Failed to install missing extensions even with custom repository"
-                    return 1
-                }
-            fi
-            
-            # Enable extensions after installation
-            for version in "${installed_versions[@]}"; do
-                for ext in raphf http dom xml gd curl simplexml xmlwriter zip; do
-                    if ! php"$version" -m | grep -q "$ext"; then
-                        log_message "INFO" "Enabling $ext for PHP $version..."
-                        phpenmod -v "$version" "$ext" || log_message "WARNING" "Failed to enable $ext for CLI in version $version"
-                        phpenmod -v "$version" -s apache2 "$ext" || log_message "WARNING" "Failed to enable $ext for Apache in version $version"
-                    fi
-                done
-            done
-            
-            # Verify extensions are now installed
-            local still_missing=()
-            for version in "${installed_versions[@]}"; do
-                for ext in raphf http dom xml gd curl simplexml xmlwriter zip; do
-                    if ! php"$version" -m | grep -q "$ext"; then
-                        still_missing+=("php${version}-${ext}")
-                    fi
-                done
-            done
-            
-            if [[ ${#still_missing[@]} -gt 0 ]]; then
-                echo -e "\nWarning: The following extensions are still missing after installation:"
-                printf '%s\n' "${still_missing[@]}"
-                return 1
-            fi
-            
-            # Restart Apache
-            systemctl restart apache2 || log_message "WARNING" "Failed to restart Apache"
-        else
-            log_message "WARNING" "User chose not to install missing extensions"
-            return 1
-        fi
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo -e "\nWarning: The following packages are missing:"
+        printf '%s\n' "${missing_packages[@]}"
+        echo -e "\nThese packages will need to be installed manually after the installation is complete."
+        return 0
     fi
     
     return 0
@@ -291,29 +241,28 @@ check_required_extensions() {
 
 # Function to verify CLI extensions
 verify_cli_extensions() {
-    local version="$1"
-    log_message "INFO" "Verifying CLI extensions for PHP $version..."
+    log_message "INFO" "Verifying CLI extensions for PHP..."
     
     # Get the list of enabled extensions from CLI
     local enabled_extensions
-    enabled_extensions=$(php"$version" -m)
+    enabled_extensions=$(php -m)
     
     # Check each required extension
-    for ext in raphf http dom xml gd curl simplexml xmlwriter zip intl mbstring mysql bcmath; do
+    for ext in iconv raphf http dom xml gd curl simplexml xmlwriter zip intl mbstring mysql bcmath; do
         if ! echo "$enabled_extensions" | grep -q "^$ext$"; then
-            log_message "ERROR" "Extension $ext is not enabled in CLI for PHP $version"
+            log_message "ERROR" "Extension $ext is not enabled in CLI"
             log_message "INFO" "Attempting to enable $ext for CLI..."
             
             # Try to enable the extension
-            phpenmod -v "$version" "$ext" || {
-                log_message "ERROR" "Failed to enable $ext for CLI in version $version"
+            phpenmod "$ext" || {
+                log_message "ERROR" "Failed to enable $ext for CLI"
                 return 1
             }
             
             # Verify again after enabling
-            enabled_extensions=$(php"$version" -m)
+            enabled_extensions=$(php -m)
             if ! echo "$enabled_extensions" | grep -q "^$ext$"; then
-                log_message "ERROR" "Extension $ext is still not enabled in CLI for PHP $version"
+                log_message "ERROR" "Extension $ext is still not enabled in CLI"
                 return 1
             fi
         fi
@@ -326,156 +275,66 @@ verify_cli_extensions() {
 install_php() {
     log_message "INFO" "Checking PHP installation..."
     
-    # Check if php-cli is installed
-    if ! command_exists php; then
-        log_message "INFO" "Installing php-cli..."
-        apt-get install -y php-cli || handle_error "Failed to install php-cli"
-    fi
+    # Update package lists first
+    update_packages
     
-    # Get current PHP version
-    local current_version
-    current_version=$(get_php_version)
-    log_message "DEBUG" "Current PHP version: $current_version"
+    # Remove any existing PHP packages first
+    apt-get remove --purge php* -y
+    apt-get autoremove -y
+    apt-get clean
     
-    # Check if PHP version meets minimum requirement
-    if [[ "$(echo "$current_version >= $MIN_PHP_VERSION" | bc -l)" -ne 1 ]]; then
-        log_message "INFO" "Installing PHP $MIN_PHP_VERSION or higher..."
-        
-        # First try to install from default Ubuntu repositories
-        log_message "INFO" "Attempting to install PHP from default Ubuntu repositories..."
-        apt-get install -y software-properties-common
-        
-        local php_packages=(
-            "php${MIN_PHP_VERSION}"
-            "php${MIN_PHP_VERSION}-cli"
-            "libapache2-mod-php${MIN_PHP_VERSION}"
-            "php${MIN_PHP_VERSION}-intl"
-            "php${MIN_PHP_VERSION}-mbstring"
-            "php${MIN_PHP_VERSION}-zip"
-            "php${MIN_PHP_VERSION}-gd"
-            "php${MIN_PHP_VERSION}-mysql"
-            "php${MIN_PHP_VERSION}-curl"
-            "php${MIN_PHP_VERSION}-xml"
-            "php${MIN_PHP_VERSION}-bcmath"
-            "php${MIN_PHP_VERSION}-raphf"
-            "php${MIN_PHP_VERSION}-http"
-            "php${MIN_PHP_VERSION}-dom"
-            "php${MIN_PHP_VERSION}-simplexml"
-            "php${MIN_PHP_VERSION}-xmlwriter"
-        )
-        
-        # Try installing from default repositories
-        if ! apt-get install -y "${php_packages[@]}"; then
-            log_message "WARNING" "Failed to install PHP from default repositories. Trying custom repositories..."
-            
-            # Add custom repository if default installation fails
-            LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php || log_message "WARNING" "PPA already exists"
-            update_packages
-            
-            # Try installing again with custom repository
-        apt-get install -y "${php_packages[@]}" || handle_error "Failed to install PHP packages"
-        fi
-    fi
+    # Install PHP and required extensions
+    log_message "INFO" "Installing PHP and required extensions..."
+    local php_packages=(
+        "php"
+        "php-cli"
+        "libapache2-mod-php"
+        "php-intl"
+        "php-mbstring"
+        "php-zip"
+        "php-gd"
+        "php-mysql"
+        "php-curl"
+        "php-xml"
+        "php-bcmath"
+        "php-raphf"
+        "php-http"
+        "php-dom"
+        "php-simplexml"
+        "php-xmlwriter"
+        "php-iconv"
+    )
     
-    # Get all installed PHP versions
-    local installed_versions
-    installed_versions=($(get_installed_php_versions))
-    log_message "INFO" "Found installed PHP versions: ${installed_versions[*]}"
-    
-    # Install and configure extensions for all PHP versions
-    for version in "${installed_versions[@]}"; do
-        log_message "INFO" "Configuring PHP $version..."
-        
-        # Install all required extensions for this version
-        local required_extensions=(
-            "php${version}-raphf"
-            "php${version}-http"
-            "php${version}-dom"
-            "php${version}-xml"
-            "php${version}-gd"
-            "php${version}-curl"
-            "php${version}-simplexml"
-            "php${version}-xmlwriter"
-            "php${version}-zip"
-            "php${version}-intl"
-            "php${version}-mbstring"
-            "php${version}-mysql"
-            "php${version}-bcmath"
-        )
-        
-        # Install extensions
-        log_message "INFO" "Installing required extensions for PHP $version..."
-        apt-get install -y "${required_extensions[@]}" || {
-            log_message "WARNING" "Failed to install some extensions for PHP $version. Trying custom repository..."
-            
-            # Add custom repository if needed
-            LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php || log_message "WARNING" "PPA already exists"
-            update_packages
-            
-            # Try installing again
-            apt-get install -y "${required_extensions[@]}" || handle_error "Failed to install PHP extensions for version $version"
-        }
-        
-        # Enable all extensions
-        for ext in raphf http dom xml gd curl simplexml xmlwriter zip intl mbstring mysql bcmath; do
-            log_message "INFO" "Enabling $ext for PHP $version..."
-            phpenmod -v "$version" "$ext" || log_message "WARNING" "Failed to enable $ext for CLI in version $version"
-            phpenmod -v "$version" -s apache2 "$ext" || log_message "WARNING" "Failed to enable $ext for Apache in version $version"
-    done
-    
-    # Create PHP configuration for both CLI and Apache
-    for sapi in cli apache2; do
-            if [[ -d "/etc/php/${version}/${sapi}/conf.d" ]]; then
-                cat > "/etc/php/${version}/${sapi}/conf.d/99-hesabix.ini" << EOF
-extension=raphf.so
-extension=http.so
-extension=dom.so
-extension=xml.so
-extension=gd.so
-extension=curl.so
-extension=simplexml.so
-extension=xmlwriter.so
-extension=zip.so
-extension=intl.so
-extension=mbstring.so
-extension=mysql.so
-extension=bcmath.so
-EOF
-            fi
-        done
-        
-        # Enable PHP module for Apache
-        if [[ -d "/etc/php/${version}/apache2" ]]; then
-            a2enmod "php${version}" || handle_error "Failed to enable PHP module for version $version"
-        fi
-        
-        # Verify extensions are loaded
-        log_message "INFO" "Verifying extensions for PHP $version..."
-        for ext in raphf http dom xml gd curl simplexml xmlwriter zip intl mbstring mysql bcmath; do
-            if ! php"$version" -m | grep -q "$ext"; then
-                log_message "ERROR" "Extension $ext is not loaded for PHP $version"
-                handle_error "Failed to load extension $ext for PHP $version"
-            fi
-        done
-        
-        # Verify CLI extensions specifically
-        if ! verify_cli_extensions "$version"; then
-            log_message "ERROR" "Failed to verify CLI extensions for PHP $version"
-            handle_error "CLI extensions verification failed for PHP $version"
+    # Install each package individually to handle dependencies
+    for pkg in "${php_packages[@]}"; do
+        log_message "INFO" "Installing $pkg..."
+        if ! apt-get install -y "$pkg"; then
+            log_message "WARNING" "Failed to install $pkg, continuing with other packages..."
         fi
     done
     
-    # Restart Apache if any PHP version was configured
-    if [[ ${#installed_versions[@]} -gt 0 ]]; then
-    systemctl restart apache2 || handle_error "Failed to restart Apache"
-    fi
+    # Install specific PHP 8.3 packages
+    for pkg in php8.3-dom php8.3-simplexml php8.3-xmlwriter; do
+        if ! apt-get install -y "$pkg"; then
+            log_message "WARNING" "Failed to install $pkg, continuing with other packages..."
+        fi
+    done
     
-    log_message "INFO" "PHP installation and configuration completed for all versions"
+    # Enable PHP module for Apache
+    a2enmod php8.3 || a2enmod php8.2 || a2enmod php8.1 || a2enmod php8.0 || a2enmod php7.4 || log_message "WARNING" "Failed to enable PHP module"
+    
+    # Restart Apache
+    systemctl restart apache2 || log_message "WARNING" "Failed to restart Apache"
+    
+    log_message "INFO" "PHP installation and configuration completed"
 }
 
 # Function to install MySQL
 install_mysql() {
     log_message "INFO" "Checking MySQL installation..."
+    
+    # Update package lists first
+    update_packages
     
     if command_exists mysql; then
         local mysql_version
@@ -498,6 +357,9 @@ install_mysql() {
 # Function to install Node.js
 install_nodejs() {
     log_message "INFO" "Checking Node.js installation..."
+    
+    # Update package lists first
+    update_packages
     
     if command_exists node; then
         local node_version
@@ -525,6 +387,9 @@ install_nodejs() {
 # Function to install Apache
 install_apache() {
     log_message "INFO" "Checking Apache installation..."
+    
+    # Update package lists first
+    update_packages
     
     if command_exists apache2; then
         log_message "INFO" "Apache is installed"
@@ -630,8 +495,31 @@ get_domain() {
 setup_domain() {
     local domain="$1"
     local domain_path="/var/www/html/$domain/public_html"
+    local config_file="/etc/apache2/sites-available/$domain.conf"
     
     log_message "INFO" "Setting up domain: $domain"
+    
+    # Remove existing virtual host if it exists
+    if [[ -f "$config_file" ]]; then
+        log_message "INFO" "Removing existing virtual host configuration..."
+        a2dissite "$domain.conf" >/dev/null 2>&1
+        rm -f "$config_file"
+    fi
+    
+    # Check for existing domain directory
+    if [[ -d "/var/www/html/$domain" ]]; then
+        echo -e "\n${YELLOW}Warning: The directory /var/www/html/$domain already exists.${NC}"
+        echo -e "${YELLOW}All its contents will be deleted.${NC}"
+        read -p "Do you want to continue? (y/n) [n]: " response
+        
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            log_message "ERROR" "User chose not to delete existing directory"
+            handle_error "Installation aborted by user"
+        fi
+        
+        log_message "INFO" "Removing existing domain directory..."
+        rm -rf "/var/www/html/$domain"
+    fi
     
     # Create domain directory
     mkdir -p "$domain_path" || handle_error "Failed to create domain directory"
@@ -642,7 +530,6 @@ setup_domain() {
     a2enmod rewrite || handle_error "Failed to enable Apache rewrite module"
     
     # Create Apache virtual host
-    local config_file="/etc/apache2/sites-available/$domain.conf"
     cat > "$config_file" << EOF
 <VirtualHost *:80>
     ServerName $domain
@@ -670,50 +557,94 @@ EOF
 # Function to setup database
 setup_database() {
     local domain="$1"
-    local db_name="hesabix_$(echo "$domain" | tr '.-' '_')"
+    local base_db_name="hesabix_$(echo "$domain" | tr '.-' '_')"
+    local db_name="$base_db_name"
     local db_user="hesabix_user"
     local db_password
     db_password=$(openssl rand -base64 12)
     local domain_path="/var/www/html/$domain"
+    local counter=1
     
-    log_message "INFO" "Setting up database: $db_name"
+    log_message "INFO" "Setting up database..."
     
     # Verify MySQL is running
     if ! systemctl is-active --quiet mysql; then
         handle_error "MySQL service is not running"
     fi
     
+    # Check if database exists and create new name if needed
+    while mysql -e "SHOW DATABASES LIKE '$db_name'" | grep -q "$db_name"; do
+        db_name="${base_db_name}_${counter}"
+        counter=$((counter + 1))
+    done
+    
+    if [[ "$db_name" != "$base_db_name" ]]; then
+        log_message "WARNING" "Database $base_db_name already exists, using $db_name instead"
+    fi
+    
+    # Drop existing user if exists
+    mysql -e "DROP USER IF EXISTS '$db_user'@'localhost';" || \
+        log_message "WARNING" "Failed to drop existing user"
+    
     # Create database
     mysql -e "CREATE DATABASE IF NOT EXISTS \`$db_name\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" || \
         handle_error "Failed to create database"
     
-    # Create user
-    mysql -e "CREATE USER IF NOT EXISTS '$db_user'@'localhost' IDENTIFIED BY '$db_password';" || \
+    # Create user with proper permissions
+    mysql -e "CREATE USER '$db_user'@'localhost' IDENTIFIED BY '$db_password';" || \
         handle_error "Failed to create database user"
     
-    # Grant privileges
+    # Grant all privileges and make sure they are applied
     mysql -e "GRANT ALL PRIVILEGES ON \`$db_name\`.* TO '$db_user'@'localhost';" || \
         handle_error "Failed to grant database privileges"
     mysql -e "FLUSH PRIVILEGES;" || handle_error "Failed to flush privileges"
+    
+    # Verify user can connect
+    if ! mysql -u"$db_user" -p"$db_password" -e "SELECT 1;" >/dev/null 2>&1; then
+        handle_error "Failed to verify database user access"
+    fi
+    
+    # Import default database structure
+    log_message "INFO" "Importing default database structure..."
+    if [[ -f "$domain_path/hesabixBackup/databasefiles/hesabix-db-default.sql" ]]; then
+        mysql -u"$db_user" -p"$db_password" "$db_name" < "$domain_path/hesabixBackup/databasefiles/hesabix-db-default.sql" || \
+            log_message "WARNING" "Failed to import default database structure"
+    else
+        log_message "WARNING" "Default database structure file not found"
+    fi
     
     # Update environment configuration
     local env_file="$domain_path/hesabixCore/.env.local.php"
     cat > "$env_file" << EOF
 <?php
-return [
-    'APP_ENV' => 'prod',
-    'APP_SECRET' => '$(openssl rand -hex 16)',
-    'DATABASE_URL' => 'mysql://$db_user:$db_password@127.0.0.1:3306/$db_name?serverVersion=8.0.32&charset=utf8mb4',
-    'MESSENGER_TRANSPORT_DSN' => 'doctrine://default?auto_setup=0',
-    'MAILER_DSN' => 'null://null',
-    'CORS_ALLOW_ORIGIN' => '*',
-    'LOCK_DSN' => 'flock',
-];
+
+// This file was generated by running "composer dump-env dev"
+
+return array (
+  'APP_ENV' => 'prod',
+  'SYMFONY_DOTENV_PATH' => './.env',
+  'APP_SECRET' => '$(openssl rand -hex 16)',
+  'DATABASE_URL' => 'mysql://$db_user:$db_password@127.0.0.1:3306/$db_name?serverVersion=8.0.32&charset=utf8mb4',
+  'MESSENGER_TRANSPORT_DSN' => 'doctrine://default?auto_setup=0',
+  'MAILER_DSN' => 'null://null',
+  'CORS_ALLOW_ORIGIN' => '*',
+  'LOCK_DSN' => 'flock',
+);
 EOF
     
     # Set proper permissions
     chown "$apache_user:$apache_user" "$env_file"
     chmod 644 "$env_file"
+    
+    # Update database schema
+    log_message "INFO" "Updating database schema..."
+    cd "$domain_path/hesabixCore" || handle_error "Failed to change to hesabixCore directory"
+    
+    # Set environment variables for doctrine command
+    export DATABASE_URL="mysql://$db_user:$db_password@127.0.0.1:3306/$db_name?serverVersion=8.0.32&charset=utf8mb4"
+    
+    php bin/console doctrine:schema:update --force || \
+        log_message "WARNING" "Failed to update database schema"
     
     log_message "INFO" "Database setup completed"
 }
@@ -755,18 +686,37 @@ install_software() {
         local composer_flags=""
     fi
     
-    # Initialize git repository
-    log_message "INFO" "Initializing git repository in $domain_path..."
-    git init || handle_error "Failed to initialize git repository"
+    # Initialize git repository if not already initialized
+    if [[ ! -d ".git" ]]; then
+        log_message "INFO" "Initializing git repository in $domain_path..."
+        git init || handle_error "Failed to initialize git repository"
+    fi
     
-    # Add remote repository
-    git remote add origin https://github.com/morrning/hesabixCore.git || \
-        handle_error "Failed to add remote repository"
+    # Check if remote origin exists
+    if ! git remote get-url origin >/dev/null 2>&1; then
+        # Add remote repository if it doesn't exist
+        git remote add origin https://github.com/morrning/hesabixCore.git || \
+            handle_error "Failed to add remote repository"
+    else
+        # Update remote URL if it exists
+        git remote set-url origin https://github.com/morrning/hesabixCore.git || \
+            handle_error "Failed to update remote repository"
+    fi
     
     # Fetch and checkout the repository
     log_message "INFO" "Fetching repository contents..."
     git fetch origin || handle_error "Failed to fetch repository"
-    git checkout -b main origin/main || handle_error "Failed to checkout repository"
+    
+    # Check if master branch exists
+    if git show-ref --verify --quiet refs/heads/master; then
+        # Switch to master branch
+        git checkout master || handle_error "Failed to checkout master branch"
+        # Pull latest changes
+        git pull origin master || handle_error "Failed to pull latest changes"
+    else
+        # Create and checkout master branch
+        git checkout -b master origin/master || handle_error "Failed to checkout repository"
+    fi
     
     # Verify repository path
     if [[ ! -d "$domain_path" ]]; then
@@ -850,12 +800,107 @@ set_apache_ownership() {
     log_message "INFO" "Apache ownership set"
 }
 
+# Function to display GPL license
+display_gpl_license() {
+    echo -e "\n${BOLD}${BLUE}=================================================${NC}"
+    echo -e "${BOLD}${BLUE}           GNU General Public License v3           ${NC}"
+    echo -e "${BOLD}${BLUE}=================================================${NC}"
+    echo -e "${YELLOW}This program is free software: you can redistribute it and/or modify${NC}"
+    echo -e "${YELLOW}it under the terms of the GNU General Public License as published by${NC}"
+    echo -e "${YELLOW}the Free Software Foundation, either version 3 of the License, or${NC}"
+    echo -e "${YELLOW}(at your option) any later version.${NC}"
+    echo -e "\n${YELLOW}This program is distributed in the hope that it will be useful,${NC}"
+    echo -e "${YELLOW}but WITHOUT ANY WARRANTY; without even the implied warranty of${NC}"
+    echo -e "${YELLOW}MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.${NC}"
+    echo -e "${YELLOW}See the GNU General Public License for more details.${NC}"
+    echo -e "${BOLD}${BLUE}=================================================${NC}\n"
+    
+    read -p "Do you accept the terms of the GNU General Public License v3? (y/n) [y]: " response
+    if [[ ! "$response" =~ ^[Yy]$ ]] && [[ -n "$response" ]]; then
+        handle_error "License terms not accepted"
+    fi
+}
+
+# Function to confirm installation
+confirm_installation() {
+    echo -e "\n${BOLD}${BLUE}=================================================${NC}"
+    echo -e "${BOLD}${BLUE}           Installation Confirmation           ${NC}"
+    echo -e "${BOLD}${BLUE}=================================================${NC}"
+    echo -e "${YELLOW}This script will install:${NC}"
+    echo -e "• PHP and required extensions"
+    echo -e "• MySQL/MariaDB"
+    echo -e "• Apache"
+    echo -e "• Node.js"
+    echo -e "• Composer"
+    echo -e "• phpMyAdmin"
+    echo -e "• Hesabix Core"
+    echo -e "• Hesabix Web UI"
+    echo -e "\n${YELLOW}The installation will require approximately 2GB of disk space.${NC}"
+    echo -e "${BOLD}${BLUE}=================================================${NC}\n"
+    
+    read -p "Do you want to continue with the installation? (y/n) [y]: " response
+    if [[ ! "$response" =~ ^[Yy]$ ]] && [[ -n "$response" ]]; then
+        handle_error "Installation cancelled by user"
+    fi
+}
+
+# Function to install phpMyAdmin
+install_phpmyadmin() {
+    log_message "INFO" "Installing phpMyAdmin..."
+    
+    # Update package lists first
+    update_packages
+    
+    # Install phpMyAdmin
+    apt-get install -y phpmyadmin || handle_error "Failed to install phpMyAdmin"
+    
+    # Configure phpMyAdmin
+    log_message "INFO" "Configuring phpMyAdmin..."
+    
+    # Create Apache configuration
+    cat > /etc/apache2/conf-available/phpmyadmin.conf << EOF
+Alias /phpmyadmin /usr/share/phpmyadmin
+<Directory /usr/share/phpmyadmin>
+    Options FollowSymLinks
+    DirectoryIndex index.php
+    AllowOverride All
+    Require all granted
+</Directory>
+EOF
+    
+    # Enable configuration
+    a2enconf phpmyadmin || handle_error "Failed to enable phpMyAdmin configuration"
+    
+    # Restart Apache
+    systemctl restart apache2 || handle_error "Failed to restart Apache"
+    
+    log_message "INFO" "phpMyAdmin installation completed"
+}
+
 # Function to show installation summary
 show_installation_summary() {
     local domain="$1"
     local domain_path="/var/www/html/$domain"
+    local missing_packages=()
+    local db_name="hesabix_$(echo "$domain" | tr '.-' '_')"
+    local db_user="hesabix_user"
+    local db_password
+    
+    # Get database password from env file
+    if [[ -f "$domain_path/hesabixCore/.env.local.php" ]]; then
+        db_password=$(php -r "include '$domain_path/hesabixCore/.env.local.php'; echo \$env['DATABASE_URL']; echo PHP_EOL;" | grep -oP '(?<=://)[^:]+(?=:)')
+    fi
     
     log_message "INFO" "Showing installation summary..."
+    
+    # Check for missing packages
+    for version in $(get_installed_php_versions); do
+        for pkg in php${version}-raphf php${version}-http php${version}-dom php${version}-xml php${version}-gd php${version}-curl php${version}-simplexml php${version}-xmlwriter php${version}-zip; do
+            if ! dpkg -l | grep -q "^ii  $pkg "; then
+                missing_packages+=("$pkg")
+            fi
+        done
+    done
     
     echo -e "\n${BOLD}${BLUE}=================================================${NC}"
     echo -e "${BOLD}${BLUE}           Hesabix Installation Summary           ${NC}"
@@ -866,11 +911,27 @@ show_installation_summary() {
     echo -e "Web Server: Apache"
     echo -e "PHP Version: $(php -v | head -n 1 | awk '{print $2}')"
     echo -e "Node.js Version: $(node -v)"
+    echo -e "phpMyAdmin URL: https://$domain/phpmyadmin"
+    
+    echo -e "\n${YELLOW}Database Information:${NC}"
+    echo -e "Database Name: $db_name"
+    echo -e "Database User: $db_user"
+    echo -e "Database Password: $db_password"
+    echo -e "Database Host: localhost"
+    echo -e "Database Port: 3306"
+    
+    if [[ ${#missing_packages[@]} -gt 0 ]]; then
+        echo -e "\n${RED}Warning: The following packages were not installed:${NC}"
+        printf '%s\n' "${missing_packages[@]}"
+        echo -e "\n${YELLOW}Please install these packages manually using:${NC}"
+        echo -e "sudo apt-get install ${missing_packages[*]}"
+    fi
     
     echo -e "\n${YELLOW}Next Steps:${NC}"
     echo -e "1. Configure domain DNS to point to this server"
     echo -e "2. Access the web interface: https://$domain"
-    echo -e "3. Register the first user (system administrator)"
+    echo -e "3. Access phpMyAdmin: https://$domain/phpmyadmin"
+    echo -e "4. Register the first user (system administrator)"
     
     echo -e "\n${YELLOW}Support:${NC}"
     echo -e "• Developer: Babak Alizadeh (alizadeh.babak)"
@@ -880,6 +941,10 @@ show_installation_summary() {
     
     echo -e "\n${GREEN}Installation completed successfully!${NC}"
     echo -e "${BOLD}${BLUE}=================================================${NC}"
+    
+    # Restart Apache at the end of installation
+    log_message "INFO" "Restarting Apache..."
+    systemctl restart apache2 || log_message "WARNING" "Failed to restart Apache"
 }
 
 # Function to display telemetry consent
@@ -908,6 +973,8 @@ main() {
     init_logging
     check_system_requirements
     install_tools
+    display_gpl_license
+    confirm_installation
     display_telemetry_consent
     update_packages
     install_php
@@ -915,6 +982,7 @@ main() {
     install_nodejs
     install_apache
     install_composer
+    install_phpmyadmin
     
     domain=$(get_domain)
     setup_domain "$domain"

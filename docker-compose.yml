@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # Web service
+  web:
+    build: .
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./hesabixCore:/var/www/html/hesabixCore
+      - ./webUI:/var/www/html/webUI
+      - ./public_html:/var/www/html/public_html
+      - ./hesabixBackup:/var/www/html/hesabixBackup
+      - ./ssl:/etc/ssl/private
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=mysql://hesabix_user:hesabix_password@db:3306/hesabix_db
+      - APP_ENV=prod
+      - APP_SECRET=${APP_SECRET:-your-secret-key}
+      - DOMAIN=${DOMAIN:-localhost}
+    networks:
+      - hesabix-network
+    restart: unless-stopped
+
+  # Database service
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=hesabix_db
+      - MYSQL_USER=hesabix_user
+      - MYSQL_PASSWORD=hesabix_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./hesabixBackup:/docker-entrypoint-initdb.d
+    networks:
+      - hesabix-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # phpMyAdmin service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_USER=hesabix_user
+      - PMA_PASSWORD=hesabix_password
+    depends_on:
+      - db
+    networks:
+      - hesabix-network
+    restart: unless-stopped
+
+  # Certbot service for SSL
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./ssl:/etc/letsencrypt
+      - ./public_html:/var/www/html
+    depends_on:
+      - web
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - hesabix-network
+    restart: unless-stopped
+
+networks:
+  hesabix-network:
+    driver: bridge
+
+volumes:
+  mysql_data: 
