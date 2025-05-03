@@ -36,12 +36,9 @@
   <v-container>
     <v-row>
       <v-col cols="12" md="4">
-        <v-text-field
+        <Hdatepicker
           v-model="ticket.date"
           label="تاریخ"
-          variant="outlined"
-          density="compact"
-          readonly
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -176,6 +173,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import Hdatepicker from '@/components/forms/Hdatepicker.vue'
 
 interface TransferType {
   id: number;
@@ -302,12 +300,51 @@ const submit = async () => {
     }
 
     const response = await axios.post('/api/storeroom/ticket/insert', {
-      doc: doc.value,
-      ticket: {
-        ...ticket.value,
-        senderTel: ticket.value.person.mobile || ''
+      doc: {
+        id: doc.value.id,
+        dateSubmit: doc.value.dateSubmit,
+        date: doc.value.date,
+        type: doc.value.type,
+        code: doc.value.code,
+        des: doc.value.des
       },
-      items: items.value
+      ticket: {
+        type: ticket.value.type,
+        typeString: ticket.value.typeString,
+        date: ticket.value.date,
+        des: ticket.value.des,
+        transfer: ticket.value.transfer,
+        receiver: ticket.value.receiver,
+        code: ticket.value.code,
+        store: {
+          id: ticket.value.store.id,
+          name: ticket.value.store.name,
+          manager: ticket.value.store.manager,
+          des: ticket.value.store.des
+        },
+        person: {
+          id: ticket.value.person.id,
+          code: ticket.value.person.code,
+          nikename: ticket.value.person.nikename,
+          name: ticket.value.person.name,
+          tel: ticket.value.person.tel,
+          mobile: ticket.value.person.mobile,
+          address: ticket.value.person.address
+        },
+        transferType: ticket.value.transferType,
+        referral: ticket.value.referral,
+        senderTel: ticket.value.person.mobile || '',
+        sms: false
+      },
+      items: items.value.map(item => ({
+        id: item.id,
+        bs: item.bs,
+        bd: item.bd,
+        ticketCount: item.ticketCount,
+        des: item.des,
+        referral: item.referral,
+        type: item.type
+      }))
     })
 
     if (response.data.result === 0) {

@@ -126,6 +126,12 @@ class PrintOptions
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $rightFooter = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $sellInvoiceIndex = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $sellBusinessStamp = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -572,6 +578,28 @@ class PrintOptions
     {
         $this->rightFooter = $rightFooter;
 
+        return $this;
+    }
+
+    public function isSellInvoiceIndex(): ?bool
+    {
+        return $this->sellInvoiceIndex;
+    }
+
+    public function setSellInvoiceIndex(bool $sellInvoiceIndex): self
+    {
+        $this->sellInvoiceIndex = $sellInvoiceIndex;
+        return $this;
+    }
+
+    public function isSellBusinessStamp(): ?bool
+    {
+        return $this->sellBusinessStamp;
+    }
+
+    public function setSellBusinessStamp(bool $sellBusinessStamp): self
+    {
+        $this->sellBusinessStamp = $sellBusinessStamp;
         return $this;
     }
 }

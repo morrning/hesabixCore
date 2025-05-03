@@ -540,6 +540,7 @@ class BusinessController extends AbstractController
                 'plugAccproRfsell' => true,
                 'plugAccproRfbuy' => true,
                 'plugAccproCloseYear' => true,
+                'plugAccproPresell' => true,
                 'plugRepservice' => true,
             ];
         } elseif ($perm) {
@@ -581,10 +582,10 @@ class BusinessController extends AbstractController
                 'plugAccproRfbuy' => $perm->isPlugAccproRfbuy(),
                 'plugAccproCloseYear' => $perm->isPlugAccproCloseYear(),
                 'plugRepservice' => $perm->isPlugRepservice(),
+                'plugAccproPresell' => $perm->isPlugAccproPresell(),
             ];
         }
         return $this->json($result);
-        return $this->json(['result' => -1]);
     }
 
     #[Route('/api/business/save/user/permissions', name: 'api_business_save_user_permission')]
@@ -646,6 +647,7 @@ class BusinessController extends AbstractController
                 $perm->setPlugAccproCloseYear($params['plugAccproCloseYear']);
                 $perm->setPlugAccproRfbuy($params['plugAccproRfbuy']);
                 $perm->setPlugAccproRfsell($params['plugAccproRfsell']);
+                $perm->setPlugAccproPresell($params['plugAccproPresell']);
                 $perm->setPlugAccproAccounting($params['plugAccproAccounting']);
                 $perm->setPlugRepservice($params['plugRepservice']);
                 $entityManager->persist($perm);

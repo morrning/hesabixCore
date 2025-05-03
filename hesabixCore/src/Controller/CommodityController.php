@@ -31,6 +31,13 @@ use Psr\Log\LoggerInterface;
 
 class CommodityController extends AbstractController
 {
+    private const DEFAULT_ROOT_CATEGORY = 'دسته بندی ها';
+    private const DEFAULT_NO_CATEGORY = 'بدون دسته‌بندی';
+
+    private function isDefaultCategoryName(string $name): bool
+    {
+        return $name === self::DEFAULT_ROOT_CATEGORY || $name === self::DEFAULT_NO_CATEGORY;
+    }
 
     #[Route('/api/commodities/search', name: 'search_commodities')]
     public function searchCommodities(
@@ -1063,6 +1070,15 @@ class CommodityController extends AbstractController
         }
         if (!array_key_exists('upper', $params) || !array_key_exists('text', $params))
             return $this->json(['result' => -1]);
+            
+        if ($this->isDefaultCategoryName($params['text'])) {
+            return $this->json([
+                'result' => 4, 
+                'message' => 'این نام برای دسته‌بندی مجاز نیست',
+                'errorCode' => 'DEFAULT_CATEGORY_NAME'
+            ]);
+        }
+            
         $upper = $entityManager->getRepository(CommodityCat::class)->find($params['upper']);
         if ($upper) {
             if ($upper->getBid() == $acc['bid']) {
@@ -1090,9 +1106,26 @@ class CommodityController extends AbstractController
         }
         if (!array_key_exists('id', $params) || !array_key_exists('text', $params))
             return $this->json(['result' => -1]);
+            
+        if ($this->isDefaultCategoryName($params['text'])) {
+            return $this->json([
+                'result' => 4, 
+                'message' => 'این نام برای دسته‌بندی مجاز نیست',
+                'errorCode' => 'DEFAULT_CATEGORY_NAME'
+            ]);
+        }
+            
         $node = $entityManager->getRepository(CommodityCat::class)->find($params['id']);
         if ($node) {
             if ($node->getBid() == $acc['bid']) {
+                // بررسی دسته‌بندی پیش‌فرض
+                if ($this->isDefaultCategoryName($node->getName())) {
+                    return $this->json([
+                        'result' => 4, 
+                        'message' => 'ویرایش دسته‌بندی پیش‌فرض مجاز نیست',
+                        'errorCode' => 'DEFAULT_CATEGORY_EDIT'
+                    ]);
+                }
                 $node->setName($params['text']);
                 $entityManager->persist($node);
                 $entityManager->flush();
@@ -1150,7 +1183,7 @@ class CommodityController extends AbstractController
     public function createDefaultCat(Business $bid, EntityManagerInterface $en): array
     {
         $item = new CommodityCat();
-        $item->setName('دسته بندی ها');
+        $item->setName(self::DEFAULT_ROOT_CATEGORY);
         $item->setUpper(null);
         $item->setBid($bid);
         $item->setRoot(true);
@@ -1160,7 +1193,7 @@ class CommodityController extends AbstractController
         $child = new CommodityCat();
         $child->setUpper($item->getId());
         $child->setBid($bid);
-        $child->setName('بدون دسته‌بندی');
+        $child->setName(self::DEFAULT_NO_CATEGORY);
         $en->persist($child);
         $en->flush();
         return [$item, $child];
@@ -1521,5 +1554,65 @@ class CommodityController extends AbstractController
         $entityManager->flush();
         $log->insert('کالا/خدمات', 'قیمت تعدادی از کالا‌ها به صورت گروهی ویرایش شد.', $this->getUser(), $acc['bid']->getId());
         return $this->json($extractor->operationSuccess());
+    }
+
+    #[Route('/api/commodity/cat/delete', name: 'app_commodity_cat_delete', methods: ['POST'])]
+    public function app_commodity_cat_delete(
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
+        $acc = $access->hasRole('commodity');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $params = json_decode($request->getContent(), true);
+        if (!isset($params['id'])) {
+            return $this->json(['Success' => false, 'message' => 'شناسه دسته‌بندی ارسال نشده است'], 400);
+        }
+
+        $category = $entityManager->getRepository(CommodityCat::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'id' => $params['id']
+        ]);
+
+        if (!$category) {
+            return $this->json(['Success' => false, 'message' => 'دسته‌بندی یافت نشد'], 404);
+        }
+
+        // بررسی دسته‌بندی پیش‌فرض
+        if ($this->isDefaultCategoryName($category->getName())) {
+            return $this->json([
+                'Success' => false, 
+                'message' => 'حذف دسته‌بندی پیش‌فرض مجاز نیست',
+                'errorCode' => 'DEFAULT_CATEGORY_DELETE'
+            ], 400);
+        }
+
+        // بررسی دسته‌بندی ریشه
+        if ($category->isRoot()) {
+            return $this->json(['Success' => false, 'message' => 'دسته‌بندی ریشه قابل حذف نیست'], 400);
+        }
+
+        // بررسی وجود زیرمجموعه
+        $hasChildren = $this->hasChild($entityManager, $category);
+        if ($hasChildren) {
+            return $this->json(['Success' => false, 'message' => 'این دسته‌بندی دارای زیرمجموعه است و قابل حذف نیست'], 400);
+        }
+
+        // بررسی وجود کالا در این دسته‌بندی
+        $hasCommodities = $entityManager->getRepository(Commodity::class)->findOneBy(['cat' => $category]);
+        if ($hasCommodities) {
+            return $this->json(['Success' => false, 'message' => 'این دسته‌بندی دارای کالا است و قابل حذف نیست'], 400);
+        }
+
+        $catName = $category->getName();
+        $entityManager->remove($category);
+        $entityManager->flush();
+
+        $log->insert('کالا/خدمات', 'دسته‌بندی با نام ' . $catName . ' حذف شد.', $this->getUser(), $acc['bid']->getId());
+        return $this->json(['Success' => true, 'message' => 'دسته‌بندی با موفقیت حذف شد']);
     }
 }

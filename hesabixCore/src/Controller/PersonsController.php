@@ -317,6 +317,9 @@ class PersonsController extends AbstractController
                     $person->setPrelabel($prelabel);
                 }
             }
+            elseif ($params['prelabel'] == null) {
+                $person->setPrelabel(null);
+            }
         }
         //inset cards
         if (array_key_exists('accounts', $params)) {
@@ -995,11 +998,6 @@ class PersonsController extends AbstractController
             $params = json_decode($content, true);
         }
 
-        // پارامترهای صفحه‌بندی
-        $page = $params['page'] ?? 1;
-        $limit = $params['limit'] ?? 10;
-        $offset = ($page - 1) * $limit;
-
         $queryBuilder = $entityManager->getRepository(HesabdariDoc::class)->createQueryBuilder('d')
             ->where('d.bid = :bid')
             ->andWhere('d.type = :type')
@@ -1022,12 +1020,23 @@ class PersonsController extends AbstractController
             ->getQuery()
             ->getSingleScalarResult();
 
-        // دریافت داده‌های صفحه فعلی
-        $items = $queryBuilder->select('d')
-            ->setFirstResult($offset)
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        // اگر درخواست با صفحه‌بندی است
+        if (array_key_exists('page', $params) && array_key_exists('limit', $params)) {
+            $page = $params['page'];
+            $limit = $params['limit'];
+            $offset = ($page - 1) * $limit;
+
+            $items = $queryBuilder->select('d')
+                ->setFirstResult($offset)
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult();
+        } else {
+            // دریافت همه آیتم‌ها بدون صفحه‌بندی
+            $items = $queryBuilder->select('d')
+                ->getQuery()
+                ->getResult();
+        }
 
         // اضافه کردن اطلاعات اشخاص به هر آیتم
         foreach ($items as $item) {
@@ -1048,16 +1057,16 @@ class PersonsController extends AbstractController
                 'bid' => $acc['bid'],
                 'items' => $items,
                 'totalItems' => $totalItems,
-                'currentPage' => $page,
-                'totalPages' => ceil($totalItems / $limit)
+                'currentPage' => $params['page'] ?? 1,
+                'totalPages' => array_key_exists('limit', $params) ? ceil($totalItems / $params['limit']) : 1
             ])
         );
 
         return $this->json([
             'id' => $pid,
             'totalItems' => $totalItems,
-            'currentPage' => $page,
-            'totalPages' => ceil($totalItems / $limit)
+            'currentPage' => $params['page'] ?? 1,
+            'totalPages' => array_key_exists('limit', $params) ? ceil($totalItems / $params['limit']) : 1
         ]);
     }
     

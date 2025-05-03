@@ -199,6 +199,7 @@ class UserController extends AbstractController
             $temp = [];
             $temp['name'] = $perm->getUser()->getFullName();
             $temp['email'] = $perm->getUser()->getEmail();
+            $temp['mobile'] = $perm->getUser()->getMobile();
             $temp['owner'] = $perm->isOwner();
             $out[] = $temp;
         }

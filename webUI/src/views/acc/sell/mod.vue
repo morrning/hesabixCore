@@ -1083,7 +1083,7 @@
                     this.items.push({
                       commodity: item.commodity,
                       count: item.commodity_count,
-                      price: parseInt((parseInt(item.bs) - parseInt(item.tax) + parseInt(item.discount)) / parseInt(item.commodity_count)),
+                      price: parseFloat((parseFloat(item.bs) - parseFloat(item.tax) + parseFloat(item.discount)) / parseFloat(item.commodity_count)),
                       bs: item.bs,
                       bd: item.bd,
                       type: 'commodity',
@@ -1091,7 +1091,7 @@
                       des: item.des,
                       discount: item.discount,
                       tax: item.tax,
-                      sumWithoutTax: item.bs - item.tax,
+                      sumWithoutTax: parseFloat(item.bs) - parseFloat(item.tax),
                       sumTotal: item.bs,
                       table: 53
                     });

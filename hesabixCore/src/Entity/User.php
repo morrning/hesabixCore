@@ -125,6 +125,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'submitter', targetEntity: AccountingPackageOrder::class, orphanRemoval: true)]
     private Collection $accountingPackageOrders;
 
+    /**
+     * @var Collection<int, BackBuiltModule>
+     */
+    #[ORM\OneToMany(targetEntity: BackBuiltModule::class, mappedBy: 'submitter', orphanRemoval: true)]
+    private Collection $backBuiltModules;
+
     public function __construct()
     {
         $this->userTokens = new ArrayCollection();
@@ -148,6 +154,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->preInvoiceDocs = new ArrayCollection();
         $this->dashboardSettings = new ArrayCollection();
         $this->accountingPackageOrders = new ArrayCollection();
+        $this->backBuiltModules = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -918,6 +925,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($accountingPackageOrder->getSubmitter() === $this) {
                 $accountingPackageOrder->setSubmitter(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, BackBuiltModule>
+     */
+    public function getBackBuiltModules(): Collection
+    {
+        return $this->backBuiltModules;
+    }
+
+    public function addBackBuiltModule(BackBuiltModule $backBuiltModule): static
+    {
+        if (!$this->backBuiltModules->contains($backBuiltModule)) {
+            $this->backBuiltModules->add($backBuiltModule);
+            $backBuiltModule->setSubmitter($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBackBuiltModule(BackBuiltModule $backBuiltModule): static
+    {
+        if ($this->backBuiltModules->removeElement($backBuiltModule)) {
+            // set the owning side to null (unless already changed)
+            if ($backBuiltModule->getSubmitter() === $this) {
+                $backBuiltModule->setSubmitter(null);
             }
         }
 

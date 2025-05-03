@@ -408,6 +408,8 @@ const fa_lang = {
     search_txt: "جست و جو ...",
     prev_page: "صفحه قبل",
     next_page: "صفحه بعد",
+    business_stamp: "مهر کسب و کار",
+    invoice_index: "نمایه فاکتور",
     change_password: {
       title: "تغییر کلمه عبور",
       new_password: "کلمه عبور جدید",
@@ -443,7 +445,7 @@ const fa_lang = {
     import_excel: "درون ریزی از اکسل",
     selected: "انتخاب شده‌ها",
     selected_all: "همه‌ی موارد",
-    export_pdf: "خروجی پی دی اف",
+    export_pdf: "خروجی PDF",
     export_excel: "خروجی اکسل",
     filter_results: "فیلتر نتایج",
     account: "حساب کاربری",

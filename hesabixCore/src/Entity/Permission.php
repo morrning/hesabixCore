@@ -120,6 +120,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $plugRepservice = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $plugAccproPresell = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -541,6 +544,18 @@ class Permission
     public function setPlugRepservice(?bool $plugRepservice): static
     {
         $this->plugRepservice = $plugRepservice;
+
+        return $this;
+    }
+
+    public function isPlugAccproPresell(): ?bool
+    {
+        return $this->plugAccproPresell;
+    }
+
+    public function setPlugAccproPresell(?bool $plugAccproPresell): static
+    {
+        $this->plugAccproPresell = $plugAccproPresell;
 
         return $this;
     }

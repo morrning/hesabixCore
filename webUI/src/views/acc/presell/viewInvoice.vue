@@ -193,28 +193,12 @@
     <v-progress-circular color="primary" indeterminate></v-progress-circular>
   </v-overlay>
   <!-- Print Modal -->
-  <v-dialog v-model="modal" width="auto">
-    <v-card :subtitle="$t('dialog.print_info_des')" prepend-icon="mdi-file-pdf-box" :title="$t('dialog.export_pdf')">
-      <template v-slot:text>
-        <v-select class="mb-2" v-model="printOptions.paper" :items="paperSizes" :label="$t('dialog.paper_size')">
-        </v-select>
-        <v-switch inset v-model="printOptions.bidInfo" color="primary" :label="$t('dialog.bid_info_label')"
-          hide-details></v-switch>
-        <v-switch inset v-model="printOptions.note" color="primary" :label="$t('dialog.invoice_footer_note')"
-          hide-details></v-switch>
-        <v-switch inset v-model="printOptions.taxInfo" color="primary" :label="$t('dialog.tax_dexpo')"
-          hide-details></v-switch>
-        <v-switch inset v-model="printOptions.discountInfo" color="primary" :label="$t('dialog.discount_dexpo')"
-          hide-details></v-switch>
-      </template>
-      <template v-slot:actions>
-        <v-btn variant="tonal" class="" prepend-icon="mdi-printer" color="primary" :text="$t('dialog.print')"
-          @click="modal = false; printInvoice()"></v-btn>
-        <v-btn variant="tonal" class="" prepend-icon="mdi-undo" color="secondary" :text="$t('dialog.cancel')"
-          @click="modal = false"></v-btn>
-      </template>
-    </v-card>
-  </v-dialog>
+  <PrintDialog
+    v-model="modal"
+    :plugins="plugins"
+    @print="handlePrint"
+    @cancel="modal = false"
+  />
   <!-- End Print Modal -->
   <!-- Delete Dialog -->
   <v-dialog v-model="deleteDialog" max-width="500">
@@ -265,9 +249,13 @@
 <script>
 import axios from "axios";
 import { ref, computed } from 'vue';
+import PrintDialog from '@/components/PrintDialog.vue';
 
 export default {
   name: "viewInvoice",
+  components: {
+    PrintDialog
+  },
   setup() {
     const items = ref([]);
     const totalInvoice = ref(0);
@@ -287,24 +275,12 @@ export default {
     const preinvoiceCode = ref('');
     const modal = ref(false);
     const deleteDialog = ref(false);
+    const plugins = ref({});
     const snackbar = ref({
       show: false,
       text: '',
       color: 'success'
     });
-    const printOptions = ref({
-      note: true,
-      bidInfo: true,
-      taxInfo: true,
-      discountInfo: true,
-      paper: 'A4-L'
-    });
-    const paperSizes = ref([
-      { title: 'A4 عمودی', value: 'A4' },
-      { title: 'A4 افقی', value: 'A4-L' },
-      { title: 'A5 عمودی', value: 'A5' },
-      { title: 'A5 افقی', value: 'A5-L' }
-    ]);
 
     const customerName = computed(() => {
       return customer.value?.nikename || customer.value?.name || 'نامشخص';
@@ -330,15 +306,15 @@ export default {
       preinvoiceCode,
       modal,
       deleteDialog,
-      snackbar,
-      printOptions,
-      paperSizes
+      plugins,
+      snackbar
     };
   },
   mounted() {
     const id = this.$route.params.id;
     if (id) {
       this.loadPreinvoice(id);
+      this.loadPlugins();
     }
   },
   methods: {
@@ -420,13 +396,24 @@ export default {
 
       this.finalTotal = total + this.taxAmount - calculatedTotalDiscount + (Number(this.shippingCost) || 0);
     },
-    printInvoice(pdf = true, cloudePrinters = true) {
+    async loadPlugins() {
+      try {
+        const response = await axios.post('/api/plugin/get/actives');
+        this.plugins = response.data;
+      } catch (error) {
+        console.error('خطا در بارگذاری افزونه‌ها:', error);
+      }
+    },
+    handlePrint(printOptions) {
+      this.printInvoice(true, true, printOptions);
+    },
+    printInvoice(pdf = true, cloudePrinters = true, printOptions = null) {
       this.loading = true;
       axios.post('/api/preinvoice/print/invoice', {
         'code': this.preinvoiceCode,
         'pdf': pdf,
         'printers': cloudePrinters,
-        'printOptions': this.printOptions
+        'printOptions': printOptions
       }).then((response) => {
         this.loading = false;
         window.open(this.$API_URL + '/front/print/' + response.data.id, '_blank', 'noreferrer');

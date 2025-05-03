@@ -83,6 +83,12 @@
                     <v-col cols="12" sm="6" md="4" lg="3">
                       <v-switch v-model="settings.sell.discountInfo" label="تخفیف به تفکیک اقلام" color="primary" hide-details density="compact"></v-switch>
                     </v-col>
+                    <v-col cols="12" sm="6" md="4" lg="3">
+                      <v-switch v-model="settings.sell.businessStamp" label="مهر کسب و کار" color="primary" hide-details density="compact"></v-switch>
+                    </v-col>
+                    <v-col cols="12" sm="6" md="4" lg="3">
+                      <v-switch v-model="settings.sell.invoiceIndex" label="نمایه فاکتور" color="primary" hide-details density="compact"></v-switch>
+                    </v-col>
                   </v-row>
                 </v-col>
               </v-row>
@@ -283,6 +289,8 @@ export default {
         taxInfo: true,
         discountInfo: true,
         paper: 'A4-L',
+        businessStamp: true,
+        invoiceIndex: true
       },
       buy: {
         pays: true,

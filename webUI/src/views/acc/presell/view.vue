@@ -14,7 +14,7 @@
           <v-spacer></v-spacer>
           <v-tooltip :text="$t('dialog.export_pdf')" location="bottom">
             <template v-slot:activator="{ props }">
-              <v-btn v-bind="props" icon="mdi-file-pdf-box" color="primary" @click="printInvoice()"></v-btn>
+              <v-btn v-bind="props" icon="mdi-file-pdf-box" color="primary" @click="modal = true"></v-btn>
             </template>
           </v-tooltip>
         </v-toolbar>
@@ -94,15 +94,28 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+
+    <!-- Print Dialog -->
+    <PrintDialog
+      v-model="modal"
+      :plugins="plugins"
+      @print="handlePrint"
+      @cancel="modal = false"
+    />
+    <!-- End Print Dialog -->
   </div>
 </template>
 
 <script>
 import axios from "axios";
 import { ref, defineComponent } from "vue";
+import PrintDialog from '@/components/PrintDialog.vue';
 
 export default defineComponent({
   name: "PresellView",
+  components: {
+    PrintDialog
+  },
   props: {
     code: {
       type: [String, Number],
@@ -116,7 +129,9 @@ export default defineComponent({
   data() {
     return {
       dialog: this.modelValue,
+      modal: false,
       presellData: {},
+      plugins: {},
       itemsHeaders: [
         { text: "کد کالا", value: "itemCode" },
         { text: "نام کالا", value: "itemName" },
@@ -124,14 +139,7 @@ export default defineComponent({
         { text: "قیمت", value: "price" },
         { text: "مبلغ", value: "amount" },
         { text: "جمع", value: "total" }
-      ],
-      printOptions: {
-        note: true,
-        bidInfo: true,
-        taxInfo: true,
-        discountInfo: true,
-        paper: 'A4-L'
-      }
+      ]
     }
   },
   methods: {
@@ -140,25 +148,37 @@ export default defineComponent({
       this.$emit('update:modelValue', value);
       this.$emit('close');
     },
+    async loadPlugins() {
+      try {
+        const response = await axios.post('/api/plugin/get/actives');
+        this.plugins = response.data;
+      } catch (error) {
+        console.error('خطا در بارگذاری افزونه‌ها:', error);
+      }
+    },
+    handlePrint(printOptions) {
+      this.printInvoice(true, true, printOptions);
+    },
+    printInvoice(pdf = true, cloudePrinters = true, printOptions = null) {
+      axios.post('/api/preinvoice/print/invoice', {
+        'code': this.code,
+        'pdf': pdf,
+        'printers': cloudePrinters,
+        'printOptions': printOptions
+      }).then((response) => {
+        window.open(this.$API_URL + '/front/print/' + response.data.id, '_blank', 'noreferrer');
+      });
+    },
     loadData() {
       axios.post('/api/preinvoice/get/' + this.code)
         .then((response) => {
           this.presellData = response.data;
         });
-    },
-    printInvoice() {
-      axios.post('/api/preinvoice/print/invoice', {
-        'code': this.code,
-        'pdf': true,
-        'printers': true,
-        'printOptions': this.printOptions
-      }).then((response) => {
-        window.open(this.$API_URL + '/front/print/' + response.data.id, '_blank', 'noreferrer');
-      });
     }
   },
   created() {
     this.loadData();
+    this.loadPlugins();
   }
 });
 </script>

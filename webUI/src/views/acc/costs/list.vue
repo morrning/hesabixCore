@@ -91,6 +91,36 @@
             <v-icon>mdi-filter</v-icon>
             {{ $t('dialog.filters') }}
           </v-list-subheader>
+          
+          <!-- فیلتر درختی حساب‌ها -->
+          <v-list-item>
+            <v-list-item-title class="text-dark mb-2">
+              فیلتر مرکز هزینه:
+              <v-btn
+                v-if="selectedAccountId !== '67'"
+                size="small"
+                color="primary"
+                variant="text"
+                class="ms-2"
+                @click="resetAccountFilter"
+              >
+                <v-icon size="small" class="me-1">mdi-refresh</v-icon>
+                بازنشانی
+              </v-btn>
+            </v-list-item-title>
+            <hesabdari-tree-view
+              v-model="selectedAccountId"
+              :show-sub-tree="true"
+              :selectable-only="false"
+              :initial-account="{ code: '67', name: 'هزینه‌ها' }"
+              @select="handleAccountSelect"
+              @account-selected="handleAccountSelected"
+            />
+          </v-list-item>
+          
+          <v-divider class="my-2"></v-divider>
+          
+          <!-- فیلترهای زمانی -->
           <v-list-item v-for="(filter, index) in timeFilters" :key="index" class="text-dark">
             <template v-slot:title>
               <v-checkbox v-model="filter.checked" :label="filter.label" @change="applyTimeFilter(filter.value)"
@@ -152,7 +182,7 @@
                 <v-list density="compact" class="pa-0 ma-0">
                   <v-list-item :border="true" v-for="(center, index) in item.costCenters" :key="index">
                     <v-list-item-title>
-                      {{ center.name }}
+                      {{ center.name }} ({{ center.code }})
                       {{ $t('dialog.acc_price') }} : {{ $filters.formatNumber(center.amount) }}
                       {{ $t('dialog.des') }} : {{ center.des }}
                     </v-list-item-title>
@@ -211,6 +241,7 @@ import Swal from 'sweetalert2';
 import { debounce } from 'lodash';
 import { getApiUrl } from '/src/hesabixConfig';
 import moment from 'jalali-moment';
+import HesabdariTreeView from '@/components/forms/HesabdariTreeView.vue';
 
 const apiUrl = getApiUrl();
 axios.defaults.baseURL = apiUrl;
@@ -222,7 +253,8 @@ const selectedItems = ref(new Set());
 const totalItems = ref(0);
 const searchQuery = ref('');
 const timeFilter = ref('all');
-const expanded = ref([]); // برای مدیریت ردیف‌های گسترش‌یافته
+const expanded = ref([]);
+const selectedAccountId = ref('67');
 
 // فیلترهای زمانی
 const timeFilters = ref([
@@ -232,7 +264,7 @@ const timeFilters = ref([
   { label: 'همه', value: 'all', checked: true },
 ]);
 
-// تعریف ستون‌های جدول (ستون costCenter از هدرها حذف شده)
+// تعریف ستون‌های جدول
 const headers = ref([
   { title: '', key: 'checkbox', sortable: false, width: '50', align: 'center' },
   { title: 'ردیف', key: 'index', align: 'center', sortable: false, width: '70' },
@@ -265,6 +297,26 @@ const selectedCost = computed(() => {
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 });
 
+// متدهای مدیریت فیلتر حساب
+const handleAccountSelect = (account) => {
+  if (account) {
+    selectedAccountId.value = account.code;
+    fetchData();
+  }
+};
+
+const handleAccountSelected = (account) => {
+  if (account) {
+    fetchData();
+  }
+};
+
+// متد ریست کردن فیلتر حساب
+const resetAccountFilter = () => {
+  selectedAccountId.value = '67';
+  fetchData();
+};
+
 // فچ کردن داده‌ها از سرور
 const fetchData = async () => {
   try {
@@ -291,10 +343,12 @@ const fetchData = async () => {
           filters.dateFrom = moment().locale('fa').startOf('jMonth').format('YYYY/MM/DD');
           filters.dateTo = today;
           break;
-        case 'all':
-        default:
-          break;
       }
+    }
+    
+    // اضافه کردن فیلتر حساب
+    if (selectedAccountId.value) {
+      filters.account = selectedAccountId.value;
     }
 
     const sortByArray = Array.isArray(serverOptions.value.sortBy) ? serverOptions.value.sortBy : [];

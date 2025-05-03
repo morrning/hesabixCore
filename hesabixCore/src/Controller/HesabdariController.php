@@ -1143,32 +1143,36 @@ class HesabdariController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
-        $depth = (int) $request->query->get('depth', 2); // عمق پیش‌فرض 2
-        $rootId = (int) $request->query->get('rootId', 1); // گره ریشه پیش‌فرض
+        $rootCode = $request->query->get('rootCode');
+        
+        if (!$rootCode) {
+            return $this->json(['Success' => false, 'message' => 'کد ریشه مشخص نشده است'], 400);
+        }
 
-        $root = $entityManager->getRepository(HesabdariTable::class)->find($rootId);
+        // جستجوی ریشه بر اساس code
+        $root = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
+            'code' => $rootCode,
+            'bid' => [$acc['bid']->getId(), null]
+        ]);
+
         if (!$root) {
             return $this->json(['Success' => false, 'message' => 'نود ریشه یافت نشد'], 404);
         }
 
-        $buildTree = function ($node, $depth, $currentDepth = 0) use ($entityManager, $acc, &$buildTree) {
-            if ($currentDepth >= $depth) {
-                return null;
-            }
-
+        // تابع بازگشتی برای ساخت درخت
+        $buildTree = function ($node) use ($entityManager, $acc, &$buildTree) {
             $children = $entityManager->getRepository(HesabdariTable::class)->findBy([
                 'upper' => $node,
                 'bid' => [$acc['bid']->getId(), null],
-            ]);
+            ], ['code' => 'ASC']); // مرتب‌سازی بر اساس کد
 
             $result = [];
             foreach ($children as $child) {
                 $childData = [
-                    'id' => $child->getId(),
-                    'name' => $child->getName(),
                     'code' => $child->getCode(),
+                    'name' => $child->getName(),
                     'type' => $child->getType(),
-                    'children' => $buildTree($child, $depth, $currentDepth + 1),
+                    'children' => $buildTree($child)
                 ];
                 $result[] = $childData;
             }
@@ -1176,12 +1180,12 @@ class HesabdariController extends AbstractController
             return $result;
         };
 
+        // ساخت درخت کامل
         $tree = [
-            'id' => $root->getId(),
-            'name' => $root->getName(),
             'code' => $root->getCode(),
+            'name' => $root->getName(),
             'type' => $root->getType(),
-            'children' => $buildTree($root, $depth),
+            'children' => $buildTree($root)
         ];
 
         return $this->json(['Success' => true, 'data' => $tree]);

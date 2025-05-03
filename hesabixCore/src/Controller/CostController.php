@@ -20,7 +20,7 @@ use App\Entity\Salary;
 use App\Entity\Person;
 use App\Service\Log;
 use Doctrine\Common\Collections\ArrayCollection;
-
+use App\Repository\HesabdariTableRepository;
 class CostController extends AbstractController
 {
     #[Route('/api/cost/dashboard/data', name: 'app_cost_dashboard_data', methods: ['GET'])]
@@ -180,6 +180,7 @@ class CostController extends AbstractController
         Request $request,
         Access $access,
         EntityManagerInterface $entityManager,
+        HesabdariTableRepository $hesabdariTableRepository,
         Jdate $jdate
     ): JsonResponse {
         $acc = $access->hasRole('cost');
@@ -189,22 +190,24 @@ class CostController extends AbstractController
 
         $params = json_decode($request->getContent(), true) ?? [];
 
-        // پارامترهای ورودی
+        // Input parameters
         $filters = $params['filters'] ?? [];
         $pagination = $params['pagination'] ?? ['page' => 1, 'limit' => 10];
         $sort = $params['sort'] ?? ['sortBy' => 'id', 'sortDesc' => true];
         $type = $params['type'] ?? 'cost';
 
-        // تنظیم پارامترهای صفحه‌بندی
+        // Set pagination parameters
         $page = max(1, $pagination['page'] ?? 1);
         $limit = max(1, min(100, $pagination['limit'] ?? 10));
 
-        // ساخت کوئری پایه
+        // Build base query
         $queryBuilder = $entityManager->createQueryBuilder()
             ->select('DISTINCT d.id, d.dateSubmit, d.date, d.type, d.code, d.des, d.amount')
             ->addSelect('u.fullName as submitter')
             ->from('App\Entity\HesabdariDoc', 'd')
             ->leftJoin('d.submitter', 'u')
+            ->leftJoin('d.hesabdariRows', 'r')
+            ->leftJoin('r.ref', 't')
             ->where('d.bid = :bid')
             ->andWhere('d.year = :year')
             ->andWhere('d.type = :type')
@@ -214,14 +217,12 @@ class CostController extends AbstractController
             ->setParameter('type', $type)
             ->setParameter('money', $acc['money']);
 
-        // اعمال فیلترها
+        // Apply filters
         if (!empty($filters)) {
-            // جستجوی متنی
+            // Text search
             if (isset($filters['search'])) {
                 $searchValue = is_array($filters['search']) ? $filters['search']['value'] : $filters['search'];
-                $queryBuilder->leftJoin('d.hesabdariRows', 'r')
-                    ->leftJoin('r.person', 'p')
-                    ->leftJoin('r.ref', 't')
+                $queryBuilder->leftJoin('r.person', 'p')
                     ->andWhere(
                         $queryBuilder->expr()->orX(
                             'd.code LIKE :search',
@@ -229,13 +230,25 @@ class CostController extends AbstractController
                             'd.date LIKE :search',
                             'd.amount LIKE :search',
                             'p.nikename LIKE :search',
-                            't.name LIKE :search'
+                            't.name LIKE :search',
+                            't.code LIKE :search'
                         )
                     )
                     ->setParameter('search', "%{$searchValue}%");
             }
 
-            // فیلتر زمانی
+            // Cost center filter
+            if (isset($filters['account']) && $filters['account'] !== '67') {
+                $accountCodes = $hesabdariTableRepository->findAllSubAccountCodes($filters['account'], $acc['bid']->getId());
+                if (!empty($accountCodes)) {
+                    $queryBuilder->andWhere('t.code IN (:accountCodes)')
+                        ->setParameter('accountCodes', $accountCodes);
+                } else {
+                    $queryBuilder->andWhere('1 = 0');
+                }
+            }
+
+            // Time filter
             if (isset($filters['timeFilter'])) {
                 $today = $jdate->jdate('Y/m/d', time());
                 switch ($filters['timeFilter']) {
@@ -262,31 +275,28 @@ class CostController extends AbstractController
                                 ->setParameter('dateTo', $filters['dateTo']);
                         }
                         break;
-                    case 'all':
-                    default:
-                        // بدون فیلتر زمانی اضافه
-                        break;
                 }
             }
 
+            // Amount filter
             if (isset($filters['amount'])) {
                 $queryBuilder->andWhere('d.amount = :amount')
                     ->setParameter('amount', $filters['amount']);
             }
         }
 
-        // اعمال مرتب‌سازی
+        // Apply sorting
         $sortField = is_array($sort['sortBy']) ? ($sort['sortBy']['key'] ?? 'id') : ($sort['sortBy'] ?? 'id');
         $sortDirection = ($sort['sortDesc'] ?? true) ? 'DESC' : 'ASC';
         $queryBuilder->orderBy("d.$sortField", $sortDirection);
 
-        // محاسبه تعداد کل نتایج
+        // Calculate total items
         $totalItemsQuery = clone $queryBuilder;
         $totalItems = $totalItemsQuery->select('COUNT(DISTINCT d.id)')
             ->getQuery()
             ->getSingleScalarResult();
 
-        // اعمال صفحه‌بندی
+        // Apply pagination
         $queryBuilder->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit);
 
@@ -305,9 +315,9 @@ class CostController extends AbstractController
                 'submitter' => $doc['submitter'],
             ];
 
-            // دریافت اطلاعات مرکز هزینه و مبلغ
+            // Get cost center details
             $costDetails = $entityManager->createQueryBuilder()
-                ->select('t.name as center_name, r.bd as amount, r.des as des')
+                ->select('t.name as center_name, t.code as center_code, r.bd as amount, r.des as des')
                 ->from('App\Entity\HesabdariRow', 'r')
                 ->join('r.ref', 't')
                 ->where('r.doc = :docId')
@@ -319,12 +329,13 @@ class CostController extends AbstractController
             $item['costCenters'] = array_map(function ($detail) {
                 return [
                     'name' => $detail['center_name'],
+                    'code' => $detail['center_code'],
                     'amount' => (int) $detail['amount'],
                     'des' => $detail['des'],
                 ];
             }, $costDetails);
 
-            // دریافت اطلاعات شخص مرتبط
+            // Get related person info
             $personInfo = $entityManager->createQueryBuilder()
                 ->select('p.id, p.nikename, p.code')
                 ->from('App\Entity\HesabdariRow', 'r')

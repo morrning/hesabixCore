@@ -57,6 +57,8 @@ class PrintersController extends AbstractController
         $temp['sell']['noteString'] = $settings->getSellNoteString();
         $temp['sell']['pays'] = $settings->isSellPays();
         $temp['sell']['paper'] = $settings->getSellPaper();
+        $temp['sell']['businessStamp'] = $settings->isSellBusinessStamp();
+        $temp['sell']['invoiceIndex'] = $settings->isSellInvoiceIndex();
         if (!$temp['sell']['paper']) {
             $temp['sell']['paper'] = 'A4-L';
         }
@@ -135,6 +137,8 @@ class PrintersController extends AbstractController
         $settings->setSellNoteString($params['sell']['noteString']);
         $settings->setSellPays($params['sell']['pays']);
         $settings->setSellPaper($params['sell']['paper']);
+        $settings->setSellBusinessStamp($params['sell']['businessStamp']);
+        $settings->setSellInvoiceIndex($params['sell']['invoiceIndex']);
         if ($params['buy']['bidInfo'] == null) {
             $settings->setBuyBidInfo(false);
         } else {

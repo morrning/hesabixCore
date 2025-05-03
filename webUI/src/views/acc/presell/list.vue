@@ -118,29 +118,12 @@
     </v-col>
   </v-row>
   <!-- Print Modal -->
-  <v-dialog v-model="modal" width="auto">
-    <v-card :subtitle="$t('dialog.print_info_des')" prepend-icon="mdi-file-pdf-box" :title="$t('dialog.export_pdf')">
-      <template v-slot:text>
-        <v-select class=mb-2 v-model="printOptions.paper" :items="paperSizes" :label="$t('dialog.paper_size')">
-        </v-select>
-        <v-switch inset v-model="printOptions.bidInfo" color="primary" :label="$t('dialog.bid_info_label')"
-          hide-details></v-switch>
-        <v-switch inset v-model="printOptions.note" color="primary" :label="$t('dialog.invoice_footer_note')"
-          hide-details></v-switch>
-        <v-switch inset v-model="printOptions.taxInfo" color="primary" :label="$t('dialog.tax_dexpo')"
-          hide-details></v-switch>
-        <v-switch inset v-model="printOptions.discountInfo" color="primary" :label="$t('dialog.discount_dexpo')"
-          hide-details></v-switch>
-
-      </template>
-      <template v-slot:actions>
-        <v-btn variant="tonal" class="" prepend-icon="mdi-printer" color="primary" :text="$t('dialog.print')"
-          @click="modal = false; printInvoice()"></v-btn>
-        <v-btn variant="tonal" class="" prepend-icon="mdi-undo" color="secondary" :text="$t('dialog.cancel')"
-          @click="modal = false"></v-btn>
-      </template>
-    </v-card>
-  </v-dialog>
+  <PrintDialog
+    v-model="modal"
+    :plugins="plugins"
+    @print="printInvoice"
+    @cancel="modal = false"
+  />
   <!-- End Print Modal -->
   <!-- Delete Dialog -->
   <v-dialog v-model="deleteDialog" width="auto">
@@ -205,9 +188,13 @@
 <script>
 import axios from "axios";
 import { ref, defineComponent } from "vue";
+import PrintDialog from '@/components/PrintDialog.vue';
 
 export default defineComponent ({
   name: "list",
+  components: {
+    PrintDialog
+  },
   data() {
     let self = this;
     return {
@@ -236,8 +223,11 @@ export default defineComponent ({
         taxInfo: true,
         discountInfo: true,
         selectedPrintCode: 0,
-        paper: 'A4-L'
+        paper: 'A4-L',
+        businessStamp: true,
+        invoiceIndex: true
       },
+      plugins: {},
       sumSelected: 0,
       sumTotal: 0,
       itemsSelected: [],
@@ -267,7 +257,20 @@ export default defineComponent ({
     }
   },
   methods: {
+    isPluginActive(pluginCode) {
+      return this.plugins && this.plugins[pluginCode] !== undefined;
+    },
+    async loadPlugins() {
+      try {
+        const response = await axios.post('/api/plugin/get/actives');
+        this.plugins = response.data || {};
+      } catch (error) {
+        console.error('Error loading plugins:', error);
+        this.plugins = {};
+      }
+    },
     loadData() {
+      this.loadPlugins();
       axios.post("/api/printers/options/info").then((response) => {
         this.printOptions = response.data.sell;
       });

@@ -1,148 +1,226 @@
-<template>
-  <div class="block block-content-full">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light" >
-      <h3 class="block-title text-primary-dark">
-        <i class="fa fa-users-gear"></i>
-        کاربران و دسترسی‌ها </h3>
-      <div class="block-options">
-      </div>
-    </div>
-    <div class="block-content p-0">
-      <div class="mb-4">
-        <div class="input-group p-3">
-          <div class="form-floating">
-            <input v-model="newEmail" class="form-control" type="email">
-            <label for="example-group3-floating2">برای افزودن کاربر جدید پست الکترونیکی را وارد کنید.</label>
-          </div>
-          <button @click="submitData" class="btn btn-primary" type="button"> افزودن </button>
+<template> <v-toolbar color="toolbar" title="کاربران و دسترسی‌ها">
+    <template v-slot:prepend>
+      <v-tooltip :text="$t('dialog.back')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+            icon="mdi-arrow-right" />
+        </template>
+      </v-tooltip>
+    </template>
+  </v-toolbar>
+  <v-container>
+    <v-row>
+      <v-col cols="12">
+        <v-form @submit.prevent="submitData">
+          <v-row>
+            <v-col cols="10">
+              <v-text-field v-model="newEmail" label="برای افزودن کاربر جدید پست الکترونیکی را وارد کنید" type="email"
+                variant="outlined" density="comfortable" class="email-field"></v-text-field>
+            </v-col>
+            <v-col cols="2">
+              <v-btn color="primary" type="submit" block class="submit-btn">
+                افزودن
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-form>
+      </v-col>
+    </v-row>
+
+    <v-data-table :headers="headers" :items="users" :items-per-page="10" class="elevation-1">
+      <template v-slot:item.index="{ index }">
+        {{ index + 1 }}
+      </template>
+
+      <template v-slot:item.name="{ item }">
+        <span class="font-weight-bold text-primary">{{ item.name }}</span>
+      </template>
+
+      <template v-slot:item.email="{ item }">
+        <v-chip color="primary" size="small">{{ item.email }}</v-chip>
+      </template>
+
+      <template v-slot:item.mobile="{ item }">
+        <v-chip color="info" size="small">{{ item.mobile || '-' }}</v-chip>
+      </template>
+
+      <template v-slot:item.actions="{ item }">
+        <template v-if="item.owner != 1">
+          <v-btn-group>
+            <v-btn :to="{ name: 'business_user_roll_edit', params: { email: item.email } }" icon="mdi-pencil"
+              variant="text" color="primary" size="small"></v-btn>
+            <v-btn @click="confirmDelete(item.email)" icon="mdi-delete" variant="text" color="error"
+              size="small"></v-btn>
+          </v-btn-group>
+        </template>
+        <v-chip v-else color="success" size="small">مدیر کل</v-chip>
+      </template>
+    </v-data-table>
+  </v-container>
+
+  <!-- دیالوگ تایید حذف -->
+  <v-dialog v-model="deleteDialog" max-width="400" transition="dialog-bottom-transition">
+    <v-card class="rounded-lg" title="تایید حذف کاربر">
+      <template v-slot:prepend>
+        <v-avatar>
+          <v-icon color="error">mdi-alert-circle</v-icon>
+        </v-avatar>
+      </template>
+      <v-divider></v-divider>
+
+      <v-card-text class="pt-4">
+        <div class="text-body-1">
+          آیا از حذف کاربر <span class="font-weight-bold text-primary">{{ userToDelete?.name }}</span> با ایمیل <span class="font-weight-bold text-primary">{{ userToDelete?.email }}</span> اطمینان دارید؟
         </div>
-      </div>
-      <table class="table table-hover table-vcenter table-sm">
-        <thead>
-        <tr>
-          <th class="text-center" style="width: 50px;">#</th>
-          <th>نام / نام خانوادگی</th>
-          <th>پست الکترونیکی</th>
-          <th class="text-center" style="width: 100px;">عملیات</th>
-        </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item,index) in users">
-            <th class="text-center" scope="row">{{ index + 1 }}</th>
-            <td class="fw-semibold text-primary-dark">{{ item.name}}</td>
-            <td class="d-none d-sm-table-cell">
-              <span class="badge bg-primary">{{item.email}}</span>
-            </td>
-            <td class="text-center">
-              <div class="btn-group btn-group-sm" v-if="item.owner != 1">
-                <router-link :to="{'name':'business_user_roll_edit','params':{'email':item.email}}"  class="btn btn-alt-primary" type="button" aria-label=" ویرایش ">
-                  <i class="fa fa-pencil-alt"></i>
-                </router-link>
-                <button @click="deleteUser(item.email)"  class="btn btn-alt-primary" type="button" aria-label=" حذف ">
-                  <i class="fa fa-times"></i>
-                </button>
-              </div>
-              <span class="badge bg-success" v-if="item.owner == 1">مدیر کل</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+        <div class="text-caption text-medium-emphasis mt-2">
+          این عملیات غیرقابل بازگشت است.
+        </div>
+      </v-card-text>
+
+      <v-divider></v-divider>
+
+      <v-card-actions class="pa-4">
+        <v-spacer></v-spacer>
+        <v-btn color="grey-darken-1" variant="text" @click="deleteDialog = false" class="px-4">
+          انصراف
+        </v-btn>
+        <v-btn color="error" variant="flat" @click="confirmDeleteAction" class="px-4">
+          <v-icon start>mdi-delete</v-icon>
+          حذف کاربر
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- اسنک‌بار برای نمایش پیام‌ها -->
+  <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
+    {{ snackbar.text }}
+    <template v-slot:actions>
+      <v-btn variant="text" @click="snackbar.show = false">
+        بستن
+      </v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
 <script>
 import axios from "axios";
-import Swal from "sweetalert2";
 
 export default {
   name: "user_rolls",
-  data: ()=>{return{
-    users : {},
+  data: () => ({
+    users: [],
     newEmail: '',
-  }},
-  methods:{
-    deleteUser(email){
-      Swal.fire({
-        title: 'آیا برای حذف کاربر مطمئن هستید؟',
-        showCancelButton: true,
-        confirmButtonText: 'بله',
-        cancelButtonText: `خیر`,
-      }).then((result) => {
-        /* Read more about isConfirmed, isDenied below */
-        if (result.isConfirmed) {
-          axios.post('/api/business/delete/user',{
-            'bid':localStorage.getItem('activeBid'),
-            'email': email}
-          ).then((response)=>{
-            if(response.data.result == 1){
-              let index = 0;
-              for(let z=0; z<this.users.length; z++){
-                index ++;
-                if(this.users[z]['email'] == email){
-                  this.users.splice(index -1 ,1);
-                }
-              }
-              Swal.fire({
-                text: 'کاربر با موفقیت حذف شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              });
-            }
-          })
-        }
-      })
+    headers: [
+      { title: '#', key: 'index', align: 'center', sortable: false },
+      { title: 'نام / نام خانوادگی', key: 'name', align: 'center' },
+      { title: 'پست الکترونیکی', key: 'email', align: 'center' },
+      { title: 'شماره موبایل', key: 'mobile', align: 'center' },
+      { title: 'عملیات', key: 'actions', align: 'center', sortable: false }
+    ],
+    deleteDialog: false,
+    userToDelete: null,
+    snackbar: {
+      show: false,
+      text: '',
+      color: 'success'
+    }
+  }),
+  methods: {
+    showSnackbar(text, color = 'success') {
+      this.snackbar.text = text;
+      this.snackbar.color = color;
+      this.snackbar.show = true;
     },
-    submitData(){
-      if(this.newEmail == ''){
-        Swal.fire({
-          text: 'پست الکترونیکی را وارد کنید.',
-          icon: 'error',
-          confirmButtonText: 'قبول'
+    confirmDelete(email) {
+      const user = this.users.find(u => u.email === email);
+      this.userToDelete = {
+        email: email,
+        name: user ? user.name : email
+      };
+      this.deleteDialog = true;
+    },
+    confirmDeleteAction() {
+      if (this.userToDelete) {
+        const emailToDelete = this.userToDelete.email;
+        axios.post('/api/business/delete/user', {
+          'bid': localStorage.getItem('activeBid'),
+          'email': emailToDelete
+        }).then((response) => {
+          if (response.data.result == 1) {
+            this.users = this.users.filter(user => user.email !== emailToDelete);
+            this.showSnackbar('کاربر با موفقیت حذف شد.');
+          } else {
+            this.showSnackbar('خطا در حذف کاربر', 'error');
+          }
+          this.deleteDialog = false;
+          this.userToDelete = null;
+        }).catch((error) => {
+          this.showSnackbar('خطا در حذف کاربر', 'error');
+          this.deleteDialog = false;
+          this.userToDelete = null;
         });
       }
-      else {
-        axios.post("/api/business/add/user",{'bid':localStorage.getItem('activeBid'),'email': this.newEmail}).then((response)=>{
-            if(response.data.result == 0){
-              Swal.fire({
-                text: 'کاربری با این پست الکترونیکی یافت نشد.',
-                icon: 'error',
-                confirmButtonText: 'قبول'
-              });
-            }
-            else if(response.data.result == 1){
-              Swal.fire({
-                text: 'قبلا این کاربر به کسب و کار افزوده شده است.',
-                icon: 'error',
-                confirmButtonText: 'قبول'
-              });
-            }
-            else{
-              let temp = {
-                'name':response.data.data.name,
-                'email':response.data.data.email,
-                'owner':response.data.data.owner
-              };
-              this.users.push(temp);
-              Swal.fire({
-                text: 'کاربر با موفقیت عضو کسب و کار شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              });
-            }
-          this.newEmail = '';
-        });
+    },
+    submitData() {
+      if (this.newEmail == '') {
+        this.showSnackbar('پست الکترونیکی را وارد کنید.', 'error');
+        return;
       }
+
+      axios.post("/api/business/add/user", {
+        'bid': localStorage.getItem('activeBid'),
+        'email': this.newEmail
+      }).then((response) => {
+        if (response.data.result == 0) {
+          this.showSnackbar('کاربری با این پست الکترونیکی یافت نشد.', 'error');
+        } else if (response.data.result == 1) {
+          this.showSnackbar('قبلا این کاربر به کسب و کار افزوده شده است.', 'error');
+        } else {
+          this.users.push({
+            'name': response.data.data.name,
+            'email': response.data.data.email,
+            'owner': response.data.data.owner,
+            'mobile': response.data.data.mobile || null
+          });
+          this.showSnackbar('کاربر با موفقیت عضو کسب و کار شد.');
+        }
+        this.newEmail = '';
+      }).catch(() => {
+        this.showSnackbar('خطا در افزودن کاربر', 'error');
+      });
     }
   },
   mounted() {
-    axios.post('/api/user/get/users/of/business/' + localStorage.getItem('activeBid')).then((response)=>{
-      this.users = response.data;
-    })
+    axios.post('/api/user/get/users/of/business/' + localStorage.getItem('activeBid')).then((response) => {
+      this.users = Array.isArray(response.data) ? response.data : [];
+    }).catch(() => {
+      this.showSnackbar('خطا در دریافت لیست کاربران', 'error');
+    });
   }
 }
 </script>
 
 <style scoped>
+.v-table {
+  width: 100%;
+}
 
+.email-field :deep(.v-field) {
+  height: 56px;
+}
+
+.submit-btn {
+  height: 56px;
+}
+
+.v-data-table :deep(th),
+.v-data-table :deep(td) {
+  text-align: center !important;
+  vertical-align: middle;
+}
+
+.v-data-table :deep(.v-chip) {
+  margin: 0 auto;
+}
 </style>

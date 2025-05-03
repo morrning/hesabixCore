@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\HesabdariTable;
+use App\Entity\Business;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -66,5 +67,59 @@ class HesabdariTableRepository extends ServiceEntityRepository
             ->setParameter('bid', $bid)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * Find all sub-account codes recursively, filtered by business ID.
+     *
+     * @param string $accountCode The account code to start with
+     * @param int|Business|null $business The business ID or Business entity (or null for no business filter)
+     * @return array List of unique account codes
+     */
+    public function findAllSubAccountCodes(string $accountCode, $business): array
+    {
+        $businessId = $business instanceof Business ? $business->getId() : $business;
+        $result = [$accountCode];
+
+        // Find the parent node by account code and business filter
+        $qb = $this->createQueryBuilder('t')
+            ->select('t.id')
+            ->where('t.code = :code')
+            ->setParameter('code', $accountCode);
+
+        // Apply business filter
+        if ($businessId !== null) {
+            $qb->andWhere('t.bid IS NULL OR t.bid = :businessId')
+                ->setParameter('businessId', $businessId);
+        }
+
+        $parent = $qb->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$parent) {
+            return array_unique($result);
+        }
+
+        // Find direct children using the upper relationship and business filter
+        $qb = $this->createQueryBuilder('t')
+            ->select('t.code')
+            ->where('t.upper = :parentId')
+            ->setParameter('parentId', $parent['id']);
+
+        // Apply business filter for children
+        if ($businessId !== null) {
+            $qb->andWhere('t.bid IS NULL OR t.bid = :businessId')
+                ->setParameter('businessId', $businessId);
+        }
+
+        $subAccounts = $qb->getQuery()->getResult();
+
+        // Recursively find sub-accounts for each child
+        foreach ($subAccounts as $subAccount) {
+            $result = array_merge($result, $this->findAllSubAccountCodes($subAccount['code'], $businessId));
+        }
+
+        return array_unique($result);
     }
 }

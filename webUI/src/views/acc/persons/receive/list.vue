@@ -400,7 +400,9 @@ const print = async (allItems = true) => {
     if (allItems) {
       response = await axios.post('/api/person/receive/list/print');
     } else {
-      response = await axios.post('/api/person/receive/list/print', { items: selectedItems.value });
+      response = await axios.post('/api/person/receive/list/print', { 
+        items: selectedItems.value
+      });
     }
     
     const printID = response.data.id;

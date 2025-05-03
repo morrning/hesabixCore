@@ -59,8 +59,8 @@ class HesabdariRow
     #[Ignore]
     private ?Commodity $commodity = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 20, scale: 0, nullable: true)]
-    private ?int $commdityCount = null;
+    #[ORM\Column(type: Types::DECIMAL, precision: 20, scale: 4, nullable: true)]
+    private ?float $commdityCount = null;
 
     #[ORM\ManyToOne(inversedBy: 'hesabdariRows')]
     #[Ignore]
@@ -220,15 +220,14 @@ class HesabdariRow
         return $this;
     }
 
-    public function getCommdityCount(): ?int
+    public function getCommdityCount(): ?float
     {
         return $this->commdityCount;
     }
 
-    public function setCommdityCount(?int $commdityCount): self
+    public function setCommdityCount(?float $commdityCount): self
     {
         $this->commdityCount = $commdityCount;
-
         return $this;
     }
 

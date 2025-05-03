@@ -236,20 +236,69 @@
     </v-dialog>
 
     <v-dialog v-model="modal" width="auto">
-      <v-card :subtitle="$t('dialog.print_info_des')" prepend-icon="mdi-file-pdf-box" :title="$t('dialog.export_pdf')">
-        <template v-slot:text>
+      <v-card>
+        <v-toolbar color="primary">
+          <v-toolbar-title class="text-white">
+            <v-icon icon="mdi-file-pdf-box" class="ml-2"></v-icon>
+            {{ $t('dialog.export_pdf') }}
+          </v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-tooltip :text="$t('dialog.print')" location="bottom">
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" icon="mdi-printer" color="white" @click="modal = false; printInvoice()"></v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip :text="$t('dialog.cancel')" location="bottom">
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" icon="mdi-close" color="white" @click="modal = false"></v-btn>
+            </template>
+          </v-tooltip>
+        </v-toolbar>
+        <v-card-text>
           <v-select class="mb-2" v-model="printOptions.paper" :items="paperSizes" :label="$t('dialog.paper_size')">
           </v-select>
-          <v-switch inset v-model="printOptions.bidInfo" color="primary" :label="$t('dialog.bid_info_label')" hide-details></v-switch>
-          <v-switch inset v-model="printOptions.pays" color="primary" :label="$t('dialog.invoice_pays')" hide-details></v-switch>
-          <v-switch inset v-model="printOptions.note" color="primary" :label="$t('dialog.invoice_footer_note')" hide-details></v-switch>
-          <v-switch inset v-model="printOptions.taxInfo" color="primary" :label="$t('dialog.tax_dexpo')" hide-details></v-switch>
-          <v-switch inset v-model="printOptions.discountInfo" color="primary" :label="$t('dialog.discount_dexpo')" hide-details></v-switch>
-        </template>
-        <template v-slot:actions>
-          <v-btn variant="tonal" prepend-icon="mdi-printer" color="primary" :text="$t('dialog.print')" @click="modal = false; printInvoice()"></v-btn>
-          <v-btn variant="tonal" prepend-icon="mdi-undo" color="secondary" :text="$t('dialog.cancel')" @click="modal = false"></v-btn>
-        </template>
+          <v-row>
+            <v-col cols="12" sm="6">
+              <v-tooltip :text="$t('dialog.bid_info_label')" location="right">
+                <template v-slot:activator="{ props }">
+                  <v-switch v-bind="props" inset v-model="printOptions.bidInfo" color="primary" :label="$t('dialog.bid_info_label')" hide-details></v-switch>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="$t('dialog.invoice_pays')" location="right">
+                <template v-slot:activator="{ props }">
+                  <v-switch v-bind="props" inset v-model="printOptions.pays" color="primary" :label="$t('dialog.invoice_pays')" hide-details></v-switch>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="$t('dialog.invoice_footer_note')" location="right">
+                <template v-slot:activator="{ props }">
+                  <v-switch v-bind="props" inset v-model="printOptions.note" color="primary" :label="$t('dialog.invoice_footer_note')" hide-details></v-switch>
+                </template>
+              </v-tooltip>
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-tooltip :text="$t('dialog.tax_dexpo')" location="right">
+                <template v-slot:activator="{ props }">
+                  <v-switch v-bind="props" inset v-model="printOptions.taxInfo" color="primary" :label="$t('dialog.tax_dexpo')" hide-details></v-switch>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="$t('dialog.discount_dexpo')" location="right">
+                <template v-slot:activator="{ props }">
+                  <v-switch v-bind="props" inset v-model="printOptions.discountInfo" color="primary" :label="$t('dialog.discount_dexpo')" hide-details></v-switch>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="$t('dialog.business_stamp')" location="right">
+                <template v-slot:activator="{ props }">
+                  <v-switch v-if="isPluginActive('accpro')" v-bind="props" inset v-model="printOptions.businessStamp" color="primary" :label="$t('dialog.business_stamp')" hide-details></v-switch>
+                </template>
+              </v-tooltip>
+              <v-tooltip :text="$t('dialog.invoice_index')" location="right">
+                <template v-slot:activator="{ props }">
+                  <v-switch v-if="isPluginActive('accpro')" v-bind="props" inset v-model="printOptions.invoiceIndex" color="primary" :label="$t('dialog.invoice_index')" hide-details></v-switch>
+                </template>
+              </v-tooltip>
+            </v-col>
+          </v-row>
+        </v-card-text>
       </v-card>
     </v-dialog>
   </div>
@@ -280,8 +329,11 @@ export default defineComponent({
         taxInfo: true,
         discountInfo: true,
         selectedPrintCode: 0,
-        paper: 'A4-L'
+        paper: 'A4-L',
+        businessStamp: true,
+        invoiceIndex: true
       },
+      plugins: {},
       sumSelected: 0,
       sumTotal: 0,
       itemsSelected: [],
@@ -330,6 +382,18 @@ export default defineComponent({
     },
   },
   methods: {
+    isPluginActive(pluginCode) {
+      return this.plugins && this.plugins[pluginCode] !== undefined;
+    },
+    async loadPlugins() {
+      try {
+        const response = await axios.post('/api/plugin/get/actives');
+        this.plugins = response.data || {};
+      } catch (error) {
+        console.error('Error loading plugins:', error);
+        this.plugins = {};
+      }
+    },
     changeLabel(label) {
       if (this.itemsSelected.length === 0) {
         Swal.fire({
@@ -606,6 +670,7 @@ export default defineComponent({
   },
   created() {
     this.loadColumnSettings();
+    this.loadPlugins();
     this.loadData();
   },
   watch: {

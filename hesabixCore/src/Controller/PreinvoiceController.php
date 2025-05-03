@@ -88,7 +88,7 @@ class PreinvoiceController extends AbstractController
     #[Route('/api/preinvoice/save', name: 'app_preinvoice_save')]
     public function savePreinvoice(Access $access,Provider $provider, Log $log, EntityManagerInterface $entityManager, Request $request): JsonResponse
     {
-        $acc = $access->hasRole('preinvoice');
+        $acc = $access->hasRole('plugAccproPresell');
         if (!$acc) {
             return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
         }
@@ -170,7 +170,7 @@ class PreinvoiceController extends AbstractController
     #[Route('/api/preinvoice/delete/{id}', name: 'app_preinvoice_delete')]
     public function deletePreinvoice(Access $access, Log $log, EntityManagerInterface $entityManager, int $id): JsonResponse
     {
-        $acc = $access->hasRole('preinvoice');
+        $acc = $access->hasRole('plugAccproPresell');
         if (!$acc) {
             return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
         }
@@ -207,7 +207,7 @@ class PreinvoiceController extends AbstractController
     #[Route('/api/preinvoice/docs/search', name: 'app_presell_search')]
     public function searchPreinvoices(Access $access, EntityManagerInterface $entityManager): JsonResponse
     {
-        $acc = $access->hasRole('preinvoice');
+        $acc = $access->hasRole('plugAccproPresell');
         if (!$acc) {
             return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
         }
@@ -244,7 +244,7 @@ class PreinvoiceController extends AbstractController
     #[Route('/api/preinvoice/remove/group', name: 'app_presell_delete_group')]
     public function deletePreinvoiceGroup(Log $log, Access $access, EntityManagerInterface $entityManager, Request $request): JsonResponse
     {
-        $acc = $access->hasRole('preinvoice');
+        $acc = $access->hasRole('plugAccproPresell');
         if (!$acc) {
             return new JsonResponse($this->extractor->operationFail('دسترسی ندارید'), 403);
         }
@@ -289,7 +289,7 @@ class PreinvoiceController extends AbstractController
             $params = json_decode($content, true);
         }
 
-        $acc = $access->hasRole('preinvoice');
+        $acc = $access->hasRole('plugAccproPresell');
         if (!$acc) {
             throw $this->createAccessDeniedException();
         }
@@ -312,7 +312,9 @@ class PreinvoiceController extends AbstractController
                 'taxInfo' => true,
                 'discountInfo' => true,
                 'note' => true,
-                'paper' => 'A4-L'
+                'paper' => 'A4-L',
+                'invoiceIndex' => false,
+                'businessStamp' => false
             ];
 
             if (array_key_exists('printOptions', $params)) {
@@ -333,6 +335,12 @@ class PreinvoiceController extends AbstractController
                 }
                 if (array_key_exists('paper', $params['printOptions'])) {
                     $printOptions['paper'] = $params['printOptions']['paper'];
+                }
+                if (array_key_exists('invoiceIndex', $params['printOptions'])) {
+                    $printOptions['invoiceIndex'] = $params['printOptions']['invoiceIndex'];
+                }
+                if (array_key_exists('businessStamp', $params['printOptions'])) {
+                    $printOptions['businessStamp'] = $params['printOptions']['businessStamp'];
                 }
             }
 

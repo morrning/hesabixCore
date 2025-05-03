@@ -36,12 +36,9 @@
   <v-container>
     <v-row>
       <v-col cols="12" md="4">
-        <v-text-field
+        <Hdatepicker
           v-model="ticket.date"
           label="تاریخ"
-          variant="outlined"
-          density="compact"
-          readonly
         />
       </v-col>
       <v-col cols="12" md="4">
@@ -176,6 +173,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import Hdatepicker from '@/components/forms/Hdatepicker.vue'
 
 interface TransferType {
   id: number;

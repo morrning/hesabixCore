@@ -125,7 +125,7 @@ export default {
       });
     },
     isPluginActive(plugName) {
-      return this.plugins[plugName] !== undefined;
+      return this.plugins && this.plugins[plugName] !== undefined;
     },
     getDefaultShortcuts() {
       return [
@@ -152,7 +152,7 @@ export default {
         { path: '/acc/costs/list', key: 'G', label: this.$t('drawer.costs'), ctrl: true, shift: true, permission: () => this.permissions.cost },
         { path: '/acc/sell/fast-mod', key: 'J', label: this.$t('drawer.fast_sell'), ctrl: true, shift: true, permission: () => this.permissions.sell },
         { path: '/acc/sell/list', key: 'V', label: this.$t('drawer.sell_invoices'), ctrl: true, shift: true, permission: () => this.permissions.sell },
-        { path: '/acc/presell/list', key: 'X', label: this.$t('drawer.presells'), ctrl: true, shift: true, permission: () => this.permissions.sell && this.isPluginActive('accpro') },
+        { path: '/acc/presell/list', key: 'X', label: this.$t('drawer.presells'), ctrl: true, shift: true, permission: () =>  this.permissions.plugAccproPresell && this.isPluginActive('accpro') },
         { path: '/acc/rfsell/list', key: 'Z', label: this.$t('drawer.rfsell_invoices'), ctrl: true, shift: true, permission: () => this.permissions.plugAccproRfsell && this.isPluginActive('accpro') },
         { path: '/acc/incomes/list', key: 'A', label: this.$t('drawer.incomes'), ctrl: true, shift: true, permission: () => this.permissions.income },
         { path: '/acc/accounting/list', key: '1', label: this.$t('drawer.accounting_docs'), ctrl: true, shift: true, permission: () => this.permissions.accounting },
@@ -621,7 +621,7 @@ export default {
             </v-tooltip>
           </template>
         </v-list-item>
-        <v-list-item v-if="this.isPluginActive('accpro') && permissions.sell" to="/acc/presell/list">
+        <v-list-item v-if="this.isPluginActive('accpro') && permissions.plugAccproPresell" to="/acc/presell/list">
           <v-list-item-title>
             {{ $t('drawer.presells') }}
             <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/presell/list') }}</span>
@@ -883,8 +883,8 @@ export default {
     <v-spacer></v-spacer>
     <v-tooltip text="جادوگر" location="bottom">
       <template v-slot:activator="{ props }">
-        <v-btn class="d-none d-sm-flex" stacked v-bind="props" to="/acc/wizard/home">
-      <v-icon>mdi-wizard-hat</v-icon>
+        <v-btn class="" stacked v-bind="props" to="/acc/wizard/home">
+      <v-icon>mdi-robot</v-icon>
     </v-btn>
       </template>
     </v-tooltip>
