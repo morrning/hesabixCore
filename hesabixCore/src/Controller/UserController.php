@@ -307,7 +307,6 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/user/register', name: 'api_user_register', methods: ['POST'])]
-    #[Route('/api/user/register', name: 'api_user_register', methods: ['POST'])]
     public function api_user_register(
         Extractor $extractor,
         registryMGR $registryMGR,

@@ -454,20 +454,90 @@ EOF
 # Function to setup SSL with Let's Encrypt
 setup_ssl() {
     local domain="$1"
+    local max_attempts=3
+    local attempt=1
+    local success=false
     
     log_message "INFO" "Setting up SSL for $domain..."
     
-    check_internet
-    if ! command_exists certbot; then
-        log_message "INFO" "Installing Certbot..."
-        apt-get install -y certbot python3-certbot-apache || handle_error "Failed to install Certbot"
+    # Check if domain is accessible
+    log_message "INFO" "Checking if domain $domain is accessible..."
+    if ! host "$domain" >/dev/null 2>&1; then
+        log_message "WARNING" "Domain $domain is not accessible. Please make sure DNS is properly configured."
+        echo -e "\n${YELLOW}SSL setup skipped. Please ensure:${NC}"
+        echo -e "1. DNS records for $domain are properly configured"
+        echo -e "2. Domain is pointing to this server's IP address"
+        echo -e "3. Port 80 is accessible from the internet"
+        echo -e "\n${YELLOW}You can run SSL setup later using:${NC}"
+        echo -e "${GREEN}sudo certbot --apache -d $domain -d www.$domain${NC}"
+        return 1
     fi
     
-    certbot --apache -d "$domain" -d "www.$domain" --non-interactive --agree-tos --email "admin@$domain" || {
-        log_message "WARNING" "Failed to setup SSL automatically. Please configure SSL manually."
+    # Check if certbot is installed
+    if ! command_exists certbot; then
+        log_message "INFO" "Installing Certbot..."
+        apt-get install -y certbot python3-certbot-apache || {
+            log_message "ERROR" "Failed to install Certbot"
+            return 1
+        }
+    fi
+    
+    # Check if Apache is running
+    if ! systemctl is-active --quiet apache2; then
+        log_message "ERROR" "Apache is not running. Please start Apache first."
+        return 1
     }
     
-    log_message "INFO" "SSL setup completed"
+    # Try to setup SSL with multiple attempts
+    while [[ $attempt -le $max_attempts ]] && [[ $success == false ]]; do
+        log_message "INFO" "Attempt $attempt of $max_attempts to setup SSL..."
+        
+        # Stop Apache temporarily to free port 80
+        systemctl stop apache2 || {
+            log_message "WARNING" "Failed to stop Apache, continuing anyway..."
+        }
+        
+        # Run certbot
+        if certbot --apache -d "$domain" -d "www.$domain" --non-interactive --agree-tos --email "admin@$domain" --force-renewal; then
+            success=true
+            log_message "INFO" "SSL setup completed successfully"
+        else
+            log_message "WARNING" "Attempt $attempt failed to setup SSL"
+            attempt=$((attempt + 1))
+            sleep 5
+        fi
+        
+        # Start Apache again
+        systemctl start apache2 || {
+            log_message "WARNING" "Failed to start Apache"
+        }
+    done
+    
+    if [[ $success == true ]]; then
+        # Verify SSL installation
+        if curl -s "https://$domain" >/dev/null 2>&1; then
+            log_message "INFO" "SSL verification successful"
+            echo -e "\n${GREEN}SSL setup completed successfully!${NC}"
+            echo -e "You can access your site securely at: ${UNDERLINE}https://$domain${NC}"
+        else
+            log_message "WARNING" "SSL verification failed"
+            echo -e "\n${YELLOW}SSL setup completed but verification failed.${NC}"
+            echo -e "Please check your SSL configuration manually."
+        fi
+    else
+        log_message "ERROR" "Failed to setup SSL after $max_attempts attempts"
+        echo -e "\n${RED}SSL setup failed.${NC}"
+        echo -e "${YELLOW}Possible reasons:${NC}"
+        echo -e "1. Domain DNS is not properly configured"
+        echo -e "2. Port 80 is blocked by firewall"
+        echo -e "3. Let's Encrypt rate limit exceeded"
+        echo -e "\n${YELLOW}You can try setting up SSL manually using:${NC}"
+        echo -e "${GREEN}sudo certbot --apache -d $domain -d www.$domain${NC}"
+        echo -e "\n${YELLOW}Or check the logs:${NC}"
+        echo -e "${GREEN}sudo certbot certificates${NC}"
+        echo -e "${GREEN}sudo certbot --apache -d $domain -d www.$domain --dry-run${NC}"
+        return 1
+    fi
 }
 
 # Function to validate domain
@@ -496,6 +566,7 @@ setup_domain() {
     local domain="$1"
     local domain_path="/var/www/html/$domain/public_html"
     local config_file="/etc/apache2/sites-available/$domain.conf"
+    local sessions_path="/var/www/html/$domain/hesabixCore/var/sessions"
     
     log_message "INFO" "Setting up domain: $domain"
     
@@ -525,6 +596,12 @@ setup_domain() {
     mkdir -p "$domain_path" || handle_error "Failed to create domain directory"
     chown -R "$apache_user:$apache_user" "$domain_path"
     chmod -R 755 "$domain_path"
+    
+    # Create sessions directory
+    log_message "INFO" "Creating sessions directory..."
+    mkdir -p "$sessions_path" || handle_error "Failed to create sessions directory"
+    chown -R "$apache_user:$apache_user" "$sessions_path"
+    chmod -R 777 "$sessions_path"
     
     # Enable Apache rewrite module
     a2enmod rewrite || handle_error "Failed to enable Apache rewrite module"
@@ -777,6 +854,23 @@ setup_web_ui() {
     log_message "INFO" "Installing web UI dependencies..."
     timeout "$NPM_TIMEOUT" npm install || handle_error "Failed to install web UI dependencies"
     
+    # Set proper permissions for webUI directory
+    log_message "INFO" "Setting proper permissions for webUI directory..."
+    chown -R "$apache_user:$apache_user" "$webui_path"
+    chmod -R 755 "$webui_path"
+    
+    # Set execute permissions for node_modules/.bin
+    if [[ -d "$webui_path/node_modules/.bin" ]]; then
+        chmod -R +x "$webui_path/node_modules/.bin"
+    fi
+    
+    # Set proper permissions for node_modules
+    log_message "INFO" "Setting proper permissions for node_modules directory..."
+    chmod -R 755 "$webui_path/node_modules"
+    find "$webui_path/node_modules" -type f -exec chmod 644 {} \;
+    find "$webui_path/node_modules" -type d -exec chmod 755 {} \;
+    find "$webui_path/node_modules/.bin" -type f -exec chmod 755 {} \;
+    
     # Build web UI
     log_message "INFO" "Building web UI..."
     timeout "$NPM_TIMEOUT" npm run build-only || handle_error "Failed to build web UI"
@@ -788,14 +882,25 @@ setup_web_ui() {
 set_apache_ownership() {
     local domain="$1"
     local domain_path="/var/www/html/$domain"
+    local webui_path="$domain_path/webUI"
     
     log_message "INFO" "Setting Apache ownership..."
     
     chown -R "$apache_user:$apache_user" "$domain_path" || \
         handle_error "Failed to set Apache ownership"
     
+    # Set permissions for all directories and files
     find "$domain_path" -type d -exec chmod 755 {} \;
     find "$domain_path" -type f -exec chmod 644 {} \;
+    
+    # Set special permissions for webUI node_modules
+    if [[ -d "$webui_path/node_modules" ]]; then
+        log_message "INFO" "Setting special permissions for webUI node_modules..."
+        chmod -R 755 "$webui_path/node_modules"
+        find "$webui_path/node_modules" -type f -exec chmod 644 {} \;
+        find "$webui_path/node_modules" -type d -exec chmod 755 {} \;
+        find "$webui_path/node_modules/.bin" -type f -exec chmod 755 {} \;
+    fi
     
     log_message "INFO" "Apache ownership set"
 }
@@ -885,10 +990,11 @@ show_installation_summary() {
     local db_name="hesabix_$(echo "$domain" | tr '.-' '_')"
     local db_user="hesabix_user"
     local db_password
+    local env_file="$domain_path/hesabixCore/.env.local.php"
     
     # Get database password from env file
-    if [[ -f "$domain_path/hesabixCore/.env.local.php" ]]; then
-        db_password=$(php -r "include '$domain_path/hesabixCore/.env.local.php'; echo \$env['DATABASE_URL']; echo PHP_EOL;" | grep -oP '(?<=://)[^:]+(?=:)')
+    if [[ -f "$env_file" ]]; then
+        db_password=$(php -r "include '$env_file'; echo \$env['DATABASE_URL']; echo PHP_EOL;" | grep -oP '(?<=://[^:]+:)[^@]+(?=@)')
     fi
     
     log_message "INFO" "Showing installation summary..."
@@ -916,7 +1022,17 @@ show_installation_summary() {
     echo -e "\n${YELLOW}Database Information:${NC}"
     echo -e "Database Name: $db_name"
     echo -e "Database User: $db_user"
-    echo -e "Database Password: $db_password"
+    if [[ -n "$db_password" ]]; then
+        echo -e "Database Password: $db_password"
+    else
+        echo -e "${RED}Database Password: Not found in .env.local.php${NC}"
+        echo -e "\n${YELLOW}To get database information, you can:${NC}"
+        echo -e "1. Check the file: $env_file"
+        echo -e "2. Run this command to extract password:"
+        echo -e "   ${GREEN}php -r \"include '$env_file'; echo \$env['DATABASE_URL']; echo PHP_EOL;\" | grep -oP '(?<=://[^:]+:)[^@]+(?=@)'${NC}"
+        echo -e "3. Or check MySQL directly:"
+        echo -e "   ${GREEN}mysql -u root -e \"SELECT User, Host FROM mysql.user WHERE User='$db_user';\"${NC}"
+    fi
     echo -e "Database Host: localhost"
     echo -e "Database Port: 3306"
     

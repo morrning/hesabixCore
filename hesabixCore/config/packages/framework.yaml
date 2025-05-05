@@ -14,6 +14,10 @@ framework:
         storage_factory_id: session.storage.factory.native
         cookie_lifetime: 3600 # 1 ساعت
         cookie_samesite: none # برای CORS باید Lax یا None باشه
+        save_path: '%kernel.project_dir%/var/sessions'
+        gc_maxlifetime: 3600
+        gc_probability: 1
+        gc_divisor: 100
 
     #esi: true
     #fragments: true
