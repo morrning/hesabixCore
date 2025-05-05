@@ -40,6 +40,24 @@ print_header() {
     echo -e "${YELLOW}Website: ${UNDERLINE}https://hesabix.ir${NC}"
     echo -e "${YELLOW}Support us: ${UNDERLINE}https://hesabix.ir/page/sponsors${NC} ❤"
     echo -e "${BOLD}${BLUE}=================================================${NC}\n"
+    
+    # Show prerequisites
+    echo -e "${BOLD}${YELLOW}Prerequisites:${NC}"
+    echo -e "1. A domain name pointing to this server"
+    echo -e "2. DNS records properly configured:"
+    echo -e "   • A record pointing to server IP"
+    echo -e "   • www subdomain pointing to server IP"
+    echo -e "3. Port 80 and 443 open and accessible"
+    echo -e "4. At least 2GB of free disk space"
+    echo -e "5. At least 1GB of RAM"
+    echo -e "\n${BOLD}${YELLOW}Important Notes:${NC}"
+    echo -e "• SSL certificate installation requires proper DNS configuration"
+    echo -e "• Domain must be accessible from the internet"
+    echo -e "• Installation may take 10-15 minutes"
+    echo -e "• System will be automatically rolled back if installation fails"
+    echo -e "\n${BOLD}${YELLOW}Do you want to continue?${NC}"
+    read -p "Press Enter to continue or Ctrl+C to abort..."
+    echo -e "${BOLD}${BLUE}=================================================${NC}\n"
 }
 
 # Show the header immediately
