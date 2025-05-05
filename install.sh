@@ -1077,6 +1077,81 @@ display_telemetry_consent() {
     [[ "$response" =~ ^[Yy]$ ]] && SEND_TELEMETRY=true
 }
 
+# Function to handle rollback
+rollback() {
+    local domain="$1"
+    local domain_path="/var/www/html/$domain"
+    
+    log_message "ERROR" "Starting rollback process..."
+    echo -e "\n${RED}Starting rollback process...${NC}"
+    
+    # Log rollback steps in main log file
+    {
+        echo "----------------------------------------"
+        echo "ROLLBACK STARTED AT: $(date)"
+        echo "Domain: $domain"
+        echo "Domain path: $domain_path"
+        echo "----------------------------------------"
+        echo "Note: System packages installed via apt are not removed"
+        echo "----------------------------------------"
+    } >> "$LOG_FILE"
+    
+    # Remove domain directory if it exists
+    if [[ -d "$domain_path" ]]; then
+        log_message "INFO" "Removing domain directory..."
+        rm -rf "$domain_path"
+        echo "Removed domain directory: $domain_path" >> "$LOG_FILE"
+    fi
+    
+    # Remove Apache virtual host
+    local config_file="/etc/apache2/sites-available/$domain.conf"
+    if [[ -f "$config_file" ]]; then
+        log_message "INFO" "Removing Apache virtual host..."
+        a2dissite "$domain.conf" >/dev/null 2>&1
+        rm -f "$config_file"
+        echo "Removed Apache virtual host: $config_file" >> "$LOG_FILE"
+    fi
+    
+    # Remove SSL certificates if they exist
+    if certbot certificates | grep -q "$domain"; then
+        log_message "INFO" "Removing SSL certificates..."
+        certbot delete --cert-name "$domain" --non-interactive
+        echo "Removed SSL certificates for: $domain" >> "$LOG_FILE"
+    fi
+    
+    # Remove database if it exists
+    local db_name="hesabix_$(echo "$domain" | tr '.-' '_')"
+    if mysql -e "SHOW DATABASES LIKE '$db_name'" | grep -q "$db_name"; then
+        log_message "INFO" "Removing database..."
+        mysql -e "DROP DATABASE IF EXISTS \`$db_name\`;"
+        echo "Removed database: $db_name" >> "$LOG_FILE"
+    fi
+    
+    # Remove database user if it exists
+    local db_user="hesabix_user"
+    if mysql -e "SELECT User FROM mysql.user WHERE User='$db_user'" | grep -q "$db_user"; then
+        log_message "INFO" "Removing database user..."
+        mysql -e "DROP USER IF EXISTS '$db_user'@'localhost';"
+        echo "Removed database user: $db_user" >> "$LOG_FILE"
+    fi
+    
+    # Restart Apache
+    systemctl restart apache2
+    
+    # Log completion in main log file
+    {
+        echo "----------------------------------------"
+        echo "ROLLBACK COMPLETED AT: $(date)"
+        echo "----------------------------------------"
+    } >> "$LOG_FILE"
+    
+    log_message "INFO" "Rollback completed"
+    echo -e "\n${YELLOW}Rollback completed.${NC}"
+    echo -e "${YELLOW}Check the installation log file for details: ${UNDERLINE}$LOG_FILE${NC}"
+    echo -e "\n${YELLOW}Note: System packages installed via apt were not removed.${NC}"
+    echo -e "${YELLOW}You can safely run the installation script again.${NC}"
+}
+
 # Main execution
 main() {
     # Show header first
@@ -1087,6 +1162,13 @@ main() {
     
     # Then start logging
     init_logging
+    
+    # Get domain first for rollback purposes
+    domain=$(get_domain)
+    
+    # Create a trap for rollback
+    trap 'rollback "$domain"; exit 1' ERR
+    
     check_system_requirements
     install_tools
     display_gpl_license
@@ -1100,7 +1182,6 @@ main() {
     install_composer
     install_phpmyadmin
     
-    domain=$(get_domain)
     setup_domain "$domain"
     install_software "$domain"
     setup_database "$domain"
@@ -1108,6 +1189,9 @@ main() {
     set_apache_ownership "$domain"
     setup_ssl "$domain"
     show_installation_summary "$domain"
+    
+    # Remove the trap at the end of successful installation
+    trap - ERR
 }
 
 # Execute main with error handling
