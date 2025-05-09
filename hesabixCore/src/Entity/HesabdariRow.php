@@ -91,6 +91,12 @@ class HesabdariRow
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $tax = null;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $discountType = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?float $discountPercent = null;
+
     public function __construct()
     {
     }
@@ -335,6 +341,30 @@ class HesabdariRow
     public function setTax(?string $tax): static
     {
         $this->tax = $tax;
+
+        return $this;
+    }
+
+    public function getDiscountType(): ?string
+    {
+        return $this->discountType;
+    }
+
+    public function setDiscountType(?string $discountType): self
+    {
+        $this->discountType = $discountType;
+
+        return $this;
+    }
+
+    public function getDiscountPercent(): ?float
+    {
+        return $this->discountPercent;
+    }
+
+    public function setDiscountPercent(?float $discountPercent): self
+    {
+        $this->discountPercent = $discountPercent;
 
         return $this;
     }

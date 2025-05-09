@@ -27,6 +27,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Entity\BankAccount;
+use App\Entity\Cashdesk;
+use App\Entity\Salary;
 
 class SellController extends AbstractController
 {
@@ -72,7 +75,7 @@ class SellController extends AbstractController
         foreach ($doc->getHesabdariRows() as $item) {
             if ($item->getCommodity() && $item->getCommdityCount()) {
                 if ($acc['bid']->getProfitCalctype() == 'simple') {
-                    $profit = $profit + (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceSell()) * $item->getCommdityCount());
+                    $profit = $profit + (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceBuy()) * $item->getCommdityCount());
                 } elseif ($acc['bid']->getProfitCalctype() == 'lis') {
                     $last = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
                         'commodity' => $item->getCommodity(),
@@ -82,7 +85,7 @@ class SellController extends AbstractController
                     ]);
                     if ($last) {
                         $price = $last->getBd() / $last->getCommdityCount();
-                        $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                        $profit = $profit + (($item->getBs() / $item->getCommdityCount() - $price) * $item->getCommdityCount());
                     } else {
                         $profit = $profit + $item->getBs();
                     }
@@ -101,7 +104,7 @@ class SellController extends AbstractController
                     }
                     if ($count != 0) {
                         $price = $avg / $count;
-                        $profit = $profit + ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                        $profit = $profit + (($item->getBs() / $item->getCommdityCount() - $price) * $item->getCommdityCount());
                     } else {
                         $profit = $profit + $item->getBs();
                     }
@@ -195,6 +198,12 @@ class SellController extends AbstractController
             ]);
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
+            
+            // ذخیره نوع تخفیف و درصد آن
+            $doc->setDiscountType($params['discountType'] ?? 'fixed');
+            if (isset($params['discountPercent'])) {
+                $doc->setDiscountPercent((float)$params['discountPercent']);
+            }
         }
         $doc->setDes($params['des']);
         $doc->setDate($params['date']);
@@ -264,10 +273,9 @@ class SellController extends AbstractController
                 $pair = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                     'bid' => $acc['bid'],
                     'code' => $pairCode,
-                    'type' => 'buy'
                 ]);
                 if ($pair) {
-                    $doc->addPairDoc($pair);
+                    $pair->addRelatedDoc($doc);
                 }
             }
         }
@@ -577,7 +585,6 @@ class SellController extends AbstractController
         ]);
     }
 
-    // متد calculateProfit بدون تغییر
     private function calculateProfit(int $docId, array $acc, EntityManagerInterface $entityManager): int
     {
         $profit = 0;
@@ -591,7 +598,7 @@ class SellController extends AbstractController
                             ->findOneBy(['commodity' => $commodityId, 'bs' => 0], ['id' => 'DESC']);
                         if ($last) {
                             $price = $last->getBd() / $last->getCommdityCount();
-                            $profit += ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                            $profit += ($item->getBs() / $item->getCommdityCount() - $price) * $item->getCommdityCount();
                         } else {
                             $profit += $item->getBs();
                         }
@@ -600,7 +607,7 @@ class SellController extends AbstractController
                     }
                 } elseif ($acc['bid']->getProfitCalctype() === 'simple') {
                     if ($item->getCommodity() && $item->getCommodity()->getPriceSell() !== null && $item->getCommodity()->getPriceBuy() !== null) {
-                        $profit += (($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceBuy()) * $item->getCommdityCount());
+                        $profit += ($item->getCommodity()->getPriceSell() - $item->getCommodity()->getPriceBuy()) * $item->getCommdityCount();
                     } else {
                         $profit += $item->getBs();
                     }
@@ -608,11 +615,15 @@ class SellController extends AbstractController
                     if ($commodityId) {
                         $lasts = $entityManager->getRepository(HesabdariRow::class)
                             ->findBy(['commodity' => $commodityId, 'bs' => 0], ['id' => 'DESC']);
-                        $avg = array_sum(array_map(fn($last) => $last->getBd(), $lasts));
-                        $count = array_sum(array_map(fn($last) => $last->getCommdityCount(), $lasts));
+                        $avg = 0;
+                        $count = 0;
+                        foreach ($lasts as $last) {
+                            $avg += $last->getBd();
+                            $count += $last->getCommdityCount();
+                        }
                         if ($count != 0) {
                             $price = $avg / $count;
-                            $profit += ((($item->getBs() / $item->getCommdityCount()) - $price) * $item->getCommdityCount());
+                            $profit += ($item->getBs() / $item->getCommdityCount() - $price) * $item->getCommdityCount();
                         } else {
                             $profit += $item->getBs();
                         }
@@ -683,19 +694,27 @@ class SellController extends AbstractController
             throw $this->createAccessDeniedException();
 
         $params = json_decode($request->getContent(), true);
-        $printOptions = $params['printOptions'] ?? [];
-
-        // اضافه کردن کلیدهای پیش‌فرض
-        $printOptions = array_merge([
-            'note' => true,
-            'bidInfo' => true,
-            'taxInfo' => true,
-            'discountInfo' => true,
-            'pays' => false,
-            'paper' => 'A4-L',
-            'invoiceIndex' => false,
-            'businessStamp' => false
-        ], $printOptions);
+        $params['printers'] = $params['printers'] ?? false;
+        $params['pdf'] = $params['pdf'] ?? true;
+        $params['posPrint'] = $params['posPrint'] ?? false;
+        
+        // دریافت تنظیمات پیش‌فرض از PrintOptions
+        $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
+        
+        // تنظیم مقادیر پیش‌فرض از تنظیمات ذخیره شده
+        $defaultOptions = [
+            'note' => $printSettings ? $printSettings->isSellNote() : true,
+            'bidInfo' => $printSettings ? $printSettings->isSellBidInfo() : true,
+            'taxInfo' => $printSettings ? $printSettings->isSellTaxInfo() : true,
+            'discountInfo' => $printSettings ? $printSettings->isSellDiscountInfo() : true,
+            'pays' => $printSettings ? $printSettings->isSellPays() : true,
+            'paper' => $printSettings ? $printSettings->getSellPaper() : 'A4-L',
+            'invoiceIndex' => $printSettings ? $printSettings->isSellInvoiceIndex() : true,
+            'businessStamp' => $printSettings ? $printSettings->isSellBusinessStamp() : true
+        ];
+        
+        // اولویت با پارامترهای ارسالی است
+        $printOptions = array_merge($defaultOptions, $params['printOptions'] ?? []);
 
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'bid' => $acc['bid'],
@@ -717,43 +736,8 @@ class SellController extends AbstractController
             }
         }
         $pdfPid = 0;
-        if ($params['pdf']) {
-            $printOptions = [
-                'bidInfo' => true,
-                'pays' => true,
-                'taxInfo' => true,
-                'discountInfo' => true,
-                'note' => true,
-                'paper' => 'A4-L'
-            ];
-            if (array_key_exists('printOptions', $params)) {
-                if (array_key_exists('bidInfo', $params['printOptions'])) {
-                    $printOptions['bidInfo'] = $params['printOptions']['bidInfo'];
-                }
-                if (array_key_exists('pays', $params['printOptions'])) {
-                    $printOptions['pays'] = $params['printOptions']['pays'];
-                }
-                if (array_key_exists('taxInfo', $params['printOptions'])) {
-                    $printOptions['taxInfo'] = $params['printOptions']['taxInfo'];
-                }
-                if (array_key_exists('discountInfo', $params['printOptions'])) {
-                    $printOptions['discountInfo'] = $params['printOptions']['discountInfo'];
-                }
-                if (array_key_exists('note', $params['printOptions'])) {
-                    $printOptions['note'] = $params['printOptions']['note'];
-                }
-                if (array_key_exists('paper', $params['printOptions'])) {
-                    $printOptions['paper'] = $params['printOptions']['paper'];
-                }
-                if (array_key_exists('invoiceIndex', $params['printOptions'])) {
-                    $printOptions['invoiceIndex'] = $params['printOptions']['invoiceIndex'];
-                }
-                if (array_key_exists('businessStamp', $params['printOptions'])) {
-                    $printOptions['businessStamp'] = $params['printOptions']['businessStamp'];
-                }
-            }
+        if ($params['pdf'] == true || $params['printers'] == true) {
             $note = '';
-            $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
             if ($printSettings) {
                 $note = $printSettings->getSellNoteString();
             }
@@ -775,7 +759,8 @@ class SellController extends AbstractController
                 $printOptions['paper']
             );
         }
-        if ($params['printers'] == true) {
+        if ($params['posPrint'] == true) {
+
             $pid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
@@ -830,5 +815,474 @@ class SellController extends AbstractController
             'dayNames' => $dayNames,
             'daySells' => $daySells
         ]);
+    }
+
+    #[Route('/api/sell/v2/mod', name: 'app_sell_v2_mod', methods: ['POST'])]
+    public function app_sell_v2_mod(
+        AccountingPermissionService $accountingPermissionService,
+        PluginService $pluginService,
+        SMS $SMS,
+        Provider $provider,
+        Extractor $extractor,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager,
+        registryMGR $registryMGR
+    ): JsonResponse {
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $acc = $access->hasRole('sell');
+        if (!$acc) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $pkgcntr = $accountingPermissionService->canRegisterAccountingDoc($acc['bid']);
+        if ($pkgcntr['code'] == 4) {
+            return $this->json([
+                'result' => 4,
+                'message' => $pkgcntr['message']
+            ]);
+        }
+
+        try {
+            // بررسی وجود فاکتور برای ویرایش
+            if (!empty($params['id'])) {
+                $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                    'bid' => $acc['bid'],
+                    'year' => $acc['year'],
+                    'code' => $params['id'],
+                    'money' => $acc['money']
+                ]);
+                if (!$doc) {
+                    return $this->json($extractor->notFound());
+                }
+
+                // حذف سطرهای قبلی
+                $rows = $doc->getHesabdariRows();
+                foreach ($rows as $row) {
+                    $entityManager->remove($row);
+                }
+            } else {
+                // ایجاد فاکتور جدید
+                $doc = new HesabdariDoc();
+                $doc->setBid($acc['bid']);
+                $doc->setYear($acc['year']);
+                $doc->setDateSubmit(time());
+                $doc->setType('sell');
+                $doc->setSubmitter($this->getUser());
+                $doc->setMoney($acc['money']);
+                $doc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
+            }
+
+            // تنظیم اطلاعات اصلی فاکتور
+            $doc->setDes($params['invoiceDescription']);
+            $doc->setDate($params['invoiceDate']);
+            $doc->setTaxPercent($params['taxPercent'] ?? 0);
+
+            // افزودن هزینه حمل
+            if ($params['shippingCost'] > 0) {
+                $hesabdariRow = new HesabdariRow();
+                $hesabdariRow->setDes('حمل و نقل کالا');
+                $hesabdariRow->setBid($acc['bid']);
+                $hesabdariRow->setYear($acc['year']);
+                $hesabdariRow->setDoc($doc);
+                $hesabdariRow->setBs($params['shippingCost']);
+                $hesabdariRow->setBd(0);
+                $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '61']);
+                $hesabdariRow->setRef($ref);
+                $entityManager->persist($hesabdariRow);
+            }
+
+            // افزودن تخفیف کلی
+            $totalDiscount = 0;
+            if ($params['discountType'] === 'percent') {
+                $totalDiscount = round(($params['totalInvoice'] * $params['discountPercent']) / 100);
+                $doc->setDiscountType('percent');
+                $doc->setDiscountPercent((float)$params['discountPercent']);
+            } else {
+                $totalDiscount = $params['totalDiscount'];
+                $doc->setDiscountType('fixed');
+                $doc->setDiscountPercent(null);
+            }
+
+            if ($totalDiscount > 0) {
+                $hesabdariRow = new HesabdariRow();
+                $hesabdariRow->setDes('تخفیف فاکتور');
+                $hesabdariRow->setBid($acc['bid']);
+                $hesabdariRow->setYear($acc['year']);
+                $hesabdariRow->setDoc($doc);
+                $hesabdariRow->setBs(0);
+                $hesabdariRow->setBd($totalDiscount);
+                $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '104']);
+                $hesabdariRow->setRef($ref);
+                $entityManager->persist($hesabdariRow);
+            }
+
+            // افزودن اقلام فاکتور
+            $sumTax = 0;
+            $sumTotal = 0;
+            foreach ($params['items'] as $item) {
+                $sumTax += $item['tax'] ?? 0;
+                $sumTotal += $item['total'] ?? 0;
+
+                $hesabdariRow = new HesabdariRow();
+                $hesabdariRow->setDes($item['description'] ?? '');
+                $hesabdariRow->setBid($acc['bid']);
+                $hesabdariRow->setYear($acc['year']);
+                $hesabdariRow->setDoc($doc);
+                $hesabdariRow->setBs($item['total'] + ($item['tax'] ?? 0));
+                $hesabdariRow->setBd(0);
+                $hesabdariRow->setDiscount($item['discountAmount'] ?? 0);
+                $hesabdariRow->setTax($item['tax'] ?? 0);
+                $hesabdariRow->setDiscountType($item['showPercentDiscount'] ? 'percent' : 'fixed');
+                $hesabdariRow->setDiscountPercent($item['discountPercent'] ?? 0);
+
+                $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '53']);
+                $hesabdariRow->setRef($ref);
+
+                $commodity = $entityManager->getRepository(Commodity::class)->findOneBy([
+                    'id' => $item['name']['id'],
+                    'bid' => $acc['bid']
+                ]);
+                if (!$commodity) {
+                    throw new \Exception('کالا یافت نشد');
+                }
+                $hesabdariRow->setCommodity($commodity);
+                $hesabdariRow->setCommdityCount($item['count']);
+
+                // به‌روزرسانی قیمت فروش کالا اگر تنظیم شده باشد
+                if ($acc['bid']->isCommodityUpdateSellPriceAuto() && $commodity->getPriceSell() != $item['price']) {
+                    $commodity->setPriceSell($item['price']);
+                    $entityManager->persist($commodity);
+                }
+
+                $entityManager->persist($hesabdariRow);
+            }
+
+            // افزودن ردیف مالیات
+            if ($sumTax > 0) {
+                $taxRow = new HesabdariRow();
+                $taxRow->setDes('مالیات بر ارزش افزوده');
+                $taxRow->setBid($acc['bid']);
+                $taxRow->setYear($acc['year']);
+                $taxRow->setDoc($doc);
+                $taxRow->setBs($sumTax);
+                $taxRow->setBd(0);
+                $taxRef = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '33']);
+                $taxRow->setRef($taxRef);
+                $entityManager->persist($taxRow);
+            }
+
+            // تنظیم مبلغ کل فاکتور
+            $doc->setAmount($sumTotal + $sumTax - $totalDiscount + $params['shippingCost']);
+
+            // افزودن سطر اصلی فاکتور
+            $hesabdariRow = new HesabdariRow();
+            $hesabdariRow->setDes('فاکتور فروش');
+            $hesabdariRow->setBid($acc['bid']);
+            $hesabdariRow->setYear($acc['year']);
+            $hesabdariRow->setDoc($doc);
+            $hesabdariRow->setBs(0);
+            $hesabdariRow->setBd($sumTotal + $sumTax + $params['shippingCost'] - $totalDiscount);
+            $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '3']);
+            $hesabdariRow->setRef($ref);
+
+            $person = $entityManager->getRepository(Person::class)->findOneBy([
+                'bid' => $acc['bid'],
+                'id' => $params['customer']
+            ]);
+            if (!$person) {
+                throw new \Exception('خریدار یافت نشد');
+            }
+            $hesabdariRow->setPerson($person);
+            $entityManager->persist($hesabdariRow);
+
+            // ذخیره فاکتور
+            $entityManager->persist($doc);
+            $entityManager->flush();
+
+            // ایجاد لینک کوتاه اگر وجود نداشته باشد
+            if (!$doc->getShortlink()) {
+                $doc->setShortlink($provider->RandomString(8));
+                $entityManager->persist($doc);
+                $entityManager->flush();
+            }
+
+            // ثبت اسناد پرداخت
+            if (!empty($params['payments'])) {
+                foreach ($params['payments'] as $payment) {
+                    // ایجاد سند حسابداری جدید برای پرداخت
+                    $paymentDoc = new HesabdariDoc();
+                    $paymentDoc->setBid($acc['bid']);
+                    $paymentDoc->setYear($acc['year']);
+                    $paymentDoc->setDateSubmit(time());
+                    $paymentDoc->setType('sell_receive');
+                    $paymentDoc->setSubmitter($this->getUser());
+                    $paymentDoc->setMoney($acc['money']);
+                    $paymentDoc->setCode($provider->getAccountingCode($acc['bid'], 'accounting'));
+                    $paymentDoc->setDate($params['invoiceDate']);
+                    $paymentDoc->setDes($payment['description'] ?? 'دریافت وجه فاکتور فروش شماره ' . $doc->getCode());
+                    $paymentDoc->setAmount($payment['amount']);
+                    
+                    // ایجاد ارتباط با فاکتور اصلی
+                    $doc->addRelatedDoc($paymentDoc);
+                    
+                    // ایجاد سطرهای حسابداری بر اساس نوع پرداخت
+                    if ($payment['type'] === 'bank') {
+                        // دریافت از طریق حساب بانکی
+                        $bankRow = new HesabdariRow();
+                        $bankRow->setDes($payment['description'] ?? 'دریافت وجه فاکتور فروش شماره ' . $doc->getCode());
+                        $bankRow->setBid($acc['bid']);
+                        $bankRow->setYear($acc['year']);
+                        $bankRow->setDoc($paymentDoc);
+                        $bankRow->setBs(0);
+                        $bankRow->setBd($payment['amount']);
+                        $bankRef = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '5']);
+                        $bankRow->setRef($bankRef);
+                        $bankRow->setBank($entityManager->getRepository(BankAccount::class)->find($payment['bank']));
+                        $entityManager->persist($bankRow);
+                    } elseif ($payment['type'] === 'cashdesk') {
+                        // دریافت از طریق صندوق
+                        $cashdeskRow = new HesabdariRow();
+                        $cashdeskRow->setDes($payment['description'] ?? 'دریافت وجه فاکتور فروش شماره ' . $doc->getCode());
+                        $cashdeskRow->setBid($acc['bid']);
+                        $cashdeskRow->setYear($acc['year']);
+                        $cashdeskRow->setDoc($paymentDoc);
+                        $cashdeskRow->setBs(0);
+                        $cashdeskRow->setBd($payment['amount']);
+                        $cashdeskRef = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '121']);
+                        $cashdeskRow->setRef($cashdeskRef);
+                        $cashdeskRow->setCashdesk($entityManager->getRepository(Cashdesk::class)->find($payment['cashdesk']));
+                        $entityManager->persist($cashdeskRow);
+                    } elseif ($payment['type'] === 'salary') {
+                        // دریافت از طریق تنخواه گردان
+                        $salaryRow = new HesabdariRow();
+                        $salaryRow->setDes($payment['description'] ?? 'دریافت وجه فاکتور فروش شماره ' . $doc->getCode());
+                        $salaryRow->setBid($acc['bid']);
+                        $salaryRow->setYear($acc['year']);
+                        $salaryRow->setDoc($paymentDoc);
+                        $salaryRow->setBs(0);
+                        $salaryRow->setBd($payment['amount']);
+                        $salaryRef = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '122']);
+                        $salaryRow->setRef($salaryRef);
+                        $salaryRow->setSalary($entityManager->getRepository(Salary::class)->find($payment['salary']));
+                        $entityManager->persist($salaryRow);
+                    }
+
+                    // ایجاد سطر دریافت از مشتری
+                    $receiveRow = new HesabdariRow();
+                    $receiveRow->setDes($payment['description'] ?? 'پرداخت وجه فاکتور فروش شماره ' . $doc->getCode());
+                    $receiveRow->setBid($acc['bid']);
+                    $receiveRow->setYear($acc['year']);
+                    $receiveRow->setDoc($paymentDoc);
+                    $receiveRow->setBs($payment['amount']);
+                    $receiveRow->setBd(0);
+                    $receiveRef = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '3']);
+                    $receiveRow->setRef($receiveRef);
+                    $receiveRow->setPerson($person);
+                    $entityManager->persist($receiveRow);
+
+                    $entityManager->persist($paymentDoc);
+                }
+                $entityManager->flush();
+            }
+
+            // ثبت لاگ
+            $log->insert(
+                'حسابداری',
+                'سند حسابداری شماره ' . $doc->getCode() . ' ثبت / ویرایش شد.',
+                $this->getUser(),
+                $request->headers->get('activeBid'),
+                $doc
+            );
+
+            // ارسال پیامک اگر درخواست شده باشد
+            if (!empty($params['sendSmsToCustomer']) && $params['sendSmsToCustomer']) {
+                if ($pluginService->isActive('accpro', $acc['bid']) && $person->getMobile() != '' && $acc['bid']->getTel()) {
+                    $SMS->sendByBalance(
+                        [$person->getnikename(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortlink(), $acc['bid']->getName(), $acc['bid']->getTel()],
+                        $registryMGR->get('sms', 'plugAccproSharefaktor'),
+                        $person->getMobile(),
+                        $acc['bid'],
+                        $this->getUser(),
+                        3
+                    );
+                } else {
+                    $SMS->sendByBalance(
+                        [$acc['bid']->getName(), 'sell/' . $acc['bid']->getId() . '/' . $doc->getShortlink()],
+                        $registryMGR->get('sms', 'sharefaktor'),
+                        $person->getMobile(),
+                        $acc['bid'],
+                        $this->getUser(),
+                        3
+                    );
+                }
+            }
+
+            return $this->json([
+                'result' => 1,
+                'message' => 'فاکتور با موفقیت ثبت شد',
+                'data' => [
+                    'id' => $doc->getCode(),
+                    'code' => $doc->getCode(),
+                    'shortlink' => $doc->getShortlink()
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'result' => 0,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    #[Route('/api/sell/v2/get/{id}', name: 'app_sell_v2_get', methods: ['GET'])]
+    public function app_sell_v2_get(
+        Request $request,
+        Access $access,
+        EntityManagerInterface $entityManager,
+        string $id
+    ): JsonResponse {
+        try {
+            $acc = $access->hasRole('sell');
+            if (!$acc) {
+                throw $this->createAccessDeniedException();
+            }
+
+            $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                'bid' => $acc['bid'],
+                'year' => $acc['year'],
+                'code' => $id,
+                'money' => $acc['money']
+            ]);
+
+            if (!$doc) {
+                throw $this->createNotFoundException('فاکتور یافت نشد');
+            }
+
+            $person = null;
+            $discountAll = 0;
+            $transferCost = 0;
+            $items = [];
+            $totalInvoice = 0;
+            $taxPercent = $doc->getTaxPercent();
+            $discountType = $doc->getDiscountType() ?? 'fixed';
+            $discountPercent = $doc->getDiscountPercent() ?? 0;
+            $payments = [];
+
+            // دریافت اسناد پرداخت مرتبط
+            $relatedDocs = $doc->getRelatedDocs();
+            
+            foreach ($relatedDocs as $relatedDoc) {
+                if ($relatedDoc->getType() === 'sell_receive') {
+                    $payment = [
+                        'type' => null,
+                        'amount' => $relatedDoc->getAmount(),
+                        'reference' => '',
+                        'description' => $relatedDoc->getDes(),
+                        'bank' => null,
+                        'cashdesk' => null,
+                        'salary' => null
+                    ];
+
+                    foreach ($relatedDoc->getHesabdariRows() as $row) {
+                        if ($row->getBank()) {
+                            $payment['type'] = 'bank';
+                            $payment['bank'] = $row->getBank()->getId();
+                        } elseif ($row->getCashdesk()) {
+                            $payment['type'] = 'cashdesk';
+                            $payment['cashdesk'] = $row->getCashdesk()->getId();
+                        } elseif ($row->getSalary()) {
+                            $payment['type'] = 'salary';
+                            $payment['salary'] = $row->getSalary()->getId();
+                        }
+                    }
+
+                    $payments[] = $payment;
+                }
+            }
+
+            foreach ($doc->getHesabdariRows() as $row) {
+                if ($row->getPerson()) {
+                    $person = $row->getPerson();
+                } elseif ($row->getRef() && $row->getRef()->getCode() == '104') {
+                    $discountAll = $row->getBd();
+                } elseif ($row->getRef() && $row->getRef()->getCode() == '61') {
+                    $transferCost = $row->getBs();
+                } elseif ($row->getCommodity()) {
+                    $basePrice = $row->getBs();
+                    $itemDiscount = $row->getDiscount() ?? 0;
+                    $itemDiscountType = $row->getDiscountType() ?? 'fixed';
+                    $itemDiscountPercent = $row->getDiscountPercent() ?? 0;
+                    
+                    // محاسبه تخفیف سطری
+                    if ($itemDiscountType === 'percent') {
+                        $itemDiscount = round(($basePrice * $itemDiscountPercent) / 100);
+                    }
+                    
+                    $itemTotal = $basePrice - $itemDiscount;
+                    $totalInvoice += $itemTotal;
+                    
+                    $items[] = [
+                        'name' => [
+                            'id' => $row->getCommodity()->getId(),
+                            'name' => $row->getCommodity()->getName(),
+                            'code' => $row->getCommodity()->getCode()
+                        ],
+                        'count' => $row->getCommdityCount(),
+                        'price' => $row->getCommdityCount() > 0 ? $basePrice / $row->getCommdityCount() : 0,
+                        'discountPercent' => $itemDiscountPercent,
+                        'discountAmount' => $itemDiscount,
+                        'total' => $itemTotal,
+                        'description' => $row->getDes(),
+                        'showPercentDiscount' => $itemDiscountType === 'percent',
+                        'tax' => $row->getTax() ?? 0
+                    ];
+                }
+            }
+
+            // محاسبه تخفیف کلی از HesabdariDoc
+            $totalDiscount = 0;
+            if ($discountType === 'percent') {
+                $totalDiscount = round(($totalInvoice * $discountPercent) / 100);
+            } else {
+                $totalDiscount = $discountAll;
+            }
+
+            return $this->json([
+                'result' => 1,
+                'data' => [
+                    'id' => $doc->getCode(),
+                    'date' => $doc->getDate(),
+                    'person' => $person ? [
+                        'id' => $person->getId(),
+                        'name' => $person->getNikename(),
+                        'code' => $person->getCode()
+                    ] : null,
+                    'des' => $doc->getDes(),
+                    'totalInvoice' => $totalInvoice,
+                    'taxPercent' => $taxPercent,
+                    'discountType' => $discountType,
+                    'discountPercent' => $discountPercent,
+                    'totalDiscount' => $totalDiscount,
+                    'shippingCost' => $transferCost,
+                    'showTotalPercentDiscount' => $discountType === 'percent',
+                    'items' => $items,
+                    'finalTotal' => $doc->getAmount(),
+                    'payments' => $payments
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'result' => 0,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 }

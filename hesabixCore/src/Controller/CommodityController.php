@@ -139,8 +139,11 @@ class CommodityController extends AbstractController
                 ]);
                 $count = 0;
                 foreach ($rows as $row) {
-                    $count += $row->getDoc()->getType() === 'buy' ? $row->getCommdityCount() : -$row->getCommdityCount();
-                }
+                    if ($row->getDoc()->getType() === 'buy' || $row->getDoc()->getType() === 'open_balance') {
+                        $count += $row->getCommdityCount();
+                    } else {
+                        $count -= $row->getCommdityCount();
+                    }                }
                 $temp['count'] = $count;
             }
             return $temp;

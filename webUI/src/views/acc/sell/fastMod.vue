@@ -267,11 +267,12 @@ export default defineComponent({
             if (response.data.result == '1') {
               this.update = response.data.doc.code;
               if (this.canPrint || this.canPrintCashdeskRecp) {
-                axios.post('/api/sell/posprinter/invoice', {
+                axios.post('/api/sell/print/invoice', {
                   code: this.update,
                   pdf: this.canPdf,
                   posPrint: this.canPrint,
-                  posPrintRecp: this.canPrintCashdeskRecp
+                  posPrintRecp: this.canPrintCashdeskRecp,
+                  printers: this.canPdf
                 }).then((response) => {
                   if (this.canPdf) {
                     this.printID = response.data.id;

@@ -64,6 +64,8 @@ class Explore
                 $person = self::ExplorePerson($item->getPerson());
             } elseif ($item->getRef()->getCode() == '104') {
                 $result['discountAll'] = $item->getBd();
+                $result['discountType'] = $hesabdariDoc->getDiscountType();
+                $result['discountPercent'] = $hesabdariDoc->getDiscountPercent();
             } elseif ($item->getRef()->getCode() == '61') {
                 $result['transferCost'] = $item->getBs();
             }
@@ -72,6 +74,10 @@ class Explore
             $result['discountAll'] = 0;
         if (!array_key_exists('transferCost', $result))
             $result['transferCost'] = 0;
+        if (!array_key_exists('discountType', $result))
+            $result['discountType'] = 'fixed';
+        if (!array_key_exists('discountPercent', $result))
+            $result['discountPercent'] = null;
         $result['person'] = $person;
         $result['pair_docs'] = [];
         foreach ($hesabdariDoc->getPairDoc() as $pair) {
@@ -105,6 +111,8 @@ class Explore
                 $person = self::ExplorePerson($item->getPerson());
             } elseif ($item->getRef()->getCode() == '51') {
                 $result['discountAll'] = $item->getBs();
+                $result['discountType'] = $hesabdariDoc->getDiscountType();
+                $result['discountPercent'] = $hesabdariDoc->getDiscountPercent();
             } elseif ($item->getRef()->getCode() == '90') {
                 $result['transferCost'] = $item->getBd();
             }
@@ -113,6 +121,10 @@ class Explore
             $result['discountAll'] = 0;
         if (!array_key_exists('transferCost', $result))
             $result['transferCost'] = 0;
+        if (!array_key_exists('discountType', $result))
+            $result['discountType'] = 'fixed';
+        if (!array_key_exists('discountPercent', $result))
+            $result['discountPercent'] = null;
         $result['person'] = $person;
         return $result;
     }
@@ -126,9 +138,20 @@ class Explore
                 $person = self::ExplorePerson($item->getPerson());
             } elseif ($item->getCommodity()) {
                 $commodities[] = Explore::ExploreCommodity($item->getCommodity(), $item->getCommdityCount(), $item->getDes());
+            } elseif ($item->getRef()->getCode() == '104') {
+                $result['discountAll'] = $item->getBs();
+                $result['discountType'] = $hesabdariDoc->getDiscountType();
+                $result['discountPercent'] = $hesabdariDoc->getDiscountPercent();
             }
         }
+        if (!array_key_exists('discountAll', $result))
+            $result['discountAll'] = 0;
+        if (!array_key_exists('discountType', $result))
+            $result['discountType'] = 'fixed';
+        if (!array_key_exists('discountPercent', $result))
+            $result['discountPercent'] = null;
         $result['person'] = $person;
+        $result['commodities'] = $commodities;
         return $result;
     }
     public static function ExploreHesabdariDoc(HesabdariDoc $doc)

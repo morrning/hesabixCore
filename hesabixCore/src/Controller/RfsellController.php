@@ -146,10 +146,16 @@ class RfsellController extends AbstractController
             $hesabdariRow->setBd(0);
             $hesabdariRow->setBs($params['discountAll']);
             $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '104' // سایر هزینه های پخش و خرید
+                'code' => '104'
             ]);
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
+            
+            // ذخیره نوع تخفیف و درصد آن
+            $doc->setDiscountType($params['discountType'] ?? 'fixed');
+            if (isset($params['discountPercent'])) {
+                $doc->setDiscountPercent((float)$params['discountPercent']);
+            }
         }
         $doc->setDes($params['des']);
         $doc->setDate($params['date']);

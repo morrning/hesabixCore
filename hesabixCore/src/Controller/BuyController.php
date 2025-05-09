@@ -145,10 +145,16 @@ class BuyController extends AbstractController
             $hesabdariRow->setBd(0);
             $hesabdariRow->setBs($params['discountAll']);
             $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy([
-                'code' => '51' //  تخفیفات نقدی خرید 
+                'code' => '51'
             ]);
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
+            
+            // ذخیره نوع تخفیف و درصد آن
+            $doc->setDiscountType($params['discountType'] ?? 'fixed');
+            if (isset($params['discountPercent'])) {
+                $doc->setDiscountPercent((float)$params['discountPercent']);
+            }
         }
         $doc->setDes($params['des']);
         $doc->setDate($params['date']);

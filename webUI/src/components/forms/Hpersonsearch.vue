@@ -16,7 +16,7 @@
           :loading="loading"
           @keydown.enter="handleEnter"
           hide-details
-          density="compact"
+          density="comfortable"
           style="font-size: 0.7rem;"
         >
           <template v-slot:append-inner>

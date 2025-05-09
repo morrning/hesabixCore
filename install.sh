@@ -35,26 +35,26 @@ print_header() {
     echo -e "${BOLD}${BLUE}           Hesabix Installation Script           ${NC}"
     echo -e "${BOLD}${BLUE}=================================================${NC}"
     echo -e "${YELLOW}Hesabix is a powerful open-source accounting software${NC}"
-    echo -e "${YELLOW}developed with ❤ by Babak Alizadeh (alizadeh.babak)${NC}"
+    echo -e "${YELLOW}developed with ā¯¤ by Babak Alizadeh (alizadeh.babak)${NC}"
     echo -e "${YELLOW}License: GNU GPL v3${NC}"
     echo -e "${YELLOW}Website: ${UNDERLINE}https://hesabix.ir${NC}"
-    echo -e "${YELLOW}Support us: ${UNDERLINE}https://hesabix.ir/page/sponsors${NC} ❤"
+    echo -e "${YELLOW}Support us: ${UNDERLINE}https://hesabix.ir/page/sponsors${NC} ā¯¤"
     echo -e "${BOLD}${BLUE}=================================================${NC}\n"
     
     # Show prerequisites
     echo -e "${BOLD}${YELLOW}Prerequisites:${NC}"
     echo -e "1. A domain name pointing to this server"
     echo -e "2. DNS records properly configured:"
-    echo -e "   • A record pointing to server IP"
-    echo -e "   • www subdomain pointing to server IP"
+    echo -e "   ā€¢ A record pointing to server IP"
+    echo -e "   ā€¢ www subdomain pointing to server IP"
     echo -e "3. Port 80 and 443 open and accessible"
     echo -e "4. At least 2GB of free disk space"
     echo -e "5. At least 1GB of RAM"
     echo -e "\n${BOLD}${YELLOW}Important Notes:${NC}"
-    echo -e "• SSL certificate installation requires proper DNS configuration"
-    echo -e "• Domain must be accessible from the internet"
-    echo -e "• Installation may take 10-15 minutes"
-    echo -e "• System will be automatically rolled back if installation fails"
+    echo -e "ā€¢ SSL certificate installation requires proper DNS configuration"
+    echo -e "ā€¢ Domain must be accessible from the internet"
+    echo -e "ā€¢ Installation may take 10-15 minutes"
+    echo -e "ā€¢ System will be automatically rolled back if installation fails"
     echo -e "\n${BOLD}${YELLOW}Do you want to continue?${NC}"
     read -p "Press Enter to continue or Ctrl+C to abort..."
     echo -e "${BOLD}${BLUE}=================================================${NC}\n"
@@ -487,7 +487,7 @@ setup_ssl() {
         echo -e "2. Domain is pointing to this server's IP address"
         echo -e "3. Port 80 is accessible from the internet"
         echo -e "\n${YELLOW}You can run SSL setup later using:${NC}"
-        echo -e "${GREEN}sudo certbot --apache -d $domain -d www.$domain${NC}"
+        echo -e "${GREEN}sudo certbot --apache -d $domain${NC}"
         return 1
     fi
     
@@ -504,7 +504,7 @@ setup_ssl() {
     if ! systemctl is-active --quiet apache2; then
         log_message "ERROR" "Apache is not running. Please start Apache first."
         return 1
-    }
+    fi
     
     # Try to setup SSL with multiple attempts
     while [[ $attempt -le $max_attempts ]] && [[ $success == false ]]; do
@@ -515,8 +515,8 @@ setup_ssl() {
             log_message "WARNING" "Failed to stop Apache, continuing anyway..."
         }
         
-        # Run certbot
-        if certbot --apache -d "$domain" -d "www.$domain" --non-interactive --agree-tos --email "admin@$domain" --force-renewal; then
+        # Run certbot only for main domain
+        if certbot --apache -d "$domain" --non-interactive --agree-tos --email "admin@$domain" --force-renewal; then
             success=true
             log_message "INFO" "SSL setup completed successfully"
         else
@@ -550,10 +550,10 @@ setup_ssl() {
         echo -e "2. Port 80 is blocked by firewall"
         echo -e "3. Let's Encrypt rate limit exceeded"
         echo -e "\n${YELLOW}You can try setting up SSL manually using:${NC}"
-        echo -e "${GREEN}sudo certbot --apache -d $domain -d www.$domain${NC}"
+        echo -e "${GREEN}sudo certbot --apache -d $domain${NC}"
         echo -e "\n${YELLOW}Or check the logs:${NC}"
         echo -e "${GREEN}sudo certbot certificates${NC}"
-        echo -e "${GREEN}sudo certbot --apache -d $domain -d www.$domain --dry-run${NC}"
+        echo -e "${GREEN}sudo certbot --apache -d $domain --dry-run${NC}"
         return 1
     fi
 }
@@ -656,7 +656,8 @@ setup_database() {
     local db_name="$base_db_name"
     local db_user="hesabix_user"
     local db_password
-    db_password=$(openssl rand -base64 12)
+    # Generate password with only alphanumeric characters
+    db_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 12 | head -n 1)
     local domain_path="/var/www/html/$domain"
     local counter=1
     
@@ -868,30 +869,32 @@ setup_web_ui() {
     
     cd "$webui_path" || handle_error "Failed to change to webUI directory"
     
+    # Set initial permissions for npm operations
+    chown -R "$SUDO_USER:$SUDO_USER" "$webui_path"
+    chmod -R 777 "$webui_path"
+    
     # Install dependencies
     log_message "INFO" "Installing web UI dependencies..."
     timeout "$NPM_TIMEOUT" npm install || handle_error "Failed to install web UI dependencies"
     
-    # Set proper permissions for webUI directory
-    log_message "INFO" "Setting proper permissions for webUI directory..."
-    chown -R "$apache_user:$apache_user" "$webui_path"
-    chmod -R 755 "$webui_path"
-    
-    # Set execute permissions for node_modules/.bin
-    if [[ -d "$webui_path/node_modules/.bin" ]]; then
-        chmod -R +x "$webui_path/node_modules/.bin"
-    fi
-    
-    # Set proper permissions for node_modules
-    log_message "INFO" "Setting proper permissions for node_modules directory..."
-    chmod -R 755 "$webui_path/node_modules"
-    find "$webui_path/node_modules" -type f -exec chmod 644 {} \;
-    find "$webui_path/node_modules" -type d -exec chmod 755 {} \;
-    find "$webui_path/node_modules/.bin" -type f -exec chmod 755 {} \;
-    
     # Build web UI
     log_message "INFO" "Building web UI..."
     timeout "$NPM_TIMEOUT" npm run build-only || handle_error "Failed to build web UI"
+    
+    # After build, set final ownership to apache
+    chown -R "$apache_user:$apache_user" "$webui_path"
+    
+    # Set final permissions
+    find "$webui_path" -type d -exec chmod 755 {} \;
+    find "$webui_path" -type f -exec chmod 644 {} \;
+    
+    # Set special permissions for node_modules
+    if [[ -d "$webui_path/node_modules" ]]; then
+        chmod -R 755 "$webui_path/node_modules"
+        find "$webui_path/node_modules" -type f -exec chmod 644 {} \;
+        find "$webui_path/node_modules" -type d -exec chmod 755 {} \;
+        find "$webui_path/node_modules/.bin" -type f -exec chmod 755 {} \;
+    fi
     
     log_message "INFO" "Web UI setup completed"
 }
@@ -950,14 +953,14 @@ confirm_installation() {
     echo -e "${BOLD}${BLUE}           Installation Confirmation           ${NC}"
     echo -e "${BOLD}${BLUE}=================================================${NC}"
     echo -e "${YELLOW}This script will install:${NC}"
-    echo -e "• PHP and required extensions"
-    echo -e "• MySQL/MariaDB"
-    echo -e "• Apache"
-    echo -e "• Node.js"
-    echo -e "• Composer"
-    echo -e "• phpMyAdmin"
-    echo -e "• Hesabix Core"
-    echo -e "• Hesabix Web UI"
+    echo -e "ā€¢ PHP and required extensions"
+    echo -e "ā€¢ MySQL/MariaDB"
+    echo -e "ā€¢ Apache"
+    echo -e "ā€¢ Node.js"
+    echo -e "ā€¢ Composer"
+    echo -e "ā€¢ phpMyAdmin"
+    echo -e "ā€¢ Hesabix Core"
+    echo -e "ā€¢ Hesabix Web UI"
     echo -e "\n${YELLOW}The installation will require approximately 2GB of disk space.${NC}"
     echo -e "${BOLD}${BLUE}=================================================${NC}\n"
     
@@ -1012,7 +1015,7 @@ show_installation_summary() {
     
     # Get database password from env file
     if [[ -f "$env_file" ]]; then
-        db_password=$(php -r "include '$env_file'; echo \$env['DATABASE_URL']; echo PHP_EOL;" | grep -oP '(?<=://[^:]+:)[^@]+(?=@)')
+        db_password=$(php -r "include '$env_file'; echo \$env['DATABASE_URL']; echo PHP_EOL;" | sed -n 's/.*:\/\/[^:]*:\([^@]*\)@.*/\1/p')
     fi
     
     log_message "INFO" "Showing installation summary..."
@@ -1047,7 +1050,7 @@ show_installation_summary() {
         echo -e "\n${YELLOW}To get database information, you can:${NC}"
         echo -e "1. Check the file: $env_file"
         echo -e "2. Run this command to extract password:"
-        echo -e "   ${GREEN}php -r \"include '$env_file'; echo \$env['DATABASE_URL']; echo PHP_EOL;\" | grep -oP '(?<=://[^:]+:)[^@]+(?=@)'${NC}"
+        echo -e "   ${GREEN}php -r \"include '$env_file'; echo \$env['DATABASE_URL']; echo PHP_EOL;\" | sed -n 's/.*:\/\/[^:]*:\\([^@]*\\)@.*/\\1/p'${NC}"
         echo -e "3. Or check MySQL directly:"
         echo -e "   ${GREEN}mysql -u root -e \"SELECT User, Host FROM mysql.user WHERE User='$db_user';\"${NC}"
     fi
@@ -1068,10 +1071,10 @@ show_installation_summary() {
     echo -e "4. Register the first user (system administrator)"
     
     echo -e "\n${YELLOW}Support:${NC}"
-    echo -e "• Developer: Babak Alizadeh (alizadeh.babak)"
-    echo -e "• License: GNU GPL v3"
-    echo -e "• Website: ${UNDERLINE}https://hesabix.ir${NC}"
-    echo -e "• Support us: ${UNDERLINE}https://hesabix.ir/page/sponsors${NC} ❤"
+    echo -e "ā€¢ Developer: Babak Alizadeh (alizadeh.babak)"
+    echo -e "ā€¢ License: GNU GPL v3"
+    echo -e "ā€¢ Website: ${UNDERLINE}https://hesabix.ir${NC}"
+    echo -e "ā€¢ Support us: ${UNDERLINE}https://hesabix.ir/page/sponsors${NC} ā¯¤"
     
     echo -e "\n${GREEN}Installation completed successfully!${NC}"
     echo -e "${BOLD}${BLUE}=================================================${NC}"
@@ -1087,9 +1090,9 @@ display_telemetry_consent() {
     echo -e "${RED}           Anonymous Data Collection           "
     echo -e "${RED}================================================="
     echo -e "${BLUE}To improve Hesabix, we would like to collect anonymous data:"
-    echo -e "${BLUE}• System information (OS, PHP, MySQL versions)"
-    echo -e "${BLUE}• Installation path and domain"
-    echo -e "${BLUE}• Installation date"
+    echo -e "${BLUE}ā€¢ System information (OS, PHP, MySQL versions)"
+    echo -e "${BLUE}ā€¢ Installation path and domain"
+    echo -e "${BLUE}ā€¢ Installation date"
     
     read -p "Do you agree? (y/n) [n]: " response
     [[ "$response" =~ ^[Yy]$ ]] && SEND_TELEMETRY=true

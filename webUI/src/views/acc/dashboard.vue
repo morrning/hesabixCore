@@ -35,27 +35,7 @@
 
       <!-- کارت جدید: کالاهای پرفروش -->
       <v-col cols="12" sm="12" md="12" v-show="permissions.sell && dashboard.topCommodities">
-        <v-card class="animate__animated animate__zoomIn card-equal-height_big" variant="outlined"
-          prepend-icon="mdi-chart-pie" :title="$t('dashboard.topCommodities.title')" hover>
-          <v-card-text class="pa-2">
-            <!-- دکمه‌های انتخاب بازه زمانی و تعداد -->
-            <v-row>
-              <v-col cols="6">
-                <v-select v-model="topCommoditiesPeriod" :items="periodOptions"
-                  :label="$t('dashboard.topCommodities.period')" density="compact" outlined
-                  @update:modelValue="fetchTopCommodities"></v-select>
-              </v-col>
-              <v-col cols="6">
-                <v-select v-model="topCommoditiesLimit" :items="limitOptions"
-                  :label="$t('dashboard.topCommodities.limit')" density="compact" outlined
-                  @update:modelValue="fetchTopCommodities"></v-select>
-              </v-col>
-            </v-row>
-            <!-- نمودارها -->
-            <top-commodities-chart :commodities="topCommodities" v-if="topCommodities.length > 0" />
-            <p v-else class="text-center">{{ $t('dashboard.topCommodities.noData') }}</p>
-          </v-card-text>
-        </v-card>
+        <top-commodities-chart class="animate__animated animate__zoomIn" />
       </v-col>
 
       <v-col cols="12" sm="12" md="6" v-show="permissions.cost && dashboard.topCostCenters">
@@ -315,21 +295,6 @@ export default {
         incomes: false,
         topIncomeCenters: false,
       },
-      topCommodities: [],
-      topCommoditiesPeriod: 'year',
-      topCommoditiesLimit: 5,
-      periodOptions: [
-        { title: self.$t('dashboard.period.today'), value: 'today' },
-        { title: self.$t('dashboard.period.week'), value: 'week' },
-        { title: self.$t('dashboard.period.month'), value: 'month' },
-        { title: self.$t('dashboard.period.year'), value: 'year' },
-      ],
-      limitOptions: [
-        { title: '۳', value: 3 },
-        { title: '۵', value: 5 },
-        { title: '۷', value: 7 },
-        { title: '۱۰', value: 10 },
-      ],
     };
   },
   methods: {
@@ -359,7 +324,7 @@ export default {
         this.loading = false;
       }
     },
-    async fetchIncomeData() { // متد جدید برای گرفتن داده‌های درآمد
+    async fetchIncomeData() {
       this.loading = true;
       try {
         const response = await axios.get('/api/income/dashboard/data');
@@ -389,33 +354,14 @@ export default {
         this.statements = statements.data;
         this.stat = stats.data;
 
-        if (this.dashboard.topCommodities) {
-          await this.fetchTopCommodities();
-        }
         if (this.dashboard.costs && this.permissions.cost) {
           await this.fetchCostData();
         }
-        if (this.dashboard.incomes && this.permissions.income) { // بارگذاری داده‌های درآمد
+        if (this.dashboard.incomes && this.permissions.income) {
           await this.fetchIncomeData();
         }
-        // نیازی به بارگذاری داده‌های نمودار اینجا نیست، کامپوننت خودش داده را می‌گیرد
       } catch (error) {
         console.error('Load data error:', error);
-      } finally {
-        this.loading = false;
-      }
-    },
-    async fetchTopCommodities() {
-      this.loading = true;
-      try {
-        const response = await axios.post('/api/report/top-selling-commodities', {
-          period: this.topCommoditiesPeriod,
-          limit: this.topCommoditiesLimit,
-        });
-        this.topCommodities = response.data;
-      } catch (error) {
-        console.error('Fetch top commodities error:', error);
-        this.topCommodities = [];
       } finally {
         this.loading = false;
       }
@@ -432,13 +378,6 @@ export default {
 
 .card-equal-height {
   height: 200px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.card-equal-height_big {
-  height: 550;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

@@ -27,6 +27,12 @@ export default defineComponent({
       appUrl: '',
       appSlogan: '',
       verifyMobileViaSms: false,
+      ftpEnabled: false,
+      ftpHost: '',
+      ftpPort: '21',
+      ftpUsername: '',
+      ftpPassword: '',
+      ftpPath: '',
     },
     dialogVisible: false,
     dialogMessage: '',
@@ -118,6 +124,38 @@ export default defineComponent({
           return false;
         }
       }
+
+      // اعتبارسنجی تنظیمات FTP
+      if (this.settings.ftpEnabled) {
+        const ftpChecks = [
+          { value: this.settings.ftpHost, message: 'آدرس سرور FTP الزامی است' },
+          { value: this.settings.ftpPort, message: 'پورت FTP الزامی است' },
+          { value: this.settings.ftpUsername, message: 'نام کاربری FTP الزامی است' },
+          { value: this.settings.ftpPassword, message: 'رمز عبور FTP الزامی است' },
+          { value: this.settings.ftpPath, message: 'مسیر ذخیره‌سازی FTP الزامی است' }
+        ];
+
+        const ftpError = ftpChecks.find(check => !check.value);
+        if (ftpError) {
+          this.showErrorDialog(ftpError.message);
+          return false;
+        }
+
+        // اعتبارسنجی پورت
+        const port = parseInt(this.settings.ftpPort);
+        if (isNaN(port) || port < 1 || port > 65535) {
+          this.showErrorDialog('پورت FTP باید عددی بین 1 تا 65535 باشد');
+          return false;
+        }
+
+        // اعتبارسنجی آدرس سرور
+        const hostRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+        if (!hostRegex.test(this.settings.ftpHost)) {
+          this.showErrorDialog('آدرس سرور FTP نامعتبر است');
+          return false;
+        }
+      }
+
       return true;
     },
     async runTicketUpdate() {
@@ -161,6 +199,67 @@ export default defineComponent({
         this.settings.autoUpdateTicketsInterval = 1;
       }
     },
+    async testFtpConnection() {
+      if (!this.validateFtpFields()) {
+        return;
+      }
+
+      this.dialogVisible = true;
+      this.dialogLoading = true;
+      this.dialogMessage = 'در حال تست اتصال به سرور FTP...';
+
+      try {
+        const response = await axios.post('/api/admin/registry/settings/test-ftp', {
+          host: this.settings.ftpHost,
+          port: this.settings.ftpPort,
+          username: this.settings.ftpUsername,
+          password: this.settings.ftpPassword,
+          path: this.settings.ftpPath
+        });
+
+        this.dialogMessage = response.data.success 
+          ? 'اتصال به سرور FTP با موفقیت برقرار شد'
+          : 'خطا در اتصال به سرور FTP: ' + response.data.message;
+      } catch (error: any) {
+        this.dialogMessage = error.response?.data?.message || 'خطایی در تست اتصال رخ داد';
+      } finally {
+        this.dialogLoading = false;
+      }
+    },
+    validateFtpFields() {
+      if (!this.settings.ftpEnabled) {
+        this.showErrorDialog('لطفا ابتدا اتصال FTP را فعال کنید');
+        return false;
+      }
+
+      const ftpChecks = [
+        { value: this.settings.ftpHost, message: 'آدرس سرور FTP الزامی است' },
+        { value: this.settings.ftpPort, message: 'پورت FTP الزامی است' },
+        { value: this.settings.ftpUsername, message: 'نام کاربری FTP الزامی است' },
+        { value: this.settings.ftpPassword, message: 'رمز عبور FTP الزامی است' },
+        { value: this.settings.ftpPath, message: 'مسیر ذخیره‌سازی FTP الزامی است' }
+      ];
+
+      const ftpError = ftpChecks.find(check => !check.value);
+      if (ftpError) {
+        this.showErrorDialog(ftpError.message);
+        return false;
+      }
+
+      const port = parseInt(this.settings.ftpPort);
+      if (isNaN(port) || port < 1 || port > 65535) {
+        this.showErrorDialog('پورت FTP باید عددی بین 1 تا 65535 باشد');
+        return false;
+      }
+
+      const hostRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+      if (!hostRegex.test(this.settings.ftpHost)) {
+        this.showErrorDialog('آدرس سرور FTP نامعتبر است');
+        return false;
+      }
+
+      return true;
+    },
   },
   watch: {
     'settings.canFreeAccounting'(newValue) {
@@ -190,6 +289,7 @@ export default defineComponent({
       <v-tab value="general">تنظیمات عمومی</v-tab>
       <v-tab value="pricing">قیمت‌گذاری</v-tab>
       <v-tab value="automation">اتوماسیون</v-tab>
+      <v-tab value="ftp">تنظیمات FTP</v-tab>
     </v-tabs>
 
     <v-card :loading="loading ? 'red' : undefined" :disabled="loading">
@@ -410,6 +510,103 @@ export default defineComponent({
                 >
                   بررسی فوری تیکت‌ها
                 </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-window-item>
+
+        <v-window-item value="ftp">
+          <v-card-text>
+            <v-row>
+              <v-col cols="12">
+                <v-card variant="outlined" class="pa-4 mb-4">
+                  <v-row>
+                    <v-col cols="12" sm="4">
+                      <v-switch
+                        v-model="settings.ftpEnabled"
+                        label="فعال‌سازی اتصال FTP"
+                        color="primary"
+                        density="comfortable"
+                      ></v-switch>
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="settings.ftpHost"
+                        label="آدرس سرور FTP"
+                        :disabled="!settings.ftpEnabled"
+                        type="text"
+                        placeholder="ftp.example.com"
+                        density="comfortable"
+                        :rules="[
+                          v => !settings.ftpEnabled || !!v || 'آدرس سرور FTP الزامی است',
+                          v => !settings.ftpEnabled || /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/.test(v) || 'آدرس سرور FTP نامعتبر است'
+                        ]"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="settings.ftpPort"
+                        label="پورت"
+                        :disabled="!settings.ftpEnabled"
+                        type="text"
+                        placeholder="21"
+                        density="comfortable"
+                        :rules="[
+                          v => !settings.ftpEnabled || !!v || 'پورت FTP الزامی است',
+                          v => !settings.ftpEnabled || (!isNaN(parseInt(v)) && parseInt(v) >= 1 && parseInt(v) <= 65535) || 'پورت FTP باید عددی بین 1 تا 65535 باشد'
+                        ]"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="settings.ftpUsername"
+                        label="نام کاربری"
+                        :disabled="!settings.ftpEnabled"
+                        type="text"
+                        density="comfortable"
+                        :rules="[v => !settings.ftpEnabled || !!v || 'نام کاربری FTP الزامی است']"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-text-field
+                        v-model="settings.ftpPassword"
+                        label="رمز عبور"
+                        :disabled="!settings.ftpEnabled"
+                        type="password"
+                        density="comfortable"
+                        :rules="[v => !settings.ftpEnabled || !!v || 'رمز عبور FTP الزامی است']"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12">
+                      <v-text-field
+                        v-model="settings.ftpPath"
+                        label="مسیر ذخیره‌سازی"
+                        :disabled="!settings.ftpEnabled"
+                        type="text"
+                        placeholder="/public_html/backup"
+                        density="comfortable"
+                        :rules="[
+                          v => !settings.ftpEnabled || !!v || 'مسیر ذخیره‌سازی FTP الزامی است',
+                          v => !settings.ftpEnabled || v.startsWith('/') || 'مسیر باید با / شروع شود'
+                        ]"
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" class="text-center">
+                      <v-btn
+                        @click="testFtpConnection"
+                        color="secondary"
+                        prepend-icon="mdi-connection"
+                        :loading="dialogLoading"
+                        :disabled="!settings.ftpEnabled"
+                        class="mt-4"
+                      >
+                        تست اتصال
+                      </v-btn>
+                    </v-col>
+                  </v-row>
+                </v-card>
               </v-col>
             </v-row>
           </v-card-text>

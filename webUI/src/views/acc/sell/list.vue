@@ -215,7 +215,16 @@
         </tr>
       </template>
     </v-data-table-server>
-
+    <div class="footer-summary">
+    <div class="summary-item">
+      <span class="summary-label">جمع کل فاکتورهای صفحه:</span>
+      <span class="summary-value">{{ $filters.formatNumber(sumTotal) }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">جمع موارد انتخاب شده:</span>
+      <span class="summary-value">{{ $filters.formatNumber(sumSelected) }}</span>
+    </div>
+  </div>
     <v-dialog v-model="showColumnDialog" max-width="500px">
       <v-card>
         <v-toolbar dark>
@@ -684,12 +693,15 @@ export default defineComponent({
     itemsSelected: {
       handler(val) {
         this.sumSelected = 0;
-        this.itemsSelected.forEach((item) => {
-          const amount = item.amount || 0;
-          if (typeof amount === "string") {
-            this.sumSelected += parseInt(amount.replaceAll(",", "") || 0);
-          } else {
-            this.sumSelected += amount;
+        this.itemsSelected.forEach((code) => {
+          const selectedItem = this.items.find(item => item.code === code);
+          if (selectedItem) {
+            const amount = selectedItem.amount || 0;
+            if (typeof amount === "string") {
+              this.sumSelected += parseInt(amount.replaceAll(",", "") || 0);
+            } else {
+              this.sumSelected += amount;
+            }
           }
         });
       },
@@ -700,4 +712,32 @@ export default defineComponent({
 </script>
 
 <style>
+.footer-summary {
+  background-color: #f5f5f5;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 8px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-label {
+  font-weight: 500;
+  color: #666;
+}
+
+.summary-value {
+  font-weight: bold;
+  color: #1976d2;
+}
+
+.data-table-wrapper {
+  margin-bottom: 0;
+}
 </style>

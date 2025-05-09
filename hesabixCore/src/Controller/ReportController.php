@@ -419,4 +419,137 @@ class ReportController extends AbstractController
             return $this->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
+
+    #[Route('/api/report/top-selling-commodities-by-price', name: 'app_report_top_selling_commodities_by_price', methods: ['POST'])]
+    public function app_report_top_selling_commodities_by_price(Access $access, Explore $explore, Jdate $jdate, Request $request, EntityManagerInterface $entityManager, LoggerInterface $logger): JsonResponse
+    {
+        $acc = $access->hasRole('report');
+        if (!$acc) {
+            $acc = $access->hasRole('sell');
+            if (!$acc) {
+                throw $this->createAccessDeniedException('شما دسترسی لازم برای مشاهده این اطلاعات را ندارید.');
+            }
+        }
+
+        /** @var Business $business */
+        $business = $acc['bid'];
+        /** @var Year $year */
+        $year = $acc['year'];
+
+        $payload = $request->getPayload();
+        $period = $payload->get('period', 'year');
+        $limit = (int) $payload->get('limit', 10);
+        if ($limit < 3) {
+            $limit = 3;
+        }
+
+        $today = $jdate->GetTodayDate();
+        list($currentYear, $currentMonth, $currentDay) = explode('/', $today);
+
+        switch ($period) {
+            case 'today':
+                $dateStart = $today;
+                $dateEnd = $today;
+                break;
+            case 'week':
+                $weekDay = (int) $jdate->jdate('w', time());
+                $daysToSubtract = $weekDay;
+                $dateStart = $jdate->shamsiDate(0, 0, -$daysToSubtract);
+                $dateEnd = $jdate->shamsiDate(0, 0, 6 - $weekDay);
+                break;
+            case 'month':
+                $dateStart = "$currentYear/$currentMonth/01";
+                $dateEnd = "$currentYear/$currentMonth/" . $jdate->jdate('t', $jdate->jallaliToUnixTime("$currentYear/$currentMonth/01"));
+                break;
+            case 'year':
+            default:
+                $dateStart = $jdate->jdate('Y/m/d', $year->getStart());
+                $dateEnd = $jdate->jdate('Y/m/d', $year->getEnd());
+                break;
+        }
+
+        $queryBuilder = $entityManager->createQueryBuilder();
+        $queryBuilder
+            ->select('c.id AS id')
+            ->addSelect('c.code AS code')
+            ->addSelect('c.name AS name')
+            ->addSelect('c.des AS des')
+            ->addSelect('c.priceBuy AS priceBuy')
+            ->addSelect('c.priceSell AS priceSell')
+            ->addSelect('c.khadamat AS khadamat')
+            ->addSelect('c.orderPoint AS orderPoint')
+            ->addSelect('c.commodityCountCheck AS commodityCountCheck')
+            ->addSelect('c.minOrderCount AS minOrderCount')
+            ->addSelect('c.dayLoading AS dayLoading')
+            ->addSelect('c.speedAccess AS speedAccess')
+            ->addSelect('c.withoutTax AS withoutTax')
+            ->addSelect('c.barcodes AS barcodes')
+            ->addSelect('IDENTITY(c.unit) AS unitId')
+            ->addSelect('u.name AS unit')
+            ->addSelect('SUM(CAST(hr.commdityCount AS INTEGER)) AS totalCount')
+            ->addSelect('SUM(hr.bs) AS totalPrice') // محاسبه مجموع قیمت فروش با استفاده از فیلد bs
+            ->from(HesabdariRow::class, 'hr')
+            ->innerJoin('hr.doc', 'hd')
+            ->innerJoin('hr.commodity', 'c')
+            ->leftJoin('c.unit', 'u')
+            ->where('hd.bid = :business')
+            ->andWhere('hd.type = :type')
+            ->andWhere('hr.year = :year')
+            ->andWhere('hd.date BETWEEN :dateStart AND :dateEnd')
+            ->setParameter('business', $business)
+            ->setParameter('type', 'sell')
+            ->setParameter('year', $year)
+            ->setParameter('dateStart', $dateStart)
+            ->setParameter('dateEnd', $dateEnd)
+            ->groupBy('c.id')
+            ->addGroupBy('u.name')
+            ->orderBy('totalPrice', 'DESC') // مرتب‌سازی بر اساس مجموع قیمت فروش
+            ->setMaxResults($limit);
+
+        try {
+            $results = $queryBuilder->getQuery()->getArrayResult();
+            $logger->info('Query executed successfully', [
+                'sql' => $queryBuilder->getQuery()->getSQL(),
+                'params' => $queryBuilder->getQuery()->getParameters()->toArray(),
+                'results' => $results
+            ]);
+
+            if (empty($results)) {
+                $logger->info('No results returned from query');
+                return $this->json(['message' => 'No data found'], 200);
+            }
+
+            $topCommodities = array_map(function ($result) {
+                return [
+                    'id' => $result['id'],
+                    'code' => $result['code'],
+                    'name' => $result['name'],
+                    'des' => $result['des'],
+                    'priceBuy' => $result['priceBuy'],
+                    'priceSell' => $result['priceSell'],
+                    'khadamat' => $result['khadamat'],
+                    'orderPoint' => $result['orderPoint'],
+                    'commodityCountCheck' => $result['commodityCountCheck'],
+                    'minOrderCount' => $result['minOrderCount'],
+                    'dayLoading' => $result['dayLoading'],
+                    'speedAccess' => $result['speedAccess'],
+                    'withoutTax' => $result['withoutTax'],
+                    'barcodes' => $result['barcodes'],
+                    'unit' => $result['unit'] ?? '',
+                    'count' => (int) $result['totalCount'],
+                    'totalPrice' => (float) $result['totalPrice'] // مجموع قیمت فروش
+                ];
+            }, $results);
+
+            return $this->json($topCommodities);
+        } catch (\Exception $e) {
+            $logger->error('Error in top-selling commodities by price query', [
+                'message' => $e->getMessage(),
+                'sql' => $queryBuilder->getQuery()->getSQL(),
+                'params' => $queryBuilder->getQuery()->getParameters()->toArray(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $this->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
+    }
 }

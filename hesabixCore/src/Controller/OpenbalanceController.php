@@ -8,6 +8,7 @@ use App\Entity\HesabdariDoc;
 use App\Entity\HesabdariTable;
 use App\Entity\Person;
 use App\Entity\Salary;
+use App\Entity\Commodity;
 use App\Entity\Shareholder;
 use App\Service\Access;
 use App\Service\Explore;
@@ -112,6 +113,18 @@ class OpenbalanceController extends AbstractController
             $shareholderDet[] = $temp;
         }
         $res['shareholders'] = $shareholderDet;
+
+        //load commodities
+        foreach ($doc->getHesabdariRows() as $row) {
+            if ($row->getCommodity()) {
+                $temp = [];
+                $temp['info'] = Explore::ExploreCommodity($row->getCommodity());
+                $temp['count'] = $row->getCommdityCount();
+                $temp['price'] = $row->getBs()/$row->getCommdityCount();
+                $temp['totalPrice'] = $row->getBs();
+                $res['commodities'][] = $temp;
+            }
+        }
 
         return $this->json($extractor->operationSuccess($res));
     }
@@ -412,6 +425,101 @@ class OpenbalanceController extends AbstractController
                 $row->setYear($acc['year']);
                 $row->setDes('موجودی اول دوره');
                 $row->setRef($entityManagerInterface->getRepository(HesabdariTable::class)->findOneBy(['code' => 5]));
+                $entityManagerInterface->persist($row);
+            }
+        }
+
+        //calculate amount of document
+        foreach ($doc->getHesabdariRows() as $row) {
+            $doc->setAmount($doc->getAmount() + $row->getBd());
+        }
+        $entityManagerInterface->persist($doc);
+
+        $entityManagerInterface->flush();
+        return $this->json($extractor->operationSuccess());
+    }
+
+
+    #[Route('/api/openbalance/save/commodities', name: 'app_openbalance_save_commodity')]
+    public function app_openbalance_save_commodity(Provider $provider,Jdate $jdate, Request $request, Access $access, EntityManagerInterface $entityManagerInterface, Extractor $extractor): Response
+    {
+        $acc = $access->hasRole('accounting');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        //get open balance doc
+        $doc = $entityManagerInterface->getRepository(HesabdariDoc::class)->findOneBy([
+            'year' => $acc['year'],
+            'bid' => $acc['bid'],
+            'type' => 'open_balance',
+            'money' => $acc['money']
+        ]);
+        if (!$doc) {
+            $doc = new HesabdariDoc();
+            $doc->setBid($acc['bid']);
+            $doc->setAmount(0);
+            $doc->setDateSubmit(time());
+            $doc->setMoney($acc['money']);
+            $doc->setSubmitter($this->getUser());
+            $doc->setYear($acc['year']);
+            $doc->setDes('سند افتتاحیه');
+            $doc->setDate($jdate->jdate('Y/n/d', time()));
+            $doc->setType('open_balance');
+            $doc->setCode($provider->getAccountingCode($acc['bid'],'accounting'));
+            $entityManagerInterface->persist($doc);
+        }
+
+        // ایجاد آرایه از کدهای کالاهای ارسالی
+        $submittedCommodityCodes = array_map(function($param) {
+            return $param['info']['code'];
+        }, $params);
+
+        // حذف سطرهای مربوط به کالاهایی که در لیست ارسالی نیستند
+        foreach ($doc->getHesabdariRows() as $row) {
+            if ($row->getCommodity() && $row->getRefData() == 'commodity') {
+                $commodityCode = $row->getCommodity()->getCode();
+                if (!in_array($commodityCode, $submittedCommodityCodes)) {
+                    $doc->removeHesabdariRow($row);
+                    $entityManagerInterface->remove($row);
+                }
+            }
+        }
+
+        foreach ($params as $param) {
+            $commodity = $entityManagerInterface->getRepository(Commodity::class)->findOneBy([
+                'code' => $param['info']['code'],
+                'bid' => $acc['bid'],
+            ]);
+            if(!$commodity) return $this->json($extractor->operationFail());
+
+            $ExistBefore = false;
+            foreach ($doc->getHesabdariRows() as $row) {
+                if ($row->getCommodity() == $commodity) {
+                    if ($param['count'] != 0) {
+                        $ExistBefore = true;
+                        $row->setCommdityCount($param['count']);
+                        $row->setBs($param['price'] * $param['count']);
+                        $entityManagerInterface->persist($row);
+                    }
+                }
+            }
+            if ((!$ExistBefore) && $param['count'] != 0) {
+                $row = new HesabdariRow();
+                $row->setDoc($doc);
+                $row->setCommodity($commodity);
+                $row->setCommdityCount($param['count']);
+                $row->setBs(0);
+                $row->setBd($param['price'] * $param['count']);
+                $row->setRefData('commodity');
+                $row->setBid($acc['bid']);
+                $row->setYear($acc['year']);
+                $row->setDes('موجودی اول دوره');
+                $row->setRef($entityManagerInterface->getRepository(HesabdariTable::class)->findOneBy(['code' => 120]));
                 $entityManagerInterface->persist($row);
             }
         }

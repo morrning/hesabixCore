@@ -53,6 +53,9 @@ class HesabdariDoc
     #[ORM\Column(type: Types::DECIMAL, precision: 30, scale: 0, nullable: true)]
     private ?string $amount = '0';
 
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    private ?float $taxPercent = 0;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     #[Ignore]
@@ -118,6 +121,12 @@ class HesabdariDoc
     #[ORM\ManyToMany(targetEntity: self::class)]
     #[ORM\JoinTable(name: 'pairDoc')]
     private Collection $pairDoc;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $discountType = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
+    private ?float $discountPercent = null;
 
     public function __construct()
     {
@@ -270,6 +279,17 @@ class HesabdariDoc
     {
         $this->amount = $amount;
 
+        return $this;
+    }
+
+    public function getTaxPercent(): ?float
+    {
+        return $this->taxPercent;
+    }
+
+    public function setTaxPercent(?float $taxPercent): self
+    {
+        $this->taxPercent = $taxPercent;
         return $this;
     }
 
@@ -570,6 +590,28 @@ class HesabdariDoc
     {
         $this->pairDoc->removeElement($pairDoc);
 
+        return $this;
+    }
+
+    public function getDiscountType(): ?string
+    {
+        return $this->discountType;
+    }
+
+    public function setDiscountType(?string $discountType): static
+    {
+        $this->discountType = $discountType;
+        return $this;
+    }
+
+    public function getDiscountPercent(): ?float
+    {
+        return $this->discountPercent;
+    }
+
+    public function setDiscountPercent(?float $discountPercent): static
+    {
+        $this->discountPercent = $discountPercent;
         return $this;
     }
 }

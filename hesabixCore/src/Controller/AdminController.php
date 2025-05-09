@@ -630,35 +630,6 @@ class AdminController extends AbstractController
         throw $this->createNotFoundException();
     }
 
-    /**
-     * @throws Exception
-     */
-    #[Route('/api/admin/database/backup/create', name: 'app_admin_database_backup_create')]
-    public function app_admin_database_backup_create(KernelInterface $kernel): JsonResponse
-    {
-        $application = new Application($kernel);
-        $application->setAutoExit(false);
-
-        $input = new ArrayInput([
-            'command' => 'doctrine:schema:create',
-            // (optional) define the value of command arguments
-            '--dump-sql' => true,
-        ]);
-
-        // You can use NullOutput() if you don't need the output
-        $output = new BufferedOutput();
-        $application->run($input, $output);
-        // return the output, don't use if you used NullOutput()
-        $content = $output->fetch();
-        $time = time();
-        $file = fopen(dirname(__DIR__, 3) . '/hesabixBackup/versions/Hesabix-' . $time . '.sql', 'w');
-        fwrite($file, $content);
-        fclose($file);
-        return $this->json([
-            'result' => 0,
-            'filename' => 'Hesabix-' . $time . '.sql',
-        ]);
-    }
     #[Route('/api/admin/logs/last', name: 'api_admin_logs_last')]
     public function api_admin_logs_last(Extractor $extractor, Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
     {

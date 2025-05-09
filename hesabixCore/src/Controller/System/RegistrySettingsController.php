@@ -57,6 +57,13 @@ final class RegistrySettingsController extends AbstractController
             'appUrl' => $registryMGR->get('system', 'appUrl'),
             'appSlogan' => $registryMGR->get('system', 'appSlogan'),
             'verifyMobileViaSms' => filter_var($registryMGR->get('system', 'verifyMobileViaSms'), FILTER_VALIDATE_BOOLEAN),
+            // تنظیمات FTP
+            'ftpEnabled' => filter_var($registryMGR->get($rootSystem, 'ftp_enabled'), FILTER_VALIDATE_BOOLEAN),
+            'ftpHost' => $registryMGR->get($rootSystem, 'ftp_host') ?: '',
+            'ftpPort' => $registryMGR->get($rootSystem, 'ftp_port') ?: '21',
+            'ftpUsername' => $registryMGR->get($rootSystem, 'ftp_username') ?: '',
+            'ftpPassword' => $registryMGR->get($rootSystem, 'ftp_password') ?: '',
+            'ftpPath' => $registryMGR->get($rootSystem, 'ftp_path') ?: '',
         ];
 
         return new JsonResponse([
@@ -89,10 +96,86 @@ final class RegistrySettingsController extends AbstractController
         $registryMGR->update('system', 'appUrl', $data['appUrl'] ?? '');
         $registryMGR->update('system', 'appSlogan', $data['appSlogan'] ?? '');
         $registryMGR->update('system', 'verifyMobileViaSms', $data['verifyMobileViaSms'] ? '1' : '0');
+        // ذخیره تنظیمات FTP
+        $registryMGR->update($rootSystem, 'ftp_enabled', $data['ftpEnabled'] ? '1' : '0');
+        $registryMGR->update($rootSystem, 'ftp_host', $data['ftpHost'] ?? '');
+        $registryMGR->update($rootSystem, 'ftp_port', $data['ftpPort'] ?? '21');
+        $registryMGR->update($rootSystem, 'ftp_username', $data['ftpUsername'] ?? '');
+        $registryMGR->update($rootSystem, 'ftp_password', $data['ftpPassword'] ?? '');
+        $registryMGR->update($rootSystem, 'ftp_path', $data['ftpPath'] ?? '');
 
         return new JsonResponse([
             'result' => 1,
             'message' => 'Settings saved successfully'
         ]);
+    }
+
+    #[Route('/api/admin/registry/settings/test-ftp', name: 'app_registry_settings_test_ftp', methods: ['POST'])]
+    public function testFtpConnection(Request $request): JsonResponse
+    {
+        try {
+            $data = json_decode($request->getContent(), true);
+            
+            // اعتبارسنجی داده‌های ورودی
+            $requiredFields = ['host', 'port', 'username', 'password', 'path'];
+            foreach ($requiredFields as $field) {
+                if (empty($data[$field])) {
+                    return $this->json([
+                        'success' => false,
+                        'message' => "فیلد {$field} الزامی است"
+                    ], 400);
+                }
+            }
+
+            // اعتبارسنجی پورت
+            $port = (int) $data['port'];
+            if ($port < 1 || $port > 65535) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'پورت باید عددی بین 1 تا 65535 باشد'
+                ], 400);
+            }
+
+            // ایجاد اتصال FTP
+            $ftp = ftp_connect($data['host'], $port, 30);
+            if (!$ftp) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'خطا در اتصال به سرور FTP'
+                ], 400);
+            }
+
+            // تلاش برای ورود
+            if (!ftp_login($ftp, $data['username'], $data['password'])) {
+                ftp_close($ftp);
+                return $this->json([
+                    'success' => false,
+                    'message' => 'نام کاربری یا رمز عبور اشتباه است'
+                ], 400);
+            }
+
+            // تست دسترسی به مسیر
+            if (!ftp_chdir($ftp, $data['path'])) {
+                ftp_close($ftp);
+                return $this->json([
+                    'success' => false,
+                    'message' => 'مسیر مورد نظر قابل دسترسی نیست'
+                ], 400);
+            }
+
+            // بستن اتصال
+            ftp_close($ftp);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'اتصال به سرور FTP با موفقیت برقرار شد'
+            ]);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'خطا در تست اتصال: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

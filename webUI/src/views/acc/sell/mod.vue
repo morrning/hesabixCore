@@ -3,1188 +3,1380 @@
     <template v-slot:prepend>
       <v-tooltip :text="$t('dialog.back')" location="bottom">
         <template v-slot:activator="{ props }">
-          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
-            icon="mdi-arrow-right" />
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text" icon="mdi-arrow-right" />
         </template>
       </v-tooltip>
     </template>
     <v-spacer></v-spacer>
-    <v-switch :disabled="this.selectedPersonWithDet.mobile == '' || this.selectedPersonWithDet.mobile == undefined"
-      v-model="sms" :label="$t('dialog.sms')" color="primary" hide-details="true" </v-switch>
-      <v-btn :disabled="this.canSubmit != true" @click="save()" :loading="loading" icon="" color="green">
-        <v-tooltip activator="parent" :text="$t('dialog.save')" location="bottom" />
-        <v-icon icon="mdi-content-save"></v-icon>
-      </v-btn>
-      <template v-slot:extension>
-        <v-tabs color="primary" class="bg-light" grow v-model="tabs">
-          <v-tab value="0">
-            {{ $t('dialog.invoice_info') }}
-          </v-tab>
-          <v-tab value="1">
-            {{ $t('dialog.comsofinvoice') }}
-          </v-tab>
-          <v-tab value="2">
-            {{ $t('dialog.pair_docs') }}
-          </v-tab>
-        </v-tabs>
+    <v-tooltip text="ثبت فاکتور" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" variant="text" icon="mdi-content-save" color="success" @click="saveInvoice" :loading="loading"></v-btn>
       </template>
+    </v-tooltip>
+    <v-tooltip v-if="$route.params.id" text="حذف فاکتور" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" variant="text" icon="mdi-delete" color="error" @click="deleteInvoice" :loading="loading"></v-btn>
+      </template>
+    </v-tooltip>
   </v-toolbar>
-  <v-row class="pa-1">
-    <v-col>
-      <v-tabs-window v-model="tabs">
-        <v-tabs-window-item value="0">
-          <v-card>
-            <v-card-text>
-              <div class="row">
-                <div class="col-sm-12 col-md-6 mb-1">
-                  <div class="block block-rounded border">
-                    <div class="block-header block-header-default py-1">
-                      <h3 class="block-title text-primary">
-                        <i class="fa fa-calendar"></i>
-                        تاریخ
-                      </h3>
-                      <div class="block-options">
+  <v-container fluid class="pa-0">
+    <v-row>
+      <v-col cols="12">
+        <v-tabs v-model="activeTab" color="primary" class="w-100 tabs-container">
+          <v-tab value="invoice" class="flex-grow-1">فاکتور</v-tab>
+          <v-tab value="payments" class="flex-grow-1">اسناد پرداخت</v-tab>
+          <v-tab value="settings" class="flex-grow-1">تنظیمات جانبی</v-tab>
+        </v-tabs>
 
-                      </div>
-                    </div>
-                    <div class="block-content pt-1 px-1">
-                      <p>
-                        <date-picker class="" v-model="data.date" format="jYYYY/jMM/jDD" display-format="jYYYY/jMM/jDD"
-                          :min="year.start" :max="year.end" />
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-sm-12 col-md-6 mb-1">
-                  <div class="block block-rounded border">
-                    <div class="block-header block-header-default py-1">
-                      <h3 class="block-title text-primary">
-                        <i class="fa fa-person"></i>
-                        طرف حساب
-                      </h3>
-                      <div class="block-options">
-                        <quickView :code="this.data.person.code"></quickView>
-                        <quickAdd :code="this.data.person.code"></quickAdd>
-                      </div>
-                    </div>
-                    <div class="block-content pt-1 px-1">
-                      <v-cob class="mb-1 mx-0" :filterable="false" dir="rtl" @search="searchPerson" :options="persons"
-                        label="nikename" v-model="data.person">
-                        <template #no-options="{ search, searching, loading }">
-                          نتیجه‌ای یافت نشد!
-                        </template>
-                        <template v-slot:option="option">
-                          <div class="row mb-1">
-                            <div class="col-12">
-                              <i class="fa fa-user me-2"></i>
-                              {{ option.nikename }}
-                            </div>
-                            <div class="col-12">
-                              <div class="row">
-                                <div class="col-6">
-                                  <i class="fa fa-phone me-2"></i>
-                                  {{ option.mobile }}
-                                </div>
-                                <div class="col-6">
-                                  <i class="fa fa-bars"></i>
-                                  تراز:
-                                  {{ $filters.formatNumber(Math.abs(parseInt(option.bs) -
-                                    parseInt(option.bd))) }}
-                                  <span class="text-danger" v-if="parseInt(option.bs) - parseInt(option.bd) < 0">
-                                    بدهکار </span>
-                                  <span class="text-success" v-if="parseInt(option.bs) - parseInt(option.bd) > 0">
-                                    بستانکار </span>
-                                </div>
-                              </div>
-                            </div>
+        <v-window v-model="activeTab" class="mt-3">
+          <!-- تب فاکتور -->
+          <v-window-item value="invoice">
+            <v-row class="ma-1">
+              <v-col cols="12" sm="12">
+                <v-row class="mb-2">
+                  <v-col cols="12" sm="6">
+                    <Hdatepicker v-model="invoiceDate" label="تاریخ فاکتور" density="compact"></Hdatepicker>
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <Hpersonsearch v-model="customer" label="خریدار" :rules="[v => !!v || 'خریدار الزامی است']" required></Hpersonsearch>
+                  </v-col>
+                </v-row>
+                <v-text-field v-model="invoiceDescription" label="توضیحات فاکتور" density="compact" hide-details class="mb-4">
+                  <template v-slot:prepend-inner>
+                    <mostdes v-model="invoiceDescription" :submitData="{ id: null, des: invoiceDescription }" type="sell" label=""></mostdes>
+                  </template>
+                </v-text-field>
+                <v-table class="border rounded d-none d-sm-table" style="width: 100%;">
+                  <thead>
+                    <tr style="background-color: #0D47A1; color: white;">
+                      <th class="text-center">نام کالا</th>
+                      <th class="text-center">تعداد</th>
+                      <th class="text-center">قیمت</th>
+                      <th class="text-center">تخفیف</th>
+                      <th class="text-center" style="width: 150px;">جمع کل</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-for="(item, index) in items" :key="index">
+                      <tr :style="{ backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white', height: '64px' }">
+                        <td class="text-center" style="min-width: 200px;">
+                          <Hcommoditysearch v-model="item.name" density="compact" hide-details class="my-0" style="font-size: 0.8rem;" return-object></Hcommoditysearch>
+                        </td>
+                        <td class="text-center" style="width: 100px;">
+                          <Hnumberinput v-model="item.count" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;"></Hnumberinput>
+                        </td>
+                        <td class="text-center" style="width: 120px;">
+                          <Hnumberinput v-model="item.price" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;"></Hnumberinput>
+                        </td>
+                        <td class="text-center" style="width: 150px;">
+                          <div class="d-flex align-center">
+                            <Hnumberinput v-if="item.showPercentDiscount" v-model="item.discountPercent" density="compact" suffix="%" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;">
+                              <template v-slot:prepend>
+                                <v-tooltip text="تخفیف درصدی" location="bottom">
+                                  <template v-slot:activator="{ props }">
+                                    <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
+                                  </template>
+                                </v-tooltip>
+                              </template>
+                            </Hnumberinput>
+                            <Hnumberinput v-else v-model="item.discountAmount" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;">
+                              <template v-slot:prepend>
+                                <v-tooltip text="تخفیف مبلغی" location="bottom">
+                                  <template v-slot:activator="{ props }">
+                                    <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
+                                  </template>
+                                </v-tooltip>
+                              </template>
+                            </Hnumberinput>
                           </div>
-                        </template>
-                      </v-cob>
-                      <span v-if="selectedPersonWithDet.bs != undefined" class="text-info ms-2">
-                        تراز:
-                        {{ $filters.formatNumber(Math.abs(parseInt(this.selectedPersonWithDet.bs) -
-                          parseInt(this.selectedPersonWithDet.bd))) }}
-                        <span class="text-danger"
-                          v-if="parseInt(this.selectedPersonWithDet.bs) - parseInt(this.selectedPersonWithDet.bd) < 0">
-                          بدهکار </span>
-                        <span class="text-success"
-                          v-if="parseInt(this.selectedPersonWithDet.bs) - parseInt(this.selectedPersonWithDet.bd) > 0">
-                          بستانکار </span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-sm-12 col-md-12 mb-1">
-                  <div class="block block-rounded border">
-                    <div class="block-header block-header-default py-1">
-                      <h3 class="block-title text-primary">
-                        <i class="fa-regular fa-note-sticky"></i>
-                        شرح
-                      </h3>
-                      <div class="block-options">
-                        <mostdes :submitData="desSubmit" type="sell"></mostdes>
-                      </div>
-                    </div>
-                    <div class="block-content p-0">
-                      <input v-model="data.des" class="form-control" type="text">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-tabs-window-item>
-        <v-tabs-window-item value="1">
-          <v-card>
-            <v-card-text>
-              <div class="row">
-                <div class="col-12">
-                  <v-bottom-sheet fullscreen inset class="float-start" v-model="addsheet">
-                    <template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" color="primary" class="">
-                        <v-icon>mdi-plus</v-icon>
-                        {{ $t('dialog.add_row') }}
-                      </v-btn>
-                    </template>
-                    <v-card class="bg-white" :loading="loading">
-                      <v-toolbar color="toolbar" :title="$t('drawer.commodity')">
-                        <template v-slot:prepend>
-                          <v-tooltip :text="$t('dialog.back')" location="bottom">
+                        </td>
+                        <td class="text-center font-weight-bold" style="width: 120px;">
+                          {{ item.total.toLocaleString('fa-IR') }}
+                        </td>
+                      </tr>
+                      <tr :style="{ backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white', height: '64px' }">
+                        <td colspan="4">
+                          <v-text-field v-model="item.description" density="compact" hide-details placeholder="شرح" class="my-0" style="font-size: 0.8rem;">
+                            <template v-slot:prepend-inner>
+                              <mostdes v-model="item.description" :submitData="{ id: null, des: item.description }" type="sell" label=""></mostdes>
+                            </template>
+                          </v-text-field>
+                        </td>
+                        <td class="text-center" style="width: 120px;">
+                          <v-tooltip text="حذف" location="bottom">
                             <template v-slot:activator="{ props }">
-                              <v-btn icon="mdi-close" @click="addsheet = !addsheet"></v-btn>
+                              <v-btn v-bind="props" icon="mdi-delete" variant="text" size="small" color="error" @click="removeItem(index)"></v-btn>
+                            </template>
+                          </v-tooltip>
+                        </td>
+                      </tr>
+                    </template>
+                    <tr>
+                      <td colspan="5" class="text-center pa-2" style="height: 64px;">
+                        <v-btn color="primary" prepend-icon="mdi-plus" size="small" @click="addItem">افزودن سطر جدید</v-btn>
+                      </td>
+                    </tr>
+                  </tbody>
+                </v-table>
+              </v-col>
+            </v-row>
+
+            <!-- جدول موبایل -->
+            <div class="d-sm-none">
+              <v-card v-for="(item, index) in items" :key="index" class="mb-4" variant="outlined">
+                <v-card-text>
+                  <div class="d-flex justify-space-between align-center mb-2">
+                    <span class="text-subtitle-2 font-weight-bold">ردیف:</span>
+                    <span>{{ index + 1 }}</span>
+                  </div>
+                  <div class="mb-2">
+                    <Hcommoditysearch v-model="item.name" density="compact" label="نام کالا" hide-details class="my-0" style="font-size: 0.8rem;" return-object></Hcommoditysearch>
+                  </div>
+                  <div class="d-flex justify-space-between mb-2">
+                    <div style="width: 48%;">
+                      <Hnumberinput v-model="item.count" density="compact" label="تعداد" hide-details class="my-0" style="font-size: 0.8rem;" @update:modelValue="recalculateTotals"></Hnumberinput>
+                    </div>
+                    <div style="width: 48%;">
+                      <Hnumberinput v-model="item.price" density="compact" label="قیمت" hide-details class="my-0" style="font-size: 0.8rem;" @update:modelValue="recalculateTotals"></Hnumberinput>
+                    </div>
+                  </div>
+                  <div class="mb-2">
+                    <div class="d-flex align-center">
+                      <Hnumberinput v-if="item.showPercentDiscount" v-model="item.discountPercent" density="compact" label="تخفیف" suffix="%" hide-details @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;">
+                        <template v-slot:prepend>
+                          <v-tooltip text="تخفیف درصدی" location="bottom">
+                            <template v-slot:activator="{ props }">
+                              <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
                             </template>
                           </v-tooltip>
                         </template>
-                        <v-spacer></v-spacer>
-                        <v-btn :loading="loading" @click="addItem()" icon="" color="green">
-                          <v-tooltip activator="parent" :text="$t('dialog.save')" location="bottom" />
-                          <v-icon icon="mdi-content-save"></v-icon>
-                        </v-btn>
-                      </v-toolbar>
-                      <v-row class="pa-2 my-auto">
-                        <v-col cols="12" sm="12" md="12">
-                          <div class="container">
-                            <div class="row">
-                              <div class="col-sm-12 col-md-6 mb-0">
-                                <div class="block block-rounded border">
-                                  <div class="block-header block-header-default py-1">
-                                    <h3 class="block-title text-primary">
-                                      <i class="fa fa-box pe-2"></i>
-                                      کالا و خدمات
-                                    </h3>
-                                    <div class="block-options">
-                                      <!-- Button trigger modal -->
-                                      <quickAddCommodity></quickAddCommodity>
-                                    </div>
-                                  </div>
-                                  <div class="block-content pt-1 px-1">
-                                    <v-cob dir="rtl" @search="searchCommodity" :options="commodity" label="name"
-                                      v-model="itemData.commodity" class="">
-                                      <template #no-options="{ search, searching, loading }">
-                                        نتیجه‌ای یافت نشد!
-                                      </template>
-                                      <template v-slot:option="option">
-                                        <div class="row mb-1">
-                                          <div class="col-12">
-                                            <i class="fa fa-box me-1"></i>
-                                            {{ option.name }}
-                                          </div>
-                                          <div class="col-12">
-                                            <small v-if="option.khadamat == false">
-                                              <i class="fa fa-store me-1"></i>
-                                              <small class="text-danger">
-                                                موجودی:
-                                              </small>
-                                              <label style="direction: ltr;">
-                                                {{ option.count }}
-                                              </label>
-                                              {{ option.unit }}
-                                            </small>
-                                          </div>
-                                        </div>
-                                      </template>
-                                    </v-cob>
-
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col-sm-12 col-md-6 mb-2">
-                                <div class="block block-rounded border">
-                                  <div class="block-header block-header-default py-1">
-                                    <h3 class="block-title text-primary">
-                                      <i class="fa-regular fa-note-sticky"></i>
-                                      شرح
-                                    </h3>
-                                    <div class="block-options">
-
-                                    </div>
-                                  </div>
-                                  <div class="block-content p-0">
-                                    <input v-model="this.itemData.des" class="form-control" type="text">
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col-sm-12 col-md-6 mb-2">
-                                <div class="form-floating mb-3">
-                                  <money3 v-bind="unitConfig" class="form-control"
-                                    v-model.number="this.itemData.count" />
-                                  <label v-if="itemData.commodity" for="floatingInput">{{
-                                    itemData.commodity.unitData.name
-                                  }}</label>
-                                </div>
-                              </div>
-                              <div class="col-sm-12 col-md-6 mb-2">
-                                <div class="input-group mb-3">
-                                  <div class="form-floating mb-3">
-                                    <money3 v-bind="currencyConfig" min=0 class="form-control"
-                                      v-model="this.itemData.price" />
-                                    <label for="floatingInput">قیمت واحد</label>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col-sm-12 col-md-6 mb-2">
-                                <div class="form-floating mb-3">
-                                  <money3 v-bind="currencyConfig" class="form-control"
-                                    v-model.number="this.itemData.discount" />
-                                  <label for="floatingInput">تخفیف</label>
-                                </div>
-                              </div>
-                              <div class="col-sm-12 col-md-6 mb-2">
-                                <div class="form-floating mb-3">
-                                  <money3 readonly="readonly" v-bind="currencyConfig" class="form-control"
-                                    v-model.number="this.itemData.sumWithoutTax" />
-                                  <label for="floatingInput">قیمت کل</label>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </v-col>
-                      </v-row>
-                    </v-card>
-                  </v-bottom-sheet>
-                  <v-bottom-sheet fullscreen inset class="float-start" v-model="editsheet">
-                    <v-card class="bg-white" :loading="loading">
-                      <v-toolbar color="toolbar" :title="$t('drawer.commodity')">
+                      </Hnumberinput>
+                      <Hnumberinput v-else v-model="item.discountAmount" density="compact" label="تخفیف" hide-details @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;">
                         <template v-slot:prepend>
-                          <v-tooltip :text="$t('dialog.back')" location="bottom">
+                          <v-tooltip text="تخفیف مبلغی" location="bottom">
                             <template v-slot:activator="{ props }">
-                              <v-btn icon="mdi-close" @click="editsheet = !editsheet"></v-btn>
+                              <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
                             </template>
                           </v-tooltip>
                         </template>
-                        <v-spacer></v-spacer>
-                        <v-btn :loading="loading" @click="doEditeItem()" icon="" color="green">
-                          <v-tooltip activator="parent" :text="$t('dialog.save')" location="bottom" />
-                          <v-icon icon="mdi-content-save"></v-icon>
-                        </v-btn>
-                      </v-toolbar>
-                      <div class="row pa-2">
-                        <div class="col-sm-12 col-md-6 mb-0">
-                          <div class="block block-rounded border">
-                            <div class="block-header block-header-default py-1">
-                              <h3 class="block-title text-primary">
-                                <i class="fa fa-box pe-2"></i>
-                                کالا و خدمات
-                              </h3>
-                              <div class="block-options">
-                                <!-- Button trigger modal -->
-                                <quickAddCommodity></quickAddCommodity>
-                              </div>
-                            </div>
-                            <div class="block-content pt-1 px-1">
-                              <v-cob dir="rtl" @search="searchCommodity" :options="commodity" label="name"
-                                v-model="editItemData.commodity" class="">
-                                <template #no-options="{ search, searching, loading }">
-                                  نتیجه‌ای یافت نشد!
-                                </template>
-                                <template v-slot:option="option">
-                                  <div class="row mb-1">
-                                    <div class="col-12">
-                                      <i class="fa fa-box me-1"></i>
-                                      {{ option.name }}
-                                    </div>
-                                    <div class="col-12">
-                                      <small v-if="option.khadamat == false">
-                                        <i class="fa fa-store me-1"></i>
-                                        <small class="text-danger">
-                                          موجودی:
-                                        </small>
-                                        <label style="direction: ltr;">
-                                          {{ option.count }}
-                                        </label>
-                                        {{ option.unit }}
-                                      </small>
-                                    </div>
-                                  </div>
-                                </template>
-                              </v-cob>
-
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-sm-12 col-md-6 mb-2">
-                          <div class="block block-rounded border">
-                            <div class="block-header block-header-default py-1">
-                              <h3 class="block-title text-primary">
-                                <i class="fa-regular fa-note-sticky"></i>
-                                شرح
-                              </h3>
-                              <div class="block-options">
-
-                              </div>
-                            </div>
-                            <div class="block-content p-0">
-                              <input v-model="this.editItemData.des" class="form-control" type="text">
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-sm-12 col-md-6 mb-2">
-                          <div class="form-floating mb-3">
-                            <money3 v-bind="unitConfig" class="form-control" v-model.number="this.editItemData.count" />
-                            <label v-if="editItemData.commodity" for="floatingInput">{{
-                              editItemData.commodity.unitData.name
-                            }}</label>
-                          </div>
-                        </div>
-                        <div class="col-sm-12 col-md-6 mb-2">
-                          <div class="input-group mb-3">
-                            <div class="form-floating mb-3">
-                              <money3 v-bind="currencyConfig" min=0 class="form-control"
-                                v-model="this.editItemData.price" />
-                              <label for="floatingInput">قیمت واحد</label>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-sm-12 col-md-6 mb-2">
-                          <div class="form-floating mb-3">
-                            <money3 v-bind="currencyConfig" class="form-control"
-                              v-model.number="this.editItemData.discount" />
-                            <label for="floatingInput">تخفیف</label>
-                          </div>
-                        </div>
-                        <div class="col-sm-12 col-md-6 mb-2">
-                          <div class="form-floating mb-3">
-                            <money3 readonly="readonly" v-bind="currencyConfig" class="form-control"
-                              v-model.number="this.editItemData.sumWithoutTax" />
-                            <label for="floatingInput">قیمت کل</label>
-                          </div>
-                        </div>
+                      </Hnumberinput>
+                    </div>
+                  </div>
+                  <div class="mb-2">
+                    <v-text-field v-model="item.description" density="compact" label="شرح" hide-details class="my-0" style="font-size: 0.8rem;">
+                      <template v-slot:prepend-inner>
+                        <mostdes v-model="item.description" :submitData="{ id: null, des: item.description }" type="sell" label=""></mostdes>
+                      </template>
+                    </v-text-field>
+                  </div>
+                  <div class="d-flex justify-space-between align-center">
+                    <span class="text-subtitle-2 font-weight-bold">جمع کل:</span>
+                    <span class="text-subtitle-2 font-weight-bold">{{ item.total.toLocaleString('fa-IR') }}</span>
+                  </div>
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn icon="mdi-delete" variant="text" color="error" @click="removeItem(index)"></v-btn>
+                </v-card-actions>
+              </v-card>
+              <v-btn color="primary" prepend-icon="mdi-plus" block class="mb-4" @click="addItem">افزودن کالای جدید</v-btn>
+            </div>
+            <v-card class="mt-4 mx-2 border pa-4">
+              <v-row>
+                <v-col cols="12" sm="6">
+                  <v-row>
+                    <v-col cols="12">
+                      <Hnumberinput v-model="taxPercent" label="مالیات بر ارزش افزوده" density="compact" hide-details suffix="%" @update:modelValue="recalculateTotals"></Hnumberinput>
+                    </v-col>
+                    <v-col cols="12">
+                      <div class="d-flex align-center">
+                        <Hnumberinput v-if="showTotalPercentDiscount" v-model="totalDiscountPercent" density="compact" label="تخفیف کلی" hide-details suffix="%" @update:modelValue="recalculateTotals">
+                          <template v-slot:prepend>
+                            <v-tooltip text="تخفیف درصدی" location="bottom">
+                              <template v-slot:activator="{ props }">
+                                <v-checkbox v-bind="props" v-model="showTotalPercentDiscount" hide-details density="compact" color="primary" class="mt-0"></v-checkbox>
+                              </template>
+                            </v-tooltip>
+                          </template>
+                        </Hnumberinput>
+                        <Hnumberinput v-else v-model="totalDiscount" density="compact" label="تخفیف کلی" hide-details @update:modelValue="recalculateTotals">
+                          <template v-slot:prepend>
+                            <v-tooltip text="تخفیف مبلغی" location="bottom">
+                              <template v-slot:activator="{ props }">
+                                <v-checkbox v-bind="props" v-model="showTotalPercentDiscount" hide-details density="compact" color="primary" class="mt-0"></v-checkbox>
+                              </template>
+                            </v-tooltip>
+                          </template>
+                        </Hnumberinput>
                       </div>
+                    </v-col>
+                    <v-col cols="12">
+                      <Hnumberinput v-model="shippingCost" density="compact" label="هزینه حمل" hide-details @update:modelValue="recalculateTotals"></Hnumberinput>
+                    </v-col>
+                  </v-row>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-card class="pa-4" color="grey-lighten-4">
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <span class="text-subtitle-2 font-weight-bold">جمع کل فاکتور:</span>
+                      <span class="text-subtitle-2 font-weight-bold">{{ totalInvoice.toLocaleString('fa-IR') }}</span>
+                    </div>
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <span class="text-subtitle-2 font-weight-bold">تخفیف کلی:</span>
+                      <span class="text-subtitle-2 font-weight-bold">{{ (showTotalPercentDiscount ? Math.round((totalInvoice * totalDiscountPercent) / 100) : totalDiscount).toLocaleString('fa-IR') }}</span>
+                    </div>
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <span class="text-subtitle-2 font-weight-bold">هزینه حمل:</span>
+                      <span class="text-subtitle-2 font-weight-bold">{{ shippingCost.toLocaleString('fa-IR') }}</span>
+                    </div>
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <span class="text-subtitle-2 font-weight-bold">جمع کل با تخفیف و حمل:</span>
+                      <span class="text-subtitle-2 font-weight-bold">{{ (totalInvoice - (showTotalPercentDiscount ? Math.round((totalInvoice * totalDiscountPercent) / 100) : totalDiscount) + shippingCost).toLocaleString('fa-IR') }}</span>
+                    </div>
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <span class="text-subtitle-2 font-weight-bold">مبلغ مالیات:</span>
+                      <span class="text-subtitle-2 font-weight-bold">{{ taxAmount.toLocaleString('fa-IR') }}</span>
+                    </div>
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <span class="text-subtitle-2 font-weight-bold">جمع کل نهایی:</span>
+                      <span class="text-subtitle-2 font-weight-bold">{{ finalTotal.toLocaleString('fa-IR') }}</span>
+                    </div>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </v-card>
+          </v-window-item>
+
+          <!-- تب اسناد پرداخت -->
+          <v-window-item value="payments">
+            <v-card class="mt-4">
+              <v-card-text>
+                <v-container class="pa-0">
+                  <!-- بخش خلاصه مبالغ -->
+                  <v-row class="mb-4">
+                    <v-col cols="12" md="4">
+                      <v-text-field v-model="totalPayments" label="مجموع پرداخت‌ها" readonly density="compact" hide-details variant="outlined" bg-color="grey-lighten-4"></v-text-field>
+                    </v-col>
+                    <v-col cols="12" md="4">
+                      <v-text-field v-model="remainingAmount" label="باقی مانده" readonly density="compact" hide-details variant="outlined" bg-color="grey-lighten-4"></v-text-field>
+                    </v-col>
+                    <v-col cols="12" md="4">
+                      <v-text-field v-model="totalAmount" label="مبلغ کل فاکتور" readonly density="compact" hide-details variant="outlined" bg-color="grey-lighten-4"></v-text-field>
+                    </v-col>
+                  </v-row>
+
+                  <!-- بخش لیست پرداخت‌ها -->
+                  <div v-if="paymentItems.length === 0" class="text-center pa-8">
+                    <v-icon size="large" color="grey" class="mb-2">mdi-cash-remove</v-icon>
+                    <div class="text-subtitle-1 text-grey">هیچ پرداختی ثبت نشده است.</div>
+                  </div>
+
+                  <v-row v-else>
+                    <v-col v-for="(item, index) in paymentItems" :key="index" cols="12">
+                      <v-card :class="{
+                        'bank-card': item.type === 'bank',
+                        'cashdesk-card': item.type === 'cashdesk',
+                        'salary-card': item.type === 'salary',
+                        'cheque-card': item.type === 'cheque'
+                      }" border="sm" class="mb-0 payment-card">
+                        <v-card-item class="py-0">
+                          <template v-slot:prepend>
+                            <v-icon :color="item.type === 'bank' ? 'blue' : item.type === 'cashdesk' ? 'green' : item.type === 'salary' ? 'orange' : 'purple'" size="small">
+                              {{ item.type === 'bank' ? 'mdi-bank' : item.type === 'cashdesk' ? 'mdi-cash-register' : item.type === 'salary' ? 'mdi-wallet' : 'mdi-checkbook' }}
+                            </v-icon>
+                          </template>
+
+                          <v-card-title class="text-subtitle-2 py-0">
+                            {{ item.type === 'bank' ? 'حساب بانکی' : item.type === 'cashdesk' ? 'صندوق' : item.type === 'salary' ? 'تنخواه گردان' : 'چک' }}
+                          </v-card-title>
+
+                          <template v-slot:append>
+                            <v-btn-group density="compact">
+                              <v-btn variant="text" color="primary" size="small" @click="fillWithTotal(item)">
+                                <v-icon size="small">mdi-cash-100</v-icon>
+                                <v-tooltip activator="parent" location="bottom">کل فاکتور</v-tooltip>
+                              </v-btn>
+                              <v-btn variant="text" color="error" size="small" @click="deletePaymentItem(index)">
+                                <v-icon size="small">mdi-trash-can</v-icon>
+                                <v-tooltip activator="parent" location="bottom">حذف</v-tooltip>
+                              </v-btn>
+                            </v-btn-group>
+                          </template>
+                        </v-card-item>
+
+                        <v-divider class="my-0"></v-divider>
+
+                        <v-card-text class="py-2">
+                          <v-row class="mt-0">
+                            <v-col cols="12" sm="6">
+                              <Hbankaccountsearch v-if="item.type === 'bank'" v-model="item.bank" label="بانک" density="compact" variant="outlined"></Hbankaccountsearch>
+                              <Hcashdesksearch v-if="item.type === 'cashdesk'" v-model="item.cashdesk" label="صندوق" density="compact" variant="outlined"></Hcashdesksearch>
+                              <Hsalarysearch v-if="item.type === 'salary'" v-model="item.salary" label="تنخواه گردان" density="compact" variant="outlined"></Hsalarysearch>
+                            </v-col>
+                            <v-col cols="12" sm="6">
+                              <Hnumberinput v-model="item.amount" label="مبلغ" placeholder="0" @update:modelValue="calculatePayments" density="compact" variant="outlined" />
+                            </v-col>
+                            <v-col cols="12" sm="6">
+                              <v-text-field v-model="item.reference" label="ارجاع" density="compact" variant="outlined"></v-text-field>
+                            </v-col>
+                            <v-col cols="12" sm="6">
+                              <v-text-field v-model="item.description" label="شرح" density="compact" variant="outlined"></v-text-field>
+                            </v-col>
+                          </v-row>
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+
+                  <!-- دکمه افزودن پرداخت -->
+                  <v-btn color="primary" prepend-icon="mdi-plus" class="mt-4" @click="showPaymentMenu = true">
+                    افزودن پرداخت
+                  </v-btn>
+
+                  <!-- دیالوگ افزودن پرداخت -->
+                  <v-dialog v-model="showPaymentMenu" max-width="300">
+                    <v-card>
+                      <v-card-title class="text-h6 pa-4">
+                        <v-icon icon="mdi-plus-circle" class="ml-2"></v-icon>
+                        افزودن پرداخت
+                      </v-card-title>
+                      <v-divider class="my-0"></v-divider>
+                      <v-list>
+                        <v-list-item @click="addPaymentItem('bank')">
+                          <template v-slot:prepend>
+                            <v-icon color="blue">mdi-bank</v-icon>
+                          </template>
+                          <v-list-item-title>حساب بانکی</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="addPaymentItem('cashdesk')">
+                          <template v-slot:prepend>
+                            <v-icon color="green">mdi-cash-register</v-icon>
+                          </template>
+                          <v-list-item-title>صندوق</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="addPaymentItem('salary')">
+                          <template v-slot:prepend>
+                            <v-icon color="orange">mdi-wallet</v-icon>
+                          </template>
+                          <v-list-item-title>تنخواه گردان</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
                     </v-card>
-                  </v-bottom-sheet>
+                  </v-dialog>
+                </v-container>
+              </v-card-text>
+            </v-card>
+          </v-window-item>
 
-                  <EasyDataTable table-class-name="customize-table" class="mt-3" v-model:items-selected="itemsSelected"
-                    show-index alternating :headers="headers" :items="items" theme-color="#1d90ff"
-                    header-text-direction="center" body-text-direction="center" rowsPerPageMessage="تعداد سطر"
-                    emptyMessage="هیچ آیتمی به این فاکتور افزوده نشده است." rowsOfPageSeparatorMessage="از">
-                    <template #item-operation="{ index }">
-                      <button title="حذف" class="btn btn-sm text-danger px-1" @click="deleteItem(index)">
-                        <i class="fa fa-trash"></i>
-                      </button>
-                      <button title="ویرایش" class="btn btn-sm text-info px-1"
-                        @click="editItem(index); editsheet = true;">
-                        <i class="fa fa-edit"></i>
-                      </button>
-                    </template>
-                    <template #item-sumTotal="{ sumTotal }">
-                      {{ $filters.formatNumber(sumTotal) }}
-                    </template>
-                    <template #item-sumWithoutTax="{ sumWithoutTax }">
-                      {{ $filters.formatNumber(sumWithoutTax) }}
-                    </template>
-                    <template #item-price="{ price }">
-                      {{ $filters.formatNumber(price) }}
-                    </template>
-                    <template #item-commodity.name="{ commodity }">
-                      {{ commodity.code }} - {{ commodity.name }}
-                    </template>
-                    <template #item-tax="{ tax }">
-                      {{ $filters.formatNumber(tax) }}
-                    </template>
-                    <template #item-discount="{ discount }">
-                      {{ $filters.formatNumber(discount) }}
-                    </template>
-                    <template #item-count="{ count, commodity }">
-                      {{ count }} {{ commodity.unit }}
-                    </template>
-                  </EasyDataTable>
-                  <div class="row mt-2">
-                    <div class="col-sm-12 col-md-4">
-                      <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text" id="inputGroup-sizing-sm">
-                          <input v-model="maliyatCheck" class="form-check-input mt-0 me-2" type="checkbox"
-                            aria-label="Checkbox for following text input">
-                          مالیات
-                          %
-                        </span>
-                        <money3 :disabled="!maliyatCheck" v-bind="unitConfig" aria-label="مالیات بر ارزش افزوده"
-                          class="form-control" v-model.number="maliyatPercent" />
-                      </div>
-                    </div>
-                    <div class="col-sm-12 col-md-4">
-                      <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text" id="inputGroup-sizing-sm">
-                          تخفیف
-                        </span>
-                        <money3 v-bind="currencyConfig" aria-label="تخفیف روی فاکتور" class="form-control"
-                          v-model.number="data.discountAll" />
-                      </div>
-                    </div>
-                    <div class="col-sm-12 col-md-4">
-                      <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text" id="inputGroup-sizing-sm">
-                          حمل و نقل
-                        </span>
-                        <money3 v-bind="currencyConfig" aria-label="مالیات بر ارزش افزوده" class="form-control"
-                          v-model.number="data.transferCost" />
-                      </div>
-                    </div>
-                  </div>
-                  <div class="container-fluid p-0 mx-0 mt-2">
-                    <a class="block block-rounded block-link-shadow border-start border-success border-3"
-                      href="javascript:void(0)">
-                      <div class="block-content block-content-full block-content-sm bg-body-light">
-                        <div class="row">
-                          <div class="col-sm-12 col-md-3">
-                            <span class="text-dark">
-                              <i class="fa fa-list-dots"></i>
-                              اقلام فاکتور:
-                            </span>
-                            <span class="text-primary">
-                              {{ items.length }} قلم
-                            </span>
-                          </div>
-                          <div class="col-sm-12 col-md-3">
-                            <span class="text-dark">
-                              <i class="fa fa-list-dots"></i>
-                              مالیات:
-                            </span>
-                            <span class="text-primary">
-                              {{ $filters.formatNumber(this.sumTax) }}
-                              {{ $filters.getActiveMoney().shortName }}
-                            </span>
-                          </div>
+          <!-- تب تنظیمات جانبی -->
+          <v-window-item value="settings">
+            <v-card class="settings-card">
+              <v-card-text>
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-card class="settings-section-card" variant="outlined">
+                      <v-card-title class="settings-section-title">
+                        <v-icon icon="mdi-message-text" class="ml-2" color="primary"></v-icon>
+                        <span class="text-subtitle-1 font-weight-bold">تنظیمات پیامک</span>
+                      </v-card-title>
+                      <v-card-text class="settings-section-content">
+                        <v-switch
+                          v-model="sendSmsToCustomer"
+                          color="primary"
+                          label="ارسال پیامک به مشتری"
+                          hide-details
+                          class="mb-0"
+                        ></v-switch>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
 
-                          <div class="col-sm-12 col-md-3">
-                            <span class="text-dark">
-                              <i class="fa fa-list-check"></i>
-                              جمع مبلغ موارد انتخابی:
-                            </span>
-                            <span class="text-primary">
-                              {{ $filters.formatNumber(this.sumSelected) }}
-                              {{ $filters.getActiveMoney().shortName }}
-                            </span>
-                          </div>
-                          <div class="col-sm-12 col-md-3">
-                            <span class="text-dark">
-                              <i class="fa fa-list-dots"></i>
-                              جمع کل:
-                            </span>
-                            <span class="text-primary">
-                              {{ $filters.formatNumber(this.sumTotal) }}
-                              {{ $filters.getActiveMoney().shortName }}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-tabs-window-item>
-        <v-tabs-window-item value="2">
-          <v-card>
-            <v-card-text>
-              <v-alert color="info" icon="mdi-information-box" :text="$t('info.sell_pairdocs')"
-                variant="tonal"></v-alert>
-              <v-autocomplete :loading="loading" prepend-inner-icon="mdi-file-search" class="mt-2" hide-details="auto"
-                chips closable-chips multiple :label="$t('dialog.search_invoice')" v-model="data.pair_docs"
-                :items="buyDocs" item-title="code" item-value="code">
-                <template v-slot:item="{ props, item }">
-                  <v-list-item v-bind="props" :title="item.title"></v-list-item>
-                </template>
-              </v-autocomplete>
-              <v-table density="compact" class="border">
-                <thead class="bg-gray">
-                  <tr>
-                    <th class="text-center">
-                      {{ $t('dialog.row') }}
-                    </th>
-                    <th class="text-center">
-                      {{ $t('dialog.invoice_num') }}
-                    </th>
-                    <th class="text-center">
-                      {{ $t('dialog.date') }}
-                    </th>
-                    <th class="text-center">
-                      {{ $t('dialog.suplayer') }}
-                    </th>
-                    <th class="text-center">
-                      {{ $t('dialog.commodities') }}
-                    </th>
-                    <th class="text-center">
-                      {{ $t('dialog.amount') }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, index) in pair_docs" :key="item.name" class="text-center">
-                    <td>{{ index }}</td>
-                    <td>
-                      <RouterLink :to="'/acc/sell/mod/' + item.code">{{ item.code }}</RouterLink>
-                    </td>
-                    <td>{{ item.date }}</td>
-                    <td>{{ item.person.nikename }}</td>
-                    <td>
-                      <v-chip variant="tonal" class="me-1" size="small" color="primary"
-                        v-for="commodity in item.commodities">
-                        {{ commodity.name }}
-                      </v-chip>
-                    </td>
-                    <td>{{ $filters.formatNumber(item.amount) }}</td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </v-card-text>
-          </v-card>
-        </v-tabs-window-item>
-      </v-tabs-window>
-    </v-col>
-  </v-row>
+                  <v-col cols="12" md="6">
+                    <v-card class="settings-section-card" variant="outlined">
+                      <v-card-title class="settings-section-title">
+                        <v-icon icon="mdi-printer" class="ml-2" color="primary"></v-icon>
+                        <span class="text-subtitle-1 font-weight-bold">تنظیمات چاپ</span>
+                      </v-card-title>
+                      <v-card-text class="settings-section-content">
+                        <v-switch
+                          v-model="cloudPrint"
+                          color="primary"
+                          label="ارسال به پرینتر ابری"
+                          hide-details
+                          class="mb-2"
+                        ></v-switch>
+                        <v-select
+                          v-if="cloudPrint"
+                          v-model="selectedPrinter"
+                          :items="printers"
+                          item-title="name"
+                          item-value="id"
+                          label="انتخاب پرینتر ابری"
+                          density="compact"
+                          variant="outlined"
+                          hide-details
+                          class="mt-2 mb-4"
+                        ></v-select>
+                        <v-divider v-if="cloudPrint" class="mb-4"></v-divider>
+                        <v-switch
+                          v-model="printInvoice"
+                          color="primary"
+                          label="چاپ صورت حساب"
+                          hide-details
+                          class="mb-2"
+                          :disabled="!cloudPrint"
+                        ></v-switch>
+                        <v-switch
+                          v-model="printCashier"
+                          color="primary"
+                          label="چاپ قبض صندوق"
+                          hide-details
+                          class="mb-2"
+                          :disabled="!cloudPrint"
+                        ></v-switch>
+                        <v-switch
+                          v-model="generatePdf"
+                          color="primary"
+                          label="خروجی PDF فاکتور"
+                          hide-details
+                          class="mb-2"
+                        ></v-switch>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+        </v-window>
+      </v-col>
+    </v-row>
+  </v-container>
+  <v-snackbar v-model="showError" color="error" timeout="3000">
+    مبلغ تخفیف نمی‌تواند از قیمت پایه بیشتر باشد
+  </v-snackbar>
+  <v-snackbar v-model="showDiscountError" color="error" timeout="3000">
+    مبلغ تخفیف کلی نمی‌تواند از جمع کل فاکتور بیشتر باشد
+  </v-snackbar>
+  <v-snackbar v-model="showError" color="error" timeout="3000">
+    {{ error }}
+  </v-snackbar>
+  <v-snackbar v-model="showSuccess" color="success" timeout="3000">
+    {{ successMessage }}
+  </v-snackbar>
+  <v-snackbar v-model="showValidationErrors" color="error" timeout="3000">
+    <ul class="mb-0">
+      <li v-for="(error, index) in validationErrors" :key="index">{{ error }}</li>
+    </ul>
+  </v-snackbar>
+  <v-overlay :model-value="loading" class="align-center justify-center">
+    <v-progress-circular color="primary" indeterminate></v-progress-circular>
+  </v-overlay>
+
+  <!-- دیالوگ تأیید حذف -->
+  <v-dialog v-model="deleteDialog" max-width="400">
+    <v-card>
+      <v-card-title class="text-h5">
+        حذف فاکتور
+      </v-card-title>
+      <v-card-text>
+        آیا مطمئن هستید که می‌خواهید این فاکتور را حذف کنید؟
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="grey-darken-1" variant="text" @click="deleteDialog = false">
+          انصراف
+        </v-btn>
+        <v-btn color="error" variant="text" @click="confirmDelete" :loading="loading">
+          حذف
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- دیالوگ تأیید بارگذاری پیش‌نویس -->
+  <v-dialog v-model="showDraftDialog" max-width="500" persistent>
+    <v-card class="draft-dialog">
+      <v-card-title class="draft-dialog-title">
+        <v-icon icon="mdi-file-document-outline" color="primary" class="ml-2"></v-icon>
+        پیش‌نویس فاکتور فروش
+      </v-card-title>
+      
+      <v-divider></v-divider>
+      
+      <v-card-text class="draft-dialog-content">
+        <div class="draft-message">
+          <v-icon icon="mdi-information-outline" color="info" size="large" class="mb-2"></v-icon>
+          <p class="text-body-1">یک پیش‌نویس از فاکتور فروش قبلی موجود است.</p>
+          <p class="text-body-2 text-medium-emphasis">آیا می‌خواهید این پیش‌نویس را بارگذاری کنید؟</p>
+        </div>
+      </v-card-text>
+      
+      <v-divider></v-divider>
+      
+      <v-card-actions class="draft-dialog-actions">
+        <v-btn
+          color="error"
+          variant="outlined"
+          prepend-icon="mdi-delete"
+          @click="discardDraft"
+          class="ml-2"
+        >
+          حذف پیش‌نویس
+        </v-btn>
+        <v-spacer></v-spacer>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          prepend-icon="mdi-file-restore"
+          @click="loadDraft"
+        >
+          بارگذاری پیش‌نویس
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
-  <script>
-  import axios from "axios";
-  import Swal from "sweetalert2";
-  import { ref } from "vue";
-  import Loading from 'vue-loading-overlay';
-  import 'vue-loading-overlay/dist/css/index.css';
-  import VuePersianDatetimePicker from 'vue-persian-datetime-picker'
-  import quickView from "../component/person/quickView.vue";
-  // import the styles
-  import { Money3 } from "v-money3";
-  import quickAdd from "../component/person/quickAdd.vue";
-  import quickAddCommodity from "../component/commodity/quickAddCommodity.vue";
-  import mostdes from "../component/mostdes.vue";
-  import { format, unformat } from "v-money3";
-  export default {
-    name: "mod",
-    components: {
-      Money3,
-      Loading,
-      quickView,
-      quickAdd,
-      quickAddCommodity,
-      mostdes
+<script>
+import axios from "axios";
+import Hnumberinput from "@/components/forms/Hnumberinput.vue";
+import Hdatepicker from "@/components/forms/Hdatepicker.vue";
+import Hpersonsearch from "@/components/forms/Hpersonsearch.vue";
+import mostdes from "../component/mostdes.vue";
+import Hcommoditysearch from "@/components/forms/Hcommoditysearch.vue";
+import Hbankaccountsearch from "@/components/forms/Hbankaccountsearch.vue";
+import Hcashdesksearch from "@/components/forms/Hcashdesksearch.vue";
+import Hsalarysearch from "@/components/forms/Hsalarysearch.vue";
+import { ref, watch } from 'vue';
+
+export default {
+  name: "mod",
+  components: {
+    Hnumberinput,
+    Hdatepicker,
+    Hpersonsearch,
+    mostdes,
+    Hcommoditysearch,
+    Hbankaccountsearch,
+    Hcashdesksearch,
+    Hsalarysearch
+  },
+  setup() {
+    const activeTab = ref('invoice');
+    const items = ref([]);
+    const totalInvoice = ref(0);
+    const showError = ref(false);
+    const showDiscountError = ref(false);
+    const showPercentDiscount = ref(true);
+    const showTotalPercentDiscount = ref(true);
+    const invoiceDescription = ref('');
+    const invoiceDate = ref(null);
+    const customer = ref(null);
+    const taxPercent = ref(0);
+    const totalDiscount = ref(0);
+    const totalDiscountPercent = ref(0);
+    const shippingCost = ref(0);
+    const finalTotal = ref(0);
+    const totalWithoutTax = ref(0);
+    const taxAmount = ref(0);
+    const loading = ref(false);
+    const error = ref(null);
+    const validationErrors = ref([]);
+    const deleteDialog = ref(false);
+    const showSuccess = ref(false);
+    const successMessage = ref('');
+    const showValidationErrors = ref(false);
+    const paymentDate = ref(null);
+    const paymentDescription = ref('');
+    const totalPayments = ref(0);
+    const remainingAmount = ref(0);
+    const totalAmount = ref(0);
+    const paymentItems = ref([]);
+    const showPaymentMenu = ref(false);
+    const addPaymentBtn = ref(null);
+    const sendSmsToCustomer = ref(false);
+    const printInvoice = ref(false);
+    const printCashier = ref(false);
+    const generatePdf = ref(false);
+    const cloudPrint = ref(false);
+    const printers = ref([]);
+    const selectedPrinter = ref(null);
+    const showDraftDialog = ref(false);
+    const hasChanges = ref(false);
+    const isNewInvoice = ref(true);
+    const isInitializing = ref(true);
+
+    // بارگذاری تنظیمات از لوکال استوریج
+    const loadSettings = () => {
+      try {
+        const settings = localStorage.getItem('sellInvoiceSettings');
+        if (settings) {
+          const parsedSettings = JSON.parse(settings);
+          sendSmsToCustomer.value = parsedSettings.sendSmsToCustomer || false;
+          printInvoice.value = parsedSettings.printInvoice || false;
+          printCashier.value = parsedSettings.printCashier || false;
+          generatePdf.value = parsedSettings.generatePdf || false;
+          cloudPrint.value = parsedSettings.cloudPrint || false;
+          selectedPrinter.value = parsedSettings.selectedPrinter || null;
+        }
+      } catch (error) {
+        console.error('خطا در بارگذاری تنظیمات:', error);
+      }
+    };
+
+    // ذخیره تنظیمات در لوکال استوریج
+    const saveSettings = () => {
+      try {
+        const settings = {
+          sendSmsToCustomer: sendSmsToCustomer.value,
+          printInvoice: printInvoice.value,
+          printCashier: printCashier.value,
+          generatePdf: generatePdf.value,
+          cloudPrint: cloudPrint.value,
+          selectedPrinter: selectedPrinter.value
+        };
+        localStorage.setItem('sellInvoiceSettings', JSON.stringify(settings));
+      } catch (error) {
+        console.error('خطا در ذخیره تنظیمات:', error);
+      }
+    };
+
+    // تماشای تغییرات تنظیمات
+    watch([sendSmsToCustomer, printInvoice, printCashier, generatePdf, cloudPrint, selectedPrinter], () => {
+      saveSettings();
+    });
+
+    return {
+      activeTab,
+      items,
+      totalInvoice,
+      showError,
+      showDiscountError,
+      showPercentDiscount,
+      showTotalPercentDiscount,
+      invoiceDescription,
+      invoiceDate,
+      customer,
+      taxPercent,
+      totalDiscount,
+      totalDiscountPercent,
+      shippingCost,
+      finalTotal,
+      totalWithoutTax,
+      taxAmount,
+      loading,
+      error,
+      validationErrors,
+      deleteDialog,
+      showSuccess,
+      successMessage,
+      showValidationErrors,
+      paymentDate,
+      paymentDescription,
+      totalPayments,
+      remainingAmount,
+      totalAmount,
+      paymentItems,
+      showPaymentMenu,
+      addPaymentBtn,
+      sendSmsToCustomer,
+      printInvoice,
+      printCashier,
+      generatePdf,
+      cloudPrint,
+      printers,
+      selectedPrinter,
+      loadSettings,
+      saveSettings,
+      showDraftDialog,
+      hasChanges,
+      isNewInvoice,
+      isInitializing
+    };
+  },
+  watch: {
+    items: {
+      handler() {
+        if (this.isNewInvoice && !this.isInitializing) {
+          this.hasChanges = true;
+          this.saveDraft();
+        }
+      },
+      deep: true
     },
-    data: () => {
-      return {
-        tabs: 0,
-        buyDocs: [],
-        pair_docs: [],
-        addsheet: false,
-        editsheet: false,
-        priceList: [],
-        selectedPriceList: {
-          id: 0,
-          label: 'پیشفرض'
-        },
-        plugins: {},
-        maliyatCheck: true,
-        maliyatPercent: 0,
-        bid: {
-          maliyatafzode: 0
-        },
-        desSubmit: {
-          id: '',
-          des: ''
-        },
-        sumSelected: 0,
-        sumTax: 0,
-        sumTotal: 0,
-        itemsSelected: [],
-        items: [],
-        headers: [
-          { text: "کالا", value: "commodity.name" },
-          { text: "شرح", value: "des" },
-          { text: "تعداد/مقدار", value: "count" },
-          { text: "مبلغ واحد", value: "price" },
-          { text: "تخفیف", value: "discount" },
-          { text: "مالیات", value: "tax" },
-          { text: "جمع بدون مالیات", value: "sumWithoutTax" },
-          { text: "مبلغ کل", value: "sumTotal" },
-          { text: "عملیات", value: "operation" },
-        ],
-        selectedPersonWithDet: {},
-        loading: false,
-        canSubmit: true,
-        updateID: null,
-        sum: 0,
-        balance: 0,
-        currencyConfig: {
-          masked: false,
-          prefix: '',
-          suffix: 'ریال',
-          thousands: ',',
-          decimal: '.',
-          precision: 0,
-          disableNegative: true,
-          disabled: false,
-          min: 0,
-          max: null,
-          allowBlank: false,
-          minimumNumberOfCharacters: 1,
-          shouldRound: false,
-          focusOnRight: true,
-        },
-        unitConfig: {
-          masked: false,
-          prefix: '',
-          suffix: '',
-          thousands: ',',
-          decimal: '.',
-          precision: 0,
-          disableNegative: true,
-          disabled: false,
-          allowBlank: false,
-          shouldRound: false,
-          focusOnRight: true,
-        },
-        data: {
-          date: '',
-          des: '',
-          person: '',
-          transferCost: 0,
-          discountAll: 0,
-          pair_docs: [],
-        },
-        year: {},
-        persons: [],
-        commodity: [],
-        units: [],
-        itemData: {
-          id: 0,
-          commodity: {
-            unit: '',
-            unitData: {
-              name: '',
-              floatNumber: 0
-            }
-          },
-          count: 0,
-          price: 0,
-          sumTotal: 0,
-          sumWithoutTax: 0,
-          tax: 0,
-          des: '',
-          discount: 0,
-        },
-        editItemData: {
-          index: 0,
-          id: 0,
-          commodity: {
-            unit: '',
-            unitData: {
-              name: '',
-              floatNumber: 0
-            }
-          },
-          count: 0,
-          price: 0,
-          sumTotal: 0,
-          sumWithoutTax: 0,
-          tax: 0,
-          des: '',
-          discount: 0,
-        },
-        sms: false
+    customer() {
+      if (this.isNewInvoice && !this.isInitializing) {
+        this.hasChanges = true;
+        this.saveDraft();
       }
     },
-    watch: {
+    invoiceDate() {
+      if (this.isNewInvoice && !this.isInitializing) {
+        this.hasChanges = true;
+        this.saveDraft();
+      }
+    },
+    invoiceDescription() {
+      if (this.isNewInvoice && !this.isInitializing) {
+        this.hasChanges = true;
+        this.saveDraft();
+      }
+    },
+    taxPercent() {
+      if (this.isNewInvoice && !this.isInitializing) {
+        this.hasChanges = true;
+        this.saveDraft();
+      }
+    },
+    totalDiscount() {
+      if (this.isNewInvoice && !this.isInitializing) {
+        this.hasChanges = true;
+        this.saveDraft();
+      }
+    },
+    totalDiscountPercent() {
+      if (this.isNewInvoice && !this.isInitializing) {
+        this.hasChanges = true;
+        this.saveDraft();
+      }
+    },
+    shippingCost() {
+      if (this.isNewInvoice && !this.isInitializing) {
+        this.hasChanges = true;
+        this.saveDraft();
+      }
+    },
+    paymentItems: {
+      handler() {
+        if (this.isNewInvoice && !this.isInitializing) {
+          this.hasChanges = true;
+          this.saveDraft();
+        }
+      },
+      deep: true
+    }
+  },
+  async mounted() {
+    try {
+      // اول تنظیمات را لود می‌کنیم
+      this.loadSettings();
+      
+      // بررسی وضعیت پیش‌نویس
+      this.isNewInvoice = !this.$route.params.id;
+      
+      // تاریخ را تنظیم می‌کنیم
+      const response = await axios.get('/api/year/get');
+      this.date = response.data.now;
+      this.paymentDate = response.data.now;
 
-      'editItemData.price': function () {
-        this.editCalc();
-      },
-      'editItemData.discount': function () {
-        this.editCalc();
-      },
-      'editItemData.count': function () {
-        this.editCalc();
-      },
-      'editItemData.commodity': function (newVal, oldVal) {
-        if (newVal != '' && newVal != undefined) {
-          this.unitConfig.precision = this.editItemData.commodity.unitData.floatNumber;
-          this.editItemData.des = this.editItemData.commodity.des;
+      if (this.isNewInvoice) {
+        const draft = localStorage.getItem('sellInvoiceDraft');
+        if (draft) {
+          try {
+            const parsedDraft = JSON.parse(draft);
+            // بررسی اینکه آیا پیش‌نویس شامل داده‌های معتبر است
+            const hasValidData = parsedDraft.items && 
+                               parsedDraft.items.length > 0 && 
+                               parsedDraft.items.some(item => item.name || item.count > 0 || item.price > 0);
+            
+            if (hasValidData) {
+              this.showDraftDialog = true;
+            } else {
+              // اگر پیش‌نویس خالی است، آن را حذف می‌کنیم
+              localStorage.removeItem('sellInvoiceDraft');
+              this.addItem();
+            }
+          } catch (error) {
+            // اگر پیش‌نویس معتبر نیست، آن را حذف می‌کنیم
+            localStorage.removeItem('sellInvoiceDraft');
+            this.addItem();
+          }
+        } else {
+          this.addItem();
         }
-      },
-      'desSubmit.id': function () {
-        this.data.des = this.desSubmit.des;
-      },
-      'itemData.price': function () {
-        this.calc();
-      },
-      'itemData.discount': function () {
-        this.calc();
-      },
-      'maliyatCheck': function (item) {
-        if (item === false) {
-          this.maliyatPercent = 0;
-        }
-        else {
-          this.maliyatPercent = this.bid.maliyatafzode;
-        }
-      },
-      'maliyatPercent': function (newVal) {
-        if (this.maliyatPercent == '') {
-          this.maliyatPercent = 0;
-        }
+      } else {
+        await this.loadInvoice(this.$route.params.id);
+      }
+      
+      // در نهایت پرینترها را لود می‌کنیم
+      await this.loadPrinters();
+
+      // اضافه کردن event listener برای تشخیص خروج از صفحه
+      window.addEventListener('beforeunload', this.handleBeforeUnload);
+
+      // غیرفعال کردن حالت اولیه
+      this.$nextTick(() => {
+        this.isInitializing = false;
+      });
+    } catch (error) {
+      console.error('خطا در بارگذاری اولیه:', error);
+      this.error = 'خطا در بارگذاری اطلاعات';
+      this.showError = true;
+    }
+  },
+  beforeUnmount() {
+    // حذف event listener هنگام خروج از کامپوننت
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
+  },
+  methods: {
+    validateForm() {
+      this.validationErrors = [];
+      this.showValidationErrors = false;
+
+      if (!this.customer) {
+        this.validationErrors.push('لطفا خریدار را انتخاب کنید');
+      }
+
+      if (!this.invoiceDate) {
+        this.validationErrors.push('لطفا تاریخ را انتخاب کنید');
+      }
+
+      if (this.items.length === 0) {
+        this.validationErrors.push('لطفا حداقل یک کالا اضافه کنید');
+      } else {
         this.items.forEach((item, index) => {
-          item.sumWithoutTax = (item.price * item.count) - item.discount;
-          item.tax = (((item.price * item.count) - item.discount) * (newVal)) / 100;
-          item.sumTotal = (((parseFloat(item.price) * parseFloat(item.count)) - parseFloat(item.discount)) * (100 + parseFloat(this.maliyatPercent))) / 100;
-        })
-      },
-      'itemData.count': function () {
-        this.calc();
-      },
-      'itemData.commodity': function (newVal, oldVal) {
-        if (newVal != '' && newVal != undefined) {
-          //fetch price
-          if (this.selectedPriceList.id == 0) {
-            this.itemData.price = this.itemData.commodity.priceSell;
+          if (!item.name) {
+            this.validationErrors.push(`لطفا کالای ردیف ${index + 1} را انتخاب کنید`);
           }
-          else {
-            const arr = Array.from(this.itemData.commodity.prices);
-            arr.forEach((item) => {
-              if (item.list.id == this.selectedPriceList.id) {
-                this.itemData.price = item.priceSell;
-              }
-            });
+          if (!item.count || item.count <= 0) {
+            this.validationErrors.push(`لطفا تعداد کالای ردیف ${index + 1} را وارد کنید`);
           }
-          this.unitConfig.precision = this.itemData.commodity.unitData.floatNumber;
-          this.itemData.des = this.itemData.commodity.des;
-        }
-      },
-      itemsSelected: {
-        handler: function (val, oldVal) {
-          this.sumSelected = 0;
-          this.itemsSelected.forEach((item) => {
-            this.sumSelected += parseFloat(item.sumTotal);
-          })
-        },
-        deep: true
-      },
-      selectedPriceList: {
-        handler: function (val, oldVal) {
-          if (this.selectedPriceList.id == 0) {
-            this.itemData.price = this.itemData.commodity.priceSell;
+          if (!item.price || item.price <= 0) {
+            this.validationErrors.push(`لطفا قیمت کالای ردیف ${index + 1} را وارد کنید`);
           }
-          else {
-            const arr = Array.from(this.itemData.commodity.prices);
-            arr.forEach((item) => {
-              if (item.list.id == this.selectedPriceList.id) {
-                this.itemData.price = item.priceSell;
-              }
-            });
-          }
-        },
-        deep: true
-      },
-      items: {
-        handler: function (val, oldVal) {
-          this.calcInvoice();
-        },
-        deep: true
-      },
-      'data.transferCost': {
-        handler: function (val, oldVal) {
-          this.calcInvoice();
-        },
-        deep: false
-      },
-      'data.pair_docs': {
-        handler: function (val, oldVal) {
-          this.pair_docs = [];
-          this.data.pair_docs.forEach((pair) => {
-            this.buyDocs.forEach((buy) => {
-              if (pair == buy.code) {
-                this.pair_docs.push(buy);
-              }
-            })
-          })
-        },
-        deep: false
-      },
-      'data.discountAll': {
-        handler: function (val, oldVal) {
-          this.calcInvoice();
-        },
-        deep: false
-      },
-      'data.person': {
-        handler: function (val, oldVal) {
-          axios.post('/api/person/info/' + this.data.person.code).then((response) => {
-            this.selectedPersonWithDet = response.data;
-          });
-        },
-        deep: true
-      },
-    },
-    mounted() {
+        });
+      }
 
-    },
-    beforeMount() {
-      this.loadData();
-    },
-    beforeRouteUpdate(to, from) {
-      this.loadData(to.params.id);
-    },
-    methods: {
-      test(ev) {
-        alert();
-      },
-      isPluginActive(plugName) {
-        return this.plugins[plugName] !== undefined;
-      },
-      searchPerson(query, loading) {
-        loading(true);
-        axios.post('/api/person/list/search', { search: query }).then((response) => {
-          this.persons = response.data;
-          loading(false);
-        });
-      },
-      searchCommodity(query, loading) {
-        loading(true);
-        axios.post('/api/commodity/list/search', { search: query }).then((response) => {
-          this.commodity = response.data;
-          loading(false);
-        });
-      },
-      editItem(index) {
-        this.editItemData = { ... this.items[index - 1] };
-        this.editItemData.index = index;
-      },
-      doEditeItem() {
-        if (this.editItemData.count == 0) {
-          Swal.fire({
-            text: 'تعداد صفر نامعتبر است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else if (this.editItemData.price == 0) {
-          Swal.fire({
-            text: 'قیمت صفر نامعتبر است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else if (this.editItemData.commodity == '' || this.editItemData.commodity == undefined) {
-          Swal.fire({
-            text: 'کالایی انتخاب نشده است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else if (this.editItemData.sumTotal == 0) {
-          Swal.fire({
-            text: 'جمع کل صفر شده است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else {
-          this.items[this.editItemData.index - 1] = this.editItemData;
-          Swal.fire({
-            text: 'آیتم فاکتور ویرایش شد.',
-            icon: 'success',
-            confirmButtonText: 'قبول'
-          });
-        }
-      },
-      calc() {
-        this.itemData.sumWithoutTax = (this.itemData.price * this.itemData.count) - this.itemData.discount;
-        if (this.itemData.commodity.withoutTax) {
-          this.itemData.tax = 0;
-          this.itemData.sumTotal = (parseFloat(this.itemData.price) * parseFloat(this.itemData.count)) - parseFloat(this.itemData.discount);
-        }
-        else {
-          this.itemData.tax = (((this.itemData.price * this.itemData.count) - this.itemData.discount) * (this.maliyatPercent)) / 100;
-          this.itemData.sumTotal = (((parseFloat(this.itemData.price) * parseFloat(this.itemData.count)) - parseFloat(this.itemData.discount)) * (100 + parseFloat(this.maliyatPercent))) / 100;
-        }
-      },
-      editCalc() {
-        this.editItemData.sumWithoutTax = (this.editItemData.price * this.editItemData.count) - this.editItemData.discount;
-        if (this.editItemData.commodity.withoutTax) {
-          this.editItemData.tax = 0;
-          this.editItemData.sumTotal = (parseFloat(this.editItemData.price) * parseFloat(this.editItemData.count)) - parseFloat(this.editItemData.discount);
-        }
-        else {
-          this.editItemData.tax = (((this.editItemData.price * this.editItemData.count) - this.editItemData.discount) * (this.maliyatPercent)) / 100;
-          this.editItemData.sumTotal = (((parseFloat(this.editItemData.price) * parseFloat(this.editItemData.count)) - parseFloat(this.editItemData.discount)) * (100 + parseFloat(this.maliyatPercent))) / 100;
-        }
-      },
-      calcInvoice() {
-        this.sumTotal = 0;
-        this.sumTax = 0;
-        this.items.forEach((item) => {
-          this.sumTotal += parseFloat(item.sumTotal);
-          if (item.commodity.withoutTax == true) {
-            item.tax = 0;
-          }
-          else {
-            this.sumTax += parseFloat(item.tax);
-          }
-        });
-        this.sumTotal += this.data.transferCost;
-        this.sumTotal -= this.data.discountAll;
-      },
-      addItem() {
-        if (this.itemData.count == 0) {
-          Swal.fire({
-            text: 'تعداد صفر نامعتبر است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else if (this.itemData.price == 0) {
-          Swal.fire({
-            text: 'قیمت صفر نامعتبر است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else if (this.itemData.commodity == '' || this.itemData.commodity == undefined) {
-          Swal.fire({
-            text: 'کالایی انتخاب نشده است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else if (this.itemData.sumTotal == 0) {
-          Swal.fire({
-            text: 'جمع کل صفر شده است.',
-            icon: 'error',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else {
-          this.items.push(this.itemData);
-          this.itemData = {
-            id: 0,
-            commodity: this.commodity[0],
-            count: 0,
-            price: 0,
-            sumTotal: 0,
-            sumWithoutTax: 0,
-            tax: 0,
-            des: '',
-            discount: 0,
-          }
-          Swal.fire({
-            text: 'آیتم به فاکتور افزوده شد.',
-            icon: 'success',
-            confirmButtonText: 'قبول'
-          });
-        }
+      if (this.validationErrors.length > 0) {
+        this.showValidationErrors = true;
+      }
 
-      },
-      deleteItem(index) {
-        Swal.fire({
-          text: 'آیا برای حذف این مورد مطمئن هستید؟',
-          showCancelButton: true,
-          confirmButtonText: 'بله',
-          cancelButtonText: `خیر`,
-        }).then((result) => {
-          /* Read more about isConfirmed, isDenied below */
-          if (result.isConfirmed) {
-            this.items.splice(index - 1, 1);
-          }
-        })
-      },
-      loadData() {
+      return this.validationErrors.length === 0;
+    },
+    async loadInvoice(id) {
+      try {
         this.loading = true;
-        axios.post('/api/commodity/pricelist/list')
-          .then((response) => {
-            this.priceList = response.data;
-            this.priceList.push({
-              id: 0,
-              label: 'پیشفرض'
-            });
-          });
-        //load year
-        axios.post('/api/year/get').then((response) => {
-          this.year = response.data;
-          this.data.date = response.data.now;
-        })
-        //load business info
-        axios.post('/api/business/get/info/' + localStorage.getItem('activeBid')).then((response) => {
-          this.bid = response.data;
-          if (this.bid.maliyatafzode == 0) {
-            this.maliyatCheck = false;
-          }
-          this.maliyatPercent = this.bid.maliyatafzode;
-          this.loading = false;
-        })
-        //load persons
-        axios.post('/api/person/list/search').then((response) => {
-          this.persons = response.data;
-        });
-        //load commodities
-        axios.post('/api/commodity/list/search').then((response) => {
-          this.commodity = response.data;
-          if (response.data.length != 0) {
-            this.itemData.commodity = response.data[0];
-          }
-          else {
-            Swal.fire({
-              text: 'برای ثبت فاکتور ابتدا یک کالای جدید تعریف کنید.',
-              icon: 'warning',
-              confirmButtonText: 'تعریف کالای جدید'
-            })
-          }
-        });
-        //load commodity units
-        axios.post('/api/commodity/units').then((response) => {
-          this.units = response.data;
-        });
+        const response = await axios.get(`/api/sell/v2/get/${id}`);
+        
+        if (response.data.result !== 1) {
+          throw new Error(response.data.message || 'خطا در بارگذاری فاکتور');
+        }
 
-        //get active plugins
-        axios.post('/api/plugin/get/actives',).then((response) => {
-          this.plugins = response.data;
-        });
+        const data = response.data.data;
 
-        //load sms settings
-        axios.post('/api/sms/load/settings')
-          .then((response) => {
-            this.sms = response.data.sendAfterSell;
-          });
+        this.invoiceDate = data.date;
+        this.customer = data.person.id;
+        this.invoiceDescription = data.des;
+        this.taxPercent = data.taxPercent;
+        this.totalDiscount = Number(data.totalDiscount);
+        this.totalDiscountPercent = Number(data.discountPercent);
+        this.showTotalPercentDiscount = data.discountType === 'percent';
+        this.shippingCost = Number(data.shippingCost);
+        this.totalInvoice = Number(data.totalInvoice);
+        this.finalTotal = Number(data.finalTotal);
 
-        //load buy docs for pair docs
-        axios.post('/api/buy/docs/search', {
-          type: 'buy'
-        })
-          .then((response) => {
-            this.buyDocs = response.data;
-            //load data for edit document
-            if (this.$route.params.id != '') {
-              axios.post('/api/sell/get/info/' + this.$route.params.id).then((response) => {
-                this.data.date = response.data.date;
-                this.data.des = response.data.des;
-                this.data.person = response.data.person;
-                this.data.transferCost = response.data.transferCost
-                this.data.discountAll = response.data.discountAll
-                this.data.pair_docs = response.data.pair_docs
+        this.items = data.items.map(item => ({
+          name: {
+            id: item.name.id,
+            name: item.name.name,
+            code: item.name.code
+          },
+          count: Number(item.count),
+          price: Number(item.price),
+          discountPercent: Number(item.discountPercent),
+          discountAmount: Number(item.discountAmount),
+          total: Number(item.total),
+          description: item.description,
+          showPercentDiscount: item.showPercentDiscount,
+          tax: Number(item.tax)
+        }));
 
-                response.data.rows.forEach((item, key) => {
-                  if (item.commodity != null) {
-                    this.items.push({
-                      commodity: item.commodity,
-                      count: item.commodity_count,
-                      price: parseFloat((parseFloat(item.bs) - parseFloat(item.tax) + parseFloat(item.discount)) / parseFloat(item.commodity_count)),
-                      bs: item.bs,
-                      bd: item.bd,
-                      type: 'commodity',
-                      id: item.commodity.id,
-                      des: item.des,
-                      discount: item.discount,
-                      tax: item.tax,
-                      sumWithoutTax: parseFloat(item.bs) - parseFloat(item.tax),
-                      sumTotal: item.bs,
-                      table: 53
-                    });
-                  }
-                });
+        // بارگذاری اسناد پرداخت
+        this.paymentItems = data.payments.map(payment => ({
+          type: payment.type,
+          amount: Number(payment.amount),
+          reference: payment.reference,
+          description: payment.description,
+          bank: payment.bank,
+          cashdesk: payment.cashdesk,
+          salary: payment.salary
+        }));
+
+        this.recalculateTotals();
+        this.calculatePayments();
+      } catch (error) {
+        this.error = error.response?.data?.message || error.message || 'خطا در بارگذاری فاکتور';
+        this.showError = true;
+        console.error(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    async saveInvoice() {
+      if (!this.validateForm()) {
+        return;
+      }
+
+      try {
+        this.loading = true;
+        const data = {
+          id: this.$route.params.id || '',
+          invoiceDate: this.invoiceDate,
+          customer: this.customer,
+          invoiceDescription: this.invoiceDescription,
+          totalInvoice: this.totalInvoice,
+          taxPercent: this.taxPercent,
+          discountType: this.showTotalPercentDiscount ? 'percent' : 'fixed',
+          discountPercent: this.showTotalPercentDiscount ? this.totalDiscountPercent : null,
+          totalDiscount: this.showTotalPercentDiscount ? 0 : this.totalDiscount,
+          shippingCost: this.shippingCost,
+          showTotalPercentDiscount: this.showTotalPercentDiscount,
+          items: this.items.map(item => ({
+            name: { id: item.name.id },
+            count: item.count,
+            price: item.price,
+            discountType: item.showPercentDiscount ? 'percent' : 'fixed',
+            discountPercent: item.showPercentDiscount ? item.discountPercent : null,
+            discountAmount: item.showPercentDiscount ? 0 : item.discountAmount,
+            description: item.description,
+            showPercentDiscount: item.showPercentDiscount,
+            total: item.total,
+            tax: item.tax || 0
+          })),
+          sendSmsToCustomer: this.sendSmsToCustomer,
+          payments: this.paymentItems.map(payment => ({
+            type: payment.type,
+            amount: payment.amount,
+            reference: payment.reference,
+            description: payment.description,
+            bank: payment.bank,
+            cashdesk: payment.cashdesk,
+            salary: payment.salary
+          }))
+        };
+
+        const response = await axios.post('/api/sell/v2/mod', data);
+        
+        if (response.data.result === 1) {
+          // حذف پیش‌نویس پس از ذخیره موفق
+          localStorage.removeItem('sellInvoiceDraft');
+          this.hasChanges = false;
+          
+          this.successMessage = this.$route.params.id ? 'فاکتور با موفقیت ویرایش شد' : 'فاکتور با موفقیت ثبت شد';
+          this.showSuccess = true;
+
+          // اگر گزینه خروجی PDF فعال باشد
+          if (this.generatePdf) {
+            try {
+              const printResponse = await axios.post('/api/sell/print/invoice', {
+                code: response.data.data.code,
+                pdf: true,
+                printers: this.cloudPrint,
               });
+              
+              if (printResponse.data && printResponse.data.id) {
+                // باز کردن PDF در پنجره جدید
+                window.open(this.$API_URL + '/front/print/' + printResponse.data.id, '_blank', 'noreferrer');
+              } else {
+                throw new Error('خطا در دریافت شناسه چاپ');
+              }
+            } catch (printError) {
+              console.error('خطا در چاپ فاکتور:', printError);
+              this.error = 'خطا در ایجاد نسخه PDF';
+              this.showError = true;
             }
-            this.loading = false;
-          })
-      },
-      save() {
-        this.canSubmit = false;
-        if (this.items.length == 0) {
-          Swal.fire({
-            text: 'فاکتور فاقد کالا می باشد.',
-            icon: 'warning',
-            confirmButtonText: 'قبول'
+          }
+
+          setTimeout(() => {
+            this.$router.push('/acc/sell/list');
+          }, 1500);
+        } else {
+          this.error = response.data.message || 'خطا در ذخیره فاکتور';
+          this.showError = true;
+        }
+      } catch (error) {
+        this.error = error.response?.data?.message || 'خطا در ذخیره فاکتور';
+        this.showError = true;
+        console.error(error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    async deleteInvoice() {
+      this.deleteDialog = true;
+    },
+    async confirmDelete() {
+      try {
+        this.loading = true;
+        await axios.delete(`/api/invoice/delete/${this.$route.params.id}`);
+        this.$router.push('/acc/sell/list');
+      } catch (error) {
+        this.error = 'خطا در حذف فاکتور';
+        console.error(error);
+      } finally {
+        this.loading = false;
+        this.deleteDialog = false;
+      }
+    },
+    addItem() {
+      this.items.push({
+        name: null,
+        count: 0,
+        price: 0,
+        discountPercent: 0,
+        discountAmount: 0,
+        total: 0,
+        description: '',
+        showPercentDiscount: this.showPercentDiscount
+      });
+      this.recalculateTotals();
+    },
+    removeItem(index) {
+      this.items.splice(index, 1);
+      this.recalculateTotals();
+    },
+    recalculateTotals() {
+      let total = 0;
+      this.items.forEach(item => {
+        const basePrice = (item.count || 0) * (item.price || 0);
+        let totalDiscount = 0;
+
+        if (item.showPercentDiscount) {
+          totalDiscount = Math.round((basePrice * (item.discountPercent || 0)) / 100);
+        } else {
+          totalDiscount = item.discountAmount || 0;
+        }
+
+        if (totalDiscount > basePrice) {
+          item.discountPercent = 0;
+          item.discountAmount = 0;
+          this.showError = true;
+        }
+
+        const itemTotal = basePrice - totalDiscount;
+        item.total = itemTotal;
+        total += itemTotal;
+      });
+      this.totalInvoice = total;
+
+      // محاسبه مالیات برای هر آیتم
+      this.items.forEach(item => {
+        item.tax = Math.round((item.total * this.taxPercent) / 100);
+      });
+
+      // محاسبه کل مالیات
+      this.taxAmount = this.items.reduce((sum, item) => sum + (item.tax || 0), 0);
+      this.totalWithoutTax = total;
+
+      let calculatedTotalDiscount = 0;
+      if (this.showTotalPercentDiscount) {
+        calculatedTotalDiscount = Math.round((total * this.totalDiscountPercent) / 100);
+      } else {
+        calculatedTotalDiscount = this.totalDiscount;
+      }
+
+      if (calculatedTotalDiscount > total) {
+        this.totalDiscountPercent = 0;
+        this.totalDiscount = 0;
+        this.showDiscountError = true;
+      }
+
+      this.finalTotal = total + this.taxAmount - calculatedTotalDiscount + this.shippingCost;
+      this.totalAmount = this.finalTotal;
+      this.calculatePayments();
+    },
+    handleDiscountTypeChange(item) {
+      if (item.showPercentDiscount) {
+        item.discountAmount = 0;
+      } else {
+        item.discountPercent = 0;
+      }
+      this.recalculateTotals();
+    },
+    calculatePayments() {
+      const total = this.paymentItems.reduce((sum, item) => {
+        const amount = item.amount !== null && item.amount !== undefined ? Number(item.amount) : 0;
+        return sum + amount;
+      }, 0);
+
+      this.totalPayments = total;
+      this.remainingAmount = this.totalAmount - total;
+    },
+    fillWithTotal(item) {
+      const total = this.paymentItems.reduce((sum, i) => {
+        if (i !== item) {
+          const amount = i.amount !== null && i.amount !== undefined ? Number(i.amount) : 0;
+          return sum + amount;
+        }
+        return sum;
+      }, 0);
+
+      item.amount = this.totalAmount - total;
+      this.calculatePayments();
+    },
+    deletePaymentItem(index) {
+      this.paymentItems.splice(index, 1);
+      this.calculatePayments();
+    },
+    addPaymentItem(type) {
+      let item = {
+        type,
+        amount: 0,
+        reference: '',
+        description: '',
+        bank: null,
+        cashdesk: null,
+        salary: null
+      };
+
+      this.paymentItems.push(item);
+      this.showPaymentMenu = false;
+      this.calculatePayments();
+    },
+    async loadPrinters() {
+      try {
+        const response = await axios.get('/api/printers/list');
+        this.printers = response.data || [];
+      } catch (error) {
+        console.error('خطا در دریافت لیست پرینترها:', error);
+      }
+    },
+    saveDraft() {
+      if (!this.isNewInvoice) return;
+      
+      // بررسی اینکه آیا داده‌های معتبری برای ذخیره وجود دارد
+      const hasValidData = this.items && 
+                          this.items.length > 0 && 
+                          this.items.some(item => item.name || item.count > 0 || item.price > 0);
+      
+      if (hasValidData) {
+        const draft = {
+          invoiceDate: this.invoiceDate,
+          customer: this.customer,
+          invoiceDescription: this.invoiceDescription,
+          taxPercent: this.taxPercent,
+          totalDiscount: this.totalDiscount,
+          totalDiscountPercent: this.totalDiscountPercent,
+          showTotalPercentDiscount: this.showTotalPercentDiscount,
+          shippingCost: this.shippingCost,
+          items: this.items,
+          paymentItems: this.paymentItems
+        };
+        
+        localStorage.setItem('sellInvoiceDraft', JSON.stringify(draft));
+      } else {
+        // اگر داده‌های معتبری وجود ندارد، پیش‌نویس را حذف می‌کنیم
+        localStorage.removeItem('sellInvoiceDraft');
+      }
+    },
+    loadDraft() {
+      try {
+        this.isInitializing = true;
+        const draft = JSON.parse(localStorage.getItem('sellInvoiceDraft'));
+        if (draft) {
+          // تنظیم مقادیر اصلی
+          this.invoiceDate = draft.invoiceDate;
+          this.customer = draft.customer;
+          this.invoiceDescription = draft.invoiceDescription;
+          this.taxPercent = draft.taxPercent;
+          this.totalDiscount = draft.totalDiscount;
+          this.totalDiscountPercent = draft.totalDiscountPercent;
+          this.showTotalPercentDiscount = draft.showTotalPercentDiscount;
+          this.shippingCost = draft.shippingCost;
+
+          // تنظیم آیتم‌های فاکتور
+          this.items = draft.items.map(item => ({
+            ...item,
+            name: item.name ? {
+              id: item.name.id,
+              name: item.name.name,
+              code: item.name.code,
+              priceSell: item.name.priceSell
+            } : null,
+            count: Number(item.count) || 0,
+            price: Number(item.price) || 0,
+            discountPercent: Number(item.discountPercent) || 0,
+            discountAmount: Number(item.discountAmount) || 0,
+            total: Number(item.total) || 0,
+            description: item.description || '',
+            showPercentDiscount: item.showPercentDiscount || false
+          }));
+
+          // تنظیم آیتم‌های پرداخت
+          this.paymentItems = draft.paymentItems.map(payment => ({
+            type: payment.type,
+            amount: Number(payment.amount) || 0,
+            reference: payment.reference || '',
+            description: payment.description || '',
+            bank: payment.bank || null,
+            cashdesk: payment.cashdesk || null,
+            salary: payment.salary || null
+          }));
+
+          // محاسبه مجدد مبالغ
+          this.$nextTick(() => {
+            this.recalculateTotals();
+            this.calculatePayments();
+            this.isInitializing = false;
           });
         }
-        else if (this.data.person == null || this.data.person == '') {
-          Swal.fire({
-            text: 'طرف حساب انتخاب نشده است.',
-            icon: 'warning',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else {
-          this.loading = true;
-          axios.post('/api/sell/mod', {
-            type: 'sell',
-            date: this.data.date,
-            des: this.data.des,
-            person: this.data.person,
-            rows: this.items,
-            discountAll: this.data.discountAll,
-            transferCost: this.data.transferCost,
-            update: this.$route.params.id,
-            sms: this.sms,
-            pair_docs: this.data.pair_docs
-          }).then((response) => {
-            this.loading = false;
-            if (response.data.code == 0) {
-              Swal.fire({
-                text: 'فاکتور ثبت شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              }).then(() => {
-                this.$router.push('/acc/sell/list')
-              });
-            }
-            else if (response.data.result == 1) {
-              Swal.fire({
-                text: 'فاکتور ثبت و پیامک اطلاع رسانی به مشتری ارسال شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              }).then(() => {
-                this.$router.push('/acc/sell/list')
-              });
-            }
-            else if (response.data.result == 2) {
-              Swal.fire({
-                text: 'فاکتور ثبت ولی به دلیل کمبود اعتبار پیامک اطلاع رسانی به مشتری ارسال نشد..',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              }).then(() => {
-                this.$router.push('/acc/sell/list')
-              });
-            }
-            else {
-              Swal.fire({
-                text: response.data.message,
-                icon: 'error',
-                confirmButtonText: 'قبول'
-              })
-            }
-
-          }).catch((response) => {
-            this.loading = false;
-            Swal.fire({
-              text: 'اتصال با سرویس دهنده برقرار نشد. لطفا اتصال اینترنت خود را بررسی نمایید.',
-              icon: 'error',
-              confirmButtonText: 'قبول'
-            });
-          });
-        }
-        this.canSubmit = true;
+      } catch (error) {
+        console.error('خطا در بارگذاری پیش‌نویس:', error);
+        this.error = 'خطا در بارگذاری پیش‌نویس';
+        this.showError = true;
+        this.isInitializing = false;
+      }
+      this.showDraftDialog = false;
+    },
+    discardDraft() {
+      localStorage.removeItem('sellInvoiceDraft');
+      this.showDraftDialog = false;
+      this.addItem();
+    },
+    handleBeforeUnload(event) {
+      if (this.isNewInvoice && this.hasChanges) {
+        event.preventDefault();
+        event.returnValue = '';
       }
     }
   }
+}
 </script>
 
-  <style scoped>
-  #vs5__listbox {
-    z-index: 999999;
-  }
+<style scoped>
+.bank-card {
+  border-right: 4px solid #1976D2 !important;
+}
+
+.cashdesk-card {
+  border-right: 4px solid #4CAF50 !important;
+}
+
+.salary-card {
+  border-right: 4px solid #FF9800 !important;
+}
+
+.tabs-container {
+  background-color: #f5f5f5;
+}
+
+.payment-card :deep(.v-card-item) {
+  min-height: 40px;
+}
+
+.payment-card :deep(.v-card-title) {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.payment-card :deep(.v-card-text) {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+:deep(.v-overlay__content) {
+  z-index: 9999 !important;
+}
+
+:deep(.v-menu__content) {
+  z-index: 9999 !important;
+}
+
+:deep(.v-dialog) {
+  z-index: 9999 !important;
+}
+
+:deep(.v-date-picker) {
+  z-index: 9999 !important;
+}
+
+.settings-section-card {
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.settings-section-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.settings-section-title {
+  background-color: #f5f5f5;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.settings-section-content {
+  padding: 20px;
+}
+
+.settings-section-card :deep(.v-switch) {
+  margin-bottom: 8px;
+}
+
+.settings-section-card :deep(.v-switch .v-label) {
+  font-size: 0.9rem;
+  color: #424242;
+}
+
+.settings-section-card :deep(.v-switch.v-input--disabled) {
+  opacity: 0.6;
+}
+
+.settings-section-card :deep(.v-select) {
+  margin-top: 8px;
+}
+
+.settings-section-card :deep(.v-divider) {
+  margin: 16px 0;
+}
+
+.draft-dialog {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.draft-dialog-title {
+  background-color: #f5f5f5;
+  padding: 16px;
+  font-size: 1.25rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.draft-dialog-content {
+  padding: 24px;
+}
+
+.draft-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.draft-message p {
+  margin: 8px 0;
+}
+
+.draft-dialog-actions {
+  padding: 16px;
+  background-color: #f5f5f5;
+}
+
+:deep(.v-btn) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+:deep(.v-btn--elevated) {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.v-btn--outlined) {
+  border-width: 1px;
+}
 </style>

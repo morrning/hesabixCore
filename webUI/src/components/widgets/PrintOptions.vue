@@ -17,6 +17,8 @@ export default defineComponent({
       taxInfo: true,
       discountInfo: true,
       paper: 'A4-L',
+      invoiceIndex: true,
+      businessStamp: true,
     },
   }),
   methods: {
@@ -99,30 +101,49 @@ export default defineComponent({
           label="اطلاعات کسب‌وکار"
           class="my-1"
           hide-details
+          color="primary"
         ></v-switch>
         <v-switch
           v-model="printOptions.pays"
           label="نمایش پرداخت‌های فاکتور"
           class="my-1"
           hide-details
+          color="primary"
         ></v-switch>
         <v-switch
           v-model="printOptions.note"
           label="یادداشت پایین فاکتور"
           class="my-1"
           hide-details
+          color="primary"
         ></v-switch>
         <v-switch
           v-model="printOptions.taxInfo"
           label="مالیات به تفکیک اقلام"
           class="my-1"
           hide-details
+          color="primary"
         ></v-switch>
         <v-switch
           v-model="printOptions.discountInfo"
           label="تخفیف به تفکیک اقلام"
           class="my-1"
           hide-details
+          color="primary"
+        ></v-switch>
+        <v-switch
+          v-model="printOptions.invoiceIndex"
+          label="نمایه فاکتور"
+          class="my-1"
+          hide-details
+          color="primary"
+        ></v-switch>
+        <v-switch
+          v-model="printOptions.businessStamp"
+          label="مهر کسب و کار"
+          class="my-1"
+          hide-details
+          color="primary"
         ></v-switch>
       </v-card-text>
     </v-card>
