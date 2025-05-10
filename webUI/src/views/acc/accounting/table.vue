@@ -144,7 +144,7 @@ import axios from "axios";
 import Loading from "vue-loading-overlay";
 
 export default {
-  name: "Table",
+  name: "AccountingTable",
   components: {
     Tree,
     Loading,
