@@ -60,7 +60,7 @@
                     <template v-for="(item, index) in items" :key="index">
                       <tr :style="{ backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white', height: '64px' }">
                         <td class="text-center" style="min-width: 200px;">
-                          <Hcommoditysearch v-model="item.name" density="compact" hide-details class="my-0" style="font-size: 0.8rem;" return-object></Hcommoditysearch>
+                          <Hcommoditysearch v-model="item.name" density="compact" hide-details class="my-0" style="font-size: 0.8rem;" return-object @update:modelValue="handleCommodityChange(item)"></Hcommoditysearch>
                         </td>
                         <td class="text-center" style="width: 100px;">
                           <Hnumberinput v-model="item.count" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;"></Hnumberinput>
@@ -130,7 +130,7 @@
                     <span>{{ index + 1 }}</span>
                   </div>
                   <div class="mb-2">
-                    <Hcommoditysearch v-model="item.name" density="compact" label="نام کالا" hide-details class="my-0" style="font-size: 0.8rem;" return-object></Hcommoditysearch>
+                    <Hcommoditysearch v-model="item.name" density="compact" label="نام کالا" hide-details class="my-0" style="font-size: 0.8rem;" return-object @update:modelValue="handleCommodityChange(item)"></Hcommoditysearch>
                   </div>
                   <div class="d-flex justify-space-between mb-2">
                     <div style="width: 48%;">
@@ -705,6 +705,18 @@ export default {
       },
       deep: true
     },
+    'items.*.name': {
+      handler(newVal) {
+        if (newVal && newVal.priceSell !== undefined) {
+          const index = this.items.findIndex(item => item.name && item.name.id === newVal.id);
+          if (index !== -1) {
+            this.items[index].price = Number(newVal.priceSell);
+            this.recalculateTotals();
+          }
+        }
+      },
+      deep: true
+    },
     customer() {
       if (this.isNewInvoice && !this.isInitializing) {
         this.hasChanges = true;
@@ -1031,6 +1043,12 @@ export default {
         showPercentDiscount: this.showPercentDiscount
       });
       this.recalculateTotals();
+    },
+    handleCommodityChange(item) {
+      if (item.name && item.name.priceSell !== undefined) {
+        item.price = Number(item.name.priceSell);
+        this.recalculateTotals();
+      }
     },
     removeItem(index) {
       this.items.splice(index, 1);
