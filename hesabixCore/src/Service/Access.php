@@ -77,10 +77,7 @@ class Access
             if (!$money) { return false; }
         }
         else{
-            $money = $this->em->getRepository(Money::class)->findOneBy([
-                'name' => $bid->getMoney(),
-            ]);
-            if (!$money) { return false; }
+            $money = $bid->getMoney();
         }
 
         $accessArray = [

@@ -123,7 +123,17 @@ class PersonsController extends AbstractController
                 //check exist before
                 if (!$person) {
                     $person = new Person();
-                    $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
+                    $code = $provider->getAccountingCode($acc['bid'], 'person');
+                    $exist = $entityManager->getRepository(Person::class)->findOneBy([
+                        'code' => $code
+                    ]);
+                    while ($exist) {
+                        $code = $provider->getAccountingCode($acc['bid'], 'person');
+                        $exist = $entityManager->getRepository(Person::class)->findOneBy([
+                            'code' => $code
+                        ]);
+                    }
+                    $person->setCode($code);
                 }
 
             } else {
@@ -259,7 +269,17 @@ class PersonsController extends AbstractController
             //check exist before
             if (!$person) {
                 $person = new Person();
-                $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
+                $code = $provider->getAccountingCode($acc['bid'], 'person');
+                $exist = $entityManager->getRepository(Person::class)->findOneBy([
+                    'code' => $code
+                ]);
+                while ($exist) {
+                    $code = $provider->getAccountingCode($acc['bid'], 'person');
+                    $exist = $entityManager->getRepository(Person::class)->findOneBy([
+                        'code' => $code
+                    ]);
+                }
+                $person->setCode($code);
             }
 
         } else {
@@ -1397,7 +1417,17 @@ class PersonsController extends AbstractController
             //check exist before
             if (!$person) {
                 $person = new Person();
-                $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
+                $code = $provider->getAccountingCode($acc['bid'], 'person');
+                $exist = $entityManager->getRepository(Person::class)->findOneBy([
+                    'code' => $code
+                ]);
+                while ($exist) {
+                    $code = $provider->getAccountingCode($acc['bid'], 'person');
+                    $exist = $entityManager->getRepository(Person::class)->findOneBy([
+                        'code' => $code
+                    ]);
+                }
+                $person->setCode($code);
                 $person->setNikename($item[0]);
                 $person->setBid($acc['bid']);
 
