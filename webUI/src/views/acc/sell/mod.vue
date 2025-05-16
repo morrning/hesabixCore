@@ -46,35 +46,46 @@
                     <mostdes v-model="invoiceDescription" :submitData="{ id: null, des: invoiceDescription }" type="sell" label=""></mostdes>
                   </template>
                 </v-text-field>
-                <v-table class="border rounded d-none d-sm-table" style="width: 100%;">
+                <v-table class="border rounded d-none d-sm-table" style="width: 100%; border-collapse: collapse;">
                   <thead>
                     <tr style="background-color: #0D47A1; color: white;">
+                      <th class="text-center px-2" style="width: 50px;">ردیف</th>
                       <th class="text-center">نام کالا</th>
                       <th class="text-center">تعداد</th>
                       <th class="text-center">قیمت</th>
                       <th class="text-center">تخفیف</th>
-                      <th class="text-center" style="width: 150px;">جمع کل</th>
+                      <th class="text-center">جمع کل</th>
                     </tr>
                   </thead>
                   <tbody>
                     <template v-for="(item, index) in items" :key="index">
                       <tr :style="{ backgroundColor: index % 2 === 0 ? '#f8f9fa' : 'white', height: '64px' }">
-                        <td class="text-center" style="min-width: 200px;">
+                        <td class="text-center px-2">
+                          <span class="text-subtitle-2">{{ index + 1 }}</span>
+                        </td>
+                        <td class="text-center px-2">
                           <Hcommoditysearch v-model="item.name" density="compact" hide-details class="my-0" style="font-size: 0.8rem;" return-object @update:modelValue="handleCommodityChange(item)"></Hcommoditysearch>
                         </td>
-                        <td class="text-center" style="width: 100px;">
+                        <td class="text-center px-2">
                           <Hnumberinput v-model="item.count" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;"></Hnumberinput>
                         </td>
-                        <td class="text-center" style="width: 120px;">
-                          <Hnumberinput v-model="item.price" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;"></Hnumberinput>
+                        <td class="text-center px-2">
+                          <div class="d-flex align-center justify-center">
+                            <Hnumberinput v-model="item.price" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;"></Hnumberinput>
+                            <v-tooltip v-if="item.name && item.price < item.name.priceBuy" text="قیمت فروش کمتر از قیمت خرید است" location="bottom">
+                              <template v-slot:activator="{ props }">
+                                <v-icon v-bind="props" color="warning" size="small" class="mr-1">mdi-alert</v-icon>
+                              </template>
+                            </v-tooltip>
+                          </div>
                         </td>
-                        <td class="text-center" style="width: 150px;">
+                        <td class="text-center px-2">
                           <div class="d-flex align-center">
                             <Hnumberinput v-if="item.showPercentDiscount" v-model="item.discountPercent" density="compact" suffix="%" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;">
                               <template v-slot:prepend>
                                 <v-tooltip text="تخفیف درصدی" location="bottom">
                                   <template v-slot:activator="{ props }">
-                                    <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
+                                    <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" style="margin: 0; padding: 0;" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
                                   </template>
                                 </v-tooltip>
                               </template>
@@ -83,14 +94,14 @@
                               <template v-slot:prepend>
                                 <v-tooltip text="تخفیف مبلغی" location="bottom">
                                   <template v-slot:activator="{ props }">
-                                    <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
+                                    <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" style="margin: 0; padding: 0;" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
                                   </template>
                                 </v-tooltip>
                               </template>
                             </Hnumberinput>
                           </div>
                         </td>
-                        <td class="text-center font-weight-bold" style="width: 120px;">
+                        <td class="text-center font-weight-bold px-2">
                           {{ item.total.toLocaleString('fa-IR') }}
                         </td>
                       </tr>
@@ -127,35 +138,42 @@
                 <v-card-text>
                   <div class="d-flex justify-space-between align-center mb-2">
                     <span class="text-subtitle-2 font-weight-bold">ردیف:</span>
-                    <span>{{ index + 1 }}</span>
+                    <span class="text-subtitle-2">{{ index + 1 }}</span>
                   </div>
                   <div class="mb-2">
-                    <Hcommoditysearch v-model="item.name" density="compact" label="نام کالا" hide-details class="my-0" style="font-size: 0.8rem;" return-object @update:modelValue="handleCommodityChange(item)"></Hcommoditysearch>
+                    <Hcommoditysearch v-model="item.name" density="compact" label="نام کالا" hide-details class="my-0" style="font-size: 0.8rem; margin: 0; padding: 0;" return-object @update:modelValue="handleCommodityChange(item)"></Hcommoditysearch>
                   </div>
                   <div class="d-flex justify-space-between mb-2">
-                    <div style="width: 48%;">
-                      <Hnumberinput v-model="item.count" density="compact" label="تعداد" hide-details class="my-0" style="font-size: 0.8rem;" @update:modelValue="recalculateTotals"></Hnumberinput>
+                    <div class="flex-grow-1 mr-2">
+                      <Hnumberinput v-model="item.count" density="compact" label="تعداد" hide-details class="my-0" style="font-size: 0.8rem; margin: 0; padding: 0;" @update:modelValue="recalculateTotals"></Hnumberinput>
                     </div>
-                    <div style="width: 48%;">
-                      <Hnumberinput v-model="item.price" density="compact" label="قیمت" hide-details class="my-0" style="font-size: 0.8rem;" @update:modelValue="recalculateTotals"></Hnumberinput>
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-center">
+                        <Hnumberinput v-model="item.price" density="compact" label="قیمت" hide-details class="my-0" style="font-size: 0.8rem; margin: 0; padding: 0;" @update:modelValue="recalculateTotals"></Hnumberinput>
+                        <v-tooltip v-if="item.name && item.price < item.name.priceBuy" text="قیمت فروش کمتر از قیمت خرید است" location="bottom">
+                          <template v-slot:activator="{ props }">
+                            <v-icon v-bind="props" color="warning" size="small" class="mr-1" style="margin: 0; padding: 0;">mdi-alert</v-icon>
+                          </template>
+                        </v-tooltip>
+                      </div>
                     </div>
                   </div>
                   <div class="mb-2">
                     <div class="d-flex align-center">
-                      <Hnumberinput v-if="item.showPercentDiscount" v-model="item.discountPercent" density="compact" label="تخفیف" suffix="%" hide-details @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;">
+                      <Hnumberinput v-if="item.showPercentDiscount" v-model="item.discountPercent" density="compact" label="تخفیف" suffix="%" hide-details @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem; margin: 0; padding: 0;">
                         <template v-slot:prepend>
                           <v-tooltip text="تخفیف درصدی" location="bottom">
                             <template v-slot:activator="{ props }">
-                              <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
+                              <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" style="margin: 0; padding: 0;" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
                             </template>
                           </v-tooltip>
                         </template>
                       </Hnumberinput>
-                      <Hnumberinput v-else v-model="item.discountAmount" density="compact" label="تخفیف" hide-details @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;">
+                      <Hnumberinput v-else v-model="item.discountAmount" density="compact" label="تخفیف" hide-details @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem; margin: 0; padding: 0;">
                         <template v-slot:prepend>
                           <v-tooltip text="تخفیف مبلغی" location="bottom">
                             <template v-slot:activator="{ props }">
-                              <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
+                              <v-checkbox v-bind="props" v-model="item.showPercentDiscount" hide-details density="compact" color="primary" class="mt-0" style="margin: 0; padding: 0;" @update:modelValue="handleDiscountTypeChange(item)"></v-checkbox>
                             </template>
                           </v-tooltip>
                         </template>
@@ -1291,6 +1309,36 @@ export default {
 .payment-card :deep(.v-card-text) {
   padding-top: 8px;
   padding-bottom: 8px;
+}
+
+:deep(.v-table) {
+  width: 100%;
+  table-layout: auto;
+}
+
+:deep(.v-table__wrapper) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+:deep(.v-table__wrapper::-webkit-scrollbar) {
+  display: none;
+}
+
+:deep(.v-table .v-field) {
+  margin: 4px 0;
+}
+
+:deep(.v-table .v-field__input) {
+  padding: 4px 8px;
+}
+
+:deep(.v-table .v-field__outline) {
+  --v-field-border-width: 1px;
+}
+
+:deep(.v-table .v-field--variant-outlined) {
+  --v-field-border-opacity: 0.12;
 }
 
 :deep(.v-overlay__content) {

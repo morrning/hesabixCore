@@ -69,6 +69,11 @@
 import { getSiteName } from "@/hesabixConfig";
 import { onMounted, ref } from "vue";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: string }>;
+}
+
 const installPromptEvent = ref<Event | null>(null);
 const browserName = ref<string>("");
 const chromeBanner = ref<boolean>(false);

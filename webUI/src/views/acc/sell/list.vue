@@ -216,15 +216,24 @@
       </template>
     </v-data-table-server>
     <div class="footer-summary">
-    <div class="summary-item">
-      <span class="summary-label">جمع کل فاکتورهای صفحه:</span>
-      <span class="summary-value">{{ $filters.formatNumber(sumTotal) }}</span>
+      <div class="summary-items">
+        <div class="summary-item">
+          <span class="summary-label">جمع کل فاکتورهای صفحه:</span>
+          <span class="summary-value">{{ $filters.formatNumber(sumTotal) }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">جمع موارد انتخاب شده:</span>
+          <span class="summary-value">{{ $filters.formatNumber(sumSelected) }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">جمع سود موارد انتخاب شده:</span>
+          <span class="summary-value" :class="{'text-success': sumSelectedProfit >= 0, 'text-danger': sumSelectedProfit < 0}">
+            {{ $filters.formatNumber(Math.abs(sumSelectedProfit)) }}
+            <span v-if="sumSelectedProfit < 0">(زیان)</span>
+          </span>
+        </div>
+      </div>
     </div>
-    <div class="summary-item">
-      <span class="summary-label">جمع موارد انتخاب شده:</span>
-      <span class="summary-value">{{ $filters.formatNumber(sumSelected) }}</span>
-    </div>
-  </div>
     <v-dialog v-model="showColumnDialog" max-width="500px">
       <v-card>
         <v-toolbar dark>
@@ -344,6 +353,7 @@ export default defineComponent({
       },
       plugins: {},
       sumSelected: 0,
+      sumSelectedProfit: 0,
       sumTotal: 0,
       itemsSelected: [],
       searchValue: '',
@@ -693,6 +703,7 @@ export default defineComponent({
     itemsSelected: {
       handler(val) {
         this.sumSelected = 0;
+        this.sumSelectedProfit = 0;
         this.itemsSelected.forEach((code) => {
           const selectedItem = this.items.find(item => item.code === code);
           if (selectedItem) {
@@ -702,6 +713,7 @@ export default defineComponent({
             } else {
               this.sumSelected += amount;
             }
+            this.sumSelectedProfit += selectedItem.profit || 0;
           }
         });
       },
@@ -715,26 +727,46 @@ export default defineComponent({
 .footer-summary {
   background-color: #f5f5f5;
   padding: 12px 24px;
-  display: flex;
-  justify-content: space-between;
   border-top: 1px solid #e0e0e0;
   margin-top: 8px;
+}
+
+.summary-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
 }
 
 .summary-item {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 200px;
 }
 
 .summary-label {
   font-weight: 500;
   color: #666;
+  white-space: nowrap;
 }
 
 .summary-value {
   font-weight: bold;
   color: #1976d2;
+}
+
+@media (max-width: 600px) {
+  .summary-items {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .summary-item {
+    min-width: 100%;
+    justify-content: space-between;
+  }
 }
 
 .data-table-wrapper {

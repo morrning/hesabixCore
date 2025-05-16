@@ -86,6 +86,8 @@ const en_lang = {
     cheque_output: "Cheque Output",
     presells: "Presells",
     presell_view: "View Presell",
+    hrm: 'HR & Payroll',
+    hrm_docs: 'Payroll Document',
   },
 };
 export default en_lang

@@ -34,10 +34,29 @@
                   v-for="item in filteredItems"
                   :key="item.id"
                   @click="selectItem(item)"
-                  class="mb-1"
+                  class="mb-2 search-result-item"
+                  :class="{ 'selected-item': selectedItem?.id === item.id }"
                 >
-                  <v-list-item-title class="text-right">{{ item.nikename }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-right">{{ item.code }}</v-list-item-subtitle>
+                  <div class="d-flex flex-column w-100">
+                    <div class="d-flex align-center justify-space-between mb-1">
+                      <div class="d-flex align-center">
+                        <v-icon size="small" color="primary" class="mr-1">mdi-cellphone</v-icon>
+                        <span class="text-caption text-primary-dark">{{ item.mobile || 'بدون موبایل' }}</span>
+                      </div>
+                      <span class="text-caption text-grey-darken-1">{{ item.code }}</span>
+                    </div>
+                    <div class="d-flex align-center justify-space-between">
+                      <span class="text-body-2 font-weight-medium text-primary-dark">{{ item.nikename }}</span>
+                      <v-chip
+                        size="small"
+                        :color="getBalanceColor(item.balance)"
+                        class="balance-chip"
+                        :class="getBalanceTextColor(item.balance)"
+                      >
+                        {{ formatBalance(item.balance) }}
+                      </v-chip>
+                    </div>
+                  </div>
                 </v-list-item>
               </template>
               <template v-else>
@@ -609,6 +628,23 @@ export default {
       if (!this.loading && this.filteredItems.length === 0) {
         this.showAddDialog = true;
       }
+    },
+    getBalanceColor(balance) {
+      if (!balance) return 'grey-lighten-3';
+      return balance > 0 ? 'green-lighten-5' : balance < 0 ? 'red-lighten-5' : 'grey-lighten-3';
+    },
+    getBalanceTextColor(balance) {
+      if (!balance) return 'text-grey-darken-2';
+      return balance > 0 ? 'text-green-darken-2' : balance < 0 ? 'text-red-darken-2' : 'text-grey-darken-2';
+    },
+    formatBalance(balance) {
+      if (!balance) return 'بدون تراز';
+      return balance > 0 ? `بستانکار: ${this.formatNumber(balance)}` : 
+             balance < 0 ? `بدهکار: ${this.formatNumber(Math.abs(balance))}` : 
+             'بدون تراز';
+    },
+    formatNumber(number) {
+      return new Intl.NumberFormat('fa-IR').format(number);
     }
   },
   created() {
@@ -675,5 +711,75 @@ export default {
   .sticky-tabs {
     -webkit-overflow-scrolling: touch;
   }
+}
+
+.search-result-item {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(var(--v-theme-outline), 0.1);
+  background-color: rgb(var(--v-theme-surface));
+  margin: 4px 0;
+}
+
+.search-result-item:hover {
+  background-color: rgba(var(--v-theme-primary), 0.05);
+  border-color: rgba(var(--v-theme-primary), 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transform: translateY(-1px);
+}
+
+.selected-item {
+  background-color: rgba(var(--v-theme-primary), 0.08);
+  border-color: rgba(var(--v-theme-primary), 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.balance-chip {
+  min-width: 110px;
+  justify-content: center;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+:deep(.v-list-item__content) {
+  padding: 12px;
+}
+
+:deep(.v-list-item) {
+  min-height: 72px;
+}
+
+:deep(.v-chip) {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+:deep(.text-green-darken-2) {
+  color: #1b5e20 !important;
+}
+
+:deep(.text-red-darken-2) {
+  color: #b71c1c !important;
+}
+
+:deep(.text-grey-darken-2) {
+  color: #424242 !important;
+}
+
+:deep(.text-primary-dark) {
+  color: rgb(var(--v-theme-primary-dark)) !important;
+}
+
+:deep(.v-list) {
+  padding: 8px;
+}
+
+:deep(.v-card) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.v-card-text) {
+  padding: 16px;
 }
 </style>

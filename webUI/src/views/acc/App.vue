@@ -11,6 +11,7 @@ import Currency_cob from '@/components/application/combobox/currency_cob.vue';
 import clock from '@/components/application/clock.vue';
 import CalculatorButton from '@/components/application/buttons/CalculatorButton.vue'
 import SecretDialog from '@/components/application/buttons/SecretDialog.vue';
+import ShortcutsButton from '@/components/application/buttons/ShortcutsButton.vue';
 export default {
   data() {
     return {
@@ -175,7 +176,8 @@ export default {
         { path: '/acc/archive/order/list', key: '.', label: this.$t('drawer.archive_log'), ctrl: true, shift: true, permission: () => this.permissions.owner },
         { path: '/acc/plugin-center/list', key: '/', label: this.$t('drawer.plugins_list'), ctrl: true, shift: true, permission: () => this.permissions.owner },
         { path: '/acc/plugin-center/my', key: '\\', label: this.$t('drawer.my_plugins'), ctrl: true, shift: true, permission: () => this.permissions.owner },
-        { path: '/acc/plugin-center/invoice', key: '`', label: this.$t('drawer.plugins_invoices'), ctrl: true, shift: true, permission: () => this.permissions.owner }
+        { path: '/acc/plugin-center/invoice', key: '`', label: this.$t('drawer.plugins_invoices'), ctrl: true, shift: true, permission: () => this.permissions.owner },
+        { path: '/acc/hrm/docs/list', key: 'H', label: this.$t('drawer.hrm_docs'), ctrl: true, shift: true, permission: () => this.isPluginActive('hrm') && this.permissions.plugHrmDocs },
       ];
     },
     restorePermissions(shortcuts) {
@@ -283,14 +285,15 @@ export default {
     Currency_cob,
     clock,
     CalculatorButton,
-    SecretDialog
+    SecretDialog,
+    ShortcutsButton
   }
 };
 </script>
 
 <template>
   <v-system-bar color="primaryLight2">
-    <v-avatar image="/img/logo-blue.png" size="20" class="me-2 d-none d-sm-flex" />
+    <v-avatar image="/u/img/logo-blue.png" size="20" class="me-2 d-none d-sm-flex" />
     <span class="d-none d-sm-flex">{{ siteSlogan }}</span>
     <v-avatar :image="apiUrl + '/front/avatar/file/get/' + business.id" size="20" class="me-2 d-flex d-sm-none" />
     <span class="d-flex d-sm-none">{{ business.name }}</span>
@@ -784,6 +787,26 @@ export default {
           </template>
         </v-list-item>
       </v-list-group>
+      <v-list-group v-show="isPluginActive('hrm') && permissions.plugHrmDocs">
+        <template v-slot:activator="{ props }">
+          <v-list-item class="text-dark" v-bind="props" :title="$t('drawer.hrm')">
+            <template v-slot:prepend><v-icon icon="mdi-account-cash" color="primary"></v-icon></template>
+          </v-list-item>
+        </template>
+        <v-list-item to="/acc/hrm/docs/list">
+          <v-list-item-title>
+            {{ $t('drawer.hrm_docs') }}
+            <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/hrm/docs/list') }}</span>
+          </v-list-item-title>
+          <template v-slot:append v-if="permissions.plugHrmDocs">
+            <v-tooltip :text="$t('dialog.add_new')" location="end">
+              <template v-slot:activator="{ props }">
+                <v-btn v-bind="props" icon="mdi-plus-box" variant="plain" to="/acc/hrm/docs/mod/" />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-list-item>
+      </v-list-group>
       <v-list-item class="text-dark" v-if="permissions.owner" to="/acc/sms/panel">
         <template v-slot:prepend><v-icon icon="mdi-message-cog" color="primary"></v-icon></template>
         <v-list-item-title>
@@ -884,10 +907,11 @@ export default {
     <v-tooltip text="جادوگر" location="bottom">
       <template v-slot:activator="{ props }">
         <v-btn class="" stacked v-bind="props" to="/acc/wizard/home">
-      <v-icon>mdi-robot</v-icon>
-    </v-btn>
+          <v-icon>mdi-robot</v-icon>
+        </v-btn>
       </template>
     </v-tooltip>
+    <ShortcutsButton />
     <CalculatorButton />
     <SecretDialog />
     <v-dialog v-model="showShortcutsDialog" max-width="800" scrollable>

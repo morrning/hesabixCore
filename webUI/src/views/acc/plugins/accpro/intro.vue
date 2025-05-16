@@ -7,7 +7,9 @@ export default defineComponent({
     siteName:''
   }},
   created(){
-    this.siteName = getSiteName();
+    getSiteName().then((name) => {
+      this.siteName = name;
+    });
   }
 })
 </script>
@@ -15,7 +17,7 @@ export default defineComponent({
 <template>
   <main id="main-container p-0 m-0">
     <!-- Hero -->
-    <div class="bg-image" style="background-image: url('/img/plugins/accpro/intro.png');">
+    <div class="bg-image" style="background-image: url('/u/img/plugins/accpro/intro.png');">
       <div class="bg-black-75">
         <div class="content content-top content-full text-center">
           <h1 class="text-white"><i class="fa fa-shop"></i></h1>

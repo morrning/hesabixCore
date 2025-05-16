@@ -765,6 +765,12 @@ const router = createRouter({
                 import('../views/acc/plugins/resamap/intro.vue'),
         },
         {
+            path: 'plugins/hrm/intro',
+            name: 'plugin_hrm_intro',
+            component: () =>
+                import('../views/acc/plugins/hrm/intro.vue'),
+        },
+        {
             path: 'plugins/noghre/intro',
             name: 'plugin_noghre_intro',
             component: () =>
@@ -925,6 +931,24 @@ const router = createRouter({
             name: 'shareholders_list',
             component: () =>
                 import('../views/acc/shareholder/list.vue'),
+        },
+        {
+            path: 'hrm/docs/list',
+            name: 'hrm_docs_list',
+            component: () =>
+                import('../views/acc/plugins/hrm/docs/list.vue'),
+        },
+        {
+            path: 'hrm/docs/mod/:id?',
+            name: 'hrm_docs_mod',
+            component: () =>
+                import('../views/acc/plugins/hrm/docs/mod.vue'),
+        },
+        {
+            path: 'hrm/docs/view/:id?',
+            name: 'hrm_docs_view',
+            component: () =>
+                import('../views/acc/plugins/hrm/docs/view.vue'),
         },
     ],
 },

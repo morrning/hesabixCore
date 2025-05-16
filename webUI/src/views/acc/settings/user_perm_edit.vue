@@ -493,6 +493,32 @@
             </v-col>
           </v-row>
 
+          <v-row v-if="isPluginActive('hrm')" class="mt-4">
+            <v-col cols="12">
+              <v-card-title class="text-h6 font-weight-bold mb-4">افزونه مدیریت منابع انسانی</v-card-title>
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-card variant="outlined" class="h-100">
+                <v-card-text>
+                  <v-list>
+                    <v-list-item>
+                      <v-switch
+                        v-model="info.plugHrmDocs"
+                        label="مدیریت اسناد حقوق و دستمزد"
+                        @change="savePerms('plugHrmDocs')"
+                        hide-details
+                        color="success"
+                        density="comfortable"
+                        :loading="loadingSwitches.plugHrmDocs"
+                        :disabled="loadingSwitches.plugHrmDocs"
+                      ></v-switch>
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+
           <v-row class="mt-4">
             <v-col v-if="isPluginActive('noghre')" cols="12" md="4">
               <v-card-title class="text-h6 font-weight-bold mb-4">افزونه کارگاه نقره سازی</v-card-title>
@@ -625,7 +651,8 @@ export default {
         plugRepservice: false,
         plugNoghreAdmin: false,
         plugNoghreSell: false,
-        plugCCAdmin: false
+        plugCCAdmin: false,
+        plugHrmDocs: false
       };
 
       axios.post('/api/business/get/user/permissions',

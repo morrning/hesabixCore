@@ -269,10 +269,10 @@ class CostController extends AbstractController
                             ->setParameter('today', $today);
                         break;
                     case 'custom':
-                        if (isset($filters['dateFrom']) && isset($filters['dateTo'])) {
+                        if (isset($filters['date']) && isset($filters['date']['from']) && isset($filters['date']['to'])) {
                             $queryBuilder->andWhere('d.date BETWEEN :dateFrom AND :dateTo')
-                                ->setParameter('dateFrom', $filters['dateFrom'])
-                                ->setParameter('dateTo', $filters['dateTo']);
+                                ->setParameter('dateFrom', $filters['date']['from'])
+                                ->setParameter('dateTo', $filters['date']['to']);
                         }
                         break;
                 }

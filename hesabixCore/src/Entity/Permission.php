@@ -123,6 +123,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $plugAccproPresell = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $plugHrmDocs = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -556,6 +559,18 @@ class Permission
     public function setPlugAccproPresell(?bool $plugAccproPresell): static
     {
         $this->plugAccproPresell = $plugAccproPresell;
+
+        return $this;
+    }
+
+    public function isPlugHrmDocs(): ?bool
+    {
+        return $this->plugHrmDocs;
+    }
+
+    public function setPlugHrmDocs(?bool $plugHrmDocs): static
+    {
+        $this->plugHrmDocs = $plugHrmDocs;
 
         return $this;
     }

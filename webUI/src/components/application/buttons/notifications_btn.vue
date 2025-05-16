@@ -2,10 +2,17 @@
 import { defineComponent } from 'vue'
 import axios from 'axios';
 
+interface NotificationItem {
+  id: number;
+  message: string;
+  date: string;
+  url: string;
+}
+
 export default defineComponent({
   name: "notifications_btn",
   data: () => ({
-    items: [],
+    items: [] as NotificationItem[],
     timeoutId: null as number | null, // برای ذخیره ID تایمر
   }),
   components: {},
@@ -19,7 +26,7 @@ export default defineComponent({
     }
   },
   methods: {
-    jump(item) {
+    jump(item: NotificationItem) {
       axios.post('/api/notifications/read/' + item.id).then((response) => {
         if (item.url.startsWith('http')) {
           window.location.href = item.url;
@@ -46,7 +53,7 @@ export default defineComponent({
 
 <template>
   <v-menu location="bottom">
-    <template v-slot:activator="{ props }">
+    <template #activator="{ props }">
       <v-btn v-bind="props" stacked>
         <v-badge color="error" :content="items.length">
           <v-icon icon="mdi-bell"></v-icon>
@@ -56,14 +63,14 @@ export default defineComponent({
     <v-card prepend-icon="mdi-bell" :subtitle="$t('dialog.unread_notifications')" :title="$t('dialog.notifications')">
       <v-list>
         <v-list-item v-for="(item, i) in items" :key="i" :value="item" @click="jump(item)">
-          <template v-slot:prepend>
+          <template #prepend>
             <v-icon color="primary" icon="mdi-alert-box-outline"></v-icon>
           </template>
           <v-list-item-title class="text-primary" v-text="item.message"></v-list-item-title>
           <v-list-item-subtitle v-text="item.date"></v-list-item-subtitle>
         </v-list-item>
         <v-list-item v-if="items.length == 0">
-          <template v-slot:prepend>
+          <template #prepend>
             <v-icon color="primary" icon="mdi-cards-heart"></v-icon>
           </template>
           <v-list-item-title class="text-primary" v-text="$t('dialog.no_notification')"></v-list-item-title>

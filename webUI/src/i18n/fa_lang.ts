@@ -190,6 +190,8 @@ const fa_lang = {
     plugins_invoices: "صورت حساب‌ها",
     repservice: "مدیریت تعمیرگاه",
     repservice_reqs: "درخواست‌ها",
+    hrm: 'منابع انسانی',
+    hrm_docs: 'سند حقوق',
   },
   time: {
     month: "{id} ماه",
@@ -494,6 +496,32 @@ const fa_lang = {
     presell_info: "اطلاعات پیش فاکتور",
     financial_info: "اطلاعات مالی",
     invoice_items: "اقلام فاکتور",
+    hrm: {
+      title: "سند حقوق",
+      date: "تاریخ",
+      description: "توضیحات",
+      person: "شخص",
+      base_salary: "حقوق پایه",
+      overtime: "اضافه کار",
+      shift: "حق شیفت",
+      night: "شب کاری",
+      total: "جمع کل",
+      row_description: "شرح",
+      add_new_row: "افزودن سطر جدید",
+      no_data: "هیچ داده‌ای ثبت نشده است",
+      delete_confirm: "آیا مطمئن هستید که می‌خواهید این سند را حذف کنید؟",
+      save_success: "سند با موفقیت ثبت شد",
+      edit_success: "سند با موفقیت ویرایش شد",
+      delete_success: "سند با موفقیت حذف شد",
+      load_error: "خطا در دریافت اطلاعات",
+      save_error: "خطا در ذخیره اطلاعات",
+      delete_error: "خطا در حذف سند",
+      required_fields: {
+        date: "تاریخ الزامی است",
+        description: "توضیحات الزامی است",
+        person: "انتخاب شخص الزامی است"
+      }
+    }
   },
   app: {
     loading: "در حال بارگذاری...",

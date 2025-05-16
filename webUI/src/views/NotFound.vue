@@ -7,7 +7,7 @@
         <div class="fof">
             <h1>
                 <v-empty-state  :headline="$t('static.not_found')" title="404" :text="$t('static.not_found_info')"
-                    image="/img/logo-blue.png"></v-empty-state>
+                    image="/u/img/logo-blue.png"></v-empty-state>
                     <v-btn color="success" to="/" prepend-icon="mdi-home">{{ $t('static.home_page') }}</v-btn>
             </h1>
         </div>

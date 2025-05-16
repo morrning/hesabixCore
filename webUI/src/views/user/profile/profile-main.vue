@@ -1,6 +1,6 @@
 <template>
   <v-system-bar color="primaryLight2">
-    <v-avatar :image="getbase() + 'img/logo-blue.png'" size="20" class="me-2" />
+    <v-avatar :image="getbase() + 'u/img/logo-blue.png'" size="20" class="me-2" />
     <span>{{ siteSlogan }}</span>
     <v-spacer />
   </v-system-bar>
@@ -10,7 +10,7 @@
         {{ siteName }}
       </template>
       <template v-slot:prepend>
-        <v-avatar :image="getbase() + 'img/favw.png'" />
+        <v-avatar :image="getbase() + 'u/img/favw.png'" />
       </template>
     </v-card>
     <v-list class="px-0 pt-0">
@@ -68,7 +68,7 @@ import { applicationStore } from "@/stores/applicationStore";
 import { useUserStore } from "@/stores/userStore";
 import { ref, defineComponent } from "vue";
 import { mapActions, mapState, mapStores } from "pinia";
-import Change_lang from "/src/components/application/buttons/change_lang.vue";
+import Change_lang from "@/components/application/buttons/change_lang.vue";
 
 export default defineComponent({
   // eslint-disable-next-line vue/multi-word-component-names,vue/no-reserved-component-names

@@ -3,7 +3,6 @@
     <v-tabs v-model="activeTab" color="primary" grow>
       <v-tab value="personal" :text="$t('tabs.personal_info')"></v-tab>
       <v-tab value="marketing" :text="$t('tabs.marketing_info')"></v-tab>
-      <v-tab value="suggestions">{{ $t('tabs.suggestions') }}</v-tab>
     </v-tabs>
 
     <v-window v-model="activeTab">
@@ -106,15 +105,6 @@
                 </v-card>
               </v-col>
             </v-row>
-          </v-card-text>
-        </v-card>
-      </v-window-item>
-
-      <!-- تب پیشنهادات -->
-      <v-window-item value="suggestions">
-        <v-card class="ma-4">
-          <v-card-text>
-            <!-- این بخش فعلاً خالی است -->
           </v-card-text>
         </v-card>
       </v-window-item>

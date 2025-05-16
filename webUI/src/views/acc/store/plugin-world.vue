@@ -1,87 +1,100 @@
-<script>
-import {defineComponent} from 'vue'
-import axios from "axios";
+<script setup>
+import { ref, onMounted } from 'vue'
+import axios from "axios"
 
-export default defineComponent({
-  name: "plugin-world",
-  data: ()=>{return{
-    plugins:{}
-  }},
-  methods:{
-    loadData(){
-      axios.post('/api/plugin/get/all').then((response)=>{
-        this.plugins = response.data;
-      })
-    }
-  },
-  created() {
-    this.loadData()
-  }
+const plugins = ref([])
+
+const loadData = () => {
+  axios.post('/api/plugin/get/all').then((response) => {
+    plugins.value = response.data
+  })
+}
+
+onMounted(() => {
+  loadData()
 })
 </script>
 
 <template>
-  <div class="block block-content-full">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light" >
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button" class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa fa-cog"></i>
-        فهرست افزونه‌ها
-      </h3>
-      <div class="block-options">
-      </div>
-    </div>
-    <div class="block-content pb-3">
-      <div class="container-fluid">
-        <div class="row">
-          <div v-for="plugin in plugins" class="col-md-6 col-xl-4">
-            <!-- House -->
-            <div class="block block-rounded border">
-              <div class="block-content p-0 overflow-hidden">
-                <a class="img-link img-fluid-100" data-action="side_overlay_open" data-toggle="layout" href="javascript:void(0)">
-                  <img alt="" class="img-fluid rounded-top" :src="'/img/plugins/' + plugin.icon">
-                </a>
-              </div>
-              <div class="block-content">
-                <h4 class="h6 mb-2">
-                  <i class="fa fa-plug-circle-plus"></i>
-                  {{plugin.name}}
-                </h4>
-                <h5 class="h2 fw-light push">{{Intl.NumberFormat('en-US').format(plugin.price)}}  تومان<br><span class="fs-3 text-muted"><i class="fa fa-clock"></i> {{plugin.timelabel}} </span>
-                </h5>
-              </div>
-              <div class="block-content p-0">
-                <div class="row text-center m-0 border-top border-bottom bg-body-light">
-                  <div class="col-6 border-end">
-                    <p class="py-3 mb-0">
-                      <i class="fa fa-fw fa-ticket text-muted me-1"></i>  پشتیبانی دارد </p>
-                  </div>
-                  <div class="col-6">
-                    <p class="py-3 mb-0">
-                      <i class="fa fa-fw fa-users-rectangle text-muted me-1"></i>  کاربر نامحدود </p>
-                  </div>
-                </div>
-              </div>
-              <div class="block-content block-content-full">
-                <div class="row">
-                  <div class="col-6">
-                    <RouterLink class="btn btn-sm btn-primary w-100" :to="'/acc/plugin-center/view-end/' + plugin.code"> خرید </RouterLink>
-                  </div>
-                  <div class="col-6">
-                    <RouterLink :to="'/acc/plugins/' + plugin.code +'/intro'" class="btn btn-sm btn-alt-primary w-100"> کاتالوگ </RouterLink>
-                  </div>
-                </div>
-              </div>
+  <v-toolbar title="فهرست افزونه‌ها" flat color="toolbar">
+        <template v-slot:prepend>
+            <v-btn icon @click="$router.back()" class="me-2 d-none d-md-flex" variant="text">
+          <v-icon>mdi-arrow-right</v-icon>
+        </v-btn>
+        </template>
+      </v-toolbar>
+  <v-container fluid>
+    <v-row>
+      <v-col
+        v-for="plugin in plugins"
+        :key="plugin.code"
+        cols="12"
+        md="6"
+        lg="4"
+        xl="4"
+      >
+        <v-card class="mb-6 elevation-3" rounded="lg">
+          <v-img
+            :src="'/u/img/plugins/' + plugin.icon"
+            height="200"
+            class="rounded-t-lg"
+            cover
+          ></v-img>
+          <v-card-title class="d-flex align-center justify-space-between">
+            <div>
+              <v-icon class="me-2" color="primary">mdi-power-plug</v-icon>
+              <span class="font-weight-bold">{{ plugin.name }}</span>
             </div>
-            <!-- END House -->
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+          </v-card-title>
+          <v-card-subtitle class="d-flex align-center justify-space-between mb-2">
+            <v-chip color="success" text-color="white" size="small">
+              {{ Intl.NumberFormat('en-US').format(plugin.price) }} تومان
+            </v-chip>
+            <v-chip color="info" text-color="white" size="small">
+              <v-icon size="small" class="me-1">mdi-clock-outline</v-icon>
+              {{ plugin.timelabel }}
+            </v-chip>
+          </v-card-subtitle>
+          <v-divider></v-divider>
+          <v-row class="text-center py-2 bg-grey-lighten-4">
+            <v-col cols="6" class="border-e">
+              <v-icon class="me-1" color="grey">mdi-ticket</v-icon>
+              پشتیبانی دارد
+            </v-col>
+            <v-col cols="6">
+              <v-icon class="me-1" color="grey">mdi-account-group</v-icon>
+              کاربر نامحدود
+            </v-col>
+          </v-row>
+          <v-divider></v-divider>
+          <v-card-actions class="justify-center">
+            <RouterLink :to="'/acc/plugin-center/view-end/' + plugin.code">
+              <v-btn
+                color="success"
+                class="mx-2 px-4"
+                elevation="1"
+                variant="flat"
+              >
+                <v-icon start class="ms-1">mdi-cart</v-icon>
+                خرید
+              </v-btn>
+            </RouterLink>
+            <RouterLink :to="'/acc/plugins/' + plugin.code + '/intro'">
+              <v-btn
+                color="info"
+                class="mx-2 px-4"
+                elevation="1"
+                variant="outlined"
+              >
+                <v-icon start class="ms-1">mdi-book-open-page-variant</v-icon>
+                کاتالوگ
+              </v-btn>
+            </RouterLink>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <style scoped>

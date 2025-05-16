@@ -120,8 +120,38 @@
           
           <v-divider class="my-2"></v-divider>
           
+          <!-- فیلتر بازه زمانی -->
+          <v-list-item>
+            <v-list-item-title class="text-dark mb-2">
+            </v-list-item-title>
+            <v-row>
+              <v-col cols="12">
+                <v-checkbox
+                  v-model="timeFilters.find(f => f.value === 'custom').checked"
+                  label="بازه زمانی"
+                  @change="handleCustomDateFilterChange"
+                  hide-details
+                />
+              </v-col>
+              <v-col cols="12" v-if="timeFilters.find(f => f.value === 'custom').checked">
+                <Hdatepicker
+                  v-model="dateRange.from"
+                  label="از تاریخ"
+                  @update:model-value="handleDateRangeChange"
+                />
+              </v-col>
+              <v-col cols="12" v-if="timeFilters.find(f => f.value === 'custom').checked">
+                <Hdatepicker
+                  v-model="dateRange.to"
+                  label="تا تاریخ"
+                  @update:model-value="handleDateRangeChange"
+                />
+              </v-col>
+            </v-row>
+          </v-list-item>
+          
           <!-- فیلترهای زمانی -->
-          <v-list-item v-for="(filter, index) in timeFilters" :key="index" class="text-dark">
+          <v-list-item v-for="(filter, index) in timeFilters.filter(f => f.value !== 'custom')" :key="index" class="text-dark">
             <template v-slot:title>
               <v-checkbox v-model="filter.checked" :label="filter.label" @change="applyTimeFilter(filter.value)"
                 hide-details />
@@ -242,6 +272,7 @@ import { debounce } from 'lodash';
 import { getApiUrl } from '/src/hesabixConfig';
 import moment from 'jalali-moment';
 import HesabdariTreeView from '@/components/forms/HesabdariTreeView.vue';
+import Hdatepicker from '@/components/forms/Hdatepicker.vue';
 
 const apiUrl = getApiUrl();
 axios.defaults.baseURL = apiUrl;
@@ -255,12 +286,17 @@ const searchQuery = ref('');
 const timeFilter = ref('all');
 const expanded = ref([]);
 const selectedAccountId = ref('67');
+const dateRange = ref({
+  from: moment().locale('fa').subtract(1, 'days').format('YYYY/MM/DD'),
+  to: moment().locale('fa').format('YYYY/MM/DD')
+});
 
 // فیلترهای زمانی
 const timeFilters = ref([
   { label: 'امروز', value: 'today', checked: false },
   { label: 'این هفته', value: 'week', checked: false },
   { label: 'این ماه', value: 'month', checked: false },
+  { label: 'بازه زمانی', value: 'custom', checked: false },
   { label: 'همه', value: 'all', checked: true },
 ]);
 
@@ -317,6 +353,93 @@ const resetAccountFilter = () => {
   fetchData();
 };
 
+// دیبونس برای جستجو
+const debouncedSearch = debounce(() => fetchData(), 500);
+
+// دیبونس برای تغییر تاریخ
+const debouncedFetchData = debounce(() => {
+  fetchData();
+}, 500);
+
+// اصلاح متد handleDateRangeChange
+const handleDateRangeChange = () => {
+  if (dateRange.value.from && dateRange.value.to) {
+    // تبدیل تاریخ‌های شمسی به آبجکت moment
+    const fromDate = moment(dateRange.value.from, 'jYYYY/jMM/jDD').locale('fa');
+    const toDate = moment(dateRange.value.to, 'jYYYY/jMM/jDD').locale('fa');
+
+    // بررسی اعتبار بازه زمانی
+    if (fromDate.isAfter(toDate)) {
+      Swal.fire({
+        text: 'تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد',
+        icon: 'error',
+        confirmButtonText: 'قبول'
+      });
+      // پاک کردن تاریخ‌ها
+      dateRange.value = {
+        from: null,
+        to: null
+      };
+      return;
+    }
+
+    // ارسال درخواست با تاخیر
+    debouncedFetchData();
+  }
+};
+
+// اصلاح متد handleCustomDateFilterChange
+const handleCustomDateFilterChange = (checked) => {
+  if (checked) {
+    // غیرفعال کردن سایر فیلترها
+    timeFilters.value.forEach(filter => {
+      if (filter.value !== 'custom') {
+        filter.checked = false;
+      }
+    });
+    timeFilter.value = 'custom';
+    
+    // تنظیم تاریخ‌های پیش‌فرض
+    dateRange.value = {
+      from: moment().locale('fa').subtract(1, 'days').format('YYYY/MM/DD'),
+      to: moment().locale('fa').format('YYYY/MM/DD')
+    };
+    
+    // ارسال درخواست با تاریخ‌های پیش‌فرض
+    debouncedFetchData();
+  } else {
+    // اگر چک‌باکس بازه زمانی غیرفعال شد، فیلتر "همه" را فعال کن
+    timeFilters.value.forEach(filter => {
+      filter.checked = filter.value === 'all';
+    });
+    timeFilter.value = 'all';
+    // پاک کردن تاریخ‌ها
+    dateRange.value = {
+      from: null,
+      to: null
+    };
+    debouncedFetchData();
+  }
+};
+
+// اصلاح متد applyTimeFilter
+const applyTimeFilter = (value) => {
+  timeFilters.value.forEach((filter) => {
+    filter.checked = filter.value === value;
+  });
+  timeFilter.value = value;
+  
+  // اگر فیلتر بازه زمانی غیرفعال شد، تاریخ‌ها را پاک کن
+  if (value !== 'custom') {
+    dateRange.value = {
+      from: null,
+      to: null
+    };
+  }
+  
+  fetchData();
+};
+
 // فچ کردن داده‌ها از سرور
 const fetchData = async () => {
   try {
@@ -329,20 +452,37 @@ const fetchData = async () => {
     if (timeFilter.value) {
       filters.timeFilter = timeFilter.value;
 
-      const today = moment().locale('fa').format('YYYY/MM/DD');
-      switch (timeFilter.value) {
-        case 'today':
-          filters.dateFrom = today;
-          filters.dateTo = today;
-          break;
-        case 'week':
-          filters.dateFrom = moment().locale('fa').subtract(6, 'days').format('YYYY/MM/DD');
-          filters.dateTo = today;
-          break;
-        case 'month':
-          filters.dateFrom = moment().locale('fa').startOf('jMonth').format('YYYY/MM/DD');
-          filters.dateTo = today;
-          break;
+      if (timeFilter.value === 'custom' && dateRange.value.from && dateRange.value.to) {
+        // تبدیل تاریخ‌های شمسی به فرمت مورد نیاز
+        const fromDate = moment(dateRange.value.from, 'jYYYY/jMM/jDD').locale('fa').format('YYYY/MM/DD');
+        const toDate = moment(dateRange.value.to, 'jYYYY/jMM/jDD').locale('fa').format('YYYY/MM/DD');
+        
+        filters.date = {
+          from: fromDate,
+          to: toDate
+        };
+      } else {
+        const today = moment().locale('fa').format('YYYY/MM/DD');
+        switch (timeFilter.value) {
+          case 'today':
+            filters.date = {
+              from: today,
+              to: today
+            };
+            break;
+          case 'week':
+            filters.date = {
+              from: moment().locale('fa').subtract(6, 'days').format('YYYY/MM/DD'),
+              to: today
+            };
+            break;
+          case 'month':
+            filters.date = {
+              from: moment().locale('fa').startOf('jMonth').format('YYYY/MM/DD'),
+              to: today
+            };
+            break;
+        }
       }
     }
     
@@ -367,6 +507,8 @@ const fetchData = async () => {
         sortDesc,
       },
     };
+
+    console.log('Request payload:', payload); // برای دیباگ
 
     const response = await axios.post('/api/cost/list/search', {
       type: 'cost',
@@ -394,18 +536,6 @@ const fetchData = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-// دیبونس برای جستجو
-const debouncedSearch = debounce(() => fetchData(), 500);
-
-// اعمال فیلتر زمانی
-const applyTimeFilter = (value) => {
-  timeFilters.value.forEach((filter) => {
-    filter.checked = filter.value === value;
-  });
-  timeFilter.value = value;
-  fetchData();
 };
 
 // حذف یک آیتم
@@ -588,6 +718,13 @@ const deleteGroup = async () => {
     }
   }
 };
+
+// اضافه کردن watch برای تغییرات تاریخ‌ها
+watch([() => dateRange.value.from, () => dateRange.value.to], () => {
+  if (timeFilter.value === 'custom') {
+    handleDateRangeChange();
+  }
+}, { deep: true });
 
 // Watchers
 watch(() => serverOptions.value.page, () => {
