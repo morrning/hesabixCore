@@ -571,8 +571,39 @@ class HesabdariController extends AbstractController
             $entityManager->remove($row);
         }
 
+        //check ghesta items
+        $ghestaItems = $entityManager->getRepository(PlugGhestaItem::class)->findBy(['hesabdariDoc' => $doc]);
+        foreach ($ghestaItems as $ghestaItem) {
+            $ghestaItem->setHesabdariDoc(null);
+            $entityManager->persist($ghestaItem);
+        }
+        $entityManager->flush();
+
+        //check ghesta doc
+        $ghesta = $entityManager->getRepository(PlugGhestaDoc::class)->findOneBy(['mainDoc' => $doc]);
+        if ($ghesta) {
+            $entityManager->remove($ghesta);
+            $entityManager->flush();
+        }
+
+        //check related docs
         foreach ($doc->getRelatedDocs() as $relatedDoc) {
             if ($relatedDoc->getType() != 'walletPay') {
+                //check ghesta items for related docs
+                $relatedGhestaItems = $entityManager->getRepository(PlugGhestaItem::class)->findBy(['hesabdariDoc' => $relatedDoc]);
+                foreach ($relatedGhestaItems as $ghestaItem) {
+                    $ghestaItem->setHesabdariDoc(null);
+                    $entityManager->persist($ghestaItem);
+                }
+                $entityManager->flush();
+
+                //check ghesta doc for related docs
+                $relatedGhesta = $entityManager->getRepository(PlugGhestaDoc::class)->findOneBy(['mainDoc' => $relatedDoc]);
+                if ($relatedGhesta) {
+                    $entityManager->remove($relatedGhesta);
+                    $entityManager->flush();
+                }
+
                 $items = $entityManager->getRepository(HesabdariRow::class)->findBy(['doc' => $relatedDoc]);
                 foreach ($items as $item)
                     $entityManager->remove($item);
@@ -581,10 +612,9 @@ class HesabdariController extends AbstractController
                 foreach ($logs as $item) {
                     $item->setDoc(null);
                     $entityManager->persist($item);
-                    $entityManager->flush();
                 }
+                $entityManager->flush();
                 $code = $doc->getCode();
-                $entityManager->remove($relatedDoc);
                 $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
             }
         }
@@ -594,19 +624,15 @@ class HesabdariController extends AbstractController
         foreach ($logs as $item) {
             $item->setDoc(null);
             $entityManager->persist($item);
-            $entityManager->flush();
         }
+        $entityManager->flush();
+
         $code = $doc->getCode();
         foreach ($doc->getNotes() as $note) {
             $entityManager->remove($note);
         }
+        $entityManager->flush();
 
-        //check ghesta items
-        $ghestaItems = $entityManager->getRepository(PlugGhestaItem::class)->findBy(['hesabdariDoc' => $doc]);
-        foreach ($ghestaItems as $ghestaItem) {
-            $ghestaItem->setHesabdariDoc(null);
-            $entityManager->persist($ghestaItem);
-        }
         $entityManager->remove($doc);
         $entityManager->flush();
         $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
@@ -692,8 +718,8 @@ class HesabdariController extends AbstractController
                     foreach ($logs as $item) {
                         $item->setDoc(null);
                         $entityManager->persist($item);
-                        $entityManager->flush();
                     }
+                    $entityManager->flush();
                     $code = $doc->getCode();
                     $entityManager->remove($relatedDoc);
                     $log->insert('حسابداری', 'سند حسابداری شماره ' . $code . ' حذف شد.', $this->getUser(), $request->headers->get('activeBid'));
@@ -705,7 +731,6 @@ class HesabdariController extends AbstractController
             foreach ($logs as $item) {
                 $item->setDoc(null);
                 $entityManager->persist($item);
-                $entityManager->flush();
             }
             $code = $doc->getCode();
             foreach ($doc->getNotes() as $note) {
