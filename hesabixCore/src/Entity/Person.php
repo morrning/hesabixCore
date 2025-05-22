@@ -152,6 +152,12 @@ class Person
     #[ORM\ManyToOne(inversedBy: 'people')]
     private ?PersonPrelabel $prelabel = null;
 
+    /**
+     * @var Collection<int, PlugGhestaDoc>
+     */
+    #[ORM\OneToMany(targetEntity: PlugGhestaDoc::class, mappedBy: 'person', orphanRemoval: true)]
+    private Collection $PlugGhestaDocs;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -166,6 +172,7 @@ class Person
         $this->preInvoiceDocs = new ArrayCollection();
         $this->hesabdariDocs = new ArrayCollection();
         $this->preinvoiceDocsSalemans = new ArrayCollection();
+        $this->PlugGhestaDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -859,6 +866,36 @@ class Person
     public function setPrelabel(?PersonPrelabel $prelabel): static
     {
         $this->prelabel = $prelabel;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugGhestaDoc>
+     */
+    public function getPlugGhestaDocs(): Collection
+    {
+        return $this->PlugGhestaDocs;
+    }
+
+    public function addPlugGhestaDoc(PlugGhestaDoc $PlugGhestaDoc): static
+    {
+        if (!$this->PlugGhestaDocs->contains($PlugGhestaDoc)) {
+            $this->PlugGhestaDocs->add($PlugGhestaDoc);
+            $PlugGhestaDoc->setPerson($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugGhestaDoc(PlugGhestaDoc $PlugGhestaDoc): static
+    {
+        if ($this->PlugGhestaDocs->removeElement($PlugGhestaDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($PlugGhestaDoc->getPerson() === $this) {
+                $PlugGhestaDoc->setPerson(null);
+            }
+        }
 
         return $this;
     }

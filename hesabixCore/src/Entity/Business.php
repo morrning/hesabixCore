@@ -291,6 +291,12 @@ class Business
     #[ORM\OneToMany(mappedBy: 'bid', targetEntity: AccountingPackageOrder::class, orphanRemoval: true)]
     private Collection $accountingPackageOrders;
 
+    /**
+     * @var Collection<int, PlugGhestaDoc>
+     */
+    #[ORM\OneToMany(targetEntity: PlugGhestaDoc::class, mappedBy: 'bid', orphanRemoval: true)]
+    private Collection $PlugGhestaDocs;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -332,6 +338,7 @@ class Business
         $this->dashboardSettings = new ArrayCollection();
         $this->hesabdariTables = new ArrayCollection();
         $this->accountingPackageOrders = new ArrayCollection();
+        $this->PlugGhestaDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -2013,6 +2020,36 @@ class Business
             // set the owning side to null (unless already changed)
             if ($accountingPackageOrder->getBid() === $this) {
                 $accountingPackageOrder->setBid(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugGhestaDoc>
+     */
+    public function getPlugGhestaDocs(): Collection
+    {
+        return $this->PlugGhestaDocs;
+    }
+
+    public function addPlugGhestaDoc(PlugGhestaDoc $PlugGhestaDoc): static
+    {
+        if (!$this->PlugGhestaDocs->contains($PlugGhestaDoc)) {
+            $this->PlugGhestaDocs->add($PlugGhestaDoc);
+            $PlugGhestaDoc->setBid($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugGhestaDoc(PlugGhestaDoc $PlugGhestaDoc): static
+    {
+        if ($this->PlugGhestaDocs->removeElement($PlugGhestaDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($PlugGhestaDoc->getBid() === $this) {
+                $PlugGhestaDoc->setBid(null);
             }
         }
 

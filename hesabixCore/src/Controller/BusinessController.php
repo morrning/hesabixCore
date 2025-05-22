@@ -543,6 +543,7 @@ class BusinessController extends AbstractController
                 'plugAccproPresell' => true,
                 'plugRepservice' => true,
                 'plugHrmDocs' => true,
+                'plugGhestaManager' => true,
             ];
         } elseif ($perm) {
             $result = [
@@ -585,6 +586,7 @@ class BusinessController extends AbstractController
                 'plugRepservice' => $perm->isPlugRepservice(),
                 'plugAccproPresell' => $perm->isPlugAccproPresell(),
                 'plugHrmDocs' => $perm->isPlugHrmDocs(),
+                'plugGhestaManager' => $perm->isPlugGhestaManager(),
             ];
         }
         return $this->json($result);
@@ -653,6 +655,7 @@ class BusinessController extends AbstractController
                 $perm->setPlugAccproAccounting($params['plugAccproAccounting']);
                 $perm->setPlugRepservice($params['plugRepservice']);
                 $perm->setPlugHrmDocs($params['plugHrmDocs']);
+                $perm->setPlugGhestaManager($params['plugGhestaManager']);
                 $entityManager->persist($perm);
                 $entityManager->flush();
                 $log->insert('تنظیمات پایه', 'ویرایش دسترسی‌های کاربر با پست الکترونیکی ' . $user->getEmail(), $this->getUser(), $business);

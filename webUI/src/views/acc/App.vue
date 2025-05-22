@@ -178,6 +178,7 @@ export default {
         { path: '/acc/plugin-center/my', key: '\\', label: this.$t('drawer.my_plugins'), ctrl: true, shift: true, permission: () => this.permissions.owner },
         { path: '/acc/plugin-center/invoice', key: '`', label: this.$t('drawer.plugins_invoices'), ctrl: true, shift: true, permission: () => this.permissions.owner },
         { path: '/acc/hrm/docs/list', key: 'H', label: this.$t('drawer.hrm_docs'), ctrl: true, shift: true, permission: () => this.isPluginActive('hrm') && this.permissions.plugHrmDocs },
+        { path: '/acc/plugins/ghesta/list', key: 'G', label: this.$t('drawer.ghesta_invoices'), ctrl: true, shift: true, permission: () => this.isPluginActive('ghesta') && this.permissions.plugGhestaManager },
       ];
     },
     restorePermissions(shortcuts) {
@@ -802,6 +803,26 @@ export default {
             <v-tooltip :text="$t('dialog.add_new')" location="end">
               <template v-slot:activator="{ props }">
                 <v-btn v-bind="props" icon="mdi-plus-box" variant="plain" to="/acc/hrm/docs/mod/" />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-list-item>
+      </v-list-group>
+      <v-list-group v-show="isPluginActive('ghesta') && permissions.plugGhestaManager">
+        <template v-slot:activator="{ props }">
+          <v-list-item class="text-dark" v-bind="props" :title="$t('drawer.ghesta')">
+            <template v-slot:prepend><v-icon icon="mdi-cash-multiple" color="primary"></v-icon></template>
+          </v-list-item>
+        </template>
+        <v-list-item to="/acc/plugins/ghesta/list">
+          <v-list-item-title>
+            {{ $t('drawer.ghesta_invoices') }}
+            <span v-if="isCtrlShiftPressed" class="shortcut-key">{{ getShortcutKey('/acc/plugins/ghesta/list') }}</span>
+          </v-list-item-title>
+          <template v-slot:append>
+            <v-tooltip :text="$t('dialog.add_new')" location="end">
+              <template v-slot:activator="{ props }">
+                <v-btn v-bind="props" icon="mdi-plus-box" variant="plain" to="/acc/plugins/ghesta/mod/" />
               </template>
             </v-tooltip>
           </template>

@@ -30,6 +30,10 @@ export default {
     rules: {
       type: Array,
       default: () => []
+    },
+    allowDecimal: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -43,7 +47,7 @@ export default {
   computed: {
     combinedRules() {
       return [
-        v => !v || /^\d+$/.test(v.replace(/[^0-9]/g, '')) || this.$t('numberinput.invalid_number'),
+        v => !v || (this.allowDecimal ? /^\d*\.?\d*$/.test(v.replace(/[^0-9.]/g, '')) : /^\d+$/.test(v.replace(/[^0-9]/g, ''))) || this.$t('numberinput.invalid_number'),
         ...this.rules
       ]
     }
@@ -54,8 +58,8 @@ export default {
       immediate: true,
       handler(newVal) {
         if (newVal !== null && newVal !== undefined) {
-          const cleaned = String(newVal).replace(/[^0-9]/g, '')
-          this.inputValue = cleaned ? Number(cleaned).toLocaleString('en-US') : ''
+          const cleaned = String(newVal).replace(this.allowDecimal ? /[^0-9.]/g : /[^0-9]/g, '')
+          this.inputValue = cleaned ? (this.allowDecimal ? cleaned : Number(cleaned).toLocaleString('en-US')) : ''
         } else {
           this.inputValue = ''
         }
@@ -66,9 +70,9 @@ export default {
         this.$emit('update:modelValue', 0)
         this.errorMessages = []
       } else {
-        const cleaned = String(newVal).replace(/[^0-9]/g, '')
-        if (/^\d+$/.test(cleaned)) {
-          const numericValue = cleaned ? Number(cleaned) : 0
+        const cleaned = String(newVal).replace(this.allowDecimal ? /[^0-9.]/g : /[^0-9]/g, '')
+        if (this.allowDecimal ? /^\d*\.?\d*$/.test(cleaned) : /^\d+$/.test(cleaned)) {
+          const numericValue = cleaned ? (this.allowDecimal ? parseFloat(cleaned) : Number(cleaned)) : 0
           this.$emit('update:modelValue', numericValue)
           this.errorMessages = []
         } else {
@@ -81,8 +85,20 @@ export default {
   methods: {
     restrictToNumbers(event) {
       const charCode = event.charCode
-      if (charCode < 48 || charCode > 57) {
-        event.preventDefault()
+      if (this.allowDecimal) {
+        // اجازه ورود اعداد و نقطه اعشاری
+        if ((charCode < 48 || charCode > 57) && charCode !== 46) {
+          event.preventDefault()
+        }
+        // جلوگیری از ورود بیش از یک نقطه اعشاری
+        if (charCode === 46 && this.inputValue.includes('.')) {
+          event.preventDefault()
+        }
+      } else {
+        // فقط اجازه ورود اعداد
+        if (charCode < 48 || charCode > 57) {
+          event.preventDefault()
+        }
       }
     }
   }

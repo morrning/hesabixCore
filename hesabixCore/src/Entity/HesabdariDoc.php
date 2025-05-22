@@ -128,6 +128,18 @@ class HesabdariDoc
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
     private ?float $discountPercent = null;
 
+    /**
+     * @var Collection<int, PlugGhestaItem>
+     */
+    #[ORM\OneToMany(targetEntity: PlugGhestaItem::class, mappedBy: 'hesabdariDoc')]
+    private Collection $plugGhestaItems;
+
+    /**
+     * @var Collection<int, PlugGhestaDoc>
+     */
+    #[ORM\OneToMany(targetEntity: PlugGhestaDoc::class, mappedBy: 'mainDoc', orphanRemoval: true)]
+    private Collection $plugGhestaDocs;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -137,6 +149,8 @@ class HesabdariDoc
         $this->logs = new ArrayCollection();
         $this->notes = new ArrayCollection();
         $this->pairDoc = new ArrayCollection();
+        $this->plugGhestaItems = new ArrayCollection();
+        $this->plugGhestaDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -612,6 +626,67 @@ class HesabdariDoc
     public function setDiscountPercent(?float $discountPercent): static
     {
         $this->discountPercent = $discountPercent;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugGhestaItem>
+     */
+    public function getPlugGhestaItems(): Collection
+    {
+        return $this->plugGhestaItems;
+    }
+
+    public function addPlugGhestaItem(PlugGhestaItem $plugGhestaItem): static
+    {
+        if (!$this->plugGhestaItems->contains($plugGhestaItem)) {
+            $this->plugGhestaItems->add($plugGhestaItem);
+            $plugGhestaItem->setHesabdariDoc($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugGhestaItem(PlugGhestaItem $plugGhestaItem): static
+    {
+        if ($this->plugGhestaItems->removeElement($plugGhestaItem)) {
+            // set the owning side to null (unless already changed)
+            if ($plugGhestaItem->getHesabdariDoc() === $this) {
+                $plugGhestaItem->setHesabdariDoc(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugGhestaDoc>
+     */
+    public function getPlugGhestaDocs(): Collection
+    {
+        return $this->plugGhestaDocs;
+    }
+
+    public function addPlugGhestaDoc(PlugGhestaDoc $plugGhestaDoc): static
+    {
+        if (!$this->plugGhestaDocs->contains($plugGhestaDoc)) {
+            $this->plugGhestaDocs->add($plugGhestaDoc);
+            $plugGhestaDoc->setMainDoc($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugGhestaDoc(PlugGhestaDoc $plugGhestaDoc): static
+    {
+        if ($this->plugGhestaDocs->removeElement($plugGhestaDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($plugGhestaDoc->getMainDoc() === $this) {
+                $plugGhestaDoc->setMainDoc(null);
+            }
+        }
+
         return $this;
     }
 }

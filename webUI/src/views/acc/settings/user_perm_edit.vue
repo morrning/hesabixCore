@@ -575,6 +575,32 @@
               </v-card>
             </v-col>
           </v-row>
+
+          <v-row v-if="isPluginActive('ghesta')" class="mt-4">
+            <v-col cols="12">
+              <v-card-title class="text-h6 font-weight-bold mb-4">افزونه فروش اقساطی</v-card-title>
+            </v-col>
+            <v-col cols="12" md="4">
+              <v-card variant="outlined" class="h-100">
+                <v-card-text>
+                  <v-list>
+                    <v-list-item>
+                      <v-switch
+                        v-model="info.plugGhestaManager"
+                        label="مدیریت فروش اقساطی"
+                        @change="savePerms('plugGhestaManager')"
+                        hide-details
+                        color="success"
+                        density="comfortable"
+                        :loading="loadingSwitches.plugGhestaManager"
+                        :disabled="loadingSwitches.plugGhestaManager"
+                      ></v-switch>
+                    </v-list-item>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
         </v-card-text>
       </v-card>
     </v-container>
@@ -652,7 +678,8 @@ export default {
         plugNoghreAdmin: false,
         plugNoghreSell: false,
         plugCCAdmin: false,
-        plugHrmDocs: false
+        plugHrmDocs: false,
+        plugGhestaManager: false
       };
 
       axios.post('/api/business/get/user/permissions',

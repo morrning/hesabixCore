@@ -730,6 +730,30 @@ const router = createRouter({
                 import('../views/acc/plugins/amartemanma/intro.vue'),
         },
         {
+            path: 'plugins/ghesta/intro',
+            name: 'plugin_ghesta_intro',
+            component: () =>
+                import('../views/acc/plugins/ghesta/intro.vue'),
+        },
+        {
+            path: 'plugins/ghesta/list',
+            name: 'plugin_ghesta_list',
+            component: () =>
+                import('../views/acc/plugins/ghesta/list.vue'),
+        },
+        {
+            path: 'plugins/ghesta/mod/:id?',
+            name: 'plugin_ghesta_mod',
+            component: () =>
+                import('../views/acc/plugins/ghesta/mod.vue'),
+        },
+        {
+            path: 'plugins/ghesta/view/:id?',
+            name: 'plugin_ghesta_view',
+            component: () =>
+                import('../views/acc/plugins/ghesta/view.vue'),
+        },
+        {
             path: 'plugins/accpro/intro',
             name: 'plugin_accpro_intro',
             component: () =>

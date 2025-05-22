@@ -94,6 +94,8 @@ const fa_lang = {
     }
   },
   drawer: {
+    ghesta: "فروش اقساطی",
+    ghesta_invoices: "فاکتورها",
     wallets: "کیف پول‌ها",
     ultimate_package: 'بسته‌های نامحدود',
     sell_chart: "فروش هفته گذشته",
@@ -402,6 +404,7 @@ const fa_lang = {
     result: "نتیجه",
     title: "پاسخ",
     view: "مشاهده",
+    payment: "ثبت پرداخت",
     exit: "خروج از حساب کاربری",
     complete_all: "موارد الزامی را تکمیل کنید",
     back: "صفحه قبل",

@@ -92,12 +92,13 @@
   </v-dialog>
 
   <!-- محتوای اصلی -->
-  <v-container fluid class="pa-2">
+  <v-container fluid class="pa-4">
     <v-row dense>
       <v-col cols="12" md="12">
         <v-autocomplete v-model="selectedPerson" :items="listPersons" item-title="nikename" item-value="code"
           return-object :label="$t('dialog.user_info')" dense hide-details prepend-inner-icon="mdi-account"
-          :loading="loading" @update:search="debouncedSearchPerson" @update:model-value="updateRoute">
+          :loading="loading" @update:search="debouncedSearchPerson" @update:model-value="updateRoute"
+          class="rounded-lg elevation-2">
           <template v-slot:no-data>
             {{ $t('pages.person_card.no_results') }}
           </template>
@@ -128,8 +129,8 @@
         </v-autocomplete>
       </v-col>
       <v-col cols="12" md="6">
-        <v-card flat outlined>
-          <v-toolbar color="primary-dark" dense flat>
+        <v-card flat outlined class="rounded-lg elevation-2">
+          <v-toolbar color="primary-dark" dense flat class="rounded-t-lg">
             <v-toolbar-title class="text-white">
               {{ $t('pages.person_card.account_card') }}
               <small class="text-info-light" v-if="selectedPerson">{{ selectedPerson.nikename }}</small>
@@ -154,8 +155,8 @@
         </v-card>
       </v-col>
       <v-col cols="12" md="6">
-        <v-card flat outlined>
-          <v-toolbar color="primary-dark" dense flat>
+        <v-card flat outlined class="rounded-lg elevation-2">
+          <v-toolbar color="primary-dark" dense flat class="rounded-t-lg">
             <v-toolbar-title class="text-white">
               {{ $t('pages.person_card.account_status') }}
               <small class="text-info-light" v-if="selectedPerson">{{ selectedPerson.nikename }}</small>
@@ -187,9 +188,9 @@
     <v-row dense>
       <v-col cols="12">
         <v-data-table v-model="itemsSelected" :headers="headers" :items="items" :search="searchValue" :loading="loading"
-          show-select dense :items-per-page="25" class="elevation-1" :header-props="{ class: 'custom-header' }">
+          show-select dense :items-per-page="25" class="elevation-2 rounded-lg" :header-props="{ class: 'custom-header' }">
           <template v-slot:top>
-            <v-toolbar flat dense color="grey-lighten-4">
+            <v-toolbar flat dense color="grey-lighten-4" class="rounded-t-lg">
               <v-toolbar-title class="text-subtitle-1">{{ $t('pages.person_card.transactions') }}</v-toolbar-title>
               <v-spacer></v-spacer>
               <v-text-field v-model="searchValue" dense hide-details
@@ -208,6 +209,12 @@
             <v-btn variant="plain" text size="small" :to="getTypeRoute(item.type, item.code)" class="text-none">
               {{ getTypeLabel(item.type) }}
             </v-btn>
+          </template>
+          <template v-slot:item.bd="{ item }">
+            {{ $filters.formatNumber(item.bd) }}
+          </template>
+          <template v-slot:item.bs="{ item }">
+            {{ $filters.formatNumber(item.bs) }}
           </template>
           <template v-slot:no-data>
             {{ $t('pages.person_card.no_data') }}
@@ -404,5 +411,39 @@ export default {
 </script>
 
 <style scoped>
-/* استایل‌های اضافی حذف شده چون Vuetify بیشتر نیازها رو پوشش می‌ده */
+.custom-header {
+  background-color: #f5f5f5 !important;
+  font-weight: bold !important;
+}
+
+.v-data-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.v-card {
+  transition: all 0.3s ease;
+}
+
+.v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+.v-autocomplete {
+  background-color: white;
+  border-radius: 8px;
+}
+
+.v-toolbar {
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.v-list-item {
+  transition: background-color 0.2s ease;
+}
+
+.v-list-item:hover {
+  background-color: #f5f5f5;
+}
 </style>

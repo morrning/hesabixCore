@@ -71,7 +71,7 @@
                         </td>
                         <td class="text-center px-2">
                           <div class="d-flex align-center justify-center">
-                            <Hnumberinput v-model="item.price" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;"></Hnumberinput>
+                            <Hnumberinput v-model="item.price" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;" :allow-decimal="true"></Hnumberinput>
                             <v-tooltip v-if="item.name && item.price < item.name.priceBuy" text="قیمت فروش کمتر از قیمت خرید است" location="bottom">
                               <template v-slot:activator="{ props }">
                                 <v-icon v-bind="props" color="warning" size="small" class="mr-1">mdi-alert</v-icon>

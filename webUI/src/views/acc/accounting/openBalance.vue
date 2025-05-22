@@ -450,10 +450,42 @@ export default {
 
       axios.post('/api/openbalance/get').then((Response) => {
         if (Response.data && Response.data.data) {
-        this.data = Response.data.data;
-          // اطمینان از وجود آرایه commodities
-          if (!this.data.commodities) {
-            this.data.commodities = [];
+          this.data = Response.data.data;
+          
+          // محاسبه مجموع بانک‌ها
+          if (this.data.banks) {
+            this.data.banks.forEach(item => {
+              if (item.openbalance) {
+                this.sums.banks += parseFloat(item.openbalance);
+              }
+            });
+          }
+          
+          // محاسبه مجموع صندوق‌ها
+          if (this.data.cashdesks) {
+            this.data.cashdesks.forEach(item => {
+              if (item.openbalance) {
+                this.sums.cashdesks += parseFloat(item.openbalance);
+              }
+            });
+          }
+          
+          // محاسبه مجموع تنخواه‌گردان‌ها
+          if (this.data.salarys) {
+            this.data.salarys.forEach(item => {
+              if (item.openbalance) {
+                this.sums.salarys += parseFloat(item.openbalance);
+              }
+            });
+          }
+          
+          // محاسبه مجموع سهام‌داران
+          if (this.data.shareholders) {
+            this.data.shareholders.forEach(item => {
+              if (item.openbalance) {
+                this.sums.shareholders += parseFloat(item.openbalance);
+              }
+            });
           }
           
           // محاسبه مجموع موجودی کالا
@@ -465,8 +497,8 @@ export default {
             });
           }
           
-          this.sums.degSum = parseFloat(this.sums.banks) + parseFloat(this.sums.cashdesks) + parseFloat(this.sums.salarys) + parseFloat(this.sums.inventory);
-          this.sums.shareSum = parseFloat(this.sums.shareholders);
+          this.sums.degSum = this.sums.banks + this.sums.cashdesks + this.sums.salarys + this.sums.inventory;
+          this.sums.shareSum = this.sums.shareholders;
         }
       }).catch(error => {
         console.error('Error loading data:', error);

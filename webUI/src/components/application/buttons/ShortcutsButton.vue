@@ -1,8 +1,8 @@
 <template>
   <div>
-    <v-menu location="bottom end" :close-on-content-click="false">
+    <v-menu location="bottom end" :close-on-content-click="false" class="d-none d-md-block">
       <template v-slot:activator="{ props }">
-        <v-btn class="" stacked v-bind="props">
+        <v-btn class="d-none d-md-block" stacked v-bind="props">
           <v-icon>mdi-apps</v-icon>
         </v-btn>
       </template>
@@ -305,7 +305,11 @@ export default {
     loadShortcuts() {
       const savedShortcuts = localStorage.getItem('customShortcuts')
       if (savedShortcuts) {
-        this.customShortcuts = JSON.parse(savedShortcuts)
+        const shortcuts = JSON.parse(savedShortcuts)
+        this.customShortcuts = shortcuts.filter(shortcut => shortcut.path && shortcut.path.trim() !== '')
+        if (shortcuts.length !== this.customShortcuts.length) {
+          this.saveShortcuts()
+        }
       }
     },
     isInternalPath(path) {

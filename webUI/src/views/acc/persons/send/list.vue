@@ -1,270 +1,531 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button"
-          class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        پرداخت‌ها
-      </h3>
-      <div class="block-options">
-        <router-link to="/acc/persons/send/mod/" class="btn btn-sm btn-primary ms-2">
-          <span class="fa fa-plus fw-bolder"></span>
+  <v-container fluid class="pa-0">
+    <v-toolbar color="toolbar" :title="'پرداخت‌ها'">
+      <template v-slot:prepend>
+        <v-tooltip :text="$t('dialog.back')" location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text" icon="mdi-arrow-right" />
+          </template>
+        </v-tooltip>
+      </template>
+      <v-spacer></v-spacer>
+      <v-tooltip :text="$t('dialog.add_new')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-plus" color="primary" to="/acc/persons/send/mod/"></v-btn>
+        </template>
+      </v-tooltip>
+      <v-menu>
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon color="error">
+            <v-icon>mdi-file-pdf-box</v-icon>
+            <v-tooltip activator="parent" :text="$t('dialog.export_pdf')" location="bottom" />
+          </v-btn>
+        </template>
+        <v-list>
+          <v-list-subheader color="primary">{{ $t('dialog.export_pdf') }}</v-list-subheader>
+          <v-list-item class="text-dark" :title="$t('dialog.selected')" @click="print(false)">
+            <template v-slot:prepend>
+              <v-icon color="green-darken-4" icon="mdi-check"></v-icon>
+            </template>
+          </v-list-item>
+          <v-list-item class="text-dark" :title="$t('dialog.selected_all')" @click="print(true)">
+            <template v-slot:prepend>
+              <v-icon color="indigo-darken-4" icon="mdi-expand-all"></v-icon>
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+      <v-menu>
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon color="success">
+            <v-icon>mdi-file-excel-box</v-icon>
+            <v-tooltip activator="parent" :text="$t('dialog.export_excel')" location="bottom" />
+          </v-btn>
+        </template>
+        <v-list>
+          <v-list-subheader color="primary">{{ $t('dialog.export_excel') }}</v-list-subheader>
+          <v-list-item class="text-dark" :title="$t('dialog.selected')" @click="excellOutput(false)">
+            <template v-slot:prepend>
+              <v-icon color="green-darken-4" icon="mdi-check"></v-icon>
+            </template>
+          </v-list-item>
+          <v-list-item class="text-dark" :title="$t('dialog.selected_all')" @click="excellOutput(true)">
+            <template v-slot:prepend>
+              <v-icon color="indigo-darken-4" icon="mdi-expand-all"></v-icon>
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+      <v-tooltip :text="'انتخاب ستون‌ها'" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon="mdi-table-cog" color="primary" @click="showColumnDialog = true"></v-btn>
+        </template>
+      </v-tooltip>
+    </v-toolbar>
+    <v-text-field
+      hide-details
+      color="green"
+      class="pt-0 rounded-0 mb-0"
+      density="compact"
+      :placeholder="$t('dialog.search_txt')"
+      v-model="searchValue"
+      type="text"
+      clearable
+    >
+      <template v-slot:prepend-inner>
+        <v-tooltip location="bottom" :text="$t('dialog.search')">
+          <template v-slot:activator="{ props }">
+            <v-icon v-bind="props" color="danger" icon="mdi-magnify"></v-icon>
+          </template>
+        </v-tooltip>
+      </template>
+      <template v-slot:append-inner>
+        <v-menu :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+            <v-icon size="sm" v-bind="props" icon="" color="primary">
+              <v-tooltip activator="parent" variant="plain" :text="$t('dialog.filters')" location="bottom" />
+              <v-icon icon="mdi-filter"></v-icon>
+            </v-icon>
+          </template>
+          <v-list>
+            <v-list-subheader color="primary">
+              <v-icon icon="mdi-filter"></v-icon>
+              {{ $t('dialog.filters') }}
+            </v-list-subheader>
+            <v-list-item>
+              <v-select
+                class="py-2 my-2"
+                v-model="dateFilter"
+                :items="dateFilterOptions"
+                label="فیلتر تاریخ"
+                @update:model-value="loadData"
+                dense
+              />
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
+    </v-text-field>
+    <v-data-table-server
+      v-model:items-per-page="itemsPerPage"
+      v-model:page="page"
+      :headers="visibleHeaders"
+      :items="items"
+      :items-length="totalItems"
+      :loading="loading"
+      item-value="code"
+      class="elevation-1"
+      :header-props="{ class: 'custom-header' }"
+      :items-per-page-options="[5, 10, 20, 50]"
+      items-per-page-text="تعداد سطر در هر صفحه"
+      @update:options="loadData"
+    >
+      <template v-slot:header.select>
+        <v-checkbox
+          v-model="selectAll"
+          @change="toggleSelectAll"
+          hide-details
+          density="compact"
+        ></v-checkbox>
+      </template>
+      
+      <template v-slot:item.select="{ item }">
+        <v-checkbox
+          :model-value="isSelected(item.code)"
+          @change="toggleSelect(item)"
+          hide-details
+          density="compact"
+        ></v-checkbox>
+      </template>
+
+      <template v-slot:item.operation="{ item }">
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn variant="text" size="small" icon="mdi-menu" v-bind="props" />
+          </template>
+          <v-list>
+            <v-list-item :to="'/acc/accounting/view/' + item.code">
+              <template v-slot:prepend>
+                <v-icon color="green-darken-4" icon="mdi-eye"></v-icon>
+              </template>
+              <v-list-item-title>سند حسابداری</v-list-item-title>
+            </v-list-item>
+            <v-list-item :to="{ name: 'person_send_mod', params: { id: item.code }}">
+              <template v-slot:prepend>
+                <v-icon icon="mdi-pencil"></v-icon>
+              </template>
+              <v-list-item-title>ویرایش</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="deleteItem(item.code)">
+              <template v-slot:prepend>
+                <v-icon color="error" icon="mdi-delete"></v-icon>
+              </template>
+              <v-list-item-title class="text-error">حذف</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
+      <template v-slot:item.persons="{ item }">
+        <router-link
+          v-for="person in item.persons"
+          :key="person.code"
+          class="me-2"
+          :to="'/acc/persons/card/view/' + person.code"
+        >
+          {{ person.nikename }}
         </router-link>
-        <div class="dropdown">
-          <a class="btn btn-sm btn-danger ms-2 dropdown-toggle text-end" href="#" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-file-pdf"></i>
-          </a>
-          <ul class="dropdown-menu">
-            <li><a @click.prevent="print(false)" class="dropdown-item" href="#">انتخاب شده‌ها</a></li>
-            <li><a @click.prevent="print(true)" class="dropdown-item" href="#">همه موارد</a></li>
-          </ul>
-        </div>
-        <div class="dropdown">
-          <a class="btn btn-sm btn-success ms-2 dropdown-toggle text-end" href="#" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-file-excel"></i>
-          </a>
-          <ul class="dropdown-menu">
-            <li><a @click.prevent="excellOutput(false)" class="dropdown-item" href="#">انتخاب شده‌ها</a></li>
-            <li><a @click.prevent="excellOutput(true)" class="dropdown-item" href="#">همه موارد</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="block-content pt-1 pb-3">
-      <div class="row">
-        <div class="col-sm-12 col-md-12 m-0 p-0">
-          <div class="mb-1">
-            <div class="input-group input-group-sm">
-              <span class="input-group-text"><i class="fa fa-search"></i></span>
-              <input v-model="searchValue" class="form-control" type="text" placeholder="جست و جو ...">
-            </div>
-          </div>
-          <EasyDataTable table-class-name="customize-table" v-model:items-selected="itemsSelected" show-index
-            alternating :search-value="searchValue" :headers="headers" :items="items" theme-color="#1d90ff"
-            header-text-direction="center" body-text-direction="center" rowsPerPageMessage="تعداد سطر"
-            emptyMessage="اطلاعاتی برای نمایش وجود ندارد" rowsOfPageSeparatorMessage="از" :loading="loading">
-            <template #item-operation="{ code }">
-              <div class="dropdown-center">
-                <button aria-expanded="false" aria-haspopup="true" class="btn btn-sm btn-link" data-bs-toggle="dropdown"
-                  id="dropdown-align-center-alt-primary" type="button">
-                  <i class="fa-solid fa-ellipsis"></i>
-                </button>
-                <div aria-labelledby="dropdown-align-center-outline-primary" class="dropdown-menu dropdown-menu-end"
-                  style="">
-                  <router-link class="dropdown-item" :to="'/acc/accounting/view/' + code">
-                    <i class="fa fa-file text-success pe-2"></i>
-                    سند حسابداری
-                  </router-link>
-                  <router-link :to="{ name: 'person_send_mod', params: { id: code } }" class="dropdown-item">
-                    <i class="fa fa-edit pe-2"></i>
-                    ویرایش
-                  </router-link>
-                  <button type="button" @click="deleteItem(code)" class="dropdown-item text-danger">
-                    <i class="fa fa-trash pe-2"></i>
-                    حذف
-                  </button>
-                </div>
+      </template>
+      <template v-slot:item.code="{ item }">
+        <span class="text-left">{{ $filters.formatNumber(item.code) }}</span>
+      </template>
+      <template v-slot:item.amount="{ item }">
+        <span class="text-left">{{ $filters.formatNumber(item.amount) }}</span>
+      </template>
+    </v-data-table-server>
+    <v-card variant="" class="my-4">
+        <v-card-text>
+          <v-row>
+            <v-col cols="12" sm="6">
+              <div class="d-flex align-center">
+                <v-icon class="me-2">mdi-format-list-bulleted</v-icon>
+                <span>مبلغ کل صفحه:</span>
+                <span class="ms-2">
+                  {{ $filters.formatNumber(sumTotal) }}
+                  {{ $filters.getActiveMoney().shortName }}
+                </span>
               </div>
-            </template>
-            <template #item-persons="{ persons }">
-              <router-link class="me-2" v-for="person in persons" :to="'/acc/persons/card/view/' + person.code">
-                {{ person.nikename }}
-              </router-link>
-            </template>
-          </EasyDataTable>
-
-          <div class="container-fluid p-0 mx-0 my-3">
-            <a class="block block-rounded block-link-shadow border-start border-success border-3"
-              href="javascript:void(0)">
-              <div class="block-content block-content-full block-content-sm bg-body-light">
-                <div class="row">
-                  <div class="col-sm-6 com-md-6">
-                    <span class="text-dark">
-                      <i class="fa fa-list-dots"></i>
-                      مبلغ کل:
-                    </span>
-                    <span class="text-primary">
-                      {{ $filters.formatNumber(this.sumTotal) }}
-                      {{ $filters.getActiveMoney().shortName }}
-                    </span>
-                  </div>
-
-                  <div class="col-sm-6 com-md-6">
-                    <span class="text-dark">
-                      <i class="fa fa-list-check"></i>
-                      جمع مبلغ موارد انتخابی:
-                    </span>
-                    <span class="text-primary">
-                      {{ $filters.formatNumber(this.sumSelected) }}
-                      {{ $filters.getActiveMoney().shortName }}
-                    </span>
-                  </div>
-                </div>
+            </v-col>
+            <v-col cols="12" sm="6">
+              <div class="d-flex align-center">
+                <v-icon class="me-2">mdi-format-list-checks</v-icon>
+                <span>جمع مبلغ موارد انتخابی:</span>
+                <span class="ms-2">
+                  {{ $filters.formatNumber(sumSelected) }}
+                  {{ $filters.getActiveMoney().shortName }}
+                </span>
               </div>
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    <v-dialog v-model="showColumnDialog" max-width="400px">
+      <v-card>
+        <v-toolbar color="toolbar" title="انتخاب ستون‌‌ها" density="compact">
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="text"
+            @click="showColumnDialog = false"
+            type="icon">
+            <v-icon>mdi-close</v-icon>
+            <v-tooltip activator="parent" location="bottom">بستن</v-tooltip>
+          </v-btn>
+        </v-toolbar>
+
+        <v-card-text class="pt-4">
+          <v-row dense>
+            <v-col cols="12" v-for="header in customizableHeaders" :key="header.key">
+              <v-checkbox
+                v-model="header.visible"
+                :label="header.title"
+                @update:model-value="updateColumnVisibility"
+                hide-details
+                density="comfortable"
+              />
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+  </v-container>
 </template>
 
-<script>
-import axios from "axios";
-import Swal from "sweetalert2";
-import { ref } from "vue";
-import HelpBtn from "../../component/helpBtn.vue";
-export default {
-  name: "list",
-  components: { HelpBtn },
-  data: () => {
-    return {
-      sumSelected: 0,
-      sumTotal: 0,
-      itemsSelected: [],
-      searchValue: '',
-      loading: ref(true),
-      items: [],
-      headers: [
-        { text: "عملیات", value: "operation" },
-        { text: "کد", value: "code", sortable: true },
-        { text: "اشخاص", value: "persons", sortable: true },
-        { text: "تاریخ", value: "date", sortable: true },
-        { text: "شرح", value: "des" },
-        { text: "مبلغ", value: "amount", sortable: true },
-      ]
-    }
-  },
-  methods: {
-    loadData() {
-      axios.post('/api/person/send/list/search')
-        .then((response) => {
-          this.items = response.data;
-          this.items.forEach((item) => {
-            item.amount = this.$filters.formatNumber(item.amount);
-            this.sumTotal += parseInt(item.amount.replaceAll(",", ""));
-          })
-          this.loading = false;
-        })
-    },
-    deleteItem(code) {
-      Swal.fire({
-        text: 'آیا برای این سند مطمئن هستید؟',
-        showCancelButton: true,
-        confirmButtonText: 'بله',
-        cancelButtonText: `خیر`,
-      }).then((result) => {
-        /* Read more about isConfirmed, isDenied below */
-        if (result.isConfirmed) {
-          axios.post('/api/accounting/remove', {
-            'code': code
-          }
-          ).then((response) => {
-            if (response.data.result == 1) {
-              let index = 0;
-              for (let z = 0; z < this.items.length; z++) {
-                index++;
-                if (this.items[z]['code'] == code) {
-                  this.items.splice(index - 1, 1);
-                }
-              }
-              Swal.fire({
-                text: 'سند با موفقیت حذف شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              });
-            }
-          })
-        }
-      })
-    },
-    excellOutput(AllItems = true) {
-      if (AllItems) {
-        axios({
-          method: 'get',
-          url: '/api/person/send/list/excel',
-          responseType: 'arraybuffer',
-        }).then((response) => {
-          var FILE = window.URL.createObjectURL(new Blob([response.data]));
-          var fileURL = window.URL.createObjectURL(new Blob([response.data]));
-          var fileLink = document.createElement('a');
+<script setup>
+import { ref, onMounted, watch, computed, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import { getApiUrl } from '@/hesabixConfig';
 
-          fileLink.href = fileURL;
-          fileLink.setAttribute('download', 'persons-send-list.xlsx');
-          document.body.appendChild(fileLink);
-          fileLink.click();
-        })
-      }
-      else {
-        if (this.itemsSelected.length === 0) {
-          Swal.fire({
-            text: 'هیچ آیتمی انتخاب نشده است.',
-            icon: 'info',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else {
-          axios({
-            method: 'post',
-            url: '/api/person/send/list/excel',
-            responseType: 'arraybuffer',
-            data: { items: this.itemsSelected }
-          }).then((response) => {
-            var FILE = window.URL.createObjectURL(new Blob([response.data]));
-            var fileURL = window.URL.createObjectURL(new Blob([response.data]));
-            var fileLink = document.createElement('a');
+const router = useRouter();
+const loading = ref(false);
+const searchValue = ref('');
+const page = ref(1);
+const itemsPerPage = ref(10);
+const totalItems = ref(0);
+const items = ref([]);
+const dateFilter = ref('all');
+const showColumnDialog = ref(false);
+const selectAll = ref(false);
+const selectedItems = ref([]);
+const sumTotal = ref(0);
+const sumSelected = ref(0);
 
-            fileLink.href = fileURL;
-            fileLink.setAttribute('download', 'persons-send-list.xlsx');
-            document.body.appendChild(fileLink);
-            fileLink.click();
-          })
-        }
+const allHeaders = reactive([
+  { title: '', key: 'select', sortable: false, visible: true, customizable: false },
+  { title: 'عملیات', key: 'operation', sortable: false, visible: true },
+  { title: 'کد', key: 'code', visible: true },
+  { title: 'اشخاص', key: 'persons', sortable: true, visible: true },
+  { title: 'تاریخ', key: 'date', visible: true },
+  { title: 'شرح', key: 'des', visible: true },
+  { title: 'مبلغ', key: 'amount', visible: true },
+]);
+
+const customizableHeaders = computed(() => 
+  allHeaders.filter(h => h.customizable !== false && h.key !== 'operation')
+);
+const visibleHeaders = computed(() => 
+  allHeaders.filter(h => h.customizable === false || h.visible)
+);
+
+const dateFilterOptions = [
+  { title: 'همه', value: 'all' },
+  { title: 'امروز', value: 'today' },
+  { title: 'این هفته', value: 'thisWeek' },
+  { title: 'این ماه', value: 'thisMonth' },
+];
+
+const loadData = async (options = null) => {
+  if (loading.value) return;
+  loading.value = true;
+
+  try {
+    const params = {
+      page: options?.page || page.value,
+      itemsPerPage: options?.itemsPerPage || itemsPerPage.value,
+      search: searchValue.value,
+      dateFilter: dateFilter.value,
+    };
+
+    const response = await axios.post('/api/person/send/list/search', params);
+
+    if (response.data) {
+      if (Array.isArray(response.data)) {
+        items.value = response.data;
+        totalItems.value = response.data.length;
+      } else if (response.data.items && Array.isArray(response.data.items)) {
+        items.value = response.data.items;
+        totalItems.value = response.data.total || response.data.items.length;
       }
-    },
-    print(AllItems = true) {
-      if (AllItems) {
-        axios.post('/api/person/send/list/print').then((response) => {
-          this.printID = response.data.id;
-          window.open(this.$API_URL + '/front/print/' + this.printID, '_blank', 'noreferrer');
-        })
-      }
-      else {
-        if (this.itemsSelected.length === 0) {
-          Swal.fire({
-            text: 'هیچ آیتمی انتخاب نشده است.',
-            icon: 'info',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else {
-          axios.post('/api/person/send/list/print', { items: this.itemsSelected }).then((response) => {
-            this.printID = response.data.id;
-            window.open(this.$API_URL + '/front/print/' + this.printID, '_blank', 'noreferrer');
-          })
-        }
-      }
+
+      items.value = items.value.map(item => ({
+        ...item,
+        code: parseInt(item.code),
+        amount: parseFloat(item.amount)
+      }));
+
+      sumTotal.value = items.value.reduce((acc, item) => acc + parseFloat(item.amount), 0);
     }
-  },
-  beforeMount() {
-    this.loadData();
-  },
-  watch: {
-    itemsSelected: {
-      handler: function (val, oldVal) {
-        this.sumSelected = 0;
-        this.itemsSelected.forEach((item) => {
-          this.sumSelected += parseInt(item.amount.replaceAll(",", ""))
+  } catch (error) {
+    console.error('Error loading data:', error);
+    items.value = [];
+    totalItems.value = 0;
+  } finally {
+    loading.value = false;
+  }
+};
+
+const deleteItem = async (code) => {
+  const result = await Swal.fire({
+    text: 'آیا برای این سند مطمئن هستید؟',
+    showCancelButton: true,
+    confirmButtonText: 'بله',
+    cancelButtonText: 'خیر',
+  });
+  if (result.isConfirmed) {
+    try {
+      const response = await axios.post('/api/accounting/remove', { code });
+      if (response.data.result === 1) {
+        items.value = items.value.filter(item => item.code !== code);
+        Swal.fire({
+          text: 'سند با موفقیت حذف شد.',
+          icon: 'success',
+          confirmButtonText: 'قبول',
         });
-      },
-      deep: true
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error);
     }
   }
-}
+};
+
+const isSelected = (code) => {
+  return selectedItems.value.some(item => item.code === code);
+};
+
+const toggleSelect = (item) => {
+  const index = selectedItems.value.findIndex(selected => selected.code === item.code);
+  if (index === -1) {
+    selectedItems.value.push(item);
+  } else {
+    selectedItems.value.splice(index, 1);
+  }
+  selectAll.value = items.value.length > 0 && selectedItems.value.length === items.value.length;
+  updateSelectedSum();
+};
+
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedItems.value = [...items.value];
+  } else {
+    selectedItems.value = [];
+  }
+  updateSelectedSum();
+};
+
+const updateSelectedSum = () => {
+  if (selectedItems.value.length > 0) {
+    sumSelected.value = selectedItems.value.reduce((acc, item) => 
+      acc + parseFloat(item.amount), 0);
+  } else {
+    sumSelected.value = 0;
+  }
+};
+
+const print = async (allItems = true) => {
+  if (!allItems && selectedItems.value.length === 0) {
+    Swal.fire({
+      text: 'هیچ آیتمی انتخاب نشده است.',
+      icon: 'info',
+      confirmButtonText: 'قبول'
+    });
+    return;
+  }
+
+  try {
+    let response;
+    if (allItems) {
+      response = await axios.post('/api/person/send/list/print');
+    } else {
+      response = await axios.post('/api/person/send/list/print', { 
+        items: selectedItems.value
+      });
+    }
+    
+    const printID = response.data.id;
+    window.open(`${getApiUrl()}/front/print/${printID}`, '_blank', 'noreferrer');
+  } catch (error) {
+    console.error('Error printing:', error);
+    Swal.fire({
+      text: 'خطا در تولید PDF',
+      icon: 'error',
+      confirmButtonText: 'قبول'
+    });
+  }
+};
+
+const excellOutput = async (allItems = true) => {
+  if (!allItems && selectedItems.value.length === 0) {
+    Swal.fire({
+      text: 'هیچ آیتمی انتخاب نشده است.',
+      icon: 'info',
+      confirmButtonText: 'قبول'
+    });
+    return;
+  }
+
+  try {
+    let response;
+    if (allItems) {
+      response = await axios({
+        method: 'post',
+        url: '/api/person/send/list/excel',
+        responseType: 'arraybuffer'
+      });
+    } else {
+      response = await axios({
+        method: 'post',
+        url: '/api/person/send/list/excel',
+        responseType: 'arraybuffer',
+        data: { items: selectedItems.value }
+      });
+    }
+
+    const blob = new Blob([response.data]);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'persons-send-list.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('Error generating excel:', error);
+    Swal.fire({
+      text: 'خطا در تولید فایل Excel',
+      icon: 'error',
+      confirmButtonText: 'قبول'
+    });
+  }
+};
+
+const updateColumnVisibility = () => {
+  localStorage.setItem('sendTableColumns', JSON.stringify(allHeaders));
+};
+
+const loadColumnSettings = () => {
+  const savedColumns = localStorage.getItem('sendTableColumns');
+  if (savedColumns) {
+    const parsedColumns = JSON.parse(savedColumns);
+    parsedColumns.forEach(savedHeader => {
+      const header = allHeaders.find(h => h.key === savedHeader.key);
+      if (header) {
+        header.visible = savedHeader.visible;
+      }
+    });
+  }
+};
+
+watch([searchValue, page, itemsPerPage, dateFilter], () => {
+  loadData();
+});
+
+watch(page, () => {
+  selectedItems.value = [];
+  selectAll.value = false;
+});
+
+watch([page, itemsPerPage], () => {
+  loadData();
+}, { deep: true });
+
+onMounted(() => {
+  loadColumnSettings();
+  loadData();
+});
 </script>
 
-<style scoped></style>
+<style scoped>
+.custom-header {
+  background-color: #f5f5f5;
+}
+
+.v-data-table {
+  direction: rtl;
+}
+
+.text-left {
+  text-align: left !important;
+}
+
+.v-data-table :deep(th) {
+  font-weight: bold !important;
+  white-space: nowrap;
+}
+
+.v-data-table :deep(td) {
+  padding: 8px 16px !important;
+}
+
+.v-dialog .v-toolbar-title {
+  font-size: 1rem;
+}
+
+.v-dialog .v-card-text {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.v-btn .v-icon {
+  font-size: 20px;
+}
+</style>

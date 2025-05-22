@@ -315,7 +315,7 @@ export default {
       if (Math.floor(this.score) > this.bestScore) {
         this.bestScore = Math.floor(this.score);
         localStorage.setItem('bestScore', this.bestScore);
- lunch      }
+      }
     },
     resetGame() {
       this.gameOver();

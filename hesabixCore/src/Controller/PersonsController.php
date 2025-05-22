@@ -1280,119 +1280,267 @@ class PersonsController extends AbstractController
         $acc = $access->hasRole('getpay');
         if (!$acc)
             throw $this->createAccessDeniedException();
+        
         $params = [];
         if ($content = $request->getContent()) {
             $params = json_decode($content, true);
         }
-        if (!array_key_exists('items', $params)) {
-            $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
-                'bid' => $acc['bid'],
-                'type' => 'person_send',
-                'year' => $acc['year'],
-                'money' => $acc['money']
-            ]);
-        } else {
-            $items = [];
-            foreach ($params['items'] as $param) {
-                $prs = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
-                    'id' => $param['id'],
-                    'bid' => $acc['bid'],
-                    'type' => 'person_send',
-                    'year' => $acc['year'],
-                    'money' => $acc['money']
-                ]);
-                if ($prs)
-                    $items[] = $prs;
-            }
+
+        $queryBuilder = $entityManager->getRepository(HesabdariDoc::class)->createQueryBuilder('d')
+            ->where('d.bid = :bid')
+            ->andWhere('d.type = :type')
+            ->andWhere('d.year = :year')
+            ->andWhere('d.money = :money')
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('type', 'person_send')
+            ->setParameter('year', $acc['year'])
+            ->setParameter('money', $acc['money']);
+
+        // اگر آیتم‌های خاصی درخواست شده‌اند
+        if (array_key_exists('items', $params)) {
+            $ids = array_map(function($item) { return $item['id']; }, $params['items']);
+            $queryBuilder->andWhere('d.id IN (:ids)')
+                ->setParameter('ids', $ids);
         }
+
+        // دریافت تعداد کل رکوردها
+        $totalItems = $queryBuilder->select('COUNT(d.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // اگر درخواست با صفحه‌بندی است
+        if (array_key_exists('page', $params) && array_key_exists('limit', $params)) {
+            $page = $params['page'];
+            $limit = $params['limit'];
+            $offset = ($page - 1) * $limit;
+
+            $items = $queryBuilder->select('d')
+                ->setFirstResult($offset)
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult();
+        } else {
+            // دریافت همه آیتم‌ها بدون صفحه‌بندی
+            $items = $queryBuilder->select('d')
+                ->getQuery()
+                ->getResult();
+        }
+
+        // اضافه کردن اطلاعات اشخاص به هر آیتم
+        foreach ($items as $item) {
+            $personNames = [];
+            foreach ($item->getHesabdariRows() as $row) {
+                if ($row->getPerson()) {
+                    $personNames[] = $row->getPerson()->getNikename();
+                }
+            }
+            $item->personNames = implode('، ', array_unique($personNames));
+        }
+
         $pid = $provider->createPrint(
             $acc['bid'],
             $this->getUser(),
-            $this->renderView('pdf/persons_receive.html.twig', [
+            $this->renderView('pdf/persons_send.html.twig', [
                 'page_title' => 'لیست پرداخت‌ها',
                 'bid' => $acc['bid'],
-                'items' => $items
+                'items' => $items,
+                'totalItems' => $totalItems,
+                'currentPage' => $params['page'] ?? 1,
+                'totalPages' => array_key_exists('limit', $params) ? ceil($totalItems / $params['limit']) : 1
             ])
         );
-        return $this->json(['id' => $pid]);
+
+        return $this->json([
+            'id' => $pid,
+            'totalItems' => $totalItems,
+            'currentPage' => $params['page'] ?? 1,
+            'totalPages' => array_key_exists('limit', $params) ? ceil($totalItems / $params['limit']) : 1
+        ]);
     }
 
-    #[Route('/api/person/send/list/search', name: 'app_persons_send_list_search')]
-    public function app_persons_send_list_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
+    #[Route('/api/person/send/list/search', name: 'app_persons_send_list_search', methods: ['POST'])]
+    public function app_persons_send_list_search(
+        Request $request,
+        Access $access,
+        EntityManagerInterface $entityManager,
+        Jdate $jdate
+    ): JsonResponse {
         $acc = $access->hasRole('getpay');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
         }
 
-        $items = $entityManager->getRepository(HesabdariDoc::class)->findBy(
-            [
-                'bid' => $acc['bid'],
-                'type' => 'person_send',
-                'year' => $acc['year'],
-                'money' => $acc['money']
-            ],
-            ['id' => 'DESC']
-        );
-        $res = [];
-        foreach ($items as $item) {
-            $temp = [
-                'id' => $item->getId(),
-                'date' => $item->getDate(),
-                'code' => $item->getCode(),
-                'des' => $item->getDes(),
-                'amount' => $item->getAmount()
-            ];
-            $persons = [];
-            foreach ($item->getHesabdariRows() as $row) {
-                if ($row->getPerson()) {
-                    $persons[] = Explore::ExplorePerson($row->getPerson());
+        // دریافت پارامترها
+        $params = json_decode($request->getContent(), true) ?? [];
+        $page = (int) ($params['page'] ?? 1);
+        $itemsPerPage = (int) ($params['itemsPerPage'] ?? 10);
+        $search = $params['search'] ?? '';
+        $dateFilter = $params['dateFilter'] ?? 'all';
+
+        // کوئری پایه برای اسناد
+        $queryBuilder = $entityManager->getRepository(HesabdariDoc::class)
+            ->createQueryBuilder('d')
+            ->select('DISTINCT d.id, d.date, d.code, d.des, d.amount')
+            ->leftJoin('d.hesabdariRows', 'hr')
+            ->leftJoin('hr.person', 'p')
+            ->where('d.bid = :bid')
+            ->andWhere('d.type = :type')
+            ->andWhere('d.year = :year')
+            ->andWhere('d.money = :money')
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('type', 'person_send')
+            ->setParameter('year', $acc['year'])
+            ->setParameter('money', $acc['money'])
+            ->orderBy('d.id', 'DESC');
+
+        // جست‌وجو
+        if (!empty($search)) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->orX(
+                    'd.code LIKE :search',
+                    'd.des LIKE :search',
+                    'p.nikename LIKE :search'
+                )
+            )->setParameter('search', "%$search%");
+        }
+
+        // فیلتر تاریخ
+        $today = $jdate->GetTodayDate();
+        switch ($dateFilter) {
+            case 'today':
+                $queryBuilder->andWhere('d.date = :today')
+                    ->setParameter('today', $today);
+                break;
+            case 'thisWeek':
+                $dayOfWeek = (int) $jdate->jdate('w', time());
+                $startOfWeek = $jdate->shamsiDate(0, 0, -$dayOfWeek);
+                $endOfWeek = $jdate->shamsiDate(0, 0, 6 - $dayOfWeek);
+                $queryBuilder->andWhere('d.date BETWEEN :start AND :end')
+                    ->setParameter('start', $startOfWeek)
+                    ->setParameter('end', $endOfWeek);
+                break;
+            case 'thisMonth':
+                $currentYear = (int) $jdate->jdate('Y', time());
+                $currentMonth = (int) $jdate->jdate('n', time());
+                $daysInMonth = (int) $jdate->jdate('t', time());
+                $startOfMonth = sprintf('%d/%02d/01', $currentYear, $currentMonth);
+                $endOfMonth = sprintf('%d/%02d/%02d', $currentYear, $currentMonth, $daysInMonth);
+                $queryBuilder->andWhere('d.date BETWEEN :start AND :end')
+                    ->setParameter('start', $startOfMonth)
+                    ->setParameter('end', $endOfMonth);
+                break;
+            case 'all':
+            default:
+                break;
+        }
+
+        // محاسبه تعداد کل
+        $totalQuery = (clone $queryBuilder)
+            ->select('COUNT(DISTINCT d.id) as total')
+            ->getQuery()
+            ->getSingleResult();
+        $total = (int) $totalQuery['total'];
+
+        // گرفتن اسناد با صفحه‌بندی
+        $docs = $queryBuilder
+            ->setFirstResult(($page - 1) * $itemsPerPage)
+            ->setMaxResults($itemsPerPage)
+            ->getQuery()
+            ->getArrayResult();
+    
+        // گرفتن اشخاص مرتبط
+        $docIds = array_column($docs, 'id');
+        $persons = [];
+        if (!empty($docIds)) {
+            $personQuery = $entityManager->createQueryBuilder()
+                ->select('IDENTITY(hr.doc) as doc_id, p.code as person_code, p.nikename as person_nikename')
+                ->from('App\Entity\HesabdariRow', 'hr')
+                ->leftJoin('hr.person', 'p')
+                ->where('hr.doc IN (:docIds)')
+                ->setParameter('docIds', $docIds)
+                ->getQuery()
+                ->getArrayResult();
+    
+            foreach ($personQuery as $row) {
+                if (!empty($row['person_code'])) {
+                    $persons[$row['doc_id']][] = [
+                        'code' => $row['person_code'],
+                        'nikename' => $row['person_nikename'],
+                    ];
                 }
             }
-            $temp['persons'] = $persons;
-            $res[] = $temp;
+        }
+    
+        // ساختاردهی خروجی
+        $items = [];
+        foreach ($docs as $doc) {
+            $items[] = [
+                'id' => $doc['id'],
+                'date' => $doc['date'],
+                'code' => $doc['code'],
+                'des' => $doc['des'],
+                'amount' => $doc['amount'],
+                'persons' => $persons[$doc['id']] ?? [],
+            ];
         }
 
-        return $this->json($res);
+        return $this->json([
+            'items' => $items,
+            'total' => $total,
+        ]);
     }
 
     /**
      * @throws Exception
      */
-    #[Route('/api/person/send/list/excel', name: 'app_persons_send_list_excel')]
-    public function app_persons_send_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse|JsonResponse|StreamedResponse
-    {
+    #[Route('/api/person/send/list/excel', name: 'app_persons_send_list_excel', methods: ['POST'])]
+    public function app_persons_send_list_excel(
+        Provider $provider,
+        Request $request,
+        Access $access,
+        Log $log,
+        EntityManagerInterface $entityManager
+    ): BinaryFileResponse {
         $acc = $access->hasRole('getpay');
-        if (!$acc)
+        if (!$acc) {
             throw $this->createAccessDeniedException();
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
         }
-        if (!array_key_exists('items', $params)) {
+
+        $params = json_decode($request->getContent(), true) ?? [];
+        if (!array_key_exists('items', $params) || empty($params['items'])) {
             $items = $entityManager->getRepository(HesabdariDoc::class)->findBy([
                 'bid' => $acc['bid'],
                 'type' => 'person_send',
                 'year' => $acc['year'],
-                'money' => $acc['money']
+                'money' => $acc['money'],
             ]);
         } else {
             $items = [];
             foreach ($params['items'] as $param) {
-                $prs = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
+                if (!is_array($param) || !isset($param['id'])) {
+                    throw new \InvalidArgumentException('Invalid item format in request');
+                }
+                $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                     'id' => $param['id'],
                     'bid' => $acc['bid'],
                     'type' => 'person_send',
                     'year' => $acc['year'],
-                    'money' => $acc['money']
+                    'money' => $acc['money'],
                 ]);
-                if ($prs)
-                    $items[] = $prs;
+                if ($doc) {
+                    // اضافه کردن اطلاعات اشخاص
+                    $personNames = [];
+                    foreach ($doc->getHesabdariRows() as $row) {
+                        if ($row->getPerson()) {
+                            $personNames[] = $row->getPerson()->getNikename();
+                        }
+                    }
+                    $doc->personNames = implode('، ', array_unique($personNames));
+                    $items[] = $doc;
+                }
             }
         }
+
         return new BinaryFileResponse($provider->createExcell($items, ['type', 'dateSubmit']));
     }
 
