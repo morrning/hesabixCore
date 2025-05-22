@@ -616,7 +616,9 @@ export default {
           type: 'sell_receive',
           update: null,
           rows,
-          related: this.invoice.code
+          related: this.invoice.code,
+          ghestaId: this.$route.params.id,
+          ghestaNum: this.selectedItem.num,
         })
 
         if (response.data.result === 1) {

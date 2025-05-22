@@ -38,6 +38,14 @@
       <v-icon start>mdi-file-import</v-icon>
       حواله‌های ورود
     </v-tab>
+    <v-tab value="transfer">
+      <v-icon start>mdi-swap-horizontal</v-icon>
+      حواله‌های انتقال
+    </v-tab>
+    <v-tab value="waste">
+      <v-icon start>mdi-delete-empty</v-icon>
+      ضایعات
+    </v-tab>
   </v-tabs>
 
   <v-window v-model="activeTab">
@@ -105,6 +113,88 @@
                       <v-list-item-title>مشاهده</v-list-item-title>
                     </v-list-item>
                     <v-list-item @click="deleteTicket('input', item.code)">
+                      <template v-slot:prepend>
+                        <v-icon color="error">mdi-delete</v-icon>
+                      </template>
+                      <v-list-item-title>حذف</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </td>
+              <td v-if="isColumnVisible('code')" class="text-center">{{ formatNumber(item.code) }}</td>
+              <td v-if="isColumnVisible('date')" class="text-center">{{ item.date }}</td>
+              <td v-if="isColumnVisible('doc.code')" class="text-center">{{ item.doc.code }}</td>
+              <td v-if="isColumnVisible('person.nikename')" class="text-center">{{ item.person.nikename }}</td>
+              <td v-if="isColumnVisible('des')" class="text-center">{{ item.des }}</td>
+            </tr>
+          </template>
+        </v-data-table>
+    </v-window-item>
+
+    <!-- تب حواله‌های انتقال -->
+    <v-window-item value="transfer">
+      <v-text-field v-model="transferSearchValue" prepend-inner-icon="mdi-magnify" label="جستجو" variant="outlined"
+          density="compact" hide-details class="mb-1"></v-text-field>
+
+        <v-data-table :headers="visibleHeaders" :items="transferItems" :search="transferSearchValue" :loading="loading" hover
+          density="compact"  class="elevation-1 text-center"
+          :header-props="{ class: 'custom-header' }">
+          <template v-slot:item="{ item }">
+            <tr>
+              <td v-if="isColumnVisible('operation')" class="text-center">
+                <v-menu>
+                  <template v-slot:activator="{ props }">
+                    <v-btn variant="text" size="small" color="error" icon="mdi-menu" v-bind="props" />
+                  </template>
+                  <v-list>
+                    <v-list-item :to="'/acc/storeroom/ticket/view/' + item.code">
+                      <template v-slot:prepend>
+                        <v-icon color="success">mdi-eye</v-icon>
+                      </template>
+                      <v-list-item-title>مشاهده</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="deleteTicket('transfer', item.code)">
+                      <template v-slot:prepend>
+                        <v-icon color="error">mdi-delete</v-icon>
+                      </template>
+                      <v-list-item-title>حذف</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </td>
+              <td v-if="isColumnVisible('code')" class="text-center">{{ formatNumber(item.code) }}</td>
+              <td v-if="isColumnVisible('date')" class="text-center">{{ item.date }}</td>
+              <td v-if="isColumnVisible('doc.code')" class="text-center">{{ item.doc.code }}</td>
+              <td v-if="isColumnVisible('person.nikename')" class="text-center">{{ item.person.nikename }}</td>
+              <td v-if="isColumnVisible('des')" class="text-center">{{ item.des }}</td>
+            </tr>
+          </template>
+        </v-data-table>
+    </v-window-item>
+
+    <!-- تب ضایعات -->
+    <v-window-item value="waste">
+      <v-text-field v-model="wasteSearchValue" prepend-inner-icon="mdi-magnify" label="جستجو" variant="outlined"
+          density="compact" hide-details class="mb-1"></v-text-field>
+
+        <v-data-table :headers="visibleHeaders" :items="wasteItems" :search="wasteSearchValue" :loading="loading" hover
+          density="compact"  class="elevation-1 text-center"
+          :header-props="{ class: 'custom-header' }">
+          <template v-slot:item="{ item }">
+            <tr>
+              <td v-if="isColumnVisible('operation')" class="text-center">
+                <v-menu>
+                  <template v-slot:activator="{ props }">
+                    <v-btn variant="text" size="small" color="error" icon="mdi-menu" v-bind="props" />
+                  </template>
+                  <v-list>
+                    <v-list-item :to="'/acc/storeroom/ticket/view/' + item.code">
+                      <template v-slot:prepend>
+                        <v-icon color="success">mdi-eye</v-icon>
+                      </template>
+                      <v-list-item-title>مشاهده</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="deleteTicket('waste', item.code)">
                       <template v-slot:prepend>
                         <v-icon color="error">mdi-delete</v-icon>
                       </template>
@@ -197,15 +287,19 @@ interface Header {
 const loading = ref(false);
 const inputItems = ref<Ticket[]>([]);
 const outputItems = ref<Ticket[]>([]);
+const transferItems = ref<Ticket[]>([]);
+const wasteItems = ref<Ticket[]>([]);
 const inputSearchValue = ref('');
 const outputSearchValue = ref('');
+const transferSearchValue = ref('');
+const wasteSearchValue = ref('');
 const activeTab = ref('output');
 const showColumnDialog = ref(false);
 
 // دیالوگ‌ها
 const deleteDialog = ref({
   show: false,
-  type: null as 'input' | 'output' | null,
+  type: null as 'input' | 'output' | 'transfer' | 'waste' | null,
   code: null as string | null
 });
 
@@ -267,13 +361,17 @@ const formatNumber = (value: string | number) => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const [inputResponse, outputResponse] = await Promise.all([
+    const [inputResponse, outputResponse, transferResponse, wasteResponse] = await Promise.all([
       axios.post('/api/storeroom/tickets/list/input'),
-      axios.post('/api/storeroom/tickets/list/output')
+      axios.post('/api/storeroom/tickets/list/output'),
+      axios.post('/api/storeroom/tickets/list/transfer'),
+      axios.post('/api/storeroom/tickets/list/waste')
     ]);
     inputItems.value = inputResponse.data;
     outputItems.value = outputResponse.data;
-  } catch (error) {
+    transferItems.value = transferResponse.data;
+    wasteItems.value = wasteResponse.data;
+  } catch (error: any) {
     console.error('Error loading data:', error);
     snackbar.value = {
       show: true,
@@ -286,7 +384,7 @@ const loadData = async () => {
 };
 
 // حذف حواله
-const deleteTicket = (type: 'input' | 'output', code: string) => {
+const deleteTicket = (type: 'input' | 'output' | 'transfer' | 'waste', code: string) => {
   deleteDialog.value = {
     show: true,
     type,
@@ -307,8 +405,12 @@ const confirmDelete = async () => {
 
     if (type === 'input') {
       inputItems.value = inputItems.value.filter(item => item.code !== code);
-    } else {
+    } else if (type === 'output') {
       outputItems.value = outputItems.value.filter(item => item.code !== code);
+    } else if (type === 'transfer') {
+      transferItems.value = transferItems.value.filter(item => item.code !== code);
+    } else {
+      wasteItems.value = wasteItems.value.filter(item => item.code !== code);
     }
 
     snackbar.value = {
@@ -316,7 +418,7 @@ const confirmDelete = async () => {
       message: 'حواله انبار حذف شد.',
       color: 'success'
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting ticket:', error);
     snackbar.value = {
       show: true,

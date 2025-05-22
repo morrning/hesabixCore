@@ -14,6 +14,8 @@ use App\Entity\Log as EntityLog;
 use App\Entity\Money;
 use App\Entity\PayInfoTemp;
 use App\Entity\Person;
+use App\Entity\PlugGhestaDoc;
+use App\Entity\PlugGhestaItem;
 use App\Entity\PlugNoghreOrder;
 use App\Entity\Salary;
 use App\Entity\StoreroomTicket;
@@ -471,6 +473,21 @@ class HesabdariController extends AbstractController
         }
         $doc->setAmount($amount);
         $entityManager->persist($doc);
+
+        //check ghesta
+        if (array_key_exists('ghestaId', $params)) {
+            $ghesta = $entityManager->getRepository(PlugGhestaDoc::class)->find($params['ghestaId']);
+            if ($ghesta) {
+                $ghestaItem = $entityManager->getRepository(PlugGhestaItem::class)->findOneBy([
+                    'doc' => $ghesta,
+                    'num' => $params['ghestaNum']
+                ]);
+                if ($ghestaItem) {
+                    $ghestaItem->setHesabdariDoc($doc);
+                    $entityManager->persist($ghestaItem);
+                }
+            }
+        }
         $entityManager->flush();
         $log->insert(
             'حسابداری',
@@ -582,6 +599,13 @@ class HesabdariController extends AbstractController
         $code = $doc->getCode();
         foreach ($doc->getNotes() as $note) {
             $entityManager->remove($note);
+        }
+
+        //check ghesta items
+        $ghestaItems = $entityManager->getRepository(PlugGhestaItem::class)->findBy(['hesabdariDoc' => $doc]);
+        foreach ($ghestaItems as $ghestaItem) {
+            $ghestaItem->setHesabdariDoc(null);
+            $entityManager->persist($ghestaItem);
         }
         $entityManager->remove($doc);
         $entityManager->flush();
@@ -819,13 +843,13 @@ class HesabdariController extends AbstractController
                 if ($this->hasChild($entityManager, $node)) {
                     $temp[$node->getCode()] = [
                         'text' => $node->getName(),
-                        'id' => $node->getCode(),
+                        'id' => $node->getCode() ?? $node->getId(),
                         'children' => $this->getFilteredChildsLabel($entityManager, $node, $business),
                     ];
                 } else {
                     $temp[$node->getCode()] = [
                         'text' => $node->getName(),
-                        'id' => $node->getCode(),
+                        'id' => $node->getCode() ?? $node->getId(),
                     ];
                 }
                 $temp[$node->getCode()]['is_public'] = $nodeBid === null;
