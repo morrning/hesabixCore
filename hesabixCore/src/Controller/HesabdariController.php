@@ -819,11 +819,13 @@ class HesabdariController extends AbstractController
                 if ($this->hasChild($entityManager, $node)) {
                     $temp[$node->getCode()] = [
                         'text' => $node->getName(),
+                        'id' => $node->getCode(),
                         'children' => $this->getFilteredChildsLabel($entityManager, $node, $business),
                     ];
                 } else {
                     $temp[$node->getCode()] = [
                         'text' => $node->getName(),
+                        'id' => $node->getCode(),
                     ];
                 }
                 $temp[$node->getCode()]['is_public'] = $nodeBid === null;

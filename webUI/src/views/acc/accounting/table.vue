@@ -13,6 +13,12 @@
     <loading color="blue" loader="dots" v-model:active="isLoading" :is-full-page="false" class="text-center" />
 
     <Tree :nodes="tree" :config="config" class="tree-view-style">
+      <template #label="{ node }">
+        <span class="node-label">
+          {{ node.text }}
+          <span class="account-code">({{ node.id }})</span>
+        </span>
+      </template>
       <template #after-input="{ node }">
         <div class="node-actions" v-if="isAccproActive">
           <v-icon small color="success" class="mx-1" @click.stop="openAddDialog(node)">
@@ -195,7 +201,19 @@ export default {
     const loadData = async () => {
       try {
         const response = await axios.post("/api/accounting/table/get");
-        tree.value = response.data;
+        const data = response.data;
+        
+        // تبدیل داده‌ها به فرمت مناسب برای درخت
+        const treeData = {};
+        Object.keys(data).forEach(key => {
+          const node = data[key];
+          treeData[key] = {
+            ...node,
+            text: `(${node.id}) ${node.text}`
+          };
+        });
+        
+        tree.value = treeData;
         config.value.roots = tree.value["1"]?.children || [];
         if (!tree.value["1"]) console.warn("ردیف حساب ریشه '1' پیدا نشد!");
       } catch (error) {
@@ -362,5 +380,17 @@ export default {
 
 :deep(.tree-node:hover) .node-actions {
   opacity: 1;
+}
+
+.node-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-code {
+  color: #666;
+  font-size: 0.9em;
+  font-family: monospace;
 }
 </style>
