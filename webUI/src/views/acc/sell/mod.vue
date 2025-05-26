@@ -67,7 +67,7 @@
                           <Hcommoditysearch v-model="item.name" density="compact" hide-details class="my-0" style="font-size: 0.8rem;" return-object @update:modelValue="handleCommodityChange(item)"></Hcommoditysearch>
                         </td>
                         <td class="text-center px-2">
-                          <Hnumberinput v-model="item.count" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;"></Hnumberinput>
+                          <Hnumberinput v-model="item.count" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;" :allow-decimal="true"></Hnumberinput>
                         </td>
                         <td class="text-center px-2">
                           <div class="d-flex align-center justify-center">
@@ -145,7 +145,7 @@
                   </div>
                   <div class="d-flex justify-space-between mb-2">
                     <div class="flex-grow-1 mr-2">
-                      <Hnumberinput v-model="item.count" density="compact" label="تعداد" hide-details class="my-0" style="font-size: 0.8rem; margin: 0; padding: 0;" @update:modelValue="recalculateTotals"></Hnumberinput>
+                      <Hnumberinput v-model="item.count" density="compact" label="تعداد" hide-details class="my-0" style="font-size: 0.8rem; margin: 0; padding: 0;" @update:modelValue="recalculateTotals" :allow-decimal="true"></Hnumberinput>
                     </div>
                     <div class="flex-grow-1">
                       <div class="d-flex align-center">
@@ -906,21 +906,29 @@ export default {
         this.totalInvoice = Number(data.totalInvoice);
         this.finalTotal = Number(data.finalTotal);
 
-        this.items = data.items.map(item => ({
-          name: {
-            id: item.name.id,
-            name: item.name.name,
-            code: item.name.code
-          },
-          count: Number(item.count),
-          price: Number(item.price),
-          discountPercent: Number(item.discountPercent),
-          discountAmount: Number(item.discountAmount),
-          total: Number(item.total),
-          description: item.description,
-          showPercentDiscount: item.showPercentDiscount,
-          tax: Number(item.tax)
-        }));
+        // تبدیل قیمت‌ها به قیمت خالص (بدون مالیات)
+        this.items = data.items.map(item => {
+          const basePrice = Number(item.price);
+          const tax = Number(item.tax);
+          const netPrice = Math.round(basePrice - tax);
+
+          return {
+            name: {
+              id: item.name.id,
+              name: item.name.name,
+              code: item.name.code,
+              priceSell: netPrice // قیمت فروش بدون مالیات
+            },
+            count: Number(item.count),
+            price: netPrice, // قیمت واحد بدون مالیات
+            discountPercent: Number(item.discountPercent),
+            discountAmount: Number(item.discountAmount),
+            total: netPrice, // جمع ردیف بدون مالیات
+            description: item.description,
+            showPercentDiscount: item.showPercentDiscount,
+            tax: tax
+          };
+        });
 
         // بارگذاری اسناد پرداخت
         this.paymentItems = data.payments.map(payment => ({
@@ -963,7 +971,12 @@ export default {
           shippingCost: this.shippingCost,
           showTotalPercentDiscount: this.showTotalPercentDiscount,
           items: this.items.map(item => ({
-            name: { id: item.name.id },
+            name: { 
+              id: item.name.id,
+              name: item.name.name,
+              code: item.name.code,
+              priceSell: item.price
+            },
             count: item.count,
             price: item.price,
             discountType: item.showPercentDiscount ? 'percent' : 'fixed',
@@ -1063,7 +1076,7 @@ export default {
       this.recalculateTotals();
     },
     handleCommodityChange(item) {
-      if (item.name && item.name.priceSell !== undefined) {
+      if (item.name && item.name.priceSell !== undefined && !item.price) {
         item.price = Number(item.name.priceSell);
         this.recalculateTotals();
       }
@@ -1075,13 +1088,15 @@ export default {
     recalculateTotals() {
       let total = 0;
       this.items.forEach(item => {
-        const basePrice = (item.count || 0) * (item.price || 0);
+        // محاسبه قیمت پایه (قیمت واحد * تعداد)
+        const basePrice = Math.round((item.count || 0) * (item.price || 0));
+        
+        // محاسبه تخفیف
         let totalDiscount = 0;
-
         if (item.showPercentDiscount) {
           totalDiscount = Math.round((basePrice * (item.discountPercent || 0)) / 100);
         } else {
-          totalDiscount = item.discountAmount || 0;
+          totalDiscount = Math.round(item.discountAmount || 0);
         }
 
         if (totalDiscount > basePrice) {
@@ -1090,26 +1105,28 @@ export default {
           this.showError = true;
         }
 
-        const itemTotal = basePrice - totalDiscount;
-        item.total = itemTotal;
-        total += itemTotal;
-      });
-      this.totalInvoice = total;
+        // محاسبه قیمت خالص (قیمت پایه - تخفیف)
+        const netPrice = Math.round(basePrice - totalDiscount);
+        item.total = netPrice;
+        total += netPrice;
 
-      // محاسبه مالیات برای هر آیتم
-      this.items.forEach(item => {
-        item.tax = Math.round((item.total * this.taxPercent) / 100);
+        // محاسبه مالیات برای هر آیتم (بر اساس قیمت خالص)
+        item.tax = Math.round((netPrice * this.taxPercent) / 100);
       });
+
+      // جمع کل فاکتور (بدون مالیات)
+      this.totalInvoice = Math.round(total);
+      this.totalWithoutTax = Math.round(total);
 
       // محاسبه کل مالیات
-      this.taxAmount = this.items.reduce((sum, item) => sum + (item.tax || 0), 0);
-      this.totalWithoutTax = total;
+      this.taxAmount = Math.round(this.items.reduce((sum, item) => sum + (item.tax || 0), 0));
 
+      // محاسبه تخفیف کلی
       let calculatedTotalDiscount = 0;
       if (this.showTotalPercentDiscount) {
         calculatedTotalDiscount = Math.round((total * this.totalDiscountPercent) / 100);
       } else {
-        calculatedTotalDiscount = this.totalDiscount;
+        calculatedTotalDiscount = Math.round(this.totalDiscount);
       }
 
       if (calculatedTotalDiscount > total) {
@@ -1118,7 +1135,9 @@ export default {
         this.showDiscountError = true;
       }
 
-      this.finalTotal = total + this.taxAmount - calculatedTotalDiscount + this.shippingCost;
+      // محاسبه جمع کل نهایی
+      // جمع کل + مالیات - تخفیف کلی + هزینه حمل
+      this.finalTotal = Math.round(total + this.taxAmount - calculatedTotalDiscount + this.shippingCost);
       this.totalAmount = this.finalTotal;
       this.calculatePayments();
     },
@@ -1341,20 +1360,39 @@ export default {
   --v-field-border-opacity: 0.12;
 }
 
-:deep(.v-overlay__content) {
-  z-index: 9999 !important;
+/* تنظیم عرض ستون‌های جدول */
+:deep(.v-table th:nth-child(3)), /* ستون تعداد */
+:deep(.v-table td:nth-child(3)) {
+  width: 120px;
 }
 
-:deep(.v-menu__content) {
-  z-index: 9999 !important;
+:deep(.v-table th:nth-child(4)), /* ستون قیمت */
+:deep(.v-table td:nth-child(4)) {
+  width: 150px;
 }
 
-:deep(.v-dialog) {
-  z-index: 9999 !important;
+:deep(.v-table th:nth-child(5)), /* ستون تخفیف */
+:deep(.v-table td:nth-child(5)) {
+  width: 200px;
 }
 
-:deep(.v-date-picker) {
-  z-index: 9999 !important;
+/* تنظیم استایل باکس تخفیف */
+:deep(.v-table .v-field--variant-outlined.v-field--density-compact) {
+  max-width: 100%;
+}
+
+:deep(.v-table .v-checkbox) {
+  margin-right: 4px;
+}
+
+:deep(.v-table .v-checkbox .v-selection-control) {
+  margin: 0;
+  padding: 0;
+}
+
+:deep(.v-table .v-checkbox .v-selection-control__wrapper) {
+  width: 24px;
+  height: 24px;
 }
 
 .settings-section-card {

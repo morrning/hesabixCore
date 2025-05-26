@@ -1,36 +1,40 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button" class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa-solid fa-chart-simple px-2"></i>
-        گزارش خرید و فروش های اشخاص
-      </h3>
-      <div class="block-options">
-        <div hidden class="dropdown">
-          <a class="btn btn-sm btn-danger ms-2 dropdown-toggle text-end" href="#" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-file-pdf"></i>
-          </a>
-          <ul class="dropdown-menu">
-            <li><a @click.prevent="print(false)" class="dropdown-item" href="#">انتخاب شده‌ها</a></li>
-            <li><a @click.prevent="print(true)" class="dropdown-item" href="#">همه موارد</a></li>
-          </ul>
-        </div>
-        <div class="dropdown">
-          <a class="btn btn-sm btn-success ms-2 dropdown-toggle text-end" href="#" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-file-excel"></i>
-          </a>
-          <ul class="dropdown-menu">
-            <li><a @click.prevent="excellOutput(false)" class="dropdown-item" href="#">انتخاب شده‌ها</a></li>
-            <li><a @click.prevent="excellOutput(true)" class="dropdown-item" href="#">همه موارد</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
+  <v-toolbar color="toolbar" :title="$t('drawer.buysellByPerson')">
+    <template v-slot:prepend>
+      <v-tooltip :text="$t('dialog.back')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+            icon="mdi-arrow-right" />
+        </template>
+      </v-tooltip>
+    </template>
+    <v-spacer />
+
+    <v-menu>
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" icon="" color="green">
+          <v-tooltip activator="parent" :text="$t('dialog.export_excel')" location="bottom" />
+          <v-icon icon="mdi-file-excel-box" />
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-subheader color="primary">{{ $t('dialog.export_excel') }}</v-list-subheader>
+        <v-list-item :disabled="!itemsSelected.length" class="text-dark" :title="$t('dialog.selected')"
+          @click="excellOutput(false)">
+          <template v-slot:prepend>
+            <v-icon color="green-darken-4" icon="mdi-check" />
+          </template>
+        </v-list-item>
+        <v-list-item class="text-dark" :title="$t('dialog.all')" @click="excellOutput(true)">
+          <template v-slot:prepend>
+            <v-icon color="indigo-darken-4" icon="mdi-expand-all" />
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+  </v-toolbar>
+
+  <div class="block block-content-full">
     <div class="block-content pt-1 pb-3">
       <div class="row">
         <div class="col-sm-12 col-md-12 m-0 p-0">

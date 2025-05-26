@@ -194,6 +194,7 @@ const fa_lang = {
     repservice_reqs: "درخواست‌ها",
     hrm: 'منابع انسانی',
     hrm_docs: 'سند حقوق',
+    buysellByPerson: "گزارش خرید و فروش های اشخاص",
   },
   time: {
     month: "{id} ماه",
@@ -524,7 +525,26 @@ const fa_lang = {
         description: "توضیحات الزامی است",
         person: "انتخاب شخص الزامی است"
       }
-    }
+    },
+    buysell_report: {
+      person: "شخص",
+      type: "نوع",
+      date_start: "تاریخ شروع",
+      date_end: "تاریخ پایان",
+      search: "جست و جو ...",
+      goods: "کالا",
+      services: "خدمات",
+      unit: "واحد شمارش",
+      count: "تعداد",
+      unit_price: "مبلغ فی",
+      total_price: "مبلغ کل",
+      cumulative: "تجمعی",
+      buy: "خرید",
+      sell: "فروش",
+      return_buy: "برگشت از خرید",
+      return_sell: "برگشت از فروش",
+      all_types: "همه موارد"
+    },
   },
   app: {
     loading: "در حال بارگذاری...",

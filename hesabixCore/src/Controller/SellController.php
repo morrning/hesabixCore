@@ -1219,14 +1219,16 @@ class SellController extends AbstractController
                     $itemDiscount = $row->getDiscount() ?? 0;
                     $itemDiscountType = $row->getDiscountType() ?? 'fixed';
                     $itemDiscountPercent = $row->getDiscountPercent() ?? 0;
+                    $itemTax = $row->getTax() ?? 0;
                     
                     // محاسبه تخفیف سطری
                     if ($itemDiscountType === 'percent') {
                         $itemDiscount = round(($basePrice * $itemDiscountPercent) / 100);
                     }
                     
-                    $itemTotal = $basePrice - $itemDiscount;
-                    $totalInvoice += $itemTotal;
+                    // محاسبه قیمت خالص (بدون مالیات)
+                    $netPrice = $basePrice - $itemDiscount;
+                    $totalInvoice += $netPrice;
                     
                     $items[] = [
                         'name' => [
@@ -1235,13 +1237,13 @@ class SellController extends AbstractController
                             'code' => $row->getCommodity()->getCode()
                         ],
                         'count' => $row->getCommdityCount(),
-                        'price' => $row->getCommdityCount() > 0 ? $basePrice / $row->getCommdityCount() : 0,
+                        'price' => $row->getCommdityCount() > 0 ? $netPrice / $row->getCommdityCount() : 0,
                         'discountPercent' => $itemDiscountPercent,
                         'discountAmount' => $itemDiscount,
-                        'total' => $itemTotal,
+                        'total' => $netPrice,
                         'description' => $row->getDes(),
                         'showPercentDiscount' => $itemDiscountType === 'percent',
-                        'tax' => $row->getTax() ?? 0
+                        'tax' => $itemTax
                     ];
                 }
             }

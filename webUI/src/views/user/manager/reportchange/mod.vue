@@ -2,12 +2,11 @@
 import { defineComponent } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import Loading from 'vue-loading-overlay';
-import 'vue-loading-overlay/dist/css/index.css';
+import CustomEditor from '@/components/Editor.vue';
 
 export default defineComponent({
   name: 'mod',
-  components: { Loading },
+  components: { CustomEditor },
   data: () => ({
     loading: true,
     id: '',
@@ -65,7 +64,7 @@ export default defineComponent({
     <v-spacer></v-spacer>
   </v-toolbar>
   <v-container class="pa-0 ma-0">
-    <v-card :loading="loading ? 'red' : null" :disabled="loading">
+    <v-card :loading="loading" :disabled="loading">
       <v-card-text class="pa-2">
         <v-row>
           <v-col cols="12" sm="12" md="6">
@@ -80,15 +79,10 @@ export default defineComponent({
           </v-col>
           <v-col cols="12" sm="12" md="12">
             <h3 class="mb-2">{{ $t('app.body') }}</h3>
-            <v-textarea
+            <CustomEditor
               v-model="body"
               :rules="[() => body.length > 0 || $t('validator.required')]"
-              auto-grow
-            
-              variant="outlined"
-              class="font-weight-regular"
-              style="font-family: 'Vazirmatn FD', sans-serif;"
-            ></v-textarea>
+            />
           </v-col>
           <v-col cols="12" sm="12" md="12">
             <v-btn

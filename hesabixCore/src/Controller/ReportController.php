@@ -186,9 +186,38 @@ class ReportController extends AbstractController
             }
         }
         $labels = [
-            'کد حسابداری'
+            'ردیف',
+            'کد کالا',
+            'نام کالا',
+            'واحد',
+            'تعداد',
+            'قیمت واحد',
+            'قیمت کل',
+            'تاریخ',
+            'شماره سند',
+            'نوع سند',
+            'خدمات'
         ];
-        return new BinaryFileResponse($provider->createExcellFromArray($response));
+        
+        // اضافه کردن شماره ردیف به داده‌ها
+        $responseWithRow = [];
+        foreach ($response as $index => $item) {
+            $responseWithRow[] = [
+                'row' => $index + 1,
+                'code' => $item['code'],
+                'name' => $item['name'],
+                'unit' => $item['unit'],
+                'count' => $item['count'],
+                'priceOne' => $item['priceOne'],
+                'priceAll' => $item['priceAll'],
+                'date' => $item['date'],
+                'docCode' => $item['docCode'],
+                'type' => $item['type'],
+                'khadamat' => $item['khadamat']
+            ];
+        }
+        
+        return new BinaryFileResponse($provider->createExcellFromArray($responseWithRow, $labels));
     }
 
     #[Route('/api/report/commodity/buysell', name: 'app_report_commodity_buysell')]

@@ -3,10 +3,11 @@
     v-model="inputValue"
     v-bind="$attrs"
     :class="$attrs.class"
-    type="text"
+    type="number"
     :rules="combinedRules"
     :error-messages="errorMessages"
-    @keypress="restrictToNumbers"
+    @keydown="restrictToNumbers"
+    @input="handleInput"
     dir="ltr"
     dense
     :hide-details="$attrs['hide-details'] || 'auto'"
@@ -34,6 +35,10 @@ export default {
     allowDecimal: {
       type: Boolean,
       default: false
+    },
+    allowNegative: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -47,7 +52,17 @@ export default {
   computed: {
     combinedRules() {
       return [
-        v => !v || (this.allowDecimal ? /^\d*\.?\d*$/.test(v.replace(/[^0-9.]/g, '')) : /^\d+$/.test(v.replace(/[^0-9]/g, ''))) || this.$t('numberinput.invalid_number'),
+        v => {
+          if (!v && v !== '0') return true // اجازه خالی بودن
+          const pattern = this.allowDecimal
+            ? this.allowNegative
+              ? /^-?\d*\.?\d*$/
+              : /^\d*\.?\d*$/
+            : this.allowNegative
+              ? /^-?\d+$/
+              : /^\d+$/
+          return pattern.test(v) || this.$t('numberinput.invalid_number')
+        },
         ...this.rules
       ]
     }
@@ -57,48 +72,98 @@ export default {
     modelValue: {
       immediate: true,
       handler(newVal) {
-        if (newVal !== null && newVal !== undefined) {
-          const cleaned = String(newVal).replace(this.allowDecimal ? /[^0-9.]/g : /[^0-9]/g, '')
-          this.inputValue = cleaned ? (this.allowDecimal ? cleaned : Number(cleaned).toLocaleString('en-US')) : ''
-        } else {
+        if (newVal === null || newVal === undefined) {
           this.inputValue = ''
+        } else {
+          const cleaned = String(newVal).replace(this.allowDecimal ? /[^0-9.-]/g : /[^0-9-]/g, '')
+          this.inputValue = cleaned
         }
       }
     },
     inputValue(newVal) {
       if (newVal === '' || newVal === null || newVal === undefined) {
-        this.$emit('update:modelValue', 0)
+        this.$emit('update:modelValue', null)
+        this.errorMessages = []
+        return
+      }
+
+      const cleaned = String(newVal).replace(this.allowDecimal ? /[^0-9.-]/g : /[^0-9-]/g, '')
+      const pattern = this.allowDecimal
+        ? this.allowNegative
+          ? /^-?\d*\.?\d*$/
+          : /^\d*\.?\d*$/
+        : this.allowNegative
+          ? /^-?\d+$/
+          : /^\d+$/
+
+      if (pattern.test(cleaned)) {
+        let numericValue
+        if (this.allowDecimal) {
+          numericValue = cleaned === '' || cleaned === '-' ? null : parseFloat(cleaned)
+        } else {
+          numericValue = cleaned === '' || cleaned === '-' ? null : parseInt(cleaned, 10)
+        }
+        this.$emit('update:modelValue', isNaN(numericValue) ? null : numericValue)
         this.errorMessages = []
       } else {
-        const cleaned = String(newVal).replace(this.allowDecimal ? /[^0-9.]/g : /[^0-9]/g, '')
-        if (this.allowDecimal ? /^\d*\.?\d*$/.test(cleaned) : /^\d+$/.test(cleaned)) {
-          const numericValue = cleaned ? (this.allowDecimal ? parseFloat(cleaned) : Number(cleaned)) : 0
-          this.$emit('update:modelValue', numericValue)
-          this.errorMessages = []
-        } else {
-          this.errorMessages = [this.$t('numberinput.invalid_number')]
-        }
+        this.errorMessages = [this.$t('numberinput.invalid_number')]
       }
     }
   },
 
   methods: {
     restrictToNumbers(event) {
-      const charCode = event.charCode
+      const key = event.key
+      const input = this.inputValue || ''
+
+      // اجازه دادن به کلیدهای کنترلی
+      if (
+        ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(key) ||
+        (event.ctrlKey || event.metaKey)
+      ) {
+        return
+      }
+
       if (this.allowDecimal) {
-        // اجازه ورود اعداد و نقطه اعشاری
-        if ((charCode < 48 || charCode > 57) && charCode !== 46) {
+        // اجازه ورود اعداد، ممیز، کاما (برای کیبوردهای محلی) و (در صورت اجازه) منفی
+        if (!/[0-9.,]/.test(key) && (!this.allowNegative || key !== '-')) {
           event.preventDefault()
         }
-        // جلوگیری از ورود بیش از یک نقطه اعشاری
-        if (charCode === 46 && this.inputValue.includes('.')) {
+        // جلوگیری از بیش از یک ممیز
+        if ((key === '.' || key === ',') && input.includes('.')) {
+          event.preventDefault()
+        }
+        // جلوگیری از ممیز در ابتدا یا بعد از منفی
+        if ((key === '.' || key === ',') && (input === '' || input === '-')) {
+          event.preventDefault()
+        }
+        // جلوگیری از بیش از یک منفی
+        if (key === '-' && (input.includes('-') || !this.allowNegative)) {
+          event.preventDefault()
+        }
+        // منفی فقط در ابتدا
+        if (key === '-' && input !== '') {
           event.preventDefault()
         }
       } else {
-        // فقط اجازه ورود اعداد
-        if (charCode < 48 || charCode > 57) {
+        // فقط اعداد و (در صورت اجازه) منفی
+        if (!/[0-9]/.test(key) && (!this.allowNegative || key !== '-')) {
           event.preventDefault()
         }
+        // جلوگیری از بیش از یک منفی
+        if (key === '-' && (input.includes('-') || !this.allowNegative)) {
+          event.preventDefault()
+        }
+        // منفی فقط در ابتدا
+        if (key === '-' && input !== '') {
+          event.preventDefault()
+        }
+      }
+    },
+    handleInput(event) {
+      // تبدیل کاما به ممیز برای کیبوردهای محلی
+      if (this.allowDecimal && event.target.value.includes(',')) {
+        this.inputValue = event.target.value.replace(',', '.')
       }
     }
   }
