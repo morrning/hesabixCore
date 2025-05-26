@@ -126,6 +126,9 @@ class Permission
     #[ORM\Column(nullable: true)]
     private ?bool $plugHrmDocs = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $plugGhestaManager = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -571,6 +574,18 @@ class Permission
     public function setPlugHrmDocs(?bool $plugHrmDocs): static
     {
         $this->plugHrmDocs = $plugHrmDocs;
+
+        return $this;
+    }
+
+    public function isPlugGhestaManager(): ?bool
+    {
+        return $this->plugGhestaManager;
+    }
+
+    public function setPlugGhestaManager(?bool $plugGhestaManager): static
+    {
+        $this->plugGhestaManager = $plugGhestaManager;
 
         return $this;
     }
