@@ -95,6 +95,7 @@ class PersonsController extends AbstractController
         $response['bs'] = $bs;
         $response['bd'] = $bd;
         $response['balance'] = $bs - $bd;
+        
         return $this->json($response);
     }
 
@@ -499,6 +500,7 @@ class PersonsController extends AbstractController
     ): JsonResponse {
         $acc = $access->hasRole('person');
         if (!$acc) {
+            var_dump($acc);
             throw $this->createAccessDeniedException();
         }
 

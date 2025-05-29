@@ -109,31 +109,46 @@ export default defineComponent({
         this.totalRec = response.data.relatedDocs.reduce((sum: number, rdoc: any) => sum + parseInt(rdoc.amount), 0);
       });
 
-      axios.get(`/api/sell/get/info/${this.$route.params.id}`).then((response) => {
-        this.person = response.data.person;
-        this.discountAll = response.data.discountAll;
-        this.transferCost = response.data.transferCost;
-        this.item.doc.profit = response.data.profit;
-        this.commoditys = response.data.rows
-          .filter((item: any) => item.commodity != null)
-          .map((item: any) => {
-            this.totalTax += parseInt(item.tax);
-            this.totalDiscount += parseInt(item.discount);
+      axios.get(`/api/sell/v2/get/${this.$route.params.id}`).then((response) => {
+        if (response.data.result === 1) {
+          const data = response.data.data;
+          this.person = {
+            id: data.person?.id,
+            nikename: data.person?.name,
+            mobile: '',
+            tel: '',
+            addres: '',
+            postalcode: ''
+          };
+          this.discountAll = data.totalDiscount;
+          this.transferCost = data.shippingCost;
+          this.item.doc.profit = 0; // این مقدار در API جدید موجود نیست
+          this.totalTax = 0;
+          this.totalDiscount = 0;
+          
+          this.commoditys = data.items.map((item: any) => {
+            this.totalTax += item.tax;
+            this.totalDiscount += item.discountAmount;
             return {
-              commodity: item.commodity,
-              count: item.commodity_count,
-              price: parseInt((parseInt(item.bs) - parseInt(item.tax) + parseInt(item.discount)) / parseFloat(item.commodity_count)),
-              bs: item.bs,
-              bd: item.bd,
-              id: item.commodity.id,
-              des: item.des,
-              discount: item.discount,
+              commodity: {
+                id: item.name.id,
+                name: item.name.name,
+                unit: 'عدد'
+              },
+              count: item.count,
+              price: item.price,
+              bs: item.total,
+              bd: item.discountAmount,
+              id: item.name.id,
+              des: item.description,
+              discount: item.discountAmount,
               tax: item.tax,
-              sumWithoutTax: item.bs - item.tax,
-              sumTotal: item.bs,
+              sumWithoutTax: item.total - item.tax,
+              sumTotal: item.total,
               table: 53,
             };
           });
+        }
       });
 
       axios.post(`/api/business/get/info/${localStorage.getItem('activeBid')}`).then((response) => {

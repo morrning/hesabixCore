@@ -130,50 +130,50 @@ class PrintersController extends AbstractController
             $params = json_decode($content, true);
         }
 
-        $settings->setSellBidInfo($params['sell']['bidInfo']);
-        $settings->setSellTaxInfo($params['sell']['taxInfo']);
-        $settings->setSellDiscountInfo($params['sell']['discountInfo']);
-        $settings->setSellNote($params['sell']['note']);
+        $settings->setSellBidInfo($params['sell']['bidInfo'] ?? false);
+        $settings->setSellTaxInfo($params['sell']['taxInfo'] ?? false);
+        $settings->setSellDiscountInfo($params['sell']['discountInfo'] ?? false);
+        $settings->setSellNote($params['sell']['note'] ?? false);
         $settings->setSellNoteString($params['sell']['noteString']);
-        $settings->setSellPays($params['sell']['pays']);
+        $settings->setSellPays($params['sell']['pays'] ?? false);
         $settings->setSellPaper($params['sell']['paper']);
-        $settings->setSellBusinessStamp($params['sell']['businessStamp']);
-        $settings->setSellInvoiceIndex($params['sell']['invoiceIndex']);
+        $settings->setSellBusinessStamp($params['sell']['businessStamp'] ?? false);
+        $settings->setSellInvoiceIndex($params['sell']['invoiceIndex'] ?? false);
         if ($params['buy']['bidInfo'] == null) {
             $settings->setBuyBidInfo(false);
         } else {
             $settings->setBuyBidInfo(true);
         }
 
-        $settings->setBuyTaxInfo($params['buy']['taxInfo']);
-        $settings->setBuyDiscountInfo($params['buy']['discountInfo']);
-        $settings->setBuyNote($params['buy']['note']);
+        $settings->setBuyTaxInfo($params['buy']['taxInfo'] ?? false);
+        $settings->setBuyDiscountInfo($params['buy']['discountInfo'] ?? false);
+        $settings->setBuyNote($params['buy']['note'] ?? false);
         $settings->setBuyNoteString($params['buy']['noteString']);
-        $settings->setBuyPays($params['buy']['pays']);
+        $settings->setBuyPays($params['buy']['pays'] ?? false);
         $settings->setBuyPaper($params['buy']['paper']);
 
-        $settings->setRfbuyBidInfo($params['rfbuy']['bidInfo']);
-        $settings->setRfbuyTaxInfo($params['rfbuy']['taxInfo']);
-        $settings->setRfbuyDiscountInfo($params['rfbuy']['discountInfo']);
-        $settings->setRfbuyNote($params['rfbuy']['note']);
+        $settings->setRfbuyBidInfo($params['rfbuy']['bidInfo'] ?? false);
+        $settings->setRfbuyTaxInfo($params['rfbuy']['taxInfo'] ?? false);
+        $settings->setRfbuyDiscountInfo($params['rfbuy']['discountInfo'] ?? false);
+        $settings->setRfbuyNote($params['rfbuy']['note'] ?? false);
         $settings->setRfbuyNoteString($params['rfbuy']['noteString']);
-        $settings->setRfbuyPays($params['rfbuy']['pays']);
+        $settings->setRfbuyPays($params['rfbuy']['pays'] ?? false);
         $settings->setRfbuyPaper($params['rfbuy']['paper']);
 
-        $settings->setRfsellBidInfo($params['rfsell']['bidInfo']);
-        $settings->setRfsellTaxInfo($params['rfsell']['taxInfo']);
-        $settings->setRfsellDiscountInfo($params['rfsell']['discountInfo']);
-        $settings->setRfsellNote($params['rfsell']['note']);
+        $settings->setRfsellBidInfo($params['rfsell']['bidInfo'] ?? false);
+        $settings->setRfsellTaxInfo($params['rfsell']['taxInfo'] ?? false);
+        $settings->setRfsellDiscountInfo($params['rfsell']['discountInfo'] ?? false);
+        $settings->setRfsellNote($params['rfsell']['note'] ?? false);
         $settings->setRfsellNoteString($params['rfsell']['noteString']);
-        $settings->setRfsellPays($params['rfsell']['pays']);
+        $settings->setRfsellPays($params['rfsell']['pays'] ?? false);
         $settings->setRfSellPaper($params['rfsell']['paper']);
 
         $settings->setRepserviceNoteString($params['repservice']['noteString']);
         $settings->setRepServicePaper($params['repservice']['paper']);
 
-        $settings->setFastsellCashdeskTicket($params['fastsell']['cashdeskTicket']);
-        $settings->setFastsellInvoice($params['fastsell']['invoice']);
-        $settings->setFastsellPdf($params['fastsell']['pdf']);
+        $settings->setFastsellCashdeskTicket($params['fastsell']['cashdeskTicket'] ?? false);
+        $settings->setFastsellInvoice($params['fastsell']['invoice'] ?? false);
+        $settings->setFastsellPdf($params['fastsell']['pdf'] ?? false);
 
         $settings->setLeftFooter($params['global']['leftFooter']);
         $settings->setRightFooter($params['global']['rightFooter']);

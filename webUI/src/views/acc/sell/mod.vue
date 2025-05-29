@@ -67,11 +67,11 @@
                           <Hcommoditysearch v-model="item.name" density="compact" hide-details class="my-0" style="font-size: 0.8rem;" return-object @update:modelValue="handleCommodityChange(item)"></Hcommoditysearch>
                         </td>
                         <td class="text-center px-2">
-                          <Hnumberinput v-model="item.count" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;" :allow-decimal="true"></Hnumberinput>
+                          <Hnumberinput v-model="item.count" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;" :max-decimals="2" :allow-decimal="true"></Hnumberinput>
                         </td>
                         <td class="text-center px-2">
                           <div class="d-flex align-center justify-center">
-                            <Hnumberinput v-model="item.price" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;" :allow-decimal="true"></Hnumberinput>
+                            <Hnumberinput v-model="item.price" density="compact" @update:modelValue="recalculateTotals" class="my-0" style="font-size: 0.8rem;" :allow-decimal="false"></Hnumberinput>
                             <v-tooltip v-if="item.name && item.price < item.name.priceBuy" text="قیمت فروش کمتر از قیمت خرید است" location="bottom">
                               <template v-slot:activator="{ props }">
                                 <v-icon v-bind="props" color="warning" size="small" class="mr-1">mdi-alert</v-icon>
@@ -906,24 +906,24 @@ export default {
         this.totalInvoice = Number(data.totalInvoice);
         this.finalTotal = Number(data.finalTotal);
 
-        // تبدیل قیمت‌ها به قیمت خالص (بدون مالیات)
+        // تبدیل قیمت‌ها به قیمت پایه (بدون مالیات)
         this.items = data.items.map(item => {
           const basePrice = Number(item.price);
           const tax = Number(item.tax);
-          const netPrice = Math.round(basePrice - tax);
+          const priceWithoutTax = Math.round(basePrice / (1 + (this.taxPercent / 100)));
 
           return {
             name: {
               id: item.name.id,
               name: item.name.name,
               code: item.name.code,
-              priceSell: netPrice // قیمت فروش بدون مالیات
+              priceSell: basePrice // قیمت فروش با مالیات
             },
             count: Number(item.count),
-            price: netPrice, // قیمت واحد بدون مالیات
+            price: basePrice, // قیمت واحد با مالیات
             discountPercent: Number(item.discountPercent),
             discountAmount: Number(item.discountAmount),
-            total: netPrice, // جمع ردیف بدون مالیات
+            total: Number(item.total),
             description: item.description,
             showPercentDiscount: item.showPercentDiscount,
             tax: tax

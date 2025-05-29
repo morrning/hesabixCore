@@ -69,6 +69,13 @@ class Access
                 'bid'=>$bid
             ]);
         }
+        else {
+            $year = $this->em->getRepository(Year::class)->findOneBy([
+                'head' => true,
+                'bid'=>$bid
+            ]);
+            if (!$year) { return false; }
+        }
         
         if ($this->request->headers->get('activeMoney')) {
             $money = $this->em->getRepository(Money::class)->findOneBy([
@@ -78,6 +85,7 @@ class Access
         }
         else{
             $money = $bid->getMoney();
+            if (!$money) { return false; }
         }
 
         $accessArray = [

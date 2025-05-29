@@ -926,18 +926,20 @@ class SellController extends AbstractController
             $sumTax = 0;
             $sumTotal = 0;
             foreach ($params['items'] as $item) {
-                $sumTax += $item['tax'] ?? 0;
-                $sumTotal += $item['total'] ?? 0;
+                $itemTotal = $item['total'] ?? 0;
+                $itemTax = $item['tax'] ?? 0;
+                $sumTotal += $itemTotal;
+                $sumTax += $itemTax;
 
                 $hesabdariRow = new HesabdariRow();
                 $hesabdariRow->setDes($item['description'] ?? '');
                 $hesabdariRow->setBid($acc['bid']);
                 $hesabdariRow->setYear($acc['year']);
                 $hesabdariRow->setDoc($doc);
-                $hesabdariRow->setBs($item['total'] + ($item['tax'] ?? 0));
+                $hesabdariRow->setBs($itemTotal); // فقط مبلغ کالا بدون مالیات
                 $hesabdariRow->setBd(0);
                 $hesabdariRow->setDiscount($item['discountAmount'] ?? 0);
-                $hesabdariRow->setTax($item['tax'] ?? 0);
+                $hesabdariRow->setTax($itemTax);
                 $hesabdariRow->setDiscountType($item['showPercentDiscount'] ? 'percent' : 'fixed');
                 $hesabdariRow->setDiscountPercent($item['discountPercent'] ?? 0);
 
@@ -1221,13 +1223,21 @@ class SellController extends AbstractController
                     $itemDiscountPercent = $row->getDiscountPercent() ?? 0;
                     $itemTax = $row->getTax() ?? 0;
                     
-                    // محاسبه تخفیف سطری
-                    if ($itemDiscountType === 'percent') {
-                        $itemDiscount = round(($basePrice * $itemDiscountPercent) / 100);
+                    // محاسبه قیمت واحد و تخفیف
+                    if ($itemDiscountType === 'percent' && $itemDiscountPercent > 0) {
+                        // محاسبه قیمت اصلی در حالت تخفیف درصدی
+                        $originalPrice = $basePrice / (1 - ($itemDiscountPercent / 100));
+                        $itemDiscount = round(($originalPrice * $itemDiscountPercent) / 100);
+                    } else {
+                        // محاسبه قیمت اصلی در حالت تخفیف مقداری
+                        $originalPrice = $basePrice + $itemDiscount;
                     }
                     
+                    // محاسبه قیمت واحد
+                    $unitPrice = $row->getCommdityCount() > 0 ? $originalPrice / $row->getCommdityCount() : 0;
+                    
                     // محاسبه قیمت خالص (بدون مالیات)
-                    $netPrice = $basePrice - $itemDiscount;
+                    $netPrice = $basePrice;
                     $totalInvoice += $netPrice;
                     
                     $items[] = [
@@ -1237,7 +1247,7 @@ class SellController extends AbstractController
                             'code' => $row->getCommodity()->getCode()
                         ],
                         'count' => $row->getCommdityCount(),
-                        'price' => $row->getCommdityCount() > 0 ? $netPrice / $row->getCommdityCount() : 0,
+                        'price' => $unitPrice,
                         'discountPercent' => $itemDiscountPercent,
                         'discountAmount' => $itemDiscount,
                         'total' => $netPrice,
@@ -1255,6 +1265,14 @@ class SellController extends AbstractController
             } else {
                 $totalDiscount = $discountAll;
             }
+
+            // محاسبه مبلغ نهایی با در نظر گرفتن تخفیف کلی و مالیات
+            $finalTotal = $totalInvoice - $totalDiscount + $transferCost;
+            $totalTax = 0;
+            foreach ($items as $item) {
+                $totalTax += $item['tax'];
+            }
+            $finalTotal += $totalTax;
 
             return $this->json([
                 'result' => 1,
@@ -1275,7 +1293,7 @@ class SellController extends AbstractController
                     'shippingCost' => $transferCost,
                     'showTotalPercentDiscount' => $discountType === 'percent',
                     'items' => $items,
-                    'finalTotal' => $doc->getAmount(),
+                    'finalTotal' => $finalTotal,
                     'payments' => $payments
                 ]
             ]);
