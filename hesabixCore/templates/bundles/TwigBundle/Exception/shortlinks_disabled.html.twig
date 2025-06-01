@@ -1,0 +1,60 @@
+{% extends "blank.html.twig" %}
+{% block title %}دسترسی به لینک‌های کوتاه محدود شده است{% endblock %}
+{% block body %}
+    <div id="page-container">
+        <!-- Main Container -->
+        <main id="main-container">
+            <!-- Page Content -->
+            <div class="bg-image" style="background-image: url('/assets/media/photos/photo21.jpg');">
+                <div class="row g-0 justify-content-end bg-xwork-op">
+                    <!-- Main Section -->
+                    <div class="hero-static col-md-5 d-flex flex-column bg-body-extra-light">
+                        <!-- Header -->
+                        <div class="flex-grow-0 p-5">
+                            <a class="link-fx fw-bold fs-2" href="/">
+                                <span class="text-dark">{{twigFunctions.getStaticData('system', 'appName')}}</span>
+                            </a>
+                            <p class="text-uppercase fw-bold fs-sm text-muted mb-0">{{twigFunctions.getStaticData('system', 'appSlogan')}}</p>
+                        </div>
+                        <!-- END Header -->
+
+                        <!-- Content -->
+                        <div class="flex-grow-1 d-flex align-items-center p-5 bg-body-light">
+                            <div class="w-100">
+                                <p class="text-warning fs-4 fw-bold text-uppercase mb-2">
+                                    دسترسی محدود شده </p>
+                                <h1 class="fw-bold mb-2"> دسترسی به لینک‌های کوتاه غیرفعال است </h1>
+                                <p class="fs-4 fw-medium text-muted mb-3"> 
+                                    متأسفانه دسترسی به لینک‌های کوتاه در این کسب و کار توسط مدیر سیستم محدود شده است.
+                                </p>
+                                <p class="fs-4 fw-medium text-muted mb-5">
+                                    برای پیگیری می‌توانید با کسب و کار زیر تماس بگیرید:<br>
+                                    <strong>{{ business.name }}</strong><br>
+                                    {% if business.phone %}
+                                        <i class="fa fa-phone me-1"></i> {{ business.phone }}
+                                    {% else %}
+                                        <span class="text-muted">شماره تماس در دسترس نیست</span>
+                                    {% endif %}
+                                </p>
+                                <a class="btn btn-lg btn-alt-warning" href="{{ twigFunctions.systemSettings().appSite }}">
+                                    <i class="fa fa-arrow-right opacity-50 me-1"></i> بازگشت به صفحه نخست </a>
+                            </div>
+                        </div>
+                        <!-- END Content -->
+
+                        <!-- Footer -->
+                        <ul class="list-inline flex-gow-1 p-5 fs-sm fw-medium mb-0">
+                            <li class="list-inline-item">
+                                <a class="text-muted" href="{{ twigFunctions.systemSettings().appSite }}/"> ورود به {{twigFunctions.getStaticData('system', 'appName')}} </a>
+                            </li>
+                        </ul>
+                        <!-- END Footer -->
+                    </div>
+                    <!-- END Main Section -->
+                </div>
+            </div>
+            <!-- END Page Content -->
+        </main>
+        <!-- END Main Container -->
+    </div>
+{% endblock %} 

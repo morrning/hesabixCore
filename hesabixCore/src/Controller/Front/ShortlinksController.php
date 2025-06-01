@@ -21,6 +21,14 @@ class ShortlinksController extends AbstractController
         $bus = $entityManager->getRepository(Business::class)->find($bid);
         if (!$bus)
             throw $this->createNotFoundException();
+        if (!$bus->isShortlinks()) {
+            return $this->render('bundles/TwigBundle/Exception/shortlinks_disabled.html.twig', [
+                'business' => [
+                    'name' => $bus->getName(),
+                    'phone' => $bus->getTel() ?: $bus->getMobile()
+                ]
+            ]);
+        }
         $ticket = $entityManager->getRepository(StoreroomTicket::class)->findOneBy([
             'bid' => $bid,
             'id' => $id
@@ -50,8 +58,14 @@ class ShortlinksController extends AbstractController
         $bus = $entityManager->getRepository(Business::class)->find($bid);
         if (!$bus)
             throw $this->createNotFoundException();
-        if (!$bus->isShortlinks())
-            throw $this->createNotFoundException();
+        if (!$bus->isShortlinks()) {
+            return $this->render('bundles/TwigBundle/Exception/shortlinks_disabled.html.twig', [
+                'business' => [
+                    'name' => $bus->getName(),
+                    'phone' => $bus->getTel() ?: $bus->getMobile()
+                ]
+            ]);
+        }
         if ($type == 'sell') {
             $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
                 'type' => 'sell',
@@ -90,15 +104,23 @@ class ShortlinksController extends AbstractController
     #[Route('/slpdf/sell/{bid}/{link}', name: 'shortlinks_pdf')]
     public function shortlinks_pdf(string $bid, string $link, EntityManagerInterface $entityManager, Provider $provider): Response
     {
+        $bus = $entityManager->getRepository(Business::class)->find($bid);
+        if (!$bus)
+            throw $this->createNotFoundException();
+        if (!$bus->isShortlinks()) {
+            return $this->render('bundles/TwigBundle/Exception/shortlinks_disabled.html.twig', [
+                'business' => [
+                    'name' => $bus->getName(),
+                    'phone' => $bus->getTel() ?: $bus->getMobile()
+                ]
+            ]);
+        }
         $doc = $entityManager->getRepository(HesabdariDoc::class)->findOneBy([
             'type' => 'sell',
             'bid' => $bid,
             'shortlink' => $link
         ]);
         if (!$doc)
-            throw $this->createNotFoundException();
-        $bid = $entityManager->getRepository(Business::class)->find($bid);
-        if (!$bid)
             throw $this->createNotFoundException();
         $person = null;
         $discount = 0;
