@@ -8,6 +8,11 @@
       </v-tooltip>
     </template>
     <v-spacer></v-spacer>
+    <v-tooltip text="چاپ گزارش اقساط" location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" variant="text" icon="mdi-printer" @click="printReport" :loading="loading" />
+      </template>
+    </v-tooltip>
   </v-toolbar>
 
   <div class="pa-0">
@@ -639,6 +644,40 @@ export default {
         this.errorDialog = true
       } finally {
         this.loading = false
+      }
+    },
+    async printReport() {
+      try {
+        this.loading = true;
+        const response = await axios.post('/api/plugins/ghesta/print', {
+          id: this.$route.params.id,
+          pdf: true
+        });
+
+        if (response.data && response.data.id) {
+          // دریافت فایل PDF
+          const pdfResponse = await axios({
+            method: 'get',
+            url: '/front/print/' + response.data.id,
+            responseType: 'arraybuffer'
+          });
+
+          // ایجاد لینک دانلود
+          const fileURL = window.URL.createObjectURL(new Blob([pdfResponse.data]));
+          const fileLink = document.createElement('a');
+          fileLink.href = fileURL;
+          fileLink.setAttribute('download', `گزارش اقساط ${this.invoice.code}.pdf`);
+          document.body.appendChild(fileLink);
+          fileLink.click();
+        } else {
+          throw new Error('خطا در دریافت شناسه چاپ');
+        }
+      } catch (error) {
+        console.error('خطا در چاپ گزارش:', error);
+        this.error = 'خطا در چاپ گزارش';
+        this.errorDialog = true;
+      } finally {
+        this.loading = false;
       }
     }
   },

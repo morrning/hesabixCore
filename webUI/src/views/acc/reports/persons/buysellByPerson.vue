@@ -12,6 +12,29 @@
 
     <v-menu>
       <template v-slot:activator="{ props }">
+        <v-btn v-bind="props" icon="" color="red">
+          <v-tooltip activator="parent" :text="$t('dialog.export_pdf')" location="bottom" />
+          <v-icon icon="mdi-file-pdf-box" />
+        </v-btn>
+      </template>
+      <v-list>
+        <v-list-subheader color="primary">{{ $t('dialog.export_pdf') }}</v-list-subheader>
+        <v-list-item :disabled="!itemsSelected.length" class="text-dark" :title="$t('dialog.selected')"
+          @click="pdfOutput(false)">
+          <template v-slot:prepend>
+            <v-icon color="red-darken-4" icon="mdi-check" />
+          </template>
+        </v-list-item>
+        <v-list-item class="text-dark" :title="$t('dialog.all')" @click="pdfOutput(true)">
+          <template v-slot:prepend>
+            <v-icon color="indigo-darken-4" icon="mdi-expand-all" />
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+
+    <v-menu>
+      <template v-slot:activator="{ props }">
         <v-btn v-bind="props" icon="" color="green">
           <v-tooltip activator="parent" :text="$t('dialog.export_excel')" location="bottom" />
           <v-icon icon="mdi-file-excel-box" />
@@ -276,7 +299,7 @@ export default {
           var fileLink = document.createElement('a');
 
           fileLink.href = fileURL;
-          fileLink.setAttribute('download', 'buysell-report-list.xlsx');
+          fileLink.setAttribute('download', `${this.selectedPerson.nikename} - گزارش خرید و فروش.xlsx`);
           document.body.appendChild(fileLink);
           fileLink.click();
         })
@@ -301,18 +324,44 @@ export default {
             var fileLink = document.createElement('a');
 
             fileLink.href = fileURL;
-            fileLink.setAttribute('download', 'buysell-report-list.xlsx');
+            fileLink.setAttribute('download', `${this.selectedPerson.nikename} - گزارش خرید و فروش.xlsx`);
             document.body.appendChild(fileLink);
             fileLink.click();
           })
         }
       }
     },
-    print(AllItems = true) {
+    pdfOutput(AllItems = true) {
       if (AllItems) {
-        axios.post('/api/person/list/print').then((response) => {
-          this.printID = response.data.id;
-          window.open(this.$API_URL + '/front/print/' + this.printID, '_blank', 'noreferrer');
+        axios({
+          method: 'post',
+          url: '/api/report/person/buysell/export/pdf',
+          data: { 
+            items: this.items,
+            printOptions: {
+              paper: 'A4-L',
+              bidInfo: true,
+              taxInfo: true,
+              discountInfo: true,
+              pays: true,
+              invoiceIndex: true,
+              businessStamp: true
+            }
+          }
+        }).then((response) => {
+          axios({
+            method: 'get',
+            url: '/front/print/' + response.data.id,
+            responseType: 'arraybuffer'
+          }).then((pdfResponse) => {
+            var fileURL = window.URL.createObjectURL(new Blob([pdfResponse.data]));
+            var fileLink = document.createElement('a');
+
+            fileLink.href = fileURL;
+            fileLink.setAttribute('download', `${this.selectedPerson.nikename} - گزارش خرید و فروش.pdf`);
+            document.body.appendChild(fileLink);
+            fileLink.click();
+          });
         })
       }
       else {
@@ -324,9 +373,35 @@ export default {
           });
         }
         else {
-          axios.post('/api/person/list/print', { items: this.itemsSelected }).then((response) => {
-            this.printID = response.data.id;
-            window.open(this.$API_URL + '/front/print/' + this.printID, '_blank', 'noreferrer');
+          axios({
+            method: 'post',
+            url: '/api/report/person/buysell/export/pdf',
+            data: { 
+              items: this.itemsSelected,
+              printOptions: {
+                paper: 'A4-L',
+                bidInfo: true,
+                taxInfo: true,
+                discountInfo: true,
+                pays: true,
+                invoiceIndex: true,
+                businessStamp: true
+              }
+            }
+          }).then((response) => {
+            axios({
+              method: 'get',
+              url: '/front/print/' + response.data.id,
+              responseType: 'arraybuffer'
+            }).then((pdfResponse) => {
+              var fileURL = window.URL.createObjectURL(new Blob([pdfResponse.data]));
+              var fileLink = document.createElement('a');
+
+              fileLink.href = fileURL;
+              fileLink.setAttribute('download', `${this.selectedPerson.nikename} - گزارش خرید و فروش.pdf`);
+              document.body.appendChild(fileLink);
+              fileLink.click();
+            });
           })
         }
       }

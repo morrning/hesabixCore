@@ -124,16 +124,23 @@ class PersonsController extends AbstractController
                 //check exist before
                 if (!$person) {
                     $person = new Person();
-                    $code = $provider->getAccountingCode($acc['bid'], 'person');
-                    $exist = $entityManager->getRepository(Person::class)->findOneBy([
-                        'code' => $code
-                    ]);
-                    while ($exist) {
+                    $maxAttempts = 10; // حداکثر تعداد تلاش برای تولید کد جدید
+                    $code = null;
+                    
+                    for ($i = 0; $i < $maxAttempts; $i++) {
                         $code = $provider->getAccountingCode($acc['bid'], 'person');
                         $exist = $entityManager->getRepository(Person::class)->findOneBy([
                             'code' => $code
                         ]);
+                        if (!$exist) {
+                            break;
+                        }
                     }
+                    
+                    if ($code === null) {
+                        throw new \Exception('نمی‌توان کد جدیدی برای شخص تولید کرد');
+                    }
+                    
                     $person->setCode($code);
                 }
 
@@ -270,16 +277,23 @@ class PersonsController extends AbstractController
             //check exist before
             if (!$person) {
                 $person = new Person();
-                $code = $provider->getAccountingCode($acc['bid'], 'person');
-                $exist = $entityManager->getRepository(Person::class)->findOneBy([
-                    'code' => $code
-                ]);
-                while ($exist) {
+                $maxAttempts = 10; // حداکثر تعداد تلاش برای تولید کد جدید
+                $code = null;
+                
+                for ($i = 0; $i < $maxAttempts; $i++) {
                     $code = $provider->getAccountingCode($acc['bid'], 'person');
                     $exist = $entityManager->getRepository(Person::class)->findOneBy([
                         'code' => $code
                     ]);
+                    if (!$exist) {
+                        break;
+                    }
                 }
+                
+                if ($code === null) {
+                    throw new \Exception('نمی‌توان کد جدیدی برای شخص تولید کرد');
+                }
+                
                 $person->setCode($code);
             }
 
@@ -520,7 +534,7 @@ class PersonsController extends AbstractController
         // جست‌وجو (بهبود داده‌شده)
         if (!empty($search) || $search === '0') { // برای اطمینان از کار با "0" یا خالی
             $search = trim($search); // حذف فضای خالی اضافی
-            $queryBuilder->andWhere('p.nikename LIKE :search OR p.name LIKE :search OR p.code LIKE :search')
+            $queryBuilder->andWhere('p.nikename LIKE :search OR p.name LIKE :search OR p.code LIKE :search OR p.mobile LIKE :search')
                 ->setParameter('search', "%$search%");
         }
 
@@ -1567,16 +1581,23 @@ class PersonsController extends AbstractController
             //check exist before
             if (!$person) {
                 $person = new Person();
-                $code = $provider->getAccountingCode($acc['bid'], 'person');
-                $exist = $entityManager->getRepository(Person::class)->findOneBy([
-                    'code' => $code
-                ]);
-                while ($exist) {
+                $maxAttempts = 10; // حداکثر تعداد تلاش برای تولید کد جدید
+                $code = null;
+                
+                for ($i = 0; $i < $maxAttempts; $i++) {
                     $code = $provider->getAccountingCode($acc['bid'], 'person');
                     $exist = $entityManager->getRepository(Person::class)->findOneBy([
                         'code' => $code
                     ]);
+                    if (!$exist) {
+                        break;
+                    }
                 }
+                
+                if ($code === null) {
+                    throw new \Exception('نمی‌توان کد جدیدی برای شخص تولید کرد');
+                }
+                
                 $person->setCode($code);
                 $person->setNikename($item[0]);
                 $person->setBid($acc['bid']);

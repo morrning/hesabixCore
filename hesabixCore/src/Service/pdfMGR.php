@@ -55,6 +55,12 @@ class pdfMGR
             ],
             'default_font' => 'vazirmatn',
             'tempDir' => $tempDir,
+            'margin_left' => 5,
+            'margin_right' => 5,
+            'margin_top' => 5,
+            'margin_bottom' => 5,
+            'margin_header' => 2,
+            'margin_footer' => 2,
             'autoArabic' => true,
         ]);
     

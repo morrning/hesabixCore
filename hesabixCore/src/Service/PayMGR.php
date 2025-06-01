@@ -79,6 +79,58 @@ class PayMGR
                     }
                 }
             }
+        } elseif ($activeGateway == 'payping') {
+            $data = array(
+                'amount' => $price,
+                'returnUrl' => $callback_url,
+                'description' => $des,
+                'clientRefId' => $orderID
+            );
+
+            $ch = curl_init('https://api.payping.ir/v2/pay');
+            curl_setopt_array($ch, array(
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 45,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => json_encode($data),
+                CURLOPT_HTTPHEADER => array(
+                    "accept: application/json",
+                    "authorization: Bearer " . $this->registry->get('system', 'paypingKey'),
+                    "cache-control: no-cache",
+                    "content-type: application/json",
+                ),
+            ));
+
+            $response = curl_exec($ch);
+            $err = curl_error($ch);
+            $header = curl_getinfo($ch);
+            curl_close($ch);
+
+            if ($err) {
+                $res['message'] = 'خطا در ارتباط با پی‌پینگ: ' . $err;
+                return $res;
+            }
+
+            if ($header['http_code'] == 200) {
+                $response = json_decode($response, true);
+                if (isset($response['code'])) {
+                    $res['code'] = 100;
+                    $res['Success'] = true;
+                    $res['gate'] = 'payping';
+                    $res['message'] = 'OK';
+                    $res['authkey'] = $response['code'];
+                    $res['targetURL'] = 'https://api.payping.ir/v2/pay/gotoipg/' . $response['code'];
+                } else {
+                    $res['message'] = 'خطا در دریافت کد پرداخت از پی‌پینگ';
+                }
+            } elseif ($header['http_code'] == 400) {
+                $res['message'] = 'خطا در درخواست پرداخت: ' . $response;
+            } else {
+                $res['message'] = 'خطا در ارتباط با پی‌پینگ. کد خطا: ' . $header['http_code'];
+            }
         } elseif ($activeGateway == 'pec') {
             ini_set("soap.wsdl_cache_enabled", "0");
             $url = "https://pec.shaparak.ir/NewIPGServices/Sale/SaleService.asmx?WSDL";
@@ -148,6 +200,53 @@ class PayMGR
                         $res['card_pan'] = $result['data']['card_pan'];
                         return $res;
                     }
+                }
+            }
+        } elseif ($activeGateway == 'payping') {
+            $refid = $request->get('refid');
+            if (!$refid) {
+                return $res;
+            }
+
+            $data = array(
+                'amount' => $price,
+                'refId' => $refid
+            );
+
+            $ch = curl_init('https://api.payping.ir/v2/pay/verify');
+            curl_setopt_array($ch, array(
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 45,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => "POST",
+                CURLOPT_POSTFIELDS => json_encode($data),
+                CURLOPT_HTTPHEADER => array(
+                    "accept: application/json",
+                    "authorization: Bearer " . $this->registry->get('system', 'paypingKey'),
+                    "cache-control: no-cache",
+                    "content-type: application/json",
+                ),
+            ));
+
+            $response = curl_exec($ch);
+            $err = curl_error($ch);
+            $header = curl_getinfo($ch);
+            curl_close($ch);
+
+            if ($err) {
+                return $res;
+            }
+
+            if ($header['http_code'] == 200) {
+                $response = json_decode($response, true);
+                if (isset($refid) && $refid != '') {
+                    $res['Success'] = true;
+                    $res['status'] = 100;
+                    $res['refID'] = $refid;
+                    $res['card_pan'] = ''; // PayPing این اطلاعات را برنمی‌گرداند
+                    return $res;
                 }
             }
         } elseif ($activeGateway == 'pec') {

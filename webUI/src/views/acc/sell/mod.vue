@@ -1019,8 +1019,20 @@ export default {
               });
               
               if (printResponse.data && printResponse.data.id) {
-                // باز کردن PDF در پنجره جدید
-                window.open(this.$API_URL + '/front/print/' + printResponse.data.id, '_blank', 'noreferrer');
+                // دریافت فایل PDF
+                const pdfResponse = await axios({
+                  method: 'get',
+                  url: '/front/print/' + printResponse.data.id,
+                  responseType: 'arraybuffer'
+                });
+                
+                // ایجاد لینک دانلود
+                var fileURL = window.URL.createObjectURL(new Blob([pdfResponse.data]));
+                var fileLink = document.createElement('a');
+                fileLink.href = fileURL;
+                fileLink.setAttribute('download', `فاکتور فروش ${response.data.data.code}.pdf`);
+                document.body.appendChild(fileLink);
+                fileLink.click();
               } else {
                 throw new Error('خطا در دریافت شناسه چاپ');
               }

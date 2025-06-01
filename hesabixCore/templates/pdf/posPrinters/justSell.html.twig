@@ -6,7 +6,7 @@
 			body {
 				margin: 5px;
 				padding: 0;
-				font-size: 100%;
+				font-size: 11px;
 			}
 
 			table {
@@ -19,10 +19,12 @@
 			th,
 			td {
 				border: 1px solid black !important;
+				font-size: 11px;
 			}
 			h1 {
 				text-align: center;
 				vertical-align: middle;
+				font-size: 14px;
 			}
 
 			#logo {
@@ -60,7 +62,7 @@
 			}
 
 			.items .heading {
-				font-size: 12.5px;
+				font-size: 11px;
 				text-transform: uppercase;
 				border-top: 1px solid black;
 				margin-bottom: 4px;
@@ -75,7 +77,7 @@
 			}
 
 			.items td {
-				font-size: 12px;
+				font-size: 11px;
 				text-align: center;
 				vertical-align: bottom;
 			}
@@ -89,7 +91,7 @@
 				text-align: right !important;
 			}
 			.total {
-				font-size: 13px;
+				font-size: 11px;
 				border-top: 1px dashed black !important;
 				border-bottom: 1px dashed black !important;
 			}
@@ -110,7 +112,7 @@
 			}
 			section,
 			footer {
-				font-size: 12px;
+				font-size: 11px;
 			}
 			tbody,
 			thead,
@@ -150,6 +152,7 @@
 					<th class="heading name">کالا</th>
 					<th class="heading qty">تعداد</th>
 					<th class="heading rate">فی</th>
+					<th class="heading amount">قبل تخفیف</th>
 					<th class="heading amount">جمع</th>
 				</tr>
 			</thead>
@@ -159,8 +162,29 @@
 					{% if row.commodity != null %}
 						<tr>
 							<td>{{row.commodity.name}}</td>
-							<td>{{row.commdityCount}}</td>
-							<td class="price">{{(row.bs / row.commdityCount) | number_format}}</td>
+							<td>{{row.commodityCount}}</td>
+							<td class="price">
+								{% if row.commodityCount > 0 %}
+									{% if row.showPercentDiscount %}
+										{% set originalPrice = row.bs / (1 - (row.discountPercent / 100)) %}
+										{% set unitPrice = originalPrice / row.commodityCount %}
+									{% else %}
+										{% set originalPrice = row.bs + row.discount %}
+										{% set unitPrice = originalPrice / row.commodityCount %}
+									{% endif %}
+									{{ unitPrice|round|number_format }}
+								{% else %}
+									0
+								{% endif %}
+							</td>
+							<td class="price">
+								{% if row.showPercentDiscount %}
+									{% set originalPrice = row.bs / (1 - (row.discountPercent / 100)) %}
+									{{ originalPrice|round|number_format }}
+								{% else %}
+									{{ (row.bs + row.discount)|number_format }}
+								{% endif %}
+							</td>
 							<td class="price">{{row.bs | number_format}}</td>
 						</tr>
 					{% endif %}
@@ -169,6 +193,19 @@
 					<th colspan="3" class="total text">جمع فاکتور</th>
 					<th class="total price">{{doc.amount | number_format}}</th>
 				</tr>
+				{% if discount > 0 %}
+				<tr>
+					<th colspan="3" class="total text">تخفیف</th>
+					<th class="total price">
+						{% if showPercentDiscount %}
+							{{ discountPercent }}%
+							({{ (doc.amount * discountPercent / 100)|round|number_format }})
+						{% else %}
+							{{ discount | number_format }}
+						{% endif %}
+					</th>
+				</tr>
+				{% endif %}
 			</tbody>
 		</table>
 		<section style="margin-bottom:10px;margin-top:10px;text-align:center;">

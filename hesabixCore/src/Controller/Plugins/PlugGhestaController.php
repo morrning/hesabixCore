@@ -13,6 +13,10 @@ use App\Entity\HesabdariDoc;
 use App\Entity\Person;
 use App\Service\Access;
 use App\Service\Provider;
+use App\Service\Printers;
+use App\Entity\PrintOptions;
+use App\Service\Log;
+use App\Entity\Business;
 
 class PlugGhestaController extends AbstractController
 {
@@ -415,5 +419,73 @@ class PlugGhestaController extends AbstractController
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    #[Route('/api/plugins/ghesta/print', name: 'plugin_ghesta_print', methods: ['POST'])]
+    public function plugin_ghesta_print(Printers $printers, Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('plugGhestaManager');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+
+        $params = json_decode($request->getContent(), true);
+        $params['pdf'] = $params['pdf'] ?? true;
+        
+        // دریافت تنظیمات پیش‌فرض از PrintOptions
+        $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
+        
+        // تنظیم مقادیر پیش‌فرض از تنظیمات ذخیره شده
+        $defaultOptions = [
+            'note' => $printSettings ? $printSettings->isSellNote() : true,
+            'bidInfo' => $printSettings ? $printSettings->isSellBidInfo() : true,
+            'paper' => $printSettings ? $printSettings->getSellPaper() : 'A4-L',
+            'businessStamp' => $printSettings ? $printSettings->isSellBusinessStamp() : true
+        ];
+        
+        // اولویت با پارامترهای ارسالی است
+        $printOptions = array_merge($defaultOptions, $params['printOptions'] ?? []);
+
+        $doc = $entityManager->getRepository(PlugGhestaDoc::class)->findOneBy([
+            'id' => $params['id'],
+            'bid' => $acc['bid']
+        ]);
+        
+        if (!$doc)
+            throw $this->createNotFoundException();
+
+        $pdfPid = 0;
+        if ($params['pdf'] == true) {
+            $note = '';
+            if ($printSettings) {
+                $note = $printSettings->getSellNoteString();
+            }
+            
+            // دریافت اطلاعات کسب و کار
+            $business = $entityManager->getRepository(Business::class)->find($acc['bid']);
+            
+            $pdfPid = $provider->createPrint(
+                $acc['bid'],
+                $this->getUser(),
+                $this->renderView('pdf/plugins/ghesta/report.html.twig', [
+                    'bid' => $business,
+                    'doc' => $doc,
+                    'items' => array_map(function($item) {
+                        return [
+                            'date' => $item->getDate(),
+                            'amount' => $item->getAmount(),
+                            'num' => $item->getNum(),
+                            'hesabdariDoc' => $item->getHesabdariDoc()
+                        ];
+                    }, $doc->getPlugGhestaItems()->toArray()),
+                    'person' => $doc->getPerson(),
+                    'printOptions' => $printOptions,
+                    'note' => $note
+                ]),
+                false,
+                $printOptions['paper']
+            );
+        }
+
+        return $this->json(['id' => $pdfPid]);
     }
 }

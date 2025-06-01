@@ -24,6 +24,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Entity\PrintOptions;
 
 class ReportController extends AbstractController
 {
@@ -580,5 +581,117 @@ class ReportController extends AbstractController
             ]);
             return $this->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
+    }
+
+    #[Route('/api/report/person/buysell/export/pdf', name: 'app_report_person_buysell_export_pdf')]
+    public function app_report_person_buysell_export_pdf(Provider $provider, Access $access, Request $request, EntityManagerInterface $entityManagerInterface): BinaryFileResponse|JsonResponse|StreamedResponse
+    {
+        $acc = $access->hasRole('report');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+
+        $items = [];
+        foreach ($params['items'] as $param) {
+            $prs = $entityManagerInterface->getRepository(HesabdariRow::class)->findOneBy([
+                'id' => $param['rowId'],
+                'bid' => $acc['bid']
+            ]);
+            if ($prs)
+                $items[] = $prs;
+        }
+
+        // دریافت اطلاعات شخص از اولین آیتم
+        $person = null;
+        if (count($items) > 0) {
+            foreach ($items[0]->getDoc()->getHesabdariRows() as $row) {
+                if ($row->getPerson()) {
+                    $person = $row->getPerson();
+                    break;
+                }
+            }
+        }
+
+        $response = [];
+        foreach ($items as $item) {
+            $temp = [
+                'id' => $item->getCommodity()->getId(),
+                'code' => $item->getCommodity()->getCode(),
+                'khadamat' => $item->getCommodity()->isKhadamat(),
+                'name' => $item->getCommodity()->getName(),
+                'unit' => $item->getCommodity()->getUnit()->getName(),
+                'count' => $item->getCommdityCount(),
+                'date' => $item->getDoc()->getDate(),
+                'docCode' => $item->getDoc()->getCode(),
+                'type' => $item->getDoc()->getType()
+            ];
+            if ($item->getDoc()->getType() == 'buy') {
+                $temp['priceAll'] = $item->getBd();
+            } elseif ($item->getDoc()->getType() == 'sell') {
+                $temp['priceAll'] = $item->getBs();
+            }
+            if ($temp['count'] != 0) {
+                $temp['priceOne'] = $temp['priceAll'] / $temp['count'];
+                $temp['priceAll'] = number_format($temp['priceAll']);
+                $temp['priceOne'] = number_format($temp['priceOne']);
+                $temp['count'] = number_format($temp['count']);
+                $response[] = $temp;
+            }
+        }
+
+        // اضافه کردن شماره ردیف به داده‌ها
+        $responseWithRow = [];
+        foreach ($response as $index => $item) {
+            $responseWithRow[] = [
+                'row' => $index + 1,
+                'code' => $item['code'],
+                'name' => $item['name'],
+                'unit' => $item['unit'],
+                'count' => $item['count'],
+                'priceOne' => $item['priceOne'],
+                'priceAll' => $item['priceAll'],
+                'date' => $item['date'],
+                'docCode' => $item['docCode'],
+                'type' => $item['type'],
+                'khadamat' => $item['khadamat']
+            ];
+        }
+
+        // دریافت تنظیمات چاپ
+        $printSettings = $entityManagerInterface->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
+        
+        // تنظیم مقادیر پیش‌فرض از تنظیمات ذخیره شده
+        $defaultOptions = [
+            'note' => $printSettings ? $printSettings->isSellNote() : true,
+            'bidInfo' => $printSettings ? $printSettings->isSellBidInfo() : true,
+            'taxInfo' => $printSettings ? $printSettings->isSellTaxInfo() : true,
+            'discountInfo' => $printSettings ? $printSettings->isSellDiscountInfo() : true,
+            'pays' => $printSettings ? $printSettings->isSellPays() : true,
+            'paper' => $printSettings ? $printSettings->getSellPaper() : 'A4-L',
+            'invoiceIndex' => $printSettings ? $printSettings->isSellInvoiceIndex() : true,
+            'businessStamp' => $printSettings ? $printSettings->isSellBusinessStamp() : true
+        ];
+        
+        // اولویت با پارامترهای ارسالی است
+        $printOptions = array_merge($defaultOptions, $params['printOptions'] ?? []);
+
+        $pdfPid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/printers/buysell_report.html.twig', [
+                'bid' => $acc['bid'],
+                'items' => $responseWithRow,
+                'printOptions' => $printOptions,
+                'note' => $printSettings ? $printSettings->getSellNoteString() : '',
+                'person' => $person
+            ]),
+            false,
+            $printOptions['paper']
+        );
+
+        return $this->json(['id' => $pdfPid]);
     }
 }

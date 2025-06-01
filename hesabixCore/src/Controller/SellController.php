@@ -747,27 +747,53 @@ class SellController extends AbstractController
                 $this->renderView('pdf/printers/sell.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
+                    'rows' => array_map(function($row) {
+                        return [
+                            'commodity' => $row->getCommodity(),
+                            'commodityCount' => $row->getCommdityCount(),
+                            'des' => $row->getDes(),
+                            'bs' => $row->getBs(),
+                            'tax' => $row->getTax(),
+                            'discount' => $row->getDiscount(),
+                            'showPercentDiscount' => $row->getDiscountType() === 'percent',
+                            'discountPercent' => $row->getDiscountPercent()
+                        ];
+                    }, $doc->getHesabdariRows()->toArray()),
                     'person' => $person,
                     'printInvoice' => $params['printers'],
                     'discount' => $discount,
                     'transfer' => $transfer,
                     'printOptions' => $printOptions,
-                    'note' => $note
+                    'note' => $note,
+                    'showPercentDiscount' => $doc->getDiscountType() === 'percent',
+                    'discountPercent' => $doc->getDiscountPercent()
                 ]),
                 false,
                 $printOptions['paper']
             );
         }
         if ($params['posPrint'] == true) {
-
             $pid = $provider->createPrint(
                 $acc['bid'],
                 $this->getUser(),
                 $this->renderView('pdf/posPrinters/justSell.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
-                    'rows' => $doc->getHesabdariRows(),
+                    'rows' => array_map(function($row) {
+                        return [
+                            'commodity' => $row->getCommodity(),
+                            'commodityCount' => $row->getCommdityCount(),
+                            'des' => $row->getDes(),
+                            'bs' => $row->getBs(),
+                            'tax' => $row->getTax(),
+                            'discount' => $row->getDiscount(),
+                            'showPercentDiscount' => $row->getDiscountType() === 'percent',
+                            'discountPercent' => $row->getDiscountPercent()
+                        ];
+                    }, $doc->getHesabdariRows()->toArray()),
+                    'discount' => $discount,
+                    'showPercentDiscount' => $doc->getDiscountType() === 'percent',
+                    'discountPercent' => $doc->getDiscountPercent()
                 ]),
                 false
             );

@@ -299,6 +299,12 @@ const router = createRouter({
                 import('../views/acc/reports/persons/buysellByPerson.vue'),
         },
         {
+            path: 'reports/persons/withdet',
+            name: 'person_withdet',
+            component: () =>
+                import('../views/acc/reports/persons/withdet.vue'),
+        },
+        {
             path: 'costs/list',
             name: 'costs_list',
             component: () =>

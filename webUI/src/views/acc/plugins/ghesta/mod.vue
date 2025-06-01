@@ -933,13 +933,6 @@ export default {
         this.isCalculating = true;
         this.loading = true;
 
-        // اگر در حالت ویرایش هستیم و اقساط قبلاً محاسبه شده‌اند، از آنها استفاده کن
-        if (this.$route.params.id && this.installments.length > 0) {
-          this.isCalculating = false;
-          this.loading = false;
-          return;
-        }
-
         const totalAmount = this.remainingAmount;
         const prepayment = Number(this.installmentData.prepayment) || 0;
         const remainingAmount = totalAmount - prepayment;
@@ -1121,6 +1114,13 @@ export default {
       },
       immediate: true
     },
+    'installmentData.count': {
+      handler(newVal) {
+        if (newVal && this.installmentData.calculationType === 'count') {
+          this.calculateInstallments();
+        }
+      }
+    },
     'installmentData.interestRate': {
       handler(newVal, oldVal) {
         if (newVal && !oldVal) {
@@ -1180,5 +1180,92 @@ export default {
 :deep(.v-data-table-header th) {
   font-weight: 600;
   background-color: rgb(var(--v-theme-surface));
+}
+
+:deep(.vpd-main) {
+  position: fixed !important;
+  z-index: 999999 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: auto !important;
+}
+
+:deep(.vpd-wrapper) {
+  position: fixed !important;
+  z-index: 999999 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: auto !important;
+}
+
+:deep(.vpd-container) {
+  position: fixed !important;
+  z-index: 999999 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: auto !important;
+}
+
+:deep(.vpd-content) {
+  position: fixed !important;
+  z-index: 999999 !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: auto !important;
+}
+
+:deep(.vpd-overlay) {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  z-index: 999998 !important;
+  pointer-events: auto !important;
+}
+
+:deep(.v-application) {
+  position: relative !important;
+}
+
+:deep(.v-application--wrap) {
+  position: relative !important;
+}
+
+:deep(.v-main) {
+  position: relative !important;
+}
+
+:deep(.v-main__wrap) {
+  position: relative !important;
+}
+
+:deep(.v-container) {
+  position: relative !important;
+}
+
+:deep(.v-row) {
+  position: relative !important;
+}
+
+:deep(.v-col) {
+  position: relative !important;
+}
+
+:deep(.v-card) {
+  position: relative !important;
+}
+
+:deep(.v-field) {
+  position: relative !important;
+}
+
+:deep(.v-field__input) {
+  position: relative !important;
 }
 </style> 

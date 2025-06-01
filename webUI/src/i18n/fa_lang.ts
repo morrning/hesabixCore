@@ -286,6 +286,7 @@ const fa_lang = {
     fetch_data_error: "خطا در گرفتن داده از {url}"
   },
   dialog: {
+    person_with_det_report: 'گزارش تفضیلی اشخاص',
     change_password_label: 'تغییر کلمه عبور',
     download: 'دانلود',
     delete_group: 'حذف گروهی',
@@ -793,6 +794,7 @@ const fa_lang = {
       keywords: "کلیدواژه‌ها با کاما (,) از هم جدا شوند",
       zarinpal_api: "کد API زرین‌پال",
       parsian_api: "کد API درگاه پارسیان",
+      payping_api: "کد API درگاه پی‌پینگ",
       scripts: "اسکریپت‌ها",
       footer_scripts: "اسکریپت‌های فوتر سایت(مثلا اسکریپت شمارنده گوگل و ...)",
       site_footer: "فوتر سایت با پشتیبانی از HTML",

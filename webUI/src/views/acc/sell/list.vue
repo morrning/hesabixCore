@@ -570,11 +570,43 @@ export default defineComponent({
         'pdf': pdf,
         'printers': cloudePrinters,
         'printOptions': this.printOptions
-      }).then((response) => {
+      }).then(async (response) => {
+        try {
+          if (response.data && response.data.id) {
+            // دریافت فایل PDF
+            const pdfResponse = await axios({
+              method: 'get',
+              url: '/front/print/' + response.data.id,
+              responseType: 'arraybuffer'
+            });
+            
+            // ایجاد لینک دانلود
+            var fileURL = window.URL.createObjectURL(new Blob([pdfResponse.data]));
+            var fileLink = document.createElement('a');
+            fileLink.href = fileURL;
+            fileLink.setAttribute('download', `فاکتور فروش ${this.printOptions.selectedPrintCode}.pdf`);
+            document.body.appendChild(fileLink);
+            fileLink.click();
+          } else {
+            throw new Error('خطا در دریافت شناسه چاپ');
+          }
+        } catch (error) {
+          console.error('خطا در دریافت فایل PDF:', error);
+          Swal.fire({
+            text: 'خطا در دریافت فایل PDF',
+            icon: 'error',
+            confirmButtonText: 'قبول'
+          });
+        } finally {
+          this.loading = false;
+        }
+      }).catch((error) => {
         this.loading = false;
-        window.open(this.$API_URL + '/front/print/' + response.data.id, '_blank', 'noreferrer');
-      }).catch(() => {
-        this.loading = false;
+        Swal.fire({
+          text: 'خطا در ایجاد نسخه PDF',
+          icon: 'error',
+          confirmButtonText: 'قبول'
+        });
       });
     },
     deleteItem(code) {

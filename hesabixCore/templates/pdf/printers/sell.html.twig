@@ -15,6 +15,16 @@
 		}
 		.item {
 			height: 30px;
+			font-size: 11px;
+		}
+		h3 {
+			font-size: 14px;
+		}
+		h4 {
+			font-size: 12px;
+		}
+		p {
+			font-size: 11px;
 		}
 	</style>
 </head>
@@ -191,6 +201,7 @@
 							<th class="text-white">مبلغ واحد</th>
 							{% if printOptions.discountInfo %}
 								<th class="text-white">تخفیف</th>
+								<th class="text-white">قبل تخفیف</th>
 							{% endif %}
 							{% if printOptions.taxInfo %}
 								<th class="text-white">مالیات</th>
@@ -213,18 +224,40 @@
 										{{ item.commodity.name }}</td>
 									<td class="center item">{{ item.des }}</td>
 									<td class="center item">
-										{{ item.commdityCount }}
+										{{ item.commodityCount }}
 										{{ item.commodity.unit.name }}
 									</td>
 									<td class="center item">
-										{% if item.commdityCount > 0 %}
-											{{ ((item.bs|number_format(0, '.', '') - item.tax|number_format(0, '.', '') + item.discount|number_format(0, '.', '')) / item.commdityCount) | number_format }}
+										{% if item.commodityCount > 0 %}
+											{% if item.showPercentDiscount %}
+												{% set originalPrice = item.bs / (1 - (item.discountPercent / 100)) %}
+												{% set unitPrice = originalPrice / item.commodityCount %}
+											{% else %}
+												{% set originalPrice = item.bs + item.discount %}
+												{% set unitPrice = originalPrice / item.commodityCount %}
+											{% endif %}
+											{{ unitPrice|round|number_format }}
 										{% else %}
 											0
 										{% endif %}
 									</td>
 									{% if printOptions.discountInfo %}
-										<td class="center item">{{ item.discount | number_format }}</td>
+										<td class="center item">
+											{% if item.showPercentDiscount %}
+												{{ item.discountPercent }}%
+												({{ (item.bs * item.commodityCount * item.discountPercent / 100)|round|number_format }})
+											{% else %}
+												{{ item.discount|number_format }}
+											{% endif %}
+										</td>
+										<td class="center item">
+											{% if item.showPercentDiscount %}
+												{% set originalPrice = item.bs / (1 - (item.discountPercent / 100)) %}
+												{{ originalPrice|round|number_format }}
+											{% else %}
+												{{ (item.bs + item.discount)|number_format }}
+											{% endif %}
+										</td>
 									{% endif %}
 									{% if printOptions.taxInfo %}
 										<td class="center item">{{ item.tax | number_format}}</td>
@@ -285,7 +318,7 @@
 								</h4>
 								{% if doc.amount != (doc.amount + discount) %}
 									<h4>
-										مبلغ کل بدون تخفیف:
+										جمع بدون تخفیف:
 										{{ (doc.amount + discount) | number_format}}
 									</h4>
 								{% endif %}
