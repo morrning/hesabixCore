@@ -27,5 +27,38 @@ class DocsController extends AbstractController
         $this->entityManager = $entityManager;
     }
 
-    
+    #[Route('/api/hrm/docs/list', name: 'hrm_docs_list', methods: ['POST'])]
+    public function list(Request $request): JsonResponse
+    {
+        // TODO: پیاده‌سازی دریافت لیست اسناد حقوق
+        return new JsonResponse([]);
+    }
+
+    #[Route('/api/hrm/docs/get/{id}', name: 'hrm_docs_get', methods: ['POST'])]
+    public function get(int $id): JsonResponse
+    {
+        // TODO: پیاده‌سازی دریافت اطلاعات یک سند حقوق
+        return new JsonResponse([]);
+    }
+
+    #[Route('/api/hrm/docs/insert', name: 'hrm_docs_insert', methods: ['POST'])]
+    public function insert(Request $request): JsonResponse
+    {
+        // TODO: پیاده‌سازی ثبت سند حقوق جدید
+        return new JsonResponse([]);
+    }
+
+    #[Route('/api/hrm/docs/update', name: 'hrm_docs_update', methods: ['POST'])]
+    public function update(Request $request): JsonResponse
+    {
+        // TODO: پیاده‌سازی ویرایش سند حقوق
+        return new JsonResponse([]);
+    }
+
+    #[Route('/api/hrm/docs/delete', name: 'hrm_docs_delete', methods: ['POST'])]
+    public function delete(Request $request): JsonResponse
+    {
+        // TODO: پیاده‌سازی حذف سند حقوق
+        return new JsonResponse([]);
+    }
 }
