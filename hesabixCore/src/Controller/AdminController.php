@@ -449,6 +449,7 @@ class AdminController extends AbstractController
         $resp['activeGateway'] = $registryMGR->get('system', key: 'activeGateway');
         $resp['parsianGatewayAPI'] = $registryMGR->get('system', key: 'parsianGatewayAPI');
         $resp['paypingKey'] = $registryMGR->get('system', key: 'paypingKey');
+        $resp['bitpayKey'] = $registryMGR->get('system', key: 'bitpayKey');
         return $this->json($resp);
     }
 
@@ -472,6 +473,7 @@ class AdminController extends AbstractController
             $registryMGR->update('system', 'activeGateway', $params['activeGateway']);
             $registryMGR->update('system', 'parsianGatewayAPI', $params['parsianGatewayAPI']);
             $registryMGR->update('system', 'paypingKey', $params['paypingKey']);
+            $registryMGR->update('system', 'bitpayKey', $params['bitpayKey']);
             $entityManager->persist($item);
             $entityManager->flush();
             return $this->json(['result' => 1]);

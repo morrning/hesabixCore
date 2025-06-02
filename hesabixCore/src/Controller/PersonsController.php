@@ -665,9 +665,21 @@ class PersonsController extends AbstractController
         if (!$acc)
             throw $this->createAccessDeniedException();
 
+        $data = json_decode($request->getContent(), true);
+        $selectedItems = $data['items'] ?? [];
+
+        // اگر آیتم‌های انتخاب شده وجود دارند، فقط آنها را دریافت کن
+        if (!empty($selectedItems)) {
+            $persons = $entityManager->getRepository(Person::class)->findBy([
+                'bid' => $acc['bid'],
+                'code' => $selectedItems
+            ]);
+        } else {
         $persons = $entityManager->getRepository(Person::class)->findBy([
             'bid' => $acc['bid']
         ]);
+        }
+
         $response = $provider->ArrayEntity2Array($persons, 0);
         foreach ($persons as $key => $person) {
             $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
@@ -690,6 +702,7 @@ class PersonsController extends AbstractController
                 array_push($result, $person);
             }
         }
+
         $pid = $provider->createPrint(
             $acc['bid'],
             $this->getUser(),
@@ -699,6 +712,7 @@ class PersonsController extends AbstractController
                 'persons' => $result
             ])
         );
+
         return $this->json(['id' => $pid]);
     }
 
@@ -1768,5 +1782,150 @@ class PersonsController extends AbstractController
                 'message' => $hasIgnored ? 'برخی اشخاص به دلیل استفاده در اسناد حذف نشدند' : 'همه اشخاص با موفقیت حذف شدند'
             ]
         ]);
+    }
+
+    #[Route('/api/person/list/debtors/excel/{id}', name: 'app_persons_debtors_list_excel', methods: ['POST'])]
+    public function app_persons_debtors_list_excel(Request $request, $id, Access $access, EntityManagerInterface $entityManager): Response
+    {
+        try {
+            $acc = $access->hasRole('person');
+            if (!$acc)
+                throw $this->createAccessDeniedException();
+
+            $data = json_decode($request->getContent(), true);
+            $selectedItems = $data['items'] ?? [];
+
+            // اگر آیتم‌های انتخاب شده وجود دارند، فقط آنها را دریافت کن
+            if (!empty($selectedItems)) {
+                $persons = $entityManager->getRepository(Person::class)->findBy([
+                    'bid' => $acc['bid'],
+                    'code' => $selectedItems
+                ]);
+            } else {
+                $persons = $entityManager->getRepository(Person::class)->findBy([
+                    'bid' => $acc['bid']
+                ]);
+            }
+
+            $response = [];
+            foreach ($persons as $key => $person) {
+                $rows = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                    'person' => $person,
+                    'bid' => $acc['bid']
+                ]);
+                $bs = 0;
+                $bd = 0;
+                foreach ($rows as $row) {
+                    $bs += $row->getBs();
+                    $bd += $row->getBd();
+                }
+                $response[$key] = [
+                    'code' => $person->getCode(),
+                    'nikename' => $person->getNikename(),
+                    'name' => $person->getName(),
+                    'birthday' => $person->getBirthday(),
+                    'company' => $person->getCompany(),
+                    'shenasemeli' => $person->getShenasemeli(),
+                    'codeeghtesadi' => $person->getCodeeghtesadi(),
+                    'sabt' => $person->getSabt(),
+                    'keshvar' => $person->getKeshvar(),
+                    'ostan' => $person->getOstan(),
+                    'shahr' => $person->getShahr(),
+                    'postalcode' => $person->getPostalcode(),
+                    'tel' => $person->getTel(),
+                    'mobile' => $person->getMobile(),
+                    'email' => $person->getEmail(),
+                    'website' => $person->getWebsite(),
+                    'fax' => $person->getFax(),
+                    'bs' => $bs,
+                    'bd' => $bd,
+                    'balance' => $bs - $bd
+                ];
+            }
+
+            // ایجاد فایل اکسل
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // تنظیم راست به چپ
+            $sheet->setRightToLeft(true);
+
+            // تنظیم هدرها
+            $headers = [
+                'A1' => 'کد',
+                'B1' => 'نام مستعار',
+                'C1' => 'وضعیت حساب',
+                'D1' => 'تراز حساب',
+                'E1' => 'نام و نام خانوادگی',
+                'F1' => 'تاریخ تولد/ثبت',
+                'G1' => 'شرکت',
+                'H1' => 'شناسه ملی',
+                'I1' => 'کد اقتصادی',
+                'J1' => 'شماره ثبت',
+                'K1' => 'کشور',
+                'L1' => 'استان',
+                'M1' => 'شهر',
+                'N1' => 'کد پستی',
+                'O1' => 'تلفن',
+                'P1' => 'تلفن همراه',
+                'Q1' => 'ایمیل',
+                'R1' => 'وب سایت',
+                'S1' => 'فکس'
+            ];
+
+            // اعمال هدرها
+            foreach ($headers as $cell => $value) {
+                $sheet->setCellValue($cell, $value);
+            }
+
+            // اضافه کردن داده‌ها
+            $row = 2;
+            foreach ($response as $item) {
+                $sheet->setCellValue('A' . $row, $item['code']);
+                $sheet->setCellValue('B' . $row, $item['nikename']);
+                $sheet->setCellValue('C' . $row, $item['balance'] < 0 ? 'بدهکار' : 'بستانکار');
+                $sheet->setCellValue('D' . $row, $item['balance']);
+                $sheet->setCellValue('E' . $row, $item['name']);
+                $sheet->setCellValue('F' . $row, $item['birthday']);
+                $sheet->setCellValue('G' . $row, $item['company']);
+                $sheet->setCellValue('H' . $row, $item['shenasemeli']);
+                $sheet->setCellValue('I' . $row, $item['codeeghtesadi']);
+                $sheet->setCellValue('J' . $row, $item['sabt']);
+                $sheet->setCellValue('K' . $row, $item['keshvar']);
+                $sheet->setCellValue('L' . $row, $item['ostan']);
+                $sheet->setCellValue('M' . $row, $item['shahr']);
+                $sheet->setCellValue('N' . $row, $item['postalcode']);
+                $sheet->setCellValue('O' . $row, $item['tel']);
+                $sheet->setCellValue('P' . $row, $item['mobile']);
+                $sheet->setCellValue('Q' . $row, $item['email']);
+                $sheet->setCellValue('R' . $row, $item['website']);
+                $sheet->setCellValue('S' . $row, $item['fax']);
+                $row++;
+            }
+
+            // تنظیم عرض ستون‌ها
+            foreach (range('A', 'S') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+
+            // ایجاد فایل اکسل
+            $writer = new Xlsx($spreadsheet);
+            $fileName = 'گزارش_بدهکاران_' . date('Y-m-d') . '.xlsx';
+            
+            // تنظیم هدرهای پاسخ
+            $response = new Response();
+            $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            $response->headers->set('Content-Disposition', 'attachment;filename="' . $fileName . '"');
+            $response->headers->set('Cache-Control', 'max-age=0');
+
+            // ذخیره فایل در حافظه
+            ob_start();
+            $writer->save('php://output');
+            $response->setContent(ob_get_clean());
+
+            return $response;
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

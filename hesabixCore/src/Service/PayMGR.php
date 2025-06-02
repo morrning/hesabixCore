@@ -159,6 +159,30 @@ class PayMGR
             } catch (\Exception $ex) {
 
             }
+        } elseif ($activeGateway == 'bitpay') {
+            $url = 'https://bitpay.ir/payment/gateway-send';
+            $api = $this->registry->get('system', 'bitpayKey');
+            $amount = $price;
+            $redirect = $callback_url;
+            $factorId = $orderID;
+            $name = '';
+            $email = '';
+            $description = $des;
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "api=$api&amount=$amount&redirect=$redirect&factorId=$factorId&name=$name&email=$email&description=$description");
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $result = curl_exec($ch);
+            curl_close($ch);
+            if ($result > 0 && is_numeric($result)) {
+                $res['code'] = 100;
+                $res['Success'] = true;
+                $res['gate'] = 'bitpay';
+                $res['message'] = 'OK';
+                $res['authkey'] = $result;
+                $res['targetURL'] = "https://bitpay.ir/payment/gateway-$result-get";
+            }
         }
         return $res;
     }
@@ -266,6 +290,27 @@ class PayMGR
                 $res['status'] = 100;
                 $res['refID'] = $result->ConfirmPaymentResult->RRN;
                 $res['card_pan'] = $result->ConfirmPaymentResult->CardNumberMasked;
+            }
+        } elseif ($activeGateway == 'bitpay') {
+            $url = 'https://bitpay.ir/payment/gateway-result-second';
+            $api = $this->registry->get('system', 'bitpayKey');
+            $trans_id = $request->get('trans_id');
+            $id_get = $request->get('id_get');
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, "api=$api&id_get=$id_get&trans_id=$trans_id&json=1");
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            $result = curl_exec($ch);
+            curl_close($ch);
+
+            $parseDecode = json_decode($result);
+            if ($parseDecode->status == 1) {
+                $res['Success'] = true;
+                $res['status'] = 100;
+                $res['refID'] = $trans_id;
+                $res['card_pan'] = $parseDecode->cardNum;
             }
         }
         return $res;

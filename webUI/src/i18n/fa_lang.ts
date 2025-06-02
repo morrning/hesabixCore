@@ -795,6 +795,7 @@ const fa_lang = {
       zarinpal_api: "کد API زرین‌پال",
       parsian_api: "کد API درگاه پارسیان",
       payping_api: "کد API درگاه پی‌پینگ",
+      bitpay_api: "کد API درگاه بیت‌پی",
       scripts: "اسکریپت‌ها",
       footer_scripts: "اسکریپت‌های فوتر سایت(مثلا اسکریپت شمارنده گوگل و ...)",
       site_footer: "فوتر سایت با پشتیبانی از HTML",

@@ -1,195 +1,337 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button"
-          class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa-solid fa-chart-simple px-2"></i>
-        گزارش بدهکاران
-      </h3>
-      <div class="block-options">
-        <div class="dropdown">
-          <a class="btn btn-sm btn-danger ms-2 dropdown-toggle text-end" href="#" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-file-pdf"></i>
-          </a>
-          <ul class="dropdown-menu">
-            <li><a @click.prevent="print(false)" class="dropdown-item" href="#">انتخاب شده‌ها</a></li>
-            <li><a @click.prevent="print(true)" class="dropdown-item" href="#">همه موارد</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <div class="block-content pt-1 pb-3">
-      <div class="row">
-        <div class="col-sm-12 col-md-12 m-0 p-0">
-          <div class="block-content pt-1 pb-3">
-            <div class="row">
-              <div class="col-sm-12 col-md-12 m-0 p-0">
-                <div class="mb-1">
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text"><i class="fa fa-search"></i></span>
-                    <input v-model="searchValue" class="form-control" type="text" placeholder="جست و جو ...">
-                  </div>
-                </div>
-                <EasyDataTable table-class-name="customize-table" v-model:items-selected="itemsSelected" multi-sort
-                  show-index alternating :search-value="searchValue" :headers="headers" :items="items"
-                  theme-color="#1d90ff" header-text-direction="center" body-text-direction="center"
-                  rowsPerPageMessage="تعداد سطر" emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-                  rowsOfPageSeparatorMessage="از" :loading="loading">
-                  <template #item-nikename="{ nikename, code }">
-                    <router-link :to="'/acc/persons/card/view/' + code">
-                      {{ nikename }}
+  <div>
+    <v-toolbar color="toolbar" title="گزارش بدهکاران">
+      <template v-slot:prepend>
+        <v-tooltip :text="$t('dialog.back')" location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text"
+              icon="mdi-arrow-right" />
+          </template>
+        </v-tooltip>
+      </template>
+      <v-spacer></v-spacer>
+      <v-menu>
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" color="error" variant="text" icon="mdi-file-pdf-box"></v-btn>
+        </template>
+        <v-list>
+          <v-list-item @click="print(false)" title="انتخاب شده‌ها">
+            <template v-slot:prepend>
+              <v-icon color="error" icon="mdi-file-pdf-box"></v-icon>
+            </template>
+          </v-list-item>
+          <v-list-item @click="print(true)" title="همه موارد">
+            <template v-slot:prepend>
+              <v-icon color="error" icon="mdi-file-pdf-box-multiple"></v-icon>
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+
+      <v-menu>
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" color="success" variant="text" icon="mdi-file-excel-box"></v-btn>
+        </template>
+        <v-list>
+          <v-list-item @click="exportExcel(false)" title="انتخاب شده‌ها">
+            <template v-slot:prepend>
+              <v-icon color="success" icon="mdi-file-excel-box"></v-icon>
+            </template>
+          </v-list-item>
+          <v-list-item @click="exportExcel(true)" title="همه موارد">
+            <template v-slot:prepend>
+              <v-icon color="success" icon="mdi-file-excel-box-multiple"></v-icon>
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </v-toolbar>
+
+    <v-text-field v-model="searchValue" prepend-inner-icon="mdi-magnify" density="compact" hide-details :rounded="false"
+      placeholder="جست و جو ..."></v-text-field>
+
+    <v-data-table :headers="headers" :items="filteredItems" :search="searchValue" :loading="loading"
+      :header-props="{ class: 'custom-header' }" hover>
+      <template v-slot:item.select="{ item }">
+        <v-checkbox
+          :model-value="selectedItems.has(item.code)"
+          @update:model-value="toggleSelection(item.code)"
+          hide-details
+          density="compact"
+        ></v-checkbox>
+      </template>
+
+      <template v-slot:item.nikename="{ item }">
+        <router-link :to="'/acc/persons/card/view/' + item.code" class="text-decoration-none">
+          {{ item.nikename }}
                     </router-link>
                   </template>
-                  <template #item-speedAccess="{ speedAccess }">
-                    <i v-if="speedAccess" class="fa fa-check text-success"></i>
-                  </template>
-                  <template #item-status="{ balance }">
-                    <span v-if="balance < 0" class="text-danger">بدهکار</span>
-                    <span v-if="balance > 0" class="text-success">بستانکار</span>
-                  </template>
-                  <template #item-bs="{ bs }">
-                    <span>{{ $filters.formatNumber(bs) }}</span>
-                  </template>
-                  <template #item-bd="{ bd }">
-                    <span>{{ $filters.formatNumber(bd) }}</span>
-                  </template>
-                  <template #item-balance="{ balance }">
-                    <span style="direction:ltr;text-align:left;">{{ $filters.formatNumber(balance) }}</span>
-                  </template>
-                </EasyDataTable>
-                <div class="container-fluid p-0 mx-0 my-3">
-                  <a class="block block-rounded block-link-shadow border-start border-success border-3"
-                    href="javascript:void(0)">
-                    <div class="block-content block-content-full block-content-sm bg-body-light">
-                      <div class="row">
-                        <div class="col-sm-6 com-md-6">
-                          <span class="text-dark">
-                            <i class="fa fa-list-dots"></i>
-                            بدهی کل:
-                          </span>
-                          <span class="text-primary">
-                            {{ $filters.formatNumber(Math.abs(this.sumTotal)) }}
-                            {{ $filters.getActiveMoney().shortName }}
-                          </span>
-                        </div>
 
-                        <div class="col-sm-6 com-md-6">
-                          <span class="text-dark">
-                            <i class="fa fa-list-check"></i>
-                            جمع بدهی موارد انتخابی:
-                          </span>
-                          <span class="text-primary">
-                            {{ $filters.formatNumber(Math.abs(this.sumSelected)) }}
+      <template v-slot:item.status="{ item }">
+        <v-chip :color="item.balance < 0 ? 'error' : 'success'" size="small">
+          {{ item.balance < 0 ? 'بدهکار' : 'بستانکار' }}
+        </v-chip>
+                  </template>
+
+      <template v-slot:item.bs="{ item }">
+        {{ $filters.formatNumber(item.bs) }}
+                  </template>
+
+      <template v-slot:item.bd="{ item }">
+        {{ $filters.formatNumber(item.bd) }}
+                  </template>
+
+      <template v-slot:item.balance="{ item }">
+        <span style="direction:ltr;text-align:left;">{{ $filters.formatNumber(item.balance) }}</span>
+                  </template>
+    </v-data-table>
+
+    <v-card class="mt-4" variant="outlined">
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" sm="6">
+            <div class="d-flex align-center">
+              <v-icon color="primary" class="ml-2">mdi-cash-multiple</v-icon>
+              <span class="text-subtitle-1">بدهی کل:</span>
+              <span class="text-primary mr-2">
+                {{ $filters.formatNumber(Math.abs(sumTotal)) }}
                             {{ $filters.getActiveMoney().shortName }}
                           </span>
                         </div>
-                      </div>
-                    </div>
-                  </a>
-                </div>
-              </div>
+          </v-col>
+          <v-col cols="12" sm="6">
+            <div class="d-flex align-center">
+              <v-icon color="primary" class="ml-2">mdi-cash-check</v-icon>
+              <span class="text-subtitle-1">جمع بدهی موارد انتخابی:</span>
+              <span class="text-primary mr-2">
+                {{ $filters.formatNumber(Math.abs(sumSelected)) }}
+                            {{ $filters.getActiveMoney().shortName }}
+                          </span>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+    <!-- اسنک‌بار برای نمایش پیام -->
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+      {{ snackbar.message }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="snackbar.show = false">
+          بستن
+        </v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
-<script>
-import axios from "axios";
-import Swal from "sweetalert2";
-import { ref } from "vue";
+<script setup>
+import { ref, onMounted, computed, watch } from 'vue'
+import axios from 'axios'
+import Swal from 'sweetalert2'
+import { getApiUrl } from '@/hesabixConfig'
 
-export default {
-  name: "debtors",
-  data: () => {
-    return {
-      sumSelected: 0,
-      sumTotal: 0,
-      itemsSelected: [],
-      searchValue: '',
-      loading: ref(true),
-      items: [],
-      itemsSelected: [],
-      headers: [
-        { text: "کد", value: "code" },
-        { text: "نام مستعار", value: "nikename", sortable: true, width: 150 },
-        { text: "تراز حساب", value: "balance", sortable: true, width: 100 },
-        { text: "وضعیت حساب", value: "status", sortable: true, width: 110 },
-        { text: "بدهکار", value: "bd", sortable: true, width: 100 },
-        { text: "نام و نام خانوادگی", value: "name", sortable: true, width: 150 },
-        { text: "تاریخ تولد/ثبت", value: "birthday", sortable: true, width: 150 },
-        { text: "شرکت", value: "company", sortable: true, width: 100 },
-        { text: "شناسه ملی", value: "shenasemeli", sortable: true, width: 100 },
-        { text: "کد اقتصادی", value: "codeeghtesadi", sortable: true, width: 100 },
-        { text: "شماره ثبت", value: "sabt", sortable: true, width: 100 },
-        { text: "کشور", value: "keshvar", sortable: true, width: 100 },
-        { text: "استان", value: "ostan", sortable: true, width: 100 },
-        { text: "شهر", value: "shahr", sortable: true, width: 100 },
-        { text: "کد پستی", value: "postalcode", sortable: true, width: 100 },
-        { text: "تلفن", value: "tel", width: 100 },
-        { text: "تلفن همراه", value: "mobile", width: 100 },
-        { text: "ایمیل", value: "email", sortable: true, width: 100 },
-        { text: "وب سایت", value: "website", sortable: true, width: 100 },
-        { text: "فکس", value: "fax", sortable: true, width: 100 },
-      ]
+const searchValue = ref('')
+const loading = ref(true)
+const items = ref([])
+const selectedItems = ref(new Set())
+const sumSelected = ref(0)
+const sumTotal = ref(0)
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: 'success'
+})
+
+const headers = [
+  { title: '', key: 'select', sortable: false },
+  { title: 'کد', key: 'code', sortable: true },
+  { title: 'نام مستعار', key: 'nikename', sortable: true },
+  { title: 'وضعیت حساب', key: 'status', sortable: true },
+  { title: 'تراز حساب', key: 'balance', sortable: true },
+  { title: 'نام و نام خانوادگی', key: 'name', sortable: true },
+  { title: 'تاریخ تولد/ثبت', key: 'birthday', sortable: true },
+  { title: 'شرکت', key: 'company', sortable: true },
+  { title: 'شناسه ملی', key: 'shenasemeli', sortable: true },
+  { title: 'کد اقتصادی', key: 'codeeghtesadi', sortable: true },
+  { title: 'شماره ثبت', key: 'sabt', sortable: true },
+  { title: 'کشور', key: 'keshvar', sortable: true },
+  { title: 'استان', key: 'ostan', sortable: true },
+  { title: 'شهر', key: 'shahr', sortable: true },
+  { title: 'کد پستی', key: 'postalcode', sortable: true },
+  { title: 'تلفن', key: 'tel' },
+  { title: 'تلفن همراه', key: 'mobile' },
+  { title: 'ایمیل', key: 'email', sortable: true },
+  { title: 'وب سایت', key: 'website', sortable: true },
+  { title: 'فکس', key: 'fax', sortable: true }
+]
+
+const filteredItems = computed(() => {
+  if (!searchValue.value) return items.value
+
+  const search = searchValue.value.toLowerCase()
+  return items.value.filter(item => {
+    return (
+      item.code.toLowerCase().includes(search) ||
+      item.nikename.toLowerCase().includes(search) ||
+      item.name.toLowerCase().includes(search) ||
+      item.company?.toLowerCase().includes(search) ||
+      item.shenasemeli?.toLowerCase().includes(search) ||
+      item.codeeghtesadi?.toLowerCase().includes(search)
+    )
+  })
+})
+
+const calculateSelectedSum = () => {
+  let total = 0
+  items.value.forEach(item => {
+    if (selectedItems.value.has(item.code)) {
+      const balance = Number(item.balance || 0)
+      total += balance
     }
-  },
-  watch: {
-    itemsSelected: {
-      handler: function (val, oldVal) {
-        this.sumSelected = 0;
-        this.itemsSelected.forEach((item) => {
-          this.sumSelected += (item.bs - item.bd);
-        });
-      },
-      deep: true
+  })
+  sumSelected.value = total
+}
+
+const toggleSelection = (code) => {
+  if (selectedItems.value.has(code)) {
+    selectedItems.value.delete(code)
+  } else {
+    selectedItems.value.add(code)
+  }
+  calculateSelectedSum()
+}
+
+const calculateTotalSum = () => {
+  let total = 0
+  items.value.forEach(item => {
+    const balance = Number(item.balance || 0)
+    total += balance
+  })
+  sumTotal.value = total
+}
+
+watch(selectedItems, () => {
+  calculateSelectedSum()
+}, { deep: true })
+
+const loadData = async () => {
+  try {
+    const response = await axios.post('/api/person/list/debtors/0')
+    items.value = response.data
+    calculateTotalSum()
+    loading.value = false
+  } catch (error) {
+    loading.value = false
+    snackbar.value = {
+      show: true,
+      message: 'خطا در بارگذاری اطلاعات',
+      color: 'error'
     }
-  },
-  methods: {
-    loadData() {
-      axios.post('/api/person/list/debtors/0')
-        .then((response) => {
-          this.items = response.data;
-          this.items.forEach((item) => {
-            this.sumTotal += (item.bs - item.bd);
-          })
-          this.loading = false;
-        })
-    },
-    print(AllItems = true) {
-      if (AllItems) {
-        axios.post('/api/person/list/debtors/print/0').then((response) => {
-          this.printID = response.data.id;
-          window.open(this.$API_URL + '/front/print/' + this.printID, '_blank', 'noreferrer');
-        })
-      }
-      else {
-        if (this.itemsSelected.length === 0) {
-          Swal.fire({
-            text: 'هیچ آیتمی انتخاب نشده است.',
-            icon: 'info',
-            confirmButtonText: 'قبول'
-          });
-        }
-        else {
-          axios.post('/api/person/list/debtors/print/0', { items: this.itemsSelected }).then((response) => {
-            this.printID = response.data.id;
-            window.open(this.$API_URL + '/front/print/' + this.printID, '_blank', 'noreferrer');
-          })
-        }
-      }
-    }
-  },
-  beforeMount() {
-    this.loadData();
   }
 }
+
+const print = async (allItems = true) => {
+  if (!allItems && selectedItems.value.size === 0) {
+    Swal.fire({
+      text: 'هیچ آیتمی انتخاب نشده است.',
+      icon: 'info',
+      confirmButtonText: 'قبول'
+    })
+    return
+  }
+
+  try {
+    loading.value = true
+    const payload = allItems ? { all: true } : { items: Array.from(selectedItems.value) }
+    const response = await axios.post('/api/person/list/debtors/print/0', payload)
+    
+    if (response.data && response.data.id) {
+      const pdfResponse = await axios({
+        method: 'get',
+        url: '/front/print/' + response.data.id,
+        responseType: 'arraybuffer'
+      })
+      
+      const fileURL = window.URL.createObjectURL(new Blob([pdfResponse.data]))
+      const fileLink = document.createElement('a')
+      fileLink.href = fileURL
+      fileLink.setAttribute('download', `گزارش_بدهکاران_${new Date().toLocaleDateString('fa-IR')}.pdf`)
+      document.body.appendChild(fileLink)
+      fileLink.click()
+      document.body.removeChild(fileLink)
+      window.URL.revokeObjectURL(fileURL)
+
+      snackbar.value = {
+        show: true,
+        message: 'گزارش با موفقیت دانلود شد',
+        color: 'success'
+      }
+    } else {
+      throw new Error('خطا در دریافت شناسه چاپ')
+    }
+  } catch (error) {
+    snackbar.value = {
+      show: true,
+      message: 'خطا در دانلود گزارش',
+      color: 'error'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const exportExcel = async (allItems = true) => {
+  if (!allItems && selectedItems.value.size === 0) {
+    Swal.fire({
+      text: 'هیچ آیتمی انتخاب نشده است.',
+      icon: 'info',
+      confirmButtonText: 'قبول'
+    })
+    return
+  }
+
+  try {
+    loading.value = true
+    const payload = allItems ? { all: true } : { items: Array.from(selectedItems.value) }
+    const response = await axios.post('/api/person/list/debtors/excel/0', payload, { 
+      responseType: 'blob' 
+    })
+    
+    const fileURL = window.URL.createObjectURL(new Blob([response.data], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    }))
+    const fileLink = document.createElement('a')
+    fileLink.href = fileURL
+    fileLink.setAttribute('download', `گزارش_بدهکاران_${new Date().toLocaleDateString('fa-IR')}.xlsx`)
+    document.body.appendChild(fileLink)
+    fileLink.click()
+    document.body.removeChild(fileLink)
+    window.URL.revokeObjectURL(fileURL)
+
+    snackbar.value = {
+      show: true,
+      message: 'گزارش اکسل با موفقیت دانلود شد',
+      color: 'success'
+    }
+  } catch (error) {
+    snackbar.value = {
+      show: true,
+      message: 'خطا در دانلود گزارش اکسل',
+      color: 'error'
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
-<style scoped></style>
+<style scoped>
+.v-data-table {
+  direction: rtl;
+}
+</style>
