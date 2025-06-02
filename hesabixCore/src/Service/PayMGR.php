@@ -183,6 +183,9 @@ class PayMGR
                 $res['authkey'] = $result;
                 $res['targetURL'] = "https://bitpay.ir/payment/gateway-$result-get";
             }
+            else{
+                var_dump($result);
+            }
         }
         return $res;
     }
