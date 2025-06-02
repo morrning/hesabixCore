@@ -78,6 +78,11 @@
                         <v-btn v-bind="props" icon="mdi-delete" variant="text" size="small" color="error" @click="removeRow(index)"></v-btn>
                       </template>
                     </v-tooltip>
+                    <v-tooltip text="کپی" location="bottom">
+                      <template v-slot:activator="{ props }">
+                        <v-btn v-bind="props" icon="mdi-content-copy" variant="text" size="small" color="primary" @click="copyRow(index)"></v-btn>
+                      </template>
+                    </v-tooltip>
                   </td>
                 </tr>
               </template>
@@ -250,6 +255,17 @@ export default {
         }
         return sum + (Number(row[column]) || 0);
       }, 0);
+    },
+    copyRow(index) {
+      const rowToCopy = this.tableItems[index];
+      this.tableItems.push({
+        person: null,
+        description: rowToCopy.description,
+        baseSalary: rowToCopy.baseSalary,
+        overtime: rowToCopy.overtime,
+        shift: rowToCopy.shift,
+        night: rowToCopy.night
+      });
     },
   }
 }

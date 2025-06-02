@@ -80,31 +80,6 @@
                     </v-card-text>
                   </v-card>
                 </v-col>
-                <v-col cols="12" sm="6" md="3">
-                  <v-card :class="['charge-card', { 'selected': isCustomAmount }]"
-                    :elevation="isCustomAmount ? 4 : 1" class="h-100"
-                    :color="isCustomAmount ? 'primary' : 'surface'" variant="elevated">
-                    <v-card-text class="text-center">
-                      <div class="text-h6 mb-2" :class="{ 'text-white': isCustomAmount }">مبلغ دلخواه</div>
-                      <v-text-field
-                        v-model="customAmount"
-                        type="number"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        class="mt-2"
-                        :class="{ 'custom-amount-input': isCustomAmount }"
-                        placeholder="مبلغ را وارد کنید"
-                        @click="selectCustomAmount"
-                        @input="handleCustomAmountInput"
-                      ></v-text-field>
-                      <div v-if="customAmount" class="text-caption mt-2"
-                        :class="{ 'text-white': isCustomAmount, 'text-medium-emphasis': !isCustomAmount }">
-                        با احتساب مالیات: {{ formatPrice(Number(customAmount) * 1.1) }} تومان
-                      </div>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
               </v-row>
             </v-col>
           </v-row>
@@ -187,13 +162,11 @@ export default defineComponent({
       color: 'error'
     },
     smsCharge: 100000,
-    customAmount: '',
-    isCustomAmount: false,
     chargeAmounts: [
-      { label: '۱۰ هزار تومان', value: 10000 },
       { label: '۵۰ هزار تومان', value: 50000 },
       { label: '۱۰۰ هزار تومان', value: 100000 },
-      { label: '۲۰۰ هزار تومان', value: 200000 }
+      { label: '۲۰۰ هزار تومان', value: 200000 },
+      { label: '۵۰۰ هزار تومان', value: 500000 }
     ],
     searchValue: '',
     loading: true,
@@ -231,7 +204,8 @@ export default defineComponent({
     },
     pay() {
       this.loading = true;
-      axios.post('/api/sms/charge', { price: this.smsCharge })
+      const amountInRial = this.smsCharge * 10; // تبدیل تومان به ریال
+      axios.post('/api/sms/charge', { price: amountInRial })
         .then((response) => {
           if (response.data.Success === true) {
             window.location.href = response.data.targetURL;
@@ -260,15 +234,6 @@ export default defineComponent({
     },
     formatPrice(price: number): string {
       return new Intl.NumberFormat('fa-IR').format(price);
-    },
-    selectCustomAmount() {
-      this.isCustomAmount = true;
-      this.smsCharge = Number(this.customAmount);
-    },
-    handleCustomAmountInput() {
-      if (this.isCustomAmount) {
-        this.smsCharge = Number(this.customAmount);
-      }
     },
   },
   beforeMount() {

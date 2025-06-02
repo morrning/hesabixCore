@@ -36,17 +36,19 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   data() {
     return {
       loading: false,
       headers: [
-        { title: this.$t('field.id'), key: 'id' },
-        { title: this.$t('field.date'), key: 'date' },
-        { title: this.$t('field.employee'), key: 'employee' },
-        { title: this.$t('field.amount'), key: 'amount' },
-        { title: this.$t('field.status'), key: 'status' },
-        { title: this.$t('field.actions'), key: 'actions', sortable: false }
+        { title: this.$t('dialog.field.id'), key: 'id' },
+        { title: this.$t('dialog.field.date'), key: 'date' },
+        { title: this.$t('dialog.field.employee'), key: 'employee' },
+        { title: this.$t('dialog.field.amount'), key: 'amount' },
+        { title: this.$t('dialog.field.status'), key: 'status' },
+        { title: this.$t('dialog.field.actions'), key: 'actions', sortable: false }
       ],
       items: []
     }
@@ -58,7 +60,7 @@ export default {
     async loadData() {
       this.loading = true
       try {
-        const response = await this.$axios.post('/api/hrm/docs/list')
+        const response = await axios.post('/api/hrm/docs/list')
         this.items = response.data
       } catch (error) {
         console.error('Error loading data:', error)

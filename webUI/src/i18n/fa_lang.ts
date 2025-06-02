@@ -546,6 +546,14 @@ const fa_lang = {
       return_sell: "برگشت از فروش",
       all_types: "همه موارد"
     },
+    field: {
+      id: "شناسه",
+      date: "تاریخ",
+      employee: "کارمند",
+      amount: "مبلغ",
+      status: "وضعیت",
+      actions: "عملیات"
+    },
   },
   app: {
     loading: "در حال بارگذاری...",

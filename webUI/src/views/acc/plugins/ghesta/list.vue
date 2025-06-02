@@ -109,11 +109,6 @@
                 <v-icon icon="mdi-file-edit"></v-icon>
               </template>
             </v-list-item>
-            <v-list-item class="text-dark" :title="$t('dialog.payment')" @click="onPayment(item)">
-              <template v-slot:prepend>
-                <v-icon icon="mdi-cash"></v-icon>
-              </template>
-            </v-list-item>
             <v-list-item class="text-dark" :title="$t('dialog.delete')" @click="onDelete(item)">
               <template v-slot:prepend>
                 <v-icon color="deep-orange-accent-4" icon="mdi-trash-can"></v-icon>
@@ -343,10 +338,6 @@ export default defineComponent({
       router.push(`/acc/plugins/ghesta/view/${item.id}`)
     }
 
-    const onPayment = (item) => {
-      router.push(`/acc/plugins/ghesta/payment/${item.id}`)
-    }
-
     onMounted(() => {
       loadData()
     })
@@ -370,8 +361,7 @@ export default defineComponent({
       onSearch,
       onEdit,
       onDelete,
-      onView,
-      onPayment
+      onView
     }
   }
 })

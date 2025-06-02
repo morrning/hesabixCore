@@ -391,7 +391,7 @@ class PlugGhestaController extends AbstractController
                     'id' => $item->getId(),
                     'code' => $item->getMainDoc() ? $item->getMainDoc()->getCode() : null,
                     'firstGhestaDate' => $firstGhestaDate,
-                    'amount' => $item->getProfitAmount(), // مبلغ کل شامل سود
+                    'amount' => $item->getMainDoc() ? $item->getMainDoc()->getAmount() : 0, // مبلغ کل فاکتور
                     'profitAmount' => $item->getProfitAmount(),
                     'profitPercent' => $item->getProfitPercent(),
                     'profitType' => $item->getProfitType(),

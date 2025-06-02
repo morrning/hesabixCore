@@ -632,112 +632,140 @@ export default {
       return Math.round(monthlyInterest);
     },
     calculatedInstallments() {
-      if (!this.selectedInvoice || !this.installmentData.firstDate) {
-        return [];
+      if (!this.canCalculate) {
+        this.showMessage('لطفا تمام اطلاعات مورد نیاز را وارد کنید', 'error');
+        return;
       }
 
-      const totalAmount = this.remainingAmount;
-      const prepayment = Number(this.installmentData.prepayment) || 0;
-      const remainingAmount = totalAmount - prepayment;
-      const interestRate = Number(this.installmentData.interestRate) || 0;
-      const interestType = this.installmentData.interestType;
+      if (this.isCalculating) {
+        return;
+      }
       
-      let count, monthlyPayment;
-      
-      if (this.installmentData.calculationType === 'amount') {
-        monthlyPayment = Number(this.installmentData.installmentAmount);
-        if (monthlyPayment <= 0) {
-          this.installments = [];
-          return;
-        }
+      try {
+        this.isCalculating = true;
+        this.loading = true;
 
-        // محاسبه تعداد اقساط بر اساس مبلغ هر قسط
-        switch (interestType) {
-          case 'monthly': {
-            // برای سود ساده ماهانه
-            const monthlyInterest = interestRate / 100;
-            const principalPerMonth = remainingAmount / monthlyPayment;
-            const interestPerMonth = monthlyInterest;
-            count = Math.ceil(principalPerMonth / (1 - interestPerMonth));
-            break;
-          }
-          case 'yearly': {
-            // برای سود ساده سالانه
-            const yearlyInterest = interestRate / 100;
-            const monthlyInterest = yearlyInterest / 12;
-            const principalPerMonth = remainingAmount / monthlyPayment;
-            const interestPerMonth = monthlyInterest;
-            count = Math.ceil(principalPerMonth / (1 - interestPerMonth));
-            break;
-          }
-          default:
-            count = 0;
-        }
+        // حفظ وضعیت پرداخت اقساط موجود
+        const existingInstallments = this.installments.reduce((acc, item) => {
+          acc[item.number] = {
+            status: item.status,
+            hesabdariDoc: item.hesabdariDoc
+          };
+          return acc;
+        }, {});
 
-        // محدود کردن تعداد اقساط به یک عدد منطقی
-        count = Math.min(Math.max(count, 1), 360); // حداکثر 30 سال
-      } else {
-        count = Number(this.installmentData.count) || 0;
-        if (count <= 0) {
-          this.installments = [];
-          return;
-        }
+        const totalAmount = this.remainingAmount;
+        const prepayment = Number(this.installmentData.prepayment) || 0;
+        const remainingAmount = totalAmount - prepayment;
+        const interestRate = Number(this.installmentData.interestRate) || 0;
+        const interestType = this.installmentData.interestType;
         
-        switch (interestType) {
-          case 'monthly': {
-            const monthlyInterest = interestRate / 100;
-            const totalInterest = monthlyInterest * count;
-            monthlyPayment = (remainingAmount * (1 + totalInterest)) / count;
-            break;
+        let count, monthlyPayment;
+        
+        if (this.installmentData.calculationType === 'amount') {
+          monthlyPayment = Number(this.installmentData.installmentAmount);
+          if (monthlyPayment <= 0) {
+            this.installments = [];
+            this.showMessage('مبلغ هر قسط باید بزرگتر از صفر باشد', 'error');
+            return;
           }
-          case 'yearly': {
-            const yearlyInterest = interestRate / 100;
-            const monthlyInterest = yearlyInterest / 12;
-            const totalInterest = monthlyInterest * count;
-            monthlyPayment = (remainingAmount * (1 + totalInterest)) / count;
-            break;
+
+          // محاسبه تعداد اقساط بر اساس مبلغ هر قسط
+          switch (interestType) {
+            case 'monthly': {
+              const monthlyInterest = interestRate / 100;
+              const principalPerMonth = remainingAmount / monthlyPayment;
+              const interestPerMonth = monthlyInterest;
+              count = Math.ceil(principalPerMonth / (1 - interestPerMonth));
+              break;
+            }
+            case 'yearly': {
+              const yearlyInterest = interestRate / 100;
+              const monthlyInterest = yearlyInterest / 12;
+              const principalPerMonth = remainingAmount / monthlyPayment;
+              const interestPerMonth = monthlyInterest;
+              count = Math.ceil(principalPerMonth / (1 - interestPerMonth));
+              break;
+            }
+            default:
+              count = 0;
           }
-          default:
-            monthlyPayment = 0;
-        }
-      }
 
-      // ایجاد اقساط
-      const newInstallments = [];
-      let currentDate = moment(this.installmentData.firstDate, 'jYYYY/jMM/jDD').toDate();
-      let remainingTotal = remainingAmount;
-
-      for (let i = 1; i <= count; i++) {
-        let installmentAmount;
-        if (i === count) {
-          installmentAmount = remainingTotal;
+          count = Math.min(Math.max(count, 1), 360);
         } else {
-          installmentAmount = Math.round(monthlyPayment);
-          remainingTotal -= installmentAmount;
+          count = Number(this.installmentData.count) || 0;
+          if (count <= 0) {
+            this.installments = [];
+            this.showMessage('تعداد اقساط باید بزرگتر از صفر باشد', 'error');
+            return;
+          }
+          
+          switch (interestType) {
+            case 'monthly': {
+              const monthlyInterest = interestRate / 100;
+              const totalInterest = monthlyInterest * count;
+              monthlyPayment = (remainingAmount * (1 + totalInterest)) / count;
+              break;
+            }
+            case 'yearly': {
+              const yearlyInterest = interestRate / 100;
+              const monthlyInterest = yearlyInterest / 12;
+              const totalInterest = monthlyInterest * count;
+              monthlyPayment = (remainingAmount * (1 + totalInterest)) / count;
+              break;
+            }
+            default:
+              monthlyPayment = 0;
+          }
         }
 
-        newInstallments.push({
-          number: i,
-          amount: installmentAmount,
-          dueDate: moment(currentDate).format('jYYYY/jMM/jDD'),
-          status: 'پرداخت نشده',
-          latePaymentPenalty: this.installmentData.latePaymentPenalty
-        });
+        const newInstallments = [];
+        let currentDate = moment(this.installmentData.firstDate, 'jYYYY/jMM/jDD').toDate();
+        let remainingTotal = remainingAmount;
 
-        currentDate = moment(currentDate).add(1, 'month').toDate();
+        for (let i = 1; i <= count; i++) {
+          let installmentAmount;
+          if (i === count) {
+            installmentAmount = remainingTotal;
+          } else {
+            installmentAmount = Math.round(monthlyPayment);
+            remainingTotal -= installmentAmount;
+          }
+
+          const existingInstallment = existingInstallments[i];
+          newInstallments.push({
+            number: i,
+            amount: installmentAmount,
+            dueDate: moment(currentDate).format('jYYYY/jMM/jDD'),
+            status: existingInstallment ? existingInstallment.status : 'پرداخت نشده',
+            latePaymentPenalty: this.installmentData.latePaymentPenalty,
+            hesabdariDoc: existingInstallment ? existingInstallment.hesabdariDoc : null
+          });
+
+          currentDate = moment(currentDate).add(1, 'month').toDate();
+        }
+
+        if (prepayment > 0) {
+          const existingPrepayment = existingInstallments[0];
+          newInstallments.unshift({
+            number: 0,
+            amount: prepayment,
+            dueDate: moment().format('jYYYY/jMM/jDD'),
+            status: existingPrepayment ? existingPrepayment.status : 'پرداخت شده',
+            latePaymentPenalty: 0,
+            hesabdariDoc: existingPrepayment ? existingPrepayment.hesabdariDoc : null
+          });
+        }
+
+        this.installments = newInstallments;
+        this.showMessage('اقساط با موفقیت محاسبه شد', 'success');
+      } catch (error) {
+        console.error('خطا در محاسبه اقساط:', error);
+        this.showMessage('خطا در محاسبه اقساط', 'error');
+      } finally {
+        this.isCalculating = false;
+        this.loading = false;
       }
-
-      if (prepayment > 0) {
-        newInstallments.unshift({
-          number: 0,
-          amount: prepayment,
-          dueDate: moment().format('jYYYY/jMM/jDD'),
-          status: 'پرداخت شده',
-          latePaymentPenalty: 0
-        });
-      }
-
-      this.installments = newInstallments;
     },
     dailyPenaltyAmount() {
       if (!this.installmentData.installmentAmount) {
@@ -761,6 +789,142 @@ export default {
       this.snackbar.text = text;
       this.snackbar.color = color;
       this.snackbar.show = true;
+    },
+    calculateInstallments() {
+      if (!this.canCalculate) {
+        this.showMessage('لطفا تمام اطلاعات مورد نیاز را وارد کنید', 'error');
+        return;
+      }
+
+      if (this.isCalculating) {
+        return;
+      }
+      
+      try {
+        this.isCalculating = true;
+        this.loading = true;
+
+        // حفظ وضعیت پرداخت اقساط موجود
+        const existingInstallments = this.installments.reduce((acc, item) => {
+          acc[item.number] = {
+            status: item.status,
+            hesabdariDoc: item.hesabdariDoc
+          };
+          return acc;
+        }, {});
+
+        const totalAmount = this.remainingAmount;
+        const prepayment = Number(this.installmentData.prepayment) || 0;
+        const remainingAmount = totalAmount - prepayment;
+        const interestRate = Number(this.installmentData.interestRate) || 0;
+        const interestType = this.installmentData.interestType;
+        
+        let count, monthlyPayment;
+        
+        if (this.installmentData.calculationType === 'amount') {
+          monthlyPayment = Number(this.installmentData.installmentAmount);
+          if (monthlyPayment <= 0) {
+            this.installments = [];
+            this.showMessage('مبلغ هر قسط باید بزرگتر از صفر باشد', 'error');
+            return;
+          }
+
+          // محاسبه تعداد اقساط بر اساس مبلغ هر قسط
+          switch (interestType) {
+            case 'monthly': {
+              const monthlyInterest = interestRate / 100;
+              const principalPerMonth = remainingAmount / monthlyPayment;
+              const interestPerMonth = monthlyInterest;
+              count = Math.ceil(principalPerMonth / (1 - interestPerMonth));
+              break;
+            }
+            case 'yearly': {
+              const yearlyInterest = interestRate / 100;
+              const monthlyInterest = yearlyInterest / 12;
+              const principalPerMonth = remainingAmount / monthlyPayment;
+              const interestPerMonth = monthlyInterest;
+              count = Math.ceil(principalPerMonth / (1 - interestPerMonth));
+              break;
+            }
+            default:
+              count = 0;
+          }
+
+          count = Math.min(Math.max(count, 1), 360);
+        } else {
+          count = Number(this.installmentData.count) || 0;
+          if (count <= 0) {
+            this.installments = [];
+            this.showMessage('تعداد اقساط باید بزرگتر از صفر باشد', 'error');
+            return;
+          }
+          
+          switch (interestType) {
+            case 'monthly': {
+              const monthlyInterest = interestRate / 100;
+              const totalInterest = monthlyInterest * count;
+              monthlyPayment = (remainingAmount * (1 + totalInterest)) / count;
+              break;
+            }
+            case 'yearly': {
+              const yearlyInterest = interestRate / 100;
+              const monthlyInterest = yearlyInterest / 12;
+              const totalInterest = monthlyInterest * count;
+              monthlyPayment = (remainingAmount * (1 + totalInterest)) / count;
+              break;
+            }
+            default:
+              monthlyPayment = 0;
+          }
+        }
+
+        const newInstallments = [];
+        let currentDate = moment(this.installmentData.firstDate, 'jYYYY/jMM/jDD').toDate();
+        let remainingTotal = remainingAmount;
+
+        for (let i = 1; i <= count; i++) {
+          let installmentAmount;
+          if (i === count) {
+            installmentAmount = remainingTotal;
+          } else {
+            installmentAmount = Math.round(monthlyPayment);
+            remainingTotal -= installmentAmount;
+          }
+
+          const existingInstallment = existingInstallments[i];
+          newInstallments.push({
+            number: i,
+            amount: installmentAmount,
+            dueDate: moment(currentDate).format('jYYYY/jMM/jDD'),
+            status: existingInstallment ? existingInstallment.status : 'پرداخت نشده',
+            latePaymentPenalty: this.installmentData.latePaymentPenalty,
+            hesabdariDoc: existingInstallment ? existingInstallment.hesabdariDoc : null
+          });
+
+          currentDate = moment(currentDate).add(1, 'month').toDate();
+        }
+
+        if (prepayment > 0) {
+          const existingPrepayment = existingInstallments[0];
+          newInstallments.unshift({
+            number: 0,
+            amount: prepayment,
+            dueDate: moment().format('jYYYY/jMM/jDD'),
+            status: existingPrepayment ? existingPrepayment.status : 'پرداخت شده',
+            latePaymentPenalty: 0,
+            hesabdariDoc: existingPrepayment ? existingPrepayment.hesabdariDoc : null
+          });
+        }
+
+        this.installments = newInstallments;
+        this.showMessage('اقساط با موفقیت محاسبه شد', 'success');
+      } catch (error) {
+        console.error('خطا در محاسبه اقساط:', error);
+        this.showMessage('خطا در محاسبه اقساط', 'error');
+      } finally {
+        this.isCalculating = false;
+        this.loading = false;
+      }
     },
     async saveInvoice() {
       if (!this.selectedInvoice) {
@@ -833,6 +997,12 @@ export default {
     },
 
     editInstallment(item) {
+      // اگر قسط پرداخت شده باشد، اجازه ویرایش ندهیم
+      if (item.isPaid) {
+        this.showMessage('قسط پرداخت شده قابل ویرایش نیست', 'error');
+        return;
+      }
+
       this.dialog = {
         show: true,
         title: 'ویرایش قسط',
@@ -872,6 +1042,12 @@ export default {
     },
 
     deleteInstallment(item) {
+      // اگر قسط پرداخت شده باشد، اجازه حذف ندهیم
+      if (item.isPaid) {
+        this.showMessage('قسط پرداخت شده قابل حذف نیست', 'error');
+        return;
+      }
+
       this.dialog = {
         show: true,
         title: 'حذف قسط',
@@ -882,14 +1058,6 @@ export default {
         onConfirm: () => {
           const index = this.installments.findIndex(i => i.number === item.number);
           if (index !== -1) {
-            // اگر قسط پرداخت شده است، اجازه حذف ندهیم
-            if (item.status === 'پرداخت شده') {
-              this.showMessage('قسط پرداخت شده قابل حذف نیست', 'error');
-              this.dialog.show = false;
-              return;
-            }
-            
-            // حذف قسط
             this.installments.splice(index, 1);
             
             // به‌روزرسانی شماره اقساط
@@ -919,133 +1087,6 @@ export default {
       // در غیر این صورت، تاریخ میلادی را به شمسی تبدیل کن
       return moment(date).format('jYYYY/jMM/jDD');
     },
-    calculateInstallments() {
-      if (!this.canCalculate) {
-        this.showMessage('لطفا تمام اطلاعات مورد نیاز را وارد کنید', 'error');
-        return;
-      }
-
-      if (this.isCalculating) {
-        return;
-      }
-      
-      try {
-        this.isCalculating = true;
-        this.loading = true;
-
-        const totalAmount = this.remainingAmount;
-        const prepayment = Number(this.installmentData.prepayment) || 0;
-        const remainingAmount = totalAmount - prepayment;
-        const interestRate = Number(this.installmentData.interestRate) || 0;
-        const interestType = this.installmentData.interestType;
-        
-        let count, monthlyPayment;
-        
-        if (this.installmentData.calculationType === 'amount') {
-          monthlyPayment = Number(this.installmentData.installmentAmount);
-          if (monthlyPayment <= 0) {
-            this.installments = [];
-            this.showMessage('مبلغ هر قسط باید بزرگتر از صفر باشد', 'error');
-            return;
-          }
-
-          // محاسبه تعداد اقساط بر اساس مبلغ هر قسط
-          switch (interestType) {
-            case 'monthly': {
-              // برای سود ساده ماهانه
-              const monthlyInterest = interestRate / 100;
-              const principalPerMonth = remainingAmount / monthlyPayment;
-              const interestPerMonth = monthlyInterest;
-              count = Math.ceil(principalPerMonth / (1 - interestPerMonth));
-              break;
-            }
-            case 'yearly': {
-              // برای سود ساده سالانه
-              const yearlyInterest = interestRate / 100;
-              const monthlyInterest = yearlyInterest / 12;
-              const principalPerMonth = remainingAmount / monthlyPayment;
-              const interestPerMonth = monthlyInterest;
-              count = Math.ceil(principalPerMonth / (1 - interestPerMonth));
-              break;
-            }
-            default:
-              count = 0;
-          }
-
-          // محدود کردن تعداد اقساط به یک عدد منطقی
-          count = Math.min(Math.max(count, 1), 360); // حداکثر 30 سال
-        } else {
-          count = Number(this.installmentData.count) || 0;
-          if (count <= 0) {
-            this.installments = [];
-            this.showMessage('تعداد اقساط باید بزرگتر از صفر باشد', 'error');
-            return;
-          }
-          
-          switch (interestType) {
-            case 'monthly': {
-              const monthlyInterest = interestRate / 100;
-              const totalInterest = monthlyInterest * count;
-              monthlyPayment = (remainingAmount * (1 + totalInterest)) / count;
-              break;
-            }
-            case 'yearly': {
-              const yearlyInterest = interestRate / 100;
-              const monthlyInterest = yearlyInterest / 12;
-              const totalInterest = monthlyInterest * count;
-              monthlyPayment = (remainingAmount * (1 + totalInterest)) / count;
-              break;
-            }
-            default:
-              monthlyPayment = 0;
-          }
-        }
-
-        // ایجاد اقساط
-        const newInstallments = [];
-        let currentDate = moment(this.installmentData.firstDate, 'jYYYY/jMM/jDD').toDate();
-        let remainingTotal = remainingAmount;
-
-        for (let i = 1; i <= count; i++) {
-          let installmentAmount;
-          if (i === count) {
-            installmentAmount = remainingTotal;
-          } else {
-            installmentAmount = Math.round(monthlyPayment);
-            remainingTotal -= installmentAmount;
-          }
-
-          newInstallments.push({
-            number: i,
-            amount: installmentAmount,
-            dueDate: moment(currentDate).format('jYYYY/jMM/jDD'),
-            status: 'پرداخت نشده',
-            latePaymentPenalty: this.installmentData.latePaymentPenalty
-          });
-
-          currentDate = moment(currentDate).add(1, 'month').toDate();
-        }
-
-        if (prepayment > 0) {
-          newInstallments.unshift({
-            number: 0,
-            amount: prepayment,
-            dueDate: moment().format('jYYYY/jMM/jDD'),
-            status: 'پرداخت شده',
-            latePaymentPenalty: 0
-          });
-        }
-
-        this.installments = newInstallments;
-        this.showMessage('اقساط با موفقیت محاسبه شد', 'success');
-      } catch (error) {
-        console.error('خطا در محاسبه اقساط:', error);
-        this.showMessage('خطا در محاسبه اقساط', 'error');
-      } finally {
-        this.isCalculating = false;
-        this.loading = false;
-      }
-    },
     async loadInvoiceData() {
       try {
         this.loading = true;
@@ -1055,7 +1096,7 @@ export default {
         // تنظیم اطلاعات فاکتور
         this.selectedInvoice = {
           id: data.id,
-          code: data.id.toString(),
+          code: data.code,
           date: moment.unix(data.dateSubmit).format('jYYYY/jMM/jDD'),
           dateSubmit: data.dateSubmit,
           des: 'فاکتور اقساطی',
@@ -1063,7 +1104,8 @@ export default {
           status: 'در انتظار پرداخت',
           person: data.person,
           personName: data.person.name || '',
-          personNikename: data.person.nikename || ''
+          personNikename: data.person.nikename || '',
+          relatedDocs: []
         };
         
         // تنظیم اطلاعات اقساط
@@ -1077,13 +1119,16 @@ export default {
           prepayment: 0
         };
         
-        // تنظیم اقساط
+        // تنظیم اقساط با وضعیت پرداخت صحیح
         this.installments = data.items.map(item => ({
+          id: item.id,
           number: parseInt(item.num),
           amount: parseFloat(item.amount),
           dueDate: item.date,
           status: item.hesabdariDoc ? 'پرداخت شده' : 'پرداخت نشده',
-          latePaymentPenalty: parseFloat(data.daysPay)
+          latePaymentPenalty: parseFloat(data.daysPay),
+          hesabdariDoc: item.hesabdariDoc,
+          isPaid: !!item.hesabdariDoc // اضافه کردن فلگ پرداخت شده
         }));
 
         // محاسبه مجدد اقساط برای نمایش صحیح

@@ -147,6 +147,14 @@ const router = createRouter({
             }
         },
         {
+            path: 'manager/plugins/transactions',
+            component: () => import('../views/user/manager/settings/pluginTransactions.vue'),
+            meta: {
+                'title': 'تراکنش‌های افزونه‌ها',
+                'login': true
+            }
+        },
+        {
             path: 'manager/update-core',
             component: () => import('../views/user/manager/settings/update-core.vue'),
             meta: {

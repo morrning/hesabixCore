@@ -377,4 +377,56 @@ class PluginController extends AbstractController
 
         return $this->json($extractor->operationSuccess());
     }
+
+    /**
+     * دریافت لیست تراکنش‌های افزونه‌ها (برای ادمین)
+     * 
+     * @OA\Post(
+     *     path="/api/admin/plugins/transactions",
+     *     summary="دریافت لیست تراکنش‌های افزونه‌ها (ادمین)",
+     *     tags={"Admin Plugins"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="لیست تراکنش‌ها",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Plugin"))
+     *     )
+     * )
+     */
+    #[Route('/api/admin/plugins/transactions', name: 'api_admin_plugins_transactions', methods: ["POST"])]
+    public function api_admin_plugins_transactions(Access $access, Jdate $jdate, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $this->checkAccess($access, 'ROLE_ADMIN');
+        
+        $plugins = $entityManager->getRepository(Plugin::class)->findBy([], ['dateSubmit' => 'DESC']);
+        $result = [];
+        
+        foreach ($plugins as $plugin) {
+            $pluginData = [
+                'id' => $plugin->getId(),
+                'des' => $plugin->getDes(),
+                'price' => $plugin->getPrice(),
+                'dateSubmit' => $jdate->jdate('Y/n/d', $plugin->getDateSubmit()),
+                'dateExpire' => $jdate->jdate('Y/n/d', $plugin->getDateExpire()),
+                'status' => $plugin->getStatus(),
+                'cardPan' => $plugin->getCardPan(),
+                'refID' => $plugin->getRefID()
+            ];
+            
+            // اضافه کردن نام کسب و کار
+            $business = $entityManager->getRepository('App\Entity\Business')->find($plugin->getBid());
+            if ($business) {
+                $pluginData['businessName'] = $business->getName();
+            }
+            
+            // اضافه کردن نام خریدار
+            $submitter = $plugin->getSubmitter();
+            if ($submitter) {
+                $pluginData['submitterName'] = $submitter->getFullName();
+            }
+            
+            $result[] = $pluginData;
+        }
+
+        return $this->json($result);
+    }
 }

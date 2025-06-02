@@ -35,6 +35,13 @@
         <v-list-item v-for="(item, i) in adminSettings" :prepend-icon="item.icon" :to="item.url"
           :title="item.text"></v-list-item>
       </v-list-group>
+      <v-list-group v-if="ROLE_ADMIN == true">
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" prepend-icon="mdi-toy-brick" title="افزونه‌ها"></v-list-item>
+        </template>
+        <v-list-item prepend-icon="mdi-format-list-bulleted" to="/profile/manager/plugins/list" title="فهرست افزونه‌ها"></v-list-item>
+        <v-list-item prepend-icon="mdi-cash-multiple" to="/profile/manager/plugins/transactions" title="تراکنش‌های خرید"></v-list-item>
+      </v-list-group>
       <v-list-item color="primary">
         <v-list-item-title>
           <small class="text-primary">{{ siteName }} : {{ hesabix.version }}</small>
@@ -101,13 +108,11 @@ export default defineComponent({
         { text: 'کسب‌و‌کارها', url: '/profile/manager/business/list', icon: 'mdi-home-city', visible: true },
         { text: 'کاربران', url: '/profile/manager/users/list', icon: 'mdi-account-multiple', visible: true },
         { text: 'کاربران آنلاین', url: '/profile/manager/users/onlinelist', icon: 'mdi-account-badge', visible: true },
-        { text: 'افزونه‌ها', url: '/profile/manager/plugins/list', icon: 'mdi-toy-brick', visible: true },
         { text: 'به روز رسانی هسته', url: '/profile/manager/update-core', icon: 'mdi-undo', visible: true },
         { text: 'تغییرات', url: '/profile/manager/changes/list', icon: 'mdi-cellphone-arrow-down', visible: true },
         { text: 'تاریخچه سیستم', url: '/profile/manager/logs/list', icon: 'mdi-history', visible: true },
         { text: 'کیف پول', url: '/profile/manager/wallet/list', icon: 'mdi-wallet', visible: true },
         { text: 'اطلاعیه‌ها', url: '/profile/manager/statments/list', icon: 'mdi-bell', visible: true },
-
       ],
       adminSettings: [
         { text: 'پیامک', url: '/profile/manager/system/sms/settings', icon: 'mdi-message-alert', visible: true },
@@ -181,4 +186,24 @@ export default defineComponent({
 });
 </script>
 
-<style scoped></style>
+<style scoped>
+.v-list-group__items .v-list-item {
+  padding-right: 32px !important;
+}
+
+.v-list-item {
+  min-height: 40px !important;
+}
+
+.v-list-item__content {
+  padding-right: 8px !important;
+}
+
+.v-list-group__header {
+  padding-right: 16px !important;
+}
+
+.v-list-group__items {
+  padding-right: 8px !important;
+}
+</style>
