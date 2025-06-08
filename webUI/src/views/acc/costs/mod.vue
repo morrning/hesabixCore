@@ -103,7 +103,7 @@
           <v-card-text>
             <v-row>
               <v-col cols="12" md="4">
-                <Htabletreeselect v-model="item.id" :items="listscosts" label="مرکز هزینه" />
+                <Htabletreeselect v-model="item.id" label="مرکز هزینه" tableType="cost" />
               </v-col>
               <v-col cols="12" md="4">
                 <Hnumberinput
@@ -360,7 +360,6 @@ export default {
       sum: 0,
       balance: 0,
       listPersons: [],
-      listscosts: [],
       listBanks: [],
       listCashdesks: [],
       listSalarys: [],
@@ -398,12 +397,7 @@ export default {
   beforeRouteUpdate(to, from) {
     this.loadData(to.params.id);
   },
-  computed: {
-    formattedCostItems() {
-      // تبدیل ساختار درختی به آرایه ساده
-      return this.flattenCostItems(this.listscosts);
-    }
-  },
+
   methods: {
     calc() {
       this.sum = 0;
@@ -553,10 +547,6 @@ export default {
           this.data.date = response.data.now;
         })
       }
-      //get list of items
-      axios.post('/api/accounting/table/childs/cost').then((response) => {
-        this.listscosts = response.data;
-      });
 
       //get list of banks
       axios.post('/api/bank/list').then((response) => {

@@ -1,147 +1,329 @@
 <template>
-  <div class="block block-content-full ">
-    <div id="fixed-header" class="block-header block-header-default bg-gray-light pt-2 pb-1">
-      <h3 class="block-title text-primary-dark">
-        <button @click="$router.back()" type="button" class="float-start d-none d-sm-none d-md-block btn btn-sm btn-link text-warning">
-          <i class="fa fw-bold fa-arrow-right"></i>
-        </button>
-        <i class="fa fa-bank px-2"></i>
-        صندوق ها </h3>
-      <div class="block-options">
-        <router-link to="/acc/cashdesk/mod/" class="block-options-item">
-          <span class="fa fa-plus fw-bolder"></span>
-        </router-link>
-      </div>
-    </div>
-    <div class="block-content pt-1 pb-3">
-      <div class="row">
-        <div class="col-sm-12 col-md-12 m-0 p-0">
-          <div class="mb-1">
-            <div class="input-group input-group-sm">
-              <span class="input-group-text"><i class="fa fa-search"></i></span>
-              <input v-model="searchValue" class="form-control" type="text" placeholder="جست و جو ...">
-            </div>
-          </div>
-          <EasyDataTable table-class-name="customize-table"
-              show-index
-              alternating
-              :search-value="searchValue"
-              :headers="headers"
-              :items="items"
-              theme-color="#1d90ff"
-              header-text-direction="center"
-              body-text-direction="center"
-              rowsPerPageMessage="تعداد سطر"
-              emptyMessage="اطلاعاتی برای نمایش وجود ندارد"
-              rowsOfPageSeparatorMessage="از"
-              :loading = "loading"
-          >
-            <template #item-operation="{ code }">
-              <button aria-expanded="false" aria-haspopup="true" class="btn btn-sm btn-link"
-                data-bs-toggle="dropdown" id="dropdown-align-center-alt-primary" type="button">
-                <i class="fa-solid fa-ellipsis"></i>
-              </button>
-              <div aria-labelledby="dropdown-align-center-outline-primary" class="dropdown-menu dropdown-menu-end"
-                style="">
-                <router-link class="dropdown-item" :to="'/acc/cashdesk/card/view/' + code">
-                  <i class="fa fa-eye text-success pe-2"></i>
-                  مشاهده
-                </router-link>
-                <router-link class="dropdown-item" :to="'/acc/cashdesk/mod/' + code">
-                  <i class="fa fa-edit pe-2"></i>
-                  ویرایش
-                </router-link>
-                <button type="button" @click="deleteItem(code)" class="dropdown-item text-danger">
-                  <i class="fa fa-trash pe-2"></i>
-                  حذف
-                </button>
-              </div>
+  <v-toolbar color="toolbar" :title="$t('drawer.cashdesks')">
+    <template v-slot:prepend>
+      <v-tooltip :text="$t('dialog.back')" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" @click="$router.back()" class="d-none d-sm-flex" variant="text" icon="mdi-arrow-right" />
+        </template>
+      </v-tooltip>
+    </template>
+    <v-spacer />
+    
+    <v-slide-group show-arrows>
+      <v-slide-group-item>
+        <v-tooltip :text="$t('dialog.add_new')" location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" icon="mdi-plus" color="primary" to="/acc/cashdesk/mod/" />
+          </template>
+        </v-tooltip>
+      </v-slide-group-item>
+
+      <v-slide-group-item>
+        <v-tooltip :text="$t('dialog.column_settings')" location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" icon="mdi-table-cog" color="primary" @click="showColumnDialog = true" />
+          </template>
+        </v-tooltip>
+      </v-slide-group-item>
+    </v-slide-group>
+  </v-toolbar>
+
+  <v-text-field
+    v-model="search"
+    :loading="loading"
+    color="green"
+    class="mb-0 pt-0 rounded-0"
+    hide-details="auto"
+    density="compact"
+    :rounded="false"
+    :placeholder="$t('dialog.search_txt')"
+    clearable
+  >
+    <template v-slot:prepend-inner>
+      <v-tooltip location="bottom" :text="$t('dialog.search')">
+        <template v-slot:activator="{ props }">
+          <v-icon v-bind="props" color="danger" icon="mdi-magnify" />
+        </template>
+      </v-tooltip>
+    </template>
+  </v-text-field>
+
+  <v-data-table
+    :headers="visibleHeaders"
+    :items="items"
+    :loading="loading"
+    :search="search"
+    class="elevation-1 text-center"
+    :header-props="{ class: 'custom-header' }"
+  >
+    <template v-slot:item="{ item }">
+      <tr>
+        <td v-if="isColumnVisible('operation')" class="text-center">
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn variant="text" size="small" color="error" icon="mdi-menu" v-bind="props" />
             </template>
-            <template #item-name="{ name,code }">
-              <router-link :to="'/acc/cashdesk/card/view/' + code">
-                {{name}}
-              </router-link>
-            </template>
-            <template #item-balance="{ balance }">
-              <label class="text-success" v-if="balance >= 0">{{ $filters.formatNumber(balance)}}</label>
-              <label class="text-danger" v-else>{{ $filters.formatNumber( -1 * balance ) }} منفی</label>
-            </template>
-          </EasyDataTable>
-        </div>
-      </div>
-    </div>
-  </div>
+            <v-list>
+              <v-list-item :to="'/acc/cashdesk/card/view/' + item.code">
+                <template v-slot:prepend>
+                  <v-icon color="success" icon="mdi-eye" />
+                </template>
+                <v-list-item-title>{{ $t('dialog.view') }}</v-list-item-title>
+              </v-list-item>
+              
+              <v-list-item :to="'/acc/cashdesk/mod/' + item.code">
+                <template v-slot:prepend>
+                  <v-icon icon="mdi-pencil" />
+                </template>
+                <v-list-item-title>{{ $t('dialog.edit') }}</v-list-item-title>
+              </v-list-item>
+              
+              <v-list-item @click="confirmDelete(item.code)">
+                <template v-slot:prepend>
+                  <v-icon color="error" icon="mdi-delete" />
+                </template>
+                <v-list-item-title>{{ $t('dialog.delete') }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </td>
+        <td v-if="isColumnVisible('code')" class="text-center">{{ formatNumber(item.code) }}</td>
+        <td v-if="isColumnVisible('name')" class="text-center">
+          <router-link :to="'/acc/cashdesk/card/view/' + item.code">
+            {{ item.name }}
+          </router-link>
+        </td>
+        <td v-if="isColumnVisible('balance')" class="text-center">
+          <span :class="Number(item.balance) >= 0 ? 'text-success' : 'text-error'">
+            {{ formatNumber(Math.abs(Number(item.balance))) }}
+            <span v-if="Number(item.balance) < 0">منفی</span>
+          </span>
+        </td>
+        <td v-if="isColumnVisible('des')" class="text-center">{{ item.des }}</td>
+      </tr>
+    </template>
+  </v-data-table>
+
+  <v-dialog v-model="showColumnDialog" max-width="500">
+    <v-card>
+      <v-toolbar color="toolbar" :title="$t('dialog.manage_columns')">
+        <v-spacer></v-spacer>
+        <v-btn icon @click="showColumnDialog = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-toolbar>
+      <v-card-text>
+        <v-row>
+          <v-col v-for="header in allHeaders" :key="header.key" cols="12" sm="6">
+            <v-checkbox
+              v-model="header.visible"
+              :label="header.title"
+              @change="updateColumnVisibility"
+              hide-details
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="deleteDialog.show" max-width="400">
+    <v-card>
+      <v-card-title class="text-h6">
+        تأیید حذف
+      </v-card-title>
+      <v-card-text>
+        آیا برای حذف صندوق مطمئن هستید؟
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" variant="text" @click="deleteDialog.show = false">خیر</v-btn>
+        <v-btn color="error" variant="text" @click="deleteItem">بله</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="messageDialog.show" max-width="400">
+    <v-card>
+      <v-card-title :class="messageDialog.color + ' text-h6'">
+        {{ messageDialog.title }}
+      </v-card-title>
+      <v-card-text class="pt-4">
+        {{ messageDialog.message }}
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" variant="text" @click="messageDialog.show = false">قبول</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
-<script>
-import axios from "axios";
-import Swal from "sweetalert2";
-import {ref} from "vue";
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
 
-export default {
-  name: "list",
-  data: ()=>{return {
-    searchValue: '',
-    loading: ref(true),
-    items:[],
-    headers: [
-      { text: "عملیات", value: "operation", width: "130"},
-      { text: "کد", value: "code", width: "100px" },
-      { text: "نام صندوق", value: "name", width: "120px"},
-      { text: "موجودی()", value: "balance", width: "140px"},
-      { text: "توضیحات", value: "des", width: "150px"},
-    ]
-  }},
-  methods: {
-    loadData(){
-      axios.post('/api/cashdesk/list')
-          .then((response)=>{
-            this.items = response.data;
-            this.loading = false;
-          })
-    },
-    deleteItem(code) {
-      Swal.fire({
-        text: 'آیا برای حذف صندوق مطمئن هستید؟',
-        showCancelButton: true,
-        confirmButtonText: 'بله',
-        cancelButtonText: `خیر`,
-      }).then((result) => {
-        /* Read more about isConfirmed, isDenied below */
-        if (result.isConfirmed) {
-          axios.post('/api/cashdesk/delete/' + code).then((response) => {
-            if (response.data.result == 1) {
-              let index = 0;
-              for (let z = 0; z < this.items.length; z++) {
-                index++;
-                if (this.items[z]['code'] == code) {
-                  this.items.splice(index - 1, 1);
-                }
-              }
-              Swal.fire({
-                text: 'صندوق با موفقیت حذف شد.',
-                icon: 'success',
-                confirmButtonText: 'قبول'
-              });
-            }
-            else if (response.data.result == 2) {
-              Swal.fire({
-                text: 'صندوق به دلیل داشتن تراکنش و اسناد حسابداری مرتبط قابل حذف نیست.',
-                icon: 'error',
-                confirmButtonText: 'قبول'
-              });
-            }
-          })
-        }
-      })
-    }
-  },
-  beforeMount() {
-    this.loadData();
+// Refs
+const loading = ref(false);
+const items = ref([]);
+const search = ref('');
+const showColumnDialog = ref(false);
+
+// دیالوگ‌ها
+const deleteDialog = ref({
+  show: false,
+  code: null
+});
+
+const messageDialog = ref({
+  show: false,
+  title: '',
+  message: '',
+  color: 'primary'
+});
+
+// تابع فرمت‌کننده اعداد
+const formatNumber = (value) => {
+  if (!value) return '0';
+  return Number(value).toLocaleString('fa-IR');
+};
+
+// تعریف همه ستون‌ها با align مرکز
+const allHeaders = ref([
+  { title: "عملیات", key: "operation", align: 'center', sortable: false, width: 100, visible: true },
+  { title: "کد", key: "code", align: 'center', sortable: true, width: 100, visible: true },
+  { title: "نام صندوق", key: "name", align: 'center', sortable: true, width: 140, visible: true },
+  { title: "موجودی", key: "balance", align: 'center', sortable: true, width: 140, visible: true },
+  { title: "توضیحات", key: "des", align: 'center', sortable: true, width: 150, visible: true },
+]);
+
+// ستون‌های قابل نمایش
+const visibleHeaders = computed(() => {
+  return allHeaders.value.filter(header => header.visible);
+});
+
+// بررسی نمایش ستون
+const isColumnVisible = (key) => {
+  return allHeaders.value.find(header => header.key === key)?.visible;
+};
+
+// کلید ذخیره‌سازی در localStorage
+const LOCAL_STORAGE_KEY = 'hesabix_cashdesk_table_columns';
+
+// لود تنظیمات ستون‌ها
+const loadColumnSettings = () => {
+  const savedSettings = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (savedSettings) {
+    const visibleColumns = JSON.parse(savedSettings);
+    allHeaders.value.forEach(header => {
+      header.visible = visibleColumns.includes(header.key);
+    });
   }
-}
+};
+
+// ذخیره تنظیمات ستون‌ها
+const updateColumnVisibility = () => {
+  const visibleColumns = allHeaders.value
+    .filter(header => header.visible)
+    .map(header => header.key);
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(visibleColumns));
+};
+
+// نمایش پیام
+const showMessage = (message, title = 'پیام', color = 'primary') => {
+  messageDialog.value = {
+    show: true,
+    title,
+    message,
+    color
+  };
+};
+
+// تأیید حذف
+const confirmDelete = (code) => {
+  deleteDialog.value = {
+    show: true,
+    code
+  };
+};
+
+// بارگذاری داده‌ها
+const loadData = async () => {
+  loading.value = true;
+  try {
+    const response = await axios.post('/api/cashdesk/list');
+    items.value = response.data;
+  } catch (error) {
+    console.error('Error loading data:', error);
+    showMessage('خطا در بارگذاری داده‌ها: ' + error.message, 'خطا', 'error');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// حذف آیتم
+const deleteItem = async () => {
+  const code = deleteDialog.value.code;
+  deleteDialog.value.show = false;
+
+  if (!code) return;
+
+  try {
+    loading.value = true;
+    const response = await axios.post(`/api/cashdesk/delete/${code}`);
+    
+    if (response.data.result === 1) {
+      items.value = items.value.filter(item => item.code !== code);
+      showMessage('صندوق با موفقیت حذف شد.', 'موفقیت', 'success');
+    } else if (response.data.result === 2) {
+      showMessage('صندوق به دلیل داشتن تراکنش و اسناد حسابداری مرتبط قابل حذف نیست.', 'خطا', 'error');
+    }
+  } catch (error) {
+    console.error('Error deleting item:', error);
+    showMessage('خطا در حذف آیتم: ' + error.message, 'خطا', 'error');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// مانت کامپوننت
+onMounted(() => {
+  loadColumnSettings();
+  loadData();
+});
 </script>
 
-<style scoped>
+<style>
+.v-data-table {
+  width: 100%;
+  overflow-x: auto;
+}
 
+/* استایل برای وسط‌چین کردن همه سلول‌های جدول */
+:deep(.v-data-table-header th) {
+  text-align: center !important;
+}
+
+:deep(.v-data-table__wrapper table td) {
+  text-align: center !important;
+}
+
+/* استایل برای رنگ‌های متن */
+.text-success {
+  color: #4caf50 !important;
+}
+
+.text-error {
+  color: #ff5252 !important;
+}
+
+/* استایل برای لینک‌ها در جدول */
+:deep(.v-data-table__wrapper table td a) {
+  text-decoration: none;
+  color: #1976d2;
+}
+
+:deep(.v-data-table__wrapper table td a:hover) {
+  text-decoration: underline;
+}
 </style>

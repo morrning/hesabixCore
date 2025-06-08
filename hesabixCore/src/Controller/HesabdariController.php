@@ -33,6 +33,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use App\Repository\HesabdariTableRepository;
 
 class HesabdariController extends AbstractController
 {
@@ -179,96 +180,192 @@ class HesabdariController extends AbstractController
         ]);
     }
 
-    #[Route('/api/accounting/search', name: 'app_accounting_search')]
-    public function app_accounting_search(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
-    {
-        $params = [];
-        if ($content = $request->getContent()) {
-            $params = json_decode($content, true);
-        }
-        if (!array_key_exists('type', $params))
-            $this->createNotFoundException();
-        $roll = '';
-        if ($params['type'] == 'person_receive' || $params['type'] == 'person_send')
-            $roll = 'person';
-        elseif ($params['type'] == 'cost')
-            $roll = 'cost';
-        elseif ($params['type'] == 'income')
-            $roll = 'income';
-        elseif ($params['type'] == 'buy')
-            $roll = 'buy';
-        elseif ($params['type'] == 'rfbuy')
-            $roll = 'plugAccproRfbuy';
-        elseif ($params['type'] == 'transfer')
-            $roll = 'bankTransfer';
-        elseif ($params['type'] == 'sell')
-            $roll = 'sell';
-        elseif ($params['type'] == 'rfsell')
-            $roll = 'plugAccproRfsell';
-        elseif ($params['type'] == 'all')
-            $roll = 'accounting';
-        else
-            $this->createNotFoundException();
-
-        $acc = $access->hasRole($roll);
-        if (!$acc)
+    #[Route('/api/accounting/search', name: 'app_hesabdari_search', methods: ['POST'])]
+    public function search(
+        Request $request,
+        Access $access,
+        EntityManagerInterface $entityManager,
+        HesabdariTableRepository $hesabdariTableRepository,
+        Jdate $jdate
+    ): JsonResponse {
+        $acc = $access->hasRole('acc');
+        if (!$acc) {
             throw $this->createAccessDeniedException();
-        if ($params['type'] == 'all') {
-            $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
-                'bid' => $acc['bid'],
-                'year' => $acc['year'],
-                'money' => $acc['money']
-            ], [
-                'id' => 'DESC'
-            ]);
-        } else {
-            $data = $entityManager->getRepository(HesabdariDoc::class)->findBy([
-                'bid' => $acc['bid'],
-                'year' => $acc['year'],
-                'type' => $params['type'],
-                'money' => $acc['money']
-            ], [
-                'id' => 'DESC'
-            ]);
         }
+
+        $params = json_decode($request->getContent(), true) ?? [];
+
+        // Input parameters
+        $filters = $params['filters'] ?? [];
+        $pagination = $params['pagination'] ?? ['page' => 1, 'limit' => 10];
+        $sort = $params['sort'] ?? ['sortBy' => 'id', 'sortDesc' => true];
+        $type = $params['type'] ?? 'all';
+
+        // Set pagination parameters
+        $page = max(1, $pagination['page'] ?? 1);
+        $limit = max(1, min(100, $pagination['limit'] ?? 10));
+
+        // Build base query
+        $queryBuilder = $entityManager->createQueryBuilder()
+            ->select('DISTINCT d.id, d.dateSubmit, d.date, d.type, d.code, d.des, d.amount')
+            ->addSelect('u.fullName as submitter')
+            ->from('App\Entity\HesabdariDoc', 'd')
+            ->leftJoin('d.submitter', 'u')
+            ->leftJoin('d.hesabdariRows', 'r')
+            ->leftJoin('r.ref', 't')
+            ->where('d.bid = :bid')
+            ->andWhere('d.year = :year')
+            ->andWhere('d.money = :money')
+            ->setParameter('bid', $acc['bid'])
+            ->setParameter('year', $acc['year'])
+            ->setParameter('money', $acc['money']);
+
+        // Add type filter if not 'all'
+        if ($type !== 'all') {
+            $queryBuilder->andWhere('d.type = :type')
+                ->setParameter('type', $type);
+        }
+
+        // Apply filters
+        if (!empty($filters)) {
+            // Text search
+            if (isset($filters['search'])) {
+                $searchValue = is_array($filters['search']) ? $filters['search']['value'] : $filters['search'];
+                $queryBuilder->leftJoin('r.person', 'p')
+                    ->andWhere(
+                        $queryBuilder->expr()->orX(
+                            'd.code LIKE :search',
+                            'd.des LIKE :search',
+                            'd.date LIKE :search',
+                            'd.amount LIKE :search',
+                            'p.nikename LIKE :search',
+                            't.name LIKE :search',
+                            't.code LIKE :search'
+                        )
+                    )
+                    ->setParameter('search', "%{$searchValue}%");
+            }
+
+            // Account filter
+            if (isset($filters['account'])) {
+                $accountCodes = $hesabdariTableRepository->findAllSubAccountCodes($filters['account'], $acc['bid']->getId());
+                if (!empty($accountCodes)) {
+                    $queryBuilder->andWhere('t.code IN (:accountCodes)')
+                        ->setParameter('accountCodes', $accountCodes);
+                } else {
+                    $queryBuilder->andWhere('1 = 0');
+                }
+            }
+
+            // Time filter
+            if (isset($filters['timeFilter'])) {
+                $today = $jdate->jdate('Y/m/d', time());
+                switch ($filters['timeFilter']) {
+                    case 'today':
+                        $queryBuilder->andWhere('d.date = :today')
+                            ->setParameter('today', $today);
+                        break;
+                    case 'week':
+                        $weekStart = $jdate->jdate('Y/m/d', strtotime('-6 days'));
+                        $queryBuilder->andWhere('d.date BETWEEN :weekStart AND :today')
+                            ->setParameter('weekStart', $weekStart)
+                            ->setParameter('today', $today);
+                        break;
+                    case 'month':
+                        $monthStart = $jdate->jdate('Y/m/01', time());
+                        $queryBuilder->andWhere('d.date BETWEEN :monthStart AND :today')
+                            ->setParameter('monthStart', $monthStart)
+                            ->setParameter('today', $today);
+                        break;
+                    case 'custom':
+                        if (isset($filters['date']) && isset($filters['date']['from']) && isset($filters['date']['to'])) {
+                            // تبدیل تاریخ‌های شمسی به میلادی
+                            $fromDate = $filters['date']['from'];
+                            $toDate = $filters['date']['to'];
+                            
+                            // اطمینان از فرمت صحیح تاریخ‌ها
+                            if (strpos($fromDate, '/') !== false && strpos($toDate, '/') !== false) {
+                                $queryBuilder->andWhere('d.date BETWEEN :dateFrom AND :dateTo')
+                                    ->setParameter('dateFrom', $fromDate)
+                                    ->setParameter('dateTo', $toDate);
+                            }
+                        }
+                        break;
+                }
+            }
+        }
+
+        // Apply sorting
+        $sortField = is_array($sort['sortBy']) ? ($sort['sortBy']['key'] ?? 'id') : ($sort['sortBy'] ?? 'id');
+        $sortDirection = ($sort['sortDesc'] ?? true) ? 'DESC' : 'ASC';
+        $queryBuilder->orderBy("d.$sortField", $sortDirection);
+
+        // Calculate total items
+        $totalItemsQuery = clone $queryBuilder;
+        $totalItems = $totalItemsQuery->select('COUNT(DISTINCT d.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Apply pagination
+        $queryBuilder->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+        $docs = $queryBuilder->getQuery()->getArrayResult();
+
         $dataTemp = [];
-        foreach ($data as $item) {
-            $temp = [
-                'id' => $item->getId(),
-                'dateSubmit' => $item->getDateSubmit(),
-                'date' => $item->getDate(),
-                'type' => $item->getType(),
-                'code' => $item->getCode(),
-                'des' => $item->getDes(),
-                'amount' => $item->getAmount(),
-                'submitter' => $item->getSubmitter()->getFullName(),
+        foreach ($docs as $doc) {
+            $item = [
+                'id' => $doc['id'],
+                'dateSubmit' => $doc['dateSubmit'],
+                'date' => $doc['date'],
+                'type' => $doc['type'],
+                'code' => $doc['code'],
+                'des' => $doc['des'],
+                'amount' => $doc['amount'],
+                'submitter' => $doc['submitter'],
             ];
-            if ($params['type'] == 'rfsell' || $params['type'] == 'rfbuy' || $params['type'] == 'buy' || $params['type'] == 'sell') {
-                $mainRow = $entityManager->getRepository(HesabdariRow::class)->getNotEqual($item, 'person');
-                $temp['person'] = '';
-                if ($mainRow)
-                    $temp['person'] = Explore::ExplorePerson($mainRow->getPerson());
+
+            // Get related person info if applicable
+            if (in_array($doc['type'], ['rfsell', 'rfbuy', 'buy', 'sell'])) {
+                $personInfo = $entityManager->createQueryBuilder()
+                    ->select('p.id, p.nikename, p.code')
+                    ->from('App\Entity\HesabdariRow', 'r')
+                    ->join('r.person', 'p')
+                    ->where('r.doc = :docId')
+                    ->andWhere('r.person IS NOT NULL')
+                    ->setParameter('docId', $doc['id'])
+                    ->setMaxResults(1)
+                    ->getQuery()
+                    ->getOneOrNullResult();
+
+                $item['person'] = $personInfo ? [
+                    'id' => $personInfo['id'],
+                    'nikename' => $personInfo['nikename'],
+                    'code' => $personInfo['code'],
+                ] : null;
             }
 
-            $temp['label'] = null;
-            if ($item->getInvoiceLabel()) {
-                $temp['label'] = [
-                    'code' => $item->getInvoiceLabel()->getCode(),
-                    'label' => $item->getInvoiceLabel()->getLabel()
-                ];
-            }
-            //get status of doc
-            $temp['status'] = 'تسویه نشده';
-            $pays = 0;
-            foreach ($item->getRelatedDocs() as $relatedDoc) {
-                $pays += $relatedDoc->getAmount();
-            }
-            if ($item->getAmount() <= $pays)
-                $temp['status'] = 'تسویه شده';
+            // Get payment status
+            $pays = $entityManager->createQueryBuilder()
+                ->select('SUM(rd.amount) as total_pays')
+                ->from('App\Entity\HesabdariDoc', 'd')
+                ->leftJoin('d.relatedDocs', 'rd')
+                ->where('d.id = :docId')
+                ->setParameter('docId', $doc['id'])
+                ->getQuery()
+                ->getSingleScalarResult();
 
-            $dataTemp[] = $temp;
+            $item['status'] = ($pays && $pays >= $doc['amount']) ? 'تسویه شده' : 'تسویه نشده';
+
+            $dataTemp[] = $item;
         }
-        return $this->json($dataTemp);
+
+        return $this->json([
+            'items' => $dataTemp,
+            'total' => (int) $totalItems,
+            'page' => $page,
+            'limit' => $limit,
+        ]);
     }
 
     /**

@@ -86,6 +86,11 @@ export default {
     returnObject: {
       type: Boolean,
       default: false
+    },
+    tableType: {
+      type: String,
+      required: true,
+      validator: (value) => ['cost', 'income'].includes(value)
     }
   },
   data() {
@@ -135,7 +140,7 @@ export default {
     async fetchTreeData() {
       this.loading = true;
       try {
-        const response = await axios.get('/api/accounting/table/childs/cost');
+        const response = await axios.get(`/api/accounting/table/childs/${this.tableType}`);
         this.treeItems = response.data;
         
         if (this.modelValue) {

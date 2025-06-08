@@ -943,15 +943,20 @@ class PersonsController extends AbstractController
             ], $acc['money']);
         } else {
             $transactions = [];
-            foreach ($params['items'] as $param) {
-                $prs = $entityManager->getRepository(HesabdariRow::class)->findByJoinMoney([
-                    'id' => $param['id'],
-                    'bid' => $acc['bid'],
-                    'person' => $person,
-                    'year' => $acc['year'],
-                ], $acc['money']);
-                if (count($prs) != 0) {
-                    $transactions[] = $prs[0];
+            if (is_array($params['items'])) {
+                foreach ($params['items'] as $param) {
+                    $id = is_array($param) ? ($param['id'] ?? null) : $param;
+                    if ($id !== null) {
+                        $prs = $entityManager->getRepository(HesabdariRow::class)->findByJoinMoney([
+                            'id' => $id,
+                            'bid' => $acc['bid'],
+                            'person' => $person,
+                            'year' => $acc['year'],
+                        ], $acc['money']);
+                        if (count($prs) != 0) {
+                            $transactions[] = $prs[0];
+                        }
+                    }
                 }
             }
         }
@@ -1011,15 +1016,20 @@ class PersonsController extends AbstractController
             ], $acc['money']);
         } else {
             $transactions = [];
-            foreach ($params['items'] as $param) {
-                $prs = $entityManager->getRepository(HesabdariRow::class)->findByJoinMoney([
-                    'id' => $param['id'],
-                    'bid' => $acc['bid'],
-                    'person' => $person,
-                    'year' => $acc['year'],
-                ], $acc['money']);
-                if (count($prs) != 0) {
-                    $transactions[] = $prs[0];
+            if (is_array($params['items'])) {
+                foreach ($params['items'] as $param) {
+                    $id = is_array($param) ? ($param['id'] ?? null) : $param;
+                    if ($id !== null) {
+                        $prs = $entityManager->getRepository(HesabdariRow::class)->findByJoinMoney([
+                            'id' => $id,
+                            'bid' => $acc['bid'],
+                            'person' => $person,
+                            'year' => $acc['year'],
+                        ], $acc['money']);
+                        if (count($prs) != 0) {
+                            $transactions[] = $prs[0];
+                        }
+                    }
                 }
             }
         }

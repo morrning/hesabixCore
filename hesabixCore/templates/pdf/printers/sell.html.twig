@@ -236,33 +236,33 @@
 												{% set originalPrice = item.bs + item.discount %}
 												{% set unitPrice = originalPrice / item.commodityCount %}
 											{% endif %}
-											{{ unitPrice|round|number_format }}
+											{{ unitPrice|round|number_format }} {{ doc.money.shortName }}
 										{% else %}
-											0
+											0 {{ doc.money.shortName }}
 										{% endif %}
 									</td>
 									{% if printOptions.discountInfo %}
 										<td class="center item">
 											{% if item.showPercentDiscount %}
 												{{ item.discountPercent }}%
-												({{ (item.bs * item.commodityCount * item.discountPercent / 100)|round|number_format }})
+												({{ (item.bs * item.commodityCount * item.discountPercent / 100)|round|number_format }} {{ doc.money.shortName }})
 											{% else %}
-												{{ item.discount|number_format }}
+												{{ item.discount|number_format }} {{ doc.money.shortName }}
 											{% endif %}
 										</td>
 										<td class="center item">
 											{% if item.showPercentDiscount %}
 												{% set originalPrice = item.bs / (1 - (item.discountPercent / 100)) %}
-												{{ originalPrice|round|number_format }}
+												{{ originalPrice|round|number_format }} {{ doc.money.shortName }}
 											{% else %}
-												{{ (item.bs + item.discount)|number_format }}
+												{{ (item.bs + item.discount)|number_format }} {{ doc.money.shortName }}
 											{% endif %}
 										</td>
 									{% endif %}
 									{% if printOptions.taxInfo %}
-										<td class="center item">{{ item.tax | number_format}}</td>
+										<td class="center item">{{ item.tax | number_format}} {{ doc.money.shortName }}</td>
 									{% endif %}
-									<td class="center item">{{ item.bs| number_format }}</td>
+									<td class="center item">{{ item.bs| number_format }} {{ doc.money.shortName }}</td>
 								</tr>
 							{% endif %}
 						{% endfor %}
@@ -296,7 +296,7 @@
 										</h4>
 										<ul class="">
 											<li class="">
-												{{note}}
+												{{note | raw}}
 											</li>
 										</ul>
 										{% endif %}
@@ -306,25 +306,25 @@
 							<td class="item" style="width:15%;padding:1%">
 								<h4>
 									تخفیف:
-									{{discount | number_format}}
+									{{discount | number_format}} {{ doc.money.shortName }}
 								</h4>
 								<h4>
 									مالیات:
-									{{taxAll | number_format}}
+									{{taxAll | number_format}} {{ doc.money.shortName }}
 								</h4>
 								<h4>
 									حمل و نقل:
-									{{transfer | number_format}}
+									{{transfer | number_format}} {{ doc.money.shortName }}
 								</h4>
 								{% if doc.amount != (doc.amount + discount) %}
 									<h4>
 										جمع بدون تخفیف:
-										{{ (doc.amount + discount) | number_format}}
+										{{ (doc.amount + discount) | number_format}} {{ doc.money.shortName }}
 									</h4>
 								{% endif %}
 								<h4>
 									جمع کل:
-									{{ doc.amount | number_format }}
+									{{ doc.amount | number_format }} {{ doc.money.shortName }}
 								</h4>
 							</td>
 						</tr>

@@ -100,6 +100,7 @@ const fa_lang = {
     ultimate_package: 'بسته‌های نامحدود',
     sell_chart: "فروش هفته گذشته",
     bankaccounts_transactions: "کارت حساب بانک",
+    cashdesk_transactions: "کارت حساب صندوق",
     print_queue: "صف چاپ",
     open_balance: "تراز افتتاحیه",
     sell_invoices_long: "فاکتور‌های فروش",

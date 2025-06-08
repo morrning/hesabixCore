@@ -94,8 +94,7 @@
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
-                  <v-textarea v-model="settings.sell.noteString" label="یادداشت پایین فاکتور" rows="4"
-                    placeholder="این نوشته در پایین فاکتور‌ها چاپ خواهد شد"></v-textarea>
+                  <CustomEditor title="یادداشت پایین فاکتور" v-model="settings.sell.noteString" />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-select v-model="settings.sell.paper" :items="paperOptions" label="سایز کاغذ و حالت چاپ"></v-select>
@@ -130,8 +129,7 @@
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
-                  <v-textarea v-model="settings.buy.noteString" label="یادداشت پایین فاکتور" rows="4"
-                    placeholder="این نوشته در پایین فاکتور‌ها چاپ خواهد شد"></v-textarea>
+                  <CustomEditor title="یادداشت پایین فاکتور" v-model="settings.buy.noteString" />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-select v-model="settings.buy.paper" :items="paperOptions" label="سایز کاغذ و حالت چاپ"></v-select>
@@ -166,8 +164,7 @@
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
-                  <v-textarea v-model="settings.rfbuy.noteString" label="یادداشت پایین فاکتور" rows="4"
-                    placeholder="این نوشته در پایین فاکتور‌ها چاپ خواهد شد"></v-textarea>
+                  <CustomEditor title="یادداشت پایین فاکتور" v-model="settings.rfbuy.noteString" />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-select v-model="settings.rfbuy.paper" :items="paperOptions" label="سایز کاغذ و حالت چاپ"></v-select>
@@ -202,8 +199,7 @@
               </v-row>
               <v-row>
                 <v-col cols="12" md="6">
-                  <v-textarea v-model="settings.rfsell.noteString" label="یادداشت پایین فاکتور" rows="4"
-                    placeholder="این نوشته در پایین فاکتور‌ها چاپ خواهد شد"></v-textarea>
+                  <CustomEditor title="یادداشت پایین فاکتور" v-model="settings.rfsell.noteString" />
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-select v-model="settings.rfsell.paper" :items="paperOptions" label="سایز کاغذ و حالت چاپ"></v-select>

@@ -14,6 +14,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 
 class CashdeskController extends AbstractController
 {
@@ -267,5 +273,133 @@ class CashdeskController extends AbstractController
             'items' => $provider->ArrayEntity2Array($transactions, 0),
             'total' => count($transactions)
         ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    #[Route('/api/cashdesk/card/list/excel', name: 'app_cashdesk_card_list_excel')]
+    public function app_cashdesk_card_list_excel(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): BinaryFileResponse|JsonResponse|StreamedResponse
+    {
+        $acc = $access->hasRole('cashdesk');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (!array_key_exists('code', $params))
+            throw $this->createNotFoundException();
+        $cashdesk = $entityManager->getRepository(Cashdesk::class)->findOneBy(['bid' => $acc['bid'], 'code' => $params['code']]);
+        if (!$cashdesk)
+            throw $this->createNotFoundException();
+        if (!array_key_exists('items', $params)) {
+            $transactions = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bid' => $acc['bid'],
+                'cashdesk' => $cashdesk,
+                'year'=>$acc['year']
+            ]);
+        } else {
+            $transactions = [];
+            foreach ($params['items'] as $param) {
+                $prs = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
+                    'id' => $param['id'],
+                    'bid' => $acc['bid'],
+                    'cashdesk' => $cashdesk,
+                    'year' => $acc['year']
+                ]);
+                if ($prs) {
+                    $transactions[] = $prs;
+                }
+            }
+        }
+        $spreadsheet = new Spreadsheet();
+        $activeWorksheet = $spreadsheet->getActiveSheet();
+        $arrayEntity = [
+            [
+                'شماره تراکنش',
+                'تاریخ',
+                'توضیحات',
+                'شرح سند',
+                'تفضیل',
+                'بستانکار',
+                'بدهکار',
+                'سال مالی',
+            ]
+        ];
+        foreach ($transactions as $transaction) {
+            $arrayEntity[] = [
+                $transaction->getId(),
+                $transaction->getDoc()->getDate(),
+                $transaction->getDes(),
+                $transaction->getDoc()->getDes(),
+                $transaction->getRef()->getName(),
+                $transaction->getBs(),
+                $transaction->getBd(),
+                $transaction->getYear()->getlabel()
+            ];
+        }
+        $activeWorksheet->fromArray($arrayEntity, null, 'A1');
+        $activeWorksheet->setRightToLeft(true);
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'کارت حساب صندوق ' . $cashdesk->getName() . '.xlsx';
+        $filePath = __DIR__ . '/../../var/' . $fileName;
+        $writer->save($filePath);
+        
+        $response = new BinaryFileResponse($filePath);
+        $response->setContentDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            $fileName
+        );
+        return $response;
+    }
+
+    #[Route('/api/cashdesk/card/list/print', name: 'app_cashdesk_card_list_print')]
+    public function app_cashdesk_card_list_print(Provider $provider, Request $request, Access $access, Log $log, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $acc = $access->hasRole('cashdesk');
+        if (!$acc)
+            throw $this->createAccessDeniedException();
+        $params = [];
+        if ($content = $request->getContent()) {
+            $params = json_decode($content, true);
+        }
+        if (!array_key_exists('code', $params))
+            throw $this->createNotFoundException();
+        $cashdesk = $entityManager->getRepository(Cashdesk::class)->findOneBy(['bid' => $acc['bid'], 'code' => $params['code']]);
+        if (!$cashdesk)
+            throw $this->createNotFoundException();
+
+        if (!array_key_exists('items', $params)) {
+            $transactions = $entityManager->getRepository(HesabdariRow::class)->findBy([
+                'bid' => $acc['bid'],
+                'cashdesk' => $cashdesk,
+                'year'=>$acc['year']
+            ]);
+        } else {
+            $transactions = [];
+            foreach ($params['items'] as $param) {
+                $prs = $entityManager->getRepository(HesabdariRow::class)->findOneBy([
+                    'id' => $param['id'],
+                    'bid' => $acc['bid'],
+                    'cashdesk' => $cashdesk,
+                    'year'=>$acc['year']
+                ]);
+                if ($prs) {
+                    $transactions[] = $prs;
+                }
+            }
+        }
+        $pid = $provider->createPrint(
+            $acc['bid'],
+            $this->getUser(),
+            $this->renderView('pdf/cashdesk_card.html.twig', [
+                'page_title' => 'کارت حساب' . ' ' . $cashdesk->getName(),
+                'bid' => $acc['bid'],
+                'items' => $transactions,
+                'cashdesk' => $cashdesk
+            ])
+        );
+        return $this->json(['id' => $pid]);
     }
 }

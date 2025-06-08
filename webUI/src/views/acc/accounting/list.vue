@@ -18,7 +18,89 @@
     </v-toolbar>
 
     <v-text-field v-model="searchValue" prepend-inner-icon="mdi-magnify" density="compact" hide-details :rounded="false"
-      placeholder="جست و جو ..."></v-text-field>
+      placeholder="جست و جو ...">
+      <template v-slot:append-inner>
+        <v-menu :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+            <v-icon v-bind="props" size="sm" color="primary">
+              <v-icon>mdi-filter</v-icon>
+              <v-tooltip activator="parent" :text="$t('dialog.filters')" location="bottom" />
+            </v-icon>
+          </template>
+          <v-list>
+            <v-list-subheader color="primary">
+              <v-icon>mdi-filter</v-icon>
+              {{ $t('dialog.filters') }}
+            </v-list-subheader>
+            
+            <!-- فیلتر درختی حساب‌ها -->
+            <v-list-item>
+              <v-list-item-title class="text-dark mb-2">
+                فیلتر حساب:
+                <v-btn
+                  v-if="selectedAccountId"
+                  size="small"
+                  color="primary"
+                  variant="text"
+                  class="ms-2"
+                  @click="resetAccountFilter"
+                >
+                  <v-icon size="small" class="me-1">mdi-refresh</v-icon>
+                  بازنشانی
+                </v-btn>
+              </v-list-item-title>
+              <hesabdari-tree-view
+                v-model="selectedAccountId"
+                :show-sub-tree="true"
+                :selectable-only="false"
+                @select="handleAccountSelect"
+                @account-selected="handleAccountSelected"
+              />
+            </v-list-item>
+            
+            <v-divider class="my-2"></v-divider>
+            
+            <!-- فیلتر بازه زمانی -->
+            <v-list-item>
+              <v-list-item-title class="text-dark mb-2">
+              </v-list-item-title>
+              <v-row>
+                <v-col cols="12">
+                  <v-checkbox
+                    v-model="timeFilters.find(f => f.value === 'custom').checked"
+                    label="بازه زمانی"
+                    @change="handleCustomDateFilterChange"
+                    hide-details
+                  />
+                </v-col>
+                <v-col cols="12" v-if="timeFilters.find(f => f.value === 'custom').checked">
+                  <Hdatepicker
+                    v-model="dateRange.from"
+                    label="از تاریخ"
+                    @update:model-value="handleDateRangeChange"
+                  />
+                </v-col>
+                <v-col cols="12" v-if="timeFilters.find(f => f.value === 'custom').checked">
+                  <Hdatepicker
+                    v-model="dateRange.to"
+                    label="تا تاریخ"
+                    @update:model-value="handleDateRangeChange"
+                  />
+                </v-col>
+              </v-row>
+            </v-list-item>
+            
+            <!-- فیلترهای زمانی -->
+            <v-list-item v-for="(filter, index) in timeFilters.filter(f => f.value !== 'custom')" :key="index" class="text-dark">
+              <template v-slot:title>
+                <v-checkbox v-model="filter.checked" :label="filter.label" @change="applyTimeFilter(filter.value)"
+                  hide-details />
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </template>
+    </v-text-field>
 
     <v-data-table :headers="headers" :items="filteredItems" :search="searchValue" :loading="loading"
       :header-props="{ class: 'custom-header' }" hover>
@@ -151,8 +233,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
+import moment from 'jalali-moment'
+import HesabdariTreeView from '@/components/forms/HesabdariTreeView.vue'
+import Hdatepicker from '@/components/forms/Hdatepicker.vue'
 
 const searchValue = ref('')
 const loading = ref(true)
@@ -166,6 +251,22 @@ const snackbar = ref({
   color: 'success'
 })
 const plugins = ref({})
+
+// فیلترهای زمانی
+const timeFilters = ref([
+  { label: 'امروز', value: 'today', checked: false },
+  { label: 'این هفته', value: 'week', checked: false },
+  { label: 'این ماه', value: 'month', checked: false },
+  { label: 'بازه زمانی', value: 'custom', checked: false },
+  { label: 'همه', value: 'all', checked: true },
+])
+
+const timeFilter = ref('all')
+const selectedAccountId = ref(null)
+const dateRange = ref({
+  from: moment().locale('fa').subtract(1, 'days').format('YYYY/MM/DD'),
+  to: moment().locale('fa').format('YYYY/MM/DD')
+})
 
 const headers = [
   { title: 'وضعیت', key: 'state', sortable: true },
@@ -181,12 +282,155 @@ const isPluginActive = (plugName) => {
   return plugins.value[plugName] !== undefined
 }
 
+// متدهای مدیریت فیلتر حساب
+const handleAccountSelect = (account) => {
+  if (account) {
+    selectedAccountId.value = account.code
+    loadData()
+  }
+}
+
+const handleAccountSelected = (account) => {
+  if (account) {
+    loadData()
+  }
+}
+
+// متد ریست کردن فیلتر حساب
+const resetAccountFilter = () => {
+  selectedAccountId.value = null
+  loadData()
+}
+
+// متدهای مدیریت فیلتر زمانی
+const handleDateRangeChange = () => {
+  if (dateRange.value.from && dateRange.value.to) {
+    const fromDate = moment(dateRange.value.from, 'jYYYY/jMM/jDD').locale('fa')
+    const toDate = moment(dateRange.value.to, 'jYYYY/jMM/jDD').locale('fa')
+
+    if (fromDate.isAfter(toDate)) {
+      snackbar.value = {
+        show: true,
+        message: 'تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد',
+        color: 'error'
+      }
+      dateRange.value = {
+        from: null,
+        to: null
+      }
+      return
+    }
+
+    loadData()
+  }
+}
+
+const handleCustomDateFilterChange = (checked) => {
+  if (checked) {
+    timeFilters.value.forEach(filter => {
+      if (filter.value !== 'custom') {
+        filter.checked = false
+      }
+    })
+    timeFilter.value = 'custom'
+    
+    dateRange.value = {
+      from: moment().locale('fa').subtract(1, 'days').format('YYYY/MM/DD'),
+      to: moment().locale('fa').format('YYYY/MM/DD')
+    }
+    
+    loadData()
+  } else {
+    timeFilters.value.forEach(filter => {
+      filter.checked = filter.value === 'all'
+    })
+    timeFilter.value = 'all'
+    dateRange.value = {
+      from: null,
+      to: null
+    }
+    loadData()
+  }
+}
+
+const applyTimeFilter = (value) => {
+  timeFilters.value.forEach((filter) => {
+    filter.checked = filter.value === value
+  })
+  timeFilter.value = value
+  
+  if (value !== 'custom') {
+    dateRange.value = {
+      from: null,
+      to: null
+    }
+  }
+  
+  loadData()
+}
+
 const loadData = async () => {
   try {
+    loading.value = true
+
+    const filters = {}
+    if (searchValue.value.trim()) {
+      filters.search = { value: searchValue.value.trim() }
+    }
+    if (timeFilter.value) {
+      filters.timeFilter = timeFilter.value
+
+      if (timeFilter.value === 'custom' && dateRange.value.from && dateRange.value.to) {
+        const fromDate = moment(dateRange.value.from, 'jYYYY/jMM/jDD').locale('fa').format('YYYY/MM/DD')
+        const toDate = moment(dateRange.value.to, 'jYYYY/jMM/jDD').locale('fa').format('YYYY/MM/DD')
+        
+        filters.date = {
+          from: fromDate,
+          to: toDate
+        }
+      } else {
+        const today = moment().locale('fa').format('YYYY/MM/DD')
+        switch (timeFilter.value) {
+          case 'today':
+            filters.date = {
+              from: today,
+              to: today
+            }
+            break
+          case 'week':
+            filters.date = {
+              from: moment().locale('fa').subtract(6, 'days').format('YYYY/MM/DD'),
+              to: today
+            }
+            break
+          case 'month':
+            filters.date = {
+              from: moment().locale('fa').startOf('jMonth').format('YYYY/MM/DD'),
+              to: today
+            }
+            break
+        }
+      }
+    }
+    
+    if (selectedAccountId.value) {
+      filters.account = selectedAccountId.value
+    }
+
     const response = await axios.post('/api/accounting/search', {
-      type: 'all'
+      type: 'all',
+      filters,
+      pagination: {
+        page: 1,
+        limit: 100
+      },
+      sort: {
+        sortBy: 'id',
+        sortDesc: true
+      }
     })
-    items.value = response.data.map(item => ({
+
+    items.value = response.data.items.map(item => ({
       ...item,
       amount: item.amount.toLocaleString(),
       amountRaw: item.amount
@@ -195,6 +439,11 @@ const loadData = async () => {
   } catch (error) {
     console.error('Error loading data:', error)
     loading.value = false
+    snackbar.value = {
+      show: true,
+      message: 'خطا در بارگذاری داده‌ها: ' + (error.response?.data?.detail || error.message),
+      color: 'error'
+    }
   }
 }
 
@@ -241,20 +490,17 @@ const confirmDelete = async () => {
     deleteLoading.value = true
     const response = await axios.delete(`/api/hesabdari/direct/doc/delete/${selectedItem.value.id}`)
     if (response.data.success) {
-      // حذف آیتم از لیست
       const index = items.value.findIndex(item => item.id === selectedItem.value.id)
       if (index !== -1) {
         items.value.splice(index, 1)
       }
       deleteDialog.value = false
-      // نمایش پیام موفقیت
       snackbar.value = {
         show: true,
         message: 'سند با موفقیت حذف شد',
         color: 'success'
       }
     } else {
-      // نمایش پیام خطا
       snackbar.value = {
         show: true,
         message: response.data.message || 'خطا در حذف سند',
@@ -262,7 +508,6 @@ const confirmDelete = async () => {
       }
     }
   } catch (error) {
-    // نمایش پیام خطا
     snackbar.value = {
       show: true,
       message: error.response?.data?.message || 'خطا در ارتباط با سرور',
@@ -272,6 +517,13 @@ const confirmDelete = async () => {
     deleteLoading.value = false
   }
 }
+
+// اضافه کردن watch برای تغییرات تاریخ‌ها
+watch([() => dateRange.value.from, () => dateRange.value.to], () => {
+  if (timeFilter.value === 'custom') {
+    handleDateRangeChange()
+  }
+}, { deep: true })
 
 onMounted(() => {
   loadData()
