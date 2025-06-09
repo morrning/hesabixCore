@@ -30,6 +30,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\BankAccount;
 use App\Entity\Cashdesk;
 use App\Entity\Salary;
+use App\Entity\Year;
 
 class SellController extends AbstractController
 {
@@ -46,8 +47,16 @@ class SellController extends AbstractController
             'code' => $code,
             'money' => $acc['money']
         ]);
-        if (count($doc->getRelatedDocs()) != 0)
+        if (!$doc){
             $canEdit = false;
+        }
+        $year = $entityManager->getRepository(Year::class)->findOneBy([
+            'bid' => $acc['bid'],
+            'head' => true
+        ]);
+        if($doc->getYear()->getId() != $year->getId()){
+            $canEdit = false;
+        }
 
         $tickets = $entityManager->getRepository(StoreroomTicket::class)->findBy(['doc' => $doc]);
         if (count($tickets) != 0)

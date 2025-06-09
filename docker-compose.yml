@@ -23,6 +23,21 @@ services:
     networks:
       - hesabix-network
     restart: unless-stopped
+    command: >
+      bash -c "
+        apt-get update &&
+        apt-get install -y curl unzip &&
+        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer &&
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash - &&
+        apt-get install -y nodejs &&
+        cd /var/www/html/hesabixCore &&
+        composer install &&
+        cd /var/www/html/webUI &&
+        composer install &&
+        npm install &&
+        npm run build-only &&
+        apache2-foreground
+      "
 
   # Database service
   db:
@@ -34,7 +49,7 @@ services:
       - MYSQL_PASSWORD=hesabix_password
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./hesabixBackup:/docker-entrypoint-initdb.d
+      - ./hesabixBackup/databasefiles:/docker-entrypoint-initdb.d
     networks:
       - hesabix-network
     healthcheck:
@@ -43,6 +58,12 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    command: >
+      bash -c "
+        docker-entrypoint.sh mysqld &
+        sleep 30 &&
+        mysql -u root -proot_password hesabix_db < /docker-entrypoint-initdb.d/hesabix-db-default.sql
+      "
 
   # phpMyAdmin service
   phpmyadmin:

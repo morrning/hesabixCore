@@ -41,6 +41,11 @@ export default defineComponent({
     recListWindowsState: { submited: false },
     notes: { count: 0 },
     bid: { legal_name: '', shortlinks: false },
+    snackbar: {
+      show: false,
+      text: '',
+      color: 'error'
+    },
     item: {
       doc: { id: 0, date: null, code: null, des: '', amount: 0, profit: 0, shortLink: null },
       relatedDocs: [],
@@ -98,6 +103,26 @@ export default defineComponent({
     },
   },
   methods: {
+    async checkCanEdit() {
+      try {
+        const response = await axios.get(`/api/sell/edit/can/${this.$route.params.id}`);
+        if (response.data.result) {
+          this.$router.push(`/acc/sell/mod/${this.$route.params.id}`);
+        } else {
+          this.snackbar = {
+            show: true,
+            text: 'شما مجاز به ویرایش این فاکتور نیستید',
+            color: 'error'
+          };
+        }
+      } catch (error) {
+        this.snackbar = {
+          show: true,
+          text: 'خطا در بررسی دسترسی',
+          color: 'error'
+        };
+      }
+    },
     loadData() {
       this.loading = true;
       this.commoditys = [];
@@ -173,7 +198,7 @@ export default defineComponent({
       </v-tooltip>
     </template>
     <v-spacer></v-spacer>
-    <v-btn icon :to="`/acc/sell/mod/${$route.params.id}`">
+    <v-btn icon @click="checkCanEdit">
       <v-icon>mdi-pencil</v-icon>
       <v-tooltip activator="parent" location="bottom">ویرایش</v-tooltip>
     </v-btn>
@@ -335,6 +360,13 @@ export default defineComponent({
       </v-window-item>
     </v-window>
   </v-container>
+  <v-snackbar
+    v-model="snackbar.show"
+    :color="snackbar.color"
+    timeout="3000"
+  >
+    {{ snackbar.text }}
+  </v-snackbar>
 </template>
 
 <style scoped>
