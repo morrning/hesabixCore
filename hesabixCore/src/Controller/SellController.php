@@ -158,9 +158,23 @@ class SellController extends AbstractController
             if (!$doc)
                 return $this->json($extractor->notFound());
 
+            // حذف سطرهای قبلی
             $rows = $doc->getHesabdariRows();
             foreach ($rows as $row)
                 $entityManager->remove($row);
+
+            // حذف سندهای پرداخت قبلی
+            $relatedDocs = $doc->getRelatedDocs();
+            foreach ($relatedDocs as $relatedDoc) {
+                if ($relatedDoc->getType() === 'sell_receive') {
+                    $relatedRows = $relatedDoc->getHesabdariRows();
+                    foreach ($relatedRows as $row) {
+                        $entityManager->remove($row);
+                    }
+                    $entityManager->remove($relatedDoc);
+                }
+            }
+            $entityManager->flush();
         } else {
             $doc = new HesabdariDoc();
             $doc->setBid($acc['bid']);
@@ -892,6 +906,19 @@ class SellController extends AbstractController
                 foreach ($rows as $row) {
                     $entityManager->remove($row);
                 }
+
+                // حذف سندهای پرداخت قبلی
+                $relatedDocs = $doc->getRelatedDocs();
+                foreach ($relatedDocs as $relatedDoc) {
+                    if ($relatedDoc->getType() === 'sell_receive') {
+                        $relatedRows = $relatedDoc->getHesabdariRows();
+                        foreach ($relatedRows as $row) {
+                            $entityManager->remove($row);
+                        }
+                        $entityManager->remove($relatedDoc);
+                    }
+                }
+                $entityManager->flush();
             } else {
                 // ایجاد فاکتور جدید
                 $doc = new HesabdariDoc();
