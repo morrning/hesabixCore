@@ -140,6 +140,12 @@ class HesabdariDoc
     #[ORM\OneToMany(targetEntity: PlugGhestaDoc::class, mappedBy: 'mainDoc', orphanRemoval: true)]
     private Collection $plugGhestaDocs;
 
+    /**
+     * @var Collection<int, PlugHrmDoc>
+     */
+    #[ORM\OneToMany(targetEntity: PlugHrmDoc::class, mappedBy: 'hesabdariDoc')]
+    private Collection $plugHrmDocs;
+
     public function __construct()
     {
         $this->hesabdariRows = new ArrayCollection();
@@ -151,6 +157,7 @@ class HesabdariDoc
         $this->pairDoc = new ArrayCollection();
         $this->plugGhestaItems = new ArrayCollection();
         $this->plugGhestaDocs = new ArrayCollection();
+        $this->plugHrmDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -684,6 +691,36 @@ class HesabdariDoc
             // set the owning side to null (unless already changed)
             if ($plugGhestaDoc->getMainDoc() === $this) {
                 $plugGhestaDoc->setMainDoc(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugHrmDoc>
+     */
+    public function getPlugHrmDocs(): Collection
+    {
+        return $this->plugHrmDocs;
+    }
+
+    public function addPlugHrmDoc(PlugHrmDoc $plugHrmDoc): static
+    {
+        if (!$this->plugHrmDocs->contains($plugHrmDoc)) {
+            $this->plugHrmDocs->add($plugHrmDoc);
+            $plugHrmDoc->setHesabdariDoc($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlugHrmDoc(PlugHrmDoc $plugHrmDoc): static
+    {
+        if ($this->plugHrmDocs->removeElement($plugHrmDoc)) {
+            // set the owning side to null (unless already changed)
+            if ($plugHrmDoc->getHesabdariDoc() === $this) {
+                $plugHrmDoc->setHesabdariDoc(null);
             }
         }
 

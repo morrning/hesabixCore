@@ -297,6 +297,9 @@ class Business
     #[ORM\OneToMany(targetEntity: PlugGhestaDoc::class, mappedBy: 'bid', orphanRemoval: true)]
     private Collection $PlugGhestaDocs;
 
+    #[ORM\OneToMany(mappedBy: 'business', targetEntity: PlugHrmDoc::class)]
+    private Collection $plugHrmDocs;
+
     public function __construct()
     {
         $this->logs = new ArrayCollection();
@@ -339,6 +342,7 @@ class Business
         $this->hesabdariTables = new ArrayCollection();
         $this->accountingPackageOrders = new ArrayCollection();
         $this->PlugGhestaDocs = new ArrayCollection();
+        $this->plugHrmDocs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -2053,6 +2057,33 @@ class Business
             }
         }
 
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PlugHrmDoc>
+     */
+    public function getPlugHrmDocs(): Collection
+    {
+        return $this->plugHrmDocs;
+    }
+
+    public function addPlugHrmDoc(PlugHrmDoc $plugHrmDoc): static
+    {
+        if (!$this->plugHrmDocs->contains($plugHrmDoc)) {
+            $this->plugHrmDocs->add($plugHrmDoc);
+            $plugHrmDoc->setBusiness($this);
+        }
+        return $this;
+    }
+
+    public function removePlugHrmDoc(PlugHrmDoc $plugHrmDoc): static
+    {
+        if ($this->plugHrmDocs->removeElement($plugHrmDoc)) {
+            if ($plugHrmDoc->getBusiness() === $this) {
+                $plugHrmDoc->setBusiness(null);
+            }
+        }
         return $this;
     }
 }

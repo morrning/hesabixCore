@@ -25,7 +25,7 @@
       <v-row>
         <v-col cols="12" sm="6" md="6">
           <Hdatepicker v-model="form.date" :label="$t('dialog.hrm.date')"
-            :rules="[v => !!v || $t('dialog.hrm.required_fields.date')]" required />
+            :rules="[v => !!v || $t('dialog.hrm.required_fields.date')]" required density="compact" />
         </v-col>
         <v-col cols="12" sm="6" md="6">
           <v-text-field v-model="form.description" :label="$t('dialog.hrm.description')" 
@@ -131,6 +131,9 @@
 import Hdatepicker from '@/components/forms/Hdatepicker.vue';
 import Hpersonsearch from '@/components/forms/Hpersonsearch.vue';
 import Hnumberinput from '@/components/forms/Hnumberinput.vue';
+import axios from 'axios';
+import moment from 'jalali-moment';
+
 export default {
   components: { Hdatepicker, Hpersonsearch, Hnumberinput },
   data() {
@@ -150,20 +153,47 @@ export default {
       tableItems: [],
     }
   },
-  mounted() {
-    const id = this.$route.params.id
-    if (id) {
-      this.isEdit = true
-      this.loadData(id)
+  async mounted() {
+    try {
+      // دریافت تاریخ فعلی
+      const response = await axios.get('/api/year/get');
+      this.form.date = response.data.now;
+
+      const id = this.$route.params.id
+      if (id) {
+        this.isEdit = true
+        await this.loadData(id)
+      }
+    } catch (error) {
+      this.errorMessage = error.response?.data?.error || 'خطا در دریافت تاریخ';
+      this.showError = true;
     }
   },
   methods: {
     async loadData(id) {
       try {
-        const response = await this.$axios.post('/api/hrm/docs/get/' + id)
-        this.form = response.data
+        const response = await axios.post('/api/hrm/docs/get/' + id)
+        const data = response.data.data
+        
+        this.form = {
+          date: data.date ? moment(data.date, 'jYYYY/jMM/jDD').format('jYYYY/jMM/jDD') : '',
+          description: data.description || ''
+        }
+        
+        this.tableItems = data.items.map(item => ({
+          person: {
+            id: item.person.id,
+            name: item.person.name,
+            code: item.person.code
+          },
+          description: item.description || '',
+          baseSalary: item.baseSalary || 0,
+          overtime: item.overtime || 0,
+          shift: item.shift || 0,
+          night: item.night || 0
+        }))
       } catch (error) {
-        this.errorMessage = 'خطا در دریافت اطلاعات';
+        this.errorMessage = error.response?.data?.error || 'خطا در دریافت اطلاعات';
         this.showError = true;
       }
     },
@@ -193,16 +223,35 @@ export default {
     },
     async save() {
       try {
+        console.log('Starting save process...');
         this.loading = true;
-        const url = this.isEdit ? '/api/hrm/docs/update' : '/api/hrm/docs/insert'
-        await this.$axios.post(url, this.form)
+        const url = this.isEdit ? '/api/hrm/docs/update' : '/api/hrm/docs/insert';
+        const data = {
+          date: this.form.date,
+          description: this.form.description,
+          items: this.tableItems.map(item => ({
+            person: item.person?.id,
+            baseSalary: Number(item.baseSalary) || 0,
+            overtime: Number(item.overtime) || 0,
+            shift: Number(item.shift) || 0,
+            night: Number(item.night) || 0,
+            description: item.description || ''
+          }))
+        };
+        console.log('Sending request to:', url);
+        console.log('Request data:', data);
+        
+        const response = await axios.post(url, data);
+        console.log('Server response:', response);
+        
         this.successMessage = this.isEdit ? this.$t('dialog.hrm.edit_success') : this.$t('dialog.hrm.save_success');
         this.showSuccess = true;
         setTimeout(() => {
-          this.$router.push('/acc/hrm/docs/list')
-        }, 1200)
+          this.$router.push('/acc/hrm/docs/list');
+        }, 1200);
       } catch (error) {
-        this.errorMessage = this.$t('dialog.hrm.save_error');
+        console.error('Save error:', error);
+        this.errorMessage = error.response?.data?.error || this.$t('dialog.hrm.save_error');
         this.showError = true;
       } finally {
         this.loading = false;
@@ -211,7 +260,7 @@ export default {
     async confirmDelete() {
       try {
         this.loading = true;
-        await this.$axios.post('/api/hrm/docs/delete', { id: this.$route.params.id })
+        await axios.post('/api/hrm/docs/delete', { id: this.$route.params.id })
         this.successMessage = 'سند با موفقیت حذف شد';
         this.showSuccess = true;
         setTimeout(() => {
@@ -315,6 +364,14 @@ export default {
 }
 
 :deep(.v-date-picker) {
+  z-index: 9999 !important;
+}
+
+:deep(.v-date-picker__menu) {
+  z-index: 9999 !important;
+}
+
+:deep(.v-date-picker__menu__content) {
   z-index: 9999 !important;
 }
 
