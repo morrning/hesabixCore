@@ -26,14 +26,13 @@ services:
     command: >
       bash -c "
         apt-get update &&
-        apt-get install -y curl unzip &&
+        apt-get install -y curl unzip php-mbstring php-gd php-soap &&
         curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer &&
         curl -fsSL https://deb.nodesource.com/setup_20.x | bash - &&
         apt-get install -y nodejs &&
         cd /var/www/html/hesabixCore &&
         composer install &&
         cd /var/www/html/webUI &&
-        composer install &&
         npm install &&
         npm run build-only &&
         apache2-foreground
