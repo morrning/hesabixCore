@@ -47,14 +47,14 @@ class SellController extends AbstractController
             'code' => $code,
             'money' => $acc['money']
         ]);
-        if (!$doc){
+        if (!$doc) {
             $canEdit = false;
         }
         $year = $entityManager->getRepository(Year::class)->findOneBy([
             'bid' => $acc['bid'],
             'head' => true
         ]);
-        if($doc->getYear()->getId() != $year->getId()){
+        if ($doc->getYear()->getId() != $year->getId()) {
             $canEdit = false;
         }
 
@@ -221,11 +221,11 @@ class SellController extends AbstractController
             ]);
             $hesabdariRow->setRef($ref);
             $entityManager->persist($hesabdariRow);
-            
+
             // ذخیره نوع تخفیف و درصد آن
             $doc->setDiscountType($params['discountType'] ?? 'fixed');
             if (isset($params['discountPercent'])) {
-                $doc->setDiscountPercent((float)$params['discountPercent']);
+                $doc->setDiscountPercent((float) $params['discountPercent']);
             }
         }
         $doc->setDes($params['des']);
@@ -720,10 +720,10 @@ class SellController extends AbstractController
         $params['printers'] = $params['printers'] ?? false;
         $params['pdf'] = $params['pdf'] ?? true;
         $params['posPrint'] = $params['posPrint'] ?? false;
-        
+
         // دریافت تنظیمات پیش‌فرض از PrintOptions
         $printSettings = $entityManager->getRepository(PrintOptions::class)->findOneBy(['bid' => $acc['bid']]);
-        
+
         // تنظیم مقادیر پیش‌فرض از تنظیمات ذخیره شده
         $defaultOptions = [
             'note' => $printSettings ? $printSettings->isSellNote() : true,
@@ -735,7 +735,7 @@ class SellController extends AbstractController
             'invoiceIndex' => $printSettings ? $printSettings->isSellInvoiceIndex() : true,
             'businessStamp' => $printSettings ? $printSettings->isSellBusinessStamp() : true
         ];
-        
+
         // اولویت با پارامترهای ارسالی است
         $printOptions = array_merge($defaultOptions, $params['printOptions'] ?? []);
 
@@ -770,7 +770,7 @@ class SellController extends AbstractController
                 $this->renderView('pdf/printers/sell.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
-                    'rows' => array_map(function($row) {
+                    'rows' => array_map(function ($row) {
                         return [
                             'commodity' => $row->getCommodity(),
                             'commodityCount' => $row->getCommdityCount(),
@@ -802,7 +802,7 @@ class SellController extends AbstractController
                 $this->renderView('pdf/posPrinters/justSell.html.twig', [
                     'bid' => $acc['bid'],
                     'doc' => $doc,
-                    'rows' => array_map(function($row) {
+                    'rows' => array_map(function ($row) {
                         return [
                             'commodity' => $row->getCommodity(),
                             'commodityCount' => $row->getCommdityCount(),
@@ -877,7 +877,8 @@ class SellController extends AbstractController
         Access $access,
         Log $log,
         EntityManagerInterface $entityManager,
-        registryMGR $registryMGR
+        registryMGR $registryMGR,
+        Jdate $jdate
     ): JsonResponse {
         $params = [];
         if ($content = $request->getContent()) {
@@ -941,12 +942,22 @@ class SellController extends AbstractController
             }
 
             // تنظیم اطلاعات اصلی فاکتور
-            $doc->setDes($params['invoiceDescription']);
-            $doc->setDate($params['invoiceDate']);
-            $doc->setTaxPercent($params['taxPercent'] ?? 0);
+            if (isset($params['invoiceDescription'])) {
+                $doc->setDes($params['invoiceDescription']);
+            } else {
+                $doc->setDes('');
+            }
+            if (isset($params['invoiceDate'])) {
+                $doc->setDate($params['invoiceDate']);
+            } else {
+                $doc->setDate($jdate->jdate('Y/n/d', time()));
+            }
+            if (isset($params['taxPercent'])) {
+                $doc->setTaxPercent($params['taxPercent'] ?? 0);
+            }
 
             // افزودن هزینه حمل
-            if ($params['shippingCost'] > 0) {
+            if (isset($params['shippingCost']) && $params['shippingCost'] > 0) {
                 $hesabdariRow = new HesabdariRow();
                 $hesabdariRow->setDes('حمل و نقل کالا');
                 $hesabdariRow->setBid($acc['bid']);
@@ -961,17 +972,21 @@ class SellController extends AbstractController
 
             // افزودن تخفیف کلی
             $totalDiscount = 0;
-            if ($params['discountType'] === 'percent') {
+            if (isset($params['discountType']) && $params['discountType'] === 'percent') {
                 $totalDiscount = round(($params['totalInvoice'] * $params['discountPercent']) / 100);
                 $doc->setDiscountType('percent');
-                $doc->setDiscountPercent((float)$params['discountPercent']);
+                $doc->setDiscountPercent((float) $params['discountPercent']);
             } else {
-                $totalDiscount = $params['totalDiscount'];
+                if (isset($params['totalDiscount']) && $params['totalDiscount'] > 0) {
+                    $totalDiscount = $params['totalDiscount'];
+                } else {
+                    $totalDiscount = 0;
+                }
                 $doc->setDiscountType('fixed');
                 $doc->setDiscountPercent(null);
             }
 
-            if ($totalDiscount > 0) {
+            if (isset($totalDiscount) && $totalDiscount > 0) {
                 $hesabdariRow = new HesabdariRow();
                 $hesabdariRow->setDes('تخفیف فاکتور');
                 $hesabdariRow->setBid($acc['bid']);
@@ -1055,10 +1070,25 @@ class SellController extends AbstractController
             $ref = $entityManager->getRepository(HesabdariTable::class)->findOneBy(['code' => '3']);
             $hesabdariRow->setRef($ref);
 
-            $person = $entityManager->getRepository(Person::class)->findOneBy([
-                'bid' => $acc['bid'],
-                'id' => $params['customer']
-            ]);
+            if (!isset($params['customer']) || $params['customer'] == '') {
+                $person = $entityManager->getRepository(Person::class)->findOneBy([
+                    'bid' => $acc['bid'],
+                    'nikename' => 'مشتری پیش فرض'
+                ]);
+                if (!$person) {
+                    $person = new Person();
+                    $person->setBid($acc['bid']);
+                    $person->setNikename('مشتری پیش فرض');
+                    $person->setCode($provider->getAccountingCode($acc['bid'], 'person'));
+                    $entityManager->persist($person);
+                }
+            } else {
+                $person = $entityManager->getRepository(Person::class)->findOneBy([
+                    'bid' => $acc['bid'],
+                    'id' => $params['customer']
+                ]);
+            }
+
             if (!$person) {
                 throw new \Exception('خریدار یافت نشد');
             }
@@ -1091,10 +1121,10 @@ class SellController extends AbstractController
                     $paymentDoc->setDate($params['invoiceDate']);
                     $paymentDoc->setDes($payment['description'] ?? 'دریافت وجه فاکتور فروش شماره ' . $doc->getCode());
                     $paymentDoc->setAmount($payment['amount']);
-                    
+
                     // ایجاد ارتباط با فاکتور اصلی
                     $doc->addRelatedDoc($paymentDoc);
-                    
+
                     // ایجاد سطرهای حسابداری بر اساس نوع پرداخت
                     if ($payment['type'] === 'bank') {
                         // دریافت از طریق حساب بانکی
@@ -1191,16 +1221,17 @@ class SellController extends AbstractController
                 'result' => 1,
                 'message' => 'فاکتور با موفقیت ثبت شد',
                 'data' => [
-                    'id' => $doc->getCode(),
-                    'code' => $doc->getCode(),
-                    'shortlink' => $doc->getShortlink()
-                ]
+                        'id' => $doc->getCode(),
+                        'code' => $doc->getCode(),
+                        'shortlink' => $doc->getShortlink()
+                    ]
             ]);
 
         } catch (\Exception $e) {
             return $this->json([
                 'result' => 0,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'data' => $params
             ]);
         }
     }
@@ -1241,7 +1272,7 @@ class SellController extends AbstractController
 
             // دریافت اسناد پرداخت مرتبط
             $relatedDocs = $doc->getRelatedDocs();
-            
+
             foreach ($relatedDocs as $relatedDoc) {
                 if ($relatedDoc->getType() === 'sell_receive') {
                     $payment = [
@@ -1284,7 +1315,7 @@ class SellController extends AbstractController
                     $itemDiscountType = $row->getDiscountType() ?? 'fixed';
                     $itemDiscountPercent = $row->getDiscountPercent() ?? 0;
                     $itemTax = $row->getTax() ?? 0;
-                    
+
                     // محاسبه قیمت واحد و تخفیف
                     if ($itemDiscountType === 'percent' && $itemDiscountPercent > 0) {
                         // محاسبه قیمت اصلی در حالت تخفیف درصدی
@@ -1294,14 +1325,14 @@ class SellController extends AbstractController
                         // محاسبه قیمت اصلی در حالت تخفیف مقداری
                         $originalPrice = $basePrice + $itemDiscount;
                     }
-                    
+
                     // محاسبه قیمت واحد
                     $unitPrice = $row->getCommdityCount() > 0 ? $originalPrice / $row->getCommdityCount() : 0;
-                    
+
                     // محاسبه قیمت خالص (بدون مالیات)
                     $netPrice = $basePrice;
                     $totalInvoice += $netPrice;
-                    
+
                     $items[] = [
                         'name' => [
                             'id' => $row->getCommodity()->getId(),

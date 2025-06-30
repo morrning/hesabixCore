@@ -230,7 +230,12 @@
 									<td class="center item">
 										{% if item.commodityCount > 0 %}
 											{% if item.showPercentDiscount %}
-												{% set originalPrice = item.bs / (1 - (item.discountPercent / 100)) %}
+												{% set discountDivisor = 1 - (item.discountPercent / 100) %}
+												{% if discountDivisor <= 0 %}
+													{% set originalPrice = item.bs %}
+												{% else %}
+													{% set originalPrice = item.bs / discountDivisor %}
+												{% endif %}
 												{% set unitPrice = originalPrice / item.commodityCount %}
 											{% else %}
 												{% set originalPrice = item.bs + item.discount %}
@@ -252,7 +257,12 @@
 										</td>
 										<td class="center item">
 											{% if item.showPercentDiscount %}
-												{% set originalPrice = item.bs / (1 - (item.discountPercent / 100)) %}
+												{% set discountDivisor = 1 - (item.discountPercent / 100) %}
+												{% if discountDivisor <= 0 %}
+													{% set originalPrice = item.bs %}
+												{% else %}
+													{% set originalPrice = item.bs / discountDivisor %}
+												{% endif %}
 												{{ originalPrice|round|number_format }} {{ doc.money.shortName }}
 											{% else %}
 												{{ (item.bs + item.discount)|number_format }} {{ doc.money.shortName }}
