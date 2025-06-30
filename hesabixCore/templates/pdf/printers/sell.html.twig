@@ -70,7 +70,7 @@
 					<p>
 						<b>نام:
 						</b>
-						{{ bid.legalName }}
+						{% if bid.legalName is not empty %}{{ bid.legalName }}{% endif %}
 					</p>
 				</td>
 				<td class="center">
@@ -78,27 +78,27 @@
 						<b>
 							شناسه ملی:
 						</b>
-						{{ bid.shenasemeli }}
+						{% if bid.shenasemeli is not empty %}{{ bid.shenasemeli }}{% endif %}
 					</p>
 				</td>
 				<td class="center">
 					<p>
 						<b>شماره ثبت:
 						</b>
-						{{ bid.shomaresabt }}
+						{% if bid.shomaresabt is not empty %}{{ bid.shomaresabt }}{% endif %}
 					</p>
 				</td>
 				<td class="center">
 					<p>
 						<b>شماره اقتصادی:
 						</b>
-						{{ bid.codeeghtesadi }}
+						{% if bid.codeeghtesadi is not empty %}{{ bid.codeeghtesadi }}{% endif %}
 					</p>
 				</td>
 				<td class="center">
 					<p>
 						<b>تلفن / نمابر:</b>
-						{{ bid.tel }}
+						{% if bid.tel is not empty %}{{ bid.tel }}{% endif %}
 					</p>
 				</td>
 			</tr>
@@ -106,17 +106,14 @@
 				<td class="" colspan="1">
 					<p>
 						<b>کد پستی:</b>
-						{{ bid.postalcode }}
+						{% if bid.postalcode is not empty %}{{ bid.postalcode }}{% endif %}
 					</p>
 				</td>
 				<td class="" colspan="3">
 					<p>
 						<b>آدرس:
 						</b>
-						استان
-						{{ bid.ostan }}، شهر
-						{{ bid.shahrestan }}،
-						{{ bid.address }}
+						{% if bid.ostan is not empty %}استان {{ bid.ostan }}{% endif %}{% if bid.shahrestan is not empty %}، شهر {{ bid.shahrestan }}{% endif %}{% if bid.address is not empty %}، {{ bid.address }}{% endif %}
 					</p>
 				</td>
 			</tr>
@@ -138,34 +135,34 @@
 									<b>نام:
 									</b>
 									{% if person.prelabel is not null %}{{ person.prelabel.label }}{% endif %}
-									{{ person.nikename }}
+									{% if person.nikename is not empty %}{{ person.nikename }}{% endif %}
 								</p>
 							</td>
 							<td class="center">
 								<p>
 									<b> شناسه ملی:
 									</b>
-									{{ person.shenasemeli }}
+									{% if person.shenasemeli is not empty %}{{ person.shenasemeli }}{% endif %}
 								</p>
 							</td>
 							<td class="center">
 								<p>
 									<b>شماره ثبت:
 									</b>
-									{{ person.sabt }}
+									{% if person.sabt is not empty %}{{ person.sabt }}{% endif %}
 								</p>
 							</td>
 							<td class="center">
 								<p>
 									<b>شماره اقتصادی:
 									</b>
-									{{ person.codeeghtesadi }}
+									{% if person.codeeghtesadi is not empty %}{{ person.codeeghtesadi }}{% endif %}
 								</p>
 							</td>
 							<td class="center">
 								<p>
 									<b>تلفن / نمابر:</b>
-									{{ person.tel }}
+									{% if person.tel is not empty %}{{ person.tel }}{% endif %}
 								</p>
 							</td>
 						</tr>
@@ -173,17 +170,14 @@
 							<td class="" colspan="1">
 								<p>
 									<b>کد پستی:</b>
-									{{ person.postalcode }}
+									{% if person.postalcode is not empty %}{{ person.postalcode }}{% endif %}
 								</p>
 							</td>
 							<td class="" colspan="3">
 								<p>
 									<b>آدرس:
 									</b>
-									استان
-									{{ person.ostan }}، شهر
-									{{ person.shahr }}،
-									{{ person.address }}
+									{% if person.ostan is not empty %}استان {{ person.ostan }}{% endif %}{% if person.shahr is not empty %}، شهر {{ person.shahr }}{% endif %}{% if person.address is not empty %}، {{ person.address }}{% endif %}
 								</p>
 							</td>
 						</tr>
@@ -309,6 +303,17 @@
 												{{note | raw}}
 											</li>
 										</ul>
+										{% endif %}
+										{# فیلد جدید وضعیت حساب مشتری #}
+										{% if accountStatus is defined %}
+										<h4 class="">
+											وضعیت حساب مشتری با احتساب این فاکتور:
+												{{ accountStatus.value | number_format}}
+												{{ doc.money.shortName }}
+												{{ accountStatus.label }}
+												
+										</h4>
+										
 										{% endif %}
 									</div>
 								</h4>

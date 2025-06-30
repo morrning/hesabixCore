@@ -759,6 +759,23 @@ class SellController extends AbstractController
             }
         }
         $pdfPid = 0;
+
+        // فیلد جدید وضعیت حساب مشتری
+        $personItems = $entityManager->getRepository(HesabdariRow::class)->findBy(['bid' => $acc['bid'], 'person' => $person]);
+        $accountStatus = [];
+        $bs = 0;
+        $bd = 0;
+        foreach ($personItems as $item) {
+            $bs += $item->getBs();
+            $bd += $item->getBd();
+        }
+        if ($bs > $bd) {
+            $accountStatus['label'] = 'بستانکار';
+            $accountStatus['value'] = $bs - $bd;
+        } else {
+            $accountStatus['label'] = 'بدهکار';
+            $accountStatus['value'] = $bd - $bs;
+        }
         if ($params['pdf'] == true || $params['printers'] == true) {
             $note = '';
             if ($printSettings) {
@@ -768,6 +785,7 @@ class SellController extends AbstractController
                 $acc['bid'],
                 $this->getUser(),
                 $this->renderView('pdf/printers/sell.html.twig', [
+                    'accountStatus' => $accountStatus,
                     'bid' => $acc['bid'],
                     'doc' => $doc,
                     'rows' => array_map(function ($row) {
@@ -1221,10 +1239,10 @@ class SellController extends AbstractController
                 'result' => 1,
                 'message' => 'فاکتور با موفقیت ثبت شد',
                 'data' => [
-                        'id' => $doc->getCode(),
-                        'code' => $doc->getCode(),
-                        'shortlink' => $doc->getShortlink()
-                    ]
+                    'id' => $doc->getCode(),
+                    'code' => $doc->getCode(),
+                    'shortlink' => $doc->getShortlink()
+                ]
             ]);
 
         } catch (\Exception $e) {
