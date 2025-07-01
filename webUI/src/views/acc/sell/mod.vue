@@ -791,7 +791,22 @@ export default {
     try {
       // اول تنظیمات را لود می‌کنیم
       this.loadSettings();
-      
+
+      // دریافت آی‌دی کسب‌وکار فعال از localStorage
+      const activeBid = localStorage.getItem('activeBid');
+      if (activeBid) {
+        try {
+          const businessRes = await axios.get(`/api/business/get/info/${activeBid}`);
+          if (businessRes.data && businessRes.data.maliyatafzode) {
+            // فقط اگر فاکتور جدید است مقدار پیش‌فرض مالیات را ست کن
+            if (!this.$route.params.id) {
+              this.taxPercent = Number(businessRes.data.maliyatafzode);
+            }
+          }
+        } catch (err) {
+          console.error('خطا در دریافت اطلاعات کسب‌وکار:', err);
+        }
+      }
       // بررسی وضعیت پیش‌نویس
       this.isNewInvoice = !this.$route.params.id;
       
