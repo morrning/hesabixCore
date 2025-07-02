@@ -19,7 +19,7 @@ final class DatabaseController extends AbstractController
     {
         $this->registryMGR = $registryMGR;
         $this->entityManager = $entityManager;
-        $this->backupPath = dirname(__DIR__, 2) . '/hesabixBackup/versions';
+        $this->backupPath = dirname(__DIR__, 4) . '/hesabixBackup/versions';
     }
 
     #[Route('/api/admin/database/backup/info', name: 'app_admin_database_backup_info', methods: ['GET'])]
@@ -53,6 +53,11 @@ final class DatabaseController extends AbstractController
             $filename = 'Hesabix-' . time() . '.sql';
             $filepath = $this->backupPath . '/' . $filename;
 
+            // بررسی دسترسی پوشه مقصد
+            if (!is_writable($this->backupPath)) {
+                throw new \Exception('پوشه مقصد قابل نوشتن نیست: ' . $this->backupPath);
+            }
+
             // دریافت تنظیمات دیتابیس از EntityManager
             $connection = $this->entityManager->getConnection();
             $params = $connection->getParams();
@@ -65,7 +70,7 @@ final class DatabaseController extends AbstractController
 
             // دستور mysqldump
             $command = sprintf(
-                'mysqldump -h %s -P %s -u %s -p%s %s > %s',
+                'mysqldump -h %s -P %s -u %s -p%s %s > %s 2>&1',
                 escapeshellarg($dbHost),
                 escapeshellarg($dbPort),
                 escapeshellarg($dbUser),
@@ -86,12 +91,12 @@ final class DatabaseController extends AbstractController
 
             return $this->json([
                 'result' => 1,
-                'filename' => $filename,
+                'filename' => $filepath,
                 'message' => 'پشتیبان با موفقیت ایجاد شد'
             ]);
         } catch (\Exception $e) {
-        return $this->json([
-            'result' => 0,
+            return $this->json([
+                'result' => 0,
                 'message' => 'خطا در ایجاد پشتیبان: ' . $e->getMessage()
             ], 500);
         }
