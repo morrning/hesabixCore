@@ -91,7 +91,7 @@ final class DatabaseController extends AbstractController
 
             return $this->json([
                 'result' => 1,
-                'filename' => $filepath,
+                'filename' => $filename,
                 'message' => 'پشتیبان با موفقیت ایجاد شد'
             ]);
         } catch (\Exception $e) {
@@ -165,12 +165,16 @@ final class DatabaseController extends AbstractController
             $remoteDir = dirname($remotePath);
 
             // بررسی دسترسی نوشتن در مسیر
-            $testFile = 'test_' . time() . '.txt';
-            if (!@ftp_put($ftp, $testFile, 'test', FTP_ASCII)) {
+            $testFileLocal = tempnam(sys_get_temp_dir(), 'ftp_test_');
+            file_put_contents($testFileLocal, 'test');
+            $testFileRemote = 'test_' . time() . '.txt';
+            if (!@ftp_put($ftp, $testFileRemote, $testFileLocal, FTP_ASCII)) {
+                unlink($testFileLocal);
                 ftp_close($ftp);
                 throw new \Exception('کاربر FTP دسترسی نوشتن ندارد');
             }
-            ftp_delete($ftp, $testFile);
+            ftp_delete($ftp, $testFileRemote);
+            unlink($testFileLocal);
 
             // ایجاد مسیر در صورت عدم وجود
             $this->createFtpDirectory($ftp, $remoteDir);
@@ -181,8 +185,13 @@ final class DatabaseController extends AbstractController
                 throw new \Exception("خطا در تغییر به مسیر {$remoteDir} در سرور FTP");
             }
 
+            // قبل از آپلود فایل
+            echo("در حال آپلود به: $remoteDir / $remotePath");
+
             // آپلود فایل
-            if (!ftp_put($ftp, basename($remotePath), $filepath, FTP_BINARY)) {
+            $result = ftp_put($ftp, basename($remotePath), $filepath, FTP_BINARY);
+            echo("نتیجه آپلود: " . ($result ? 'موفق' : 'ناموفق'));
+            if (!$result) {
                 $error = error_get_last();
                 ftp_close($ftp);
                 throw new \Exception('خطا در آپلود فایل به سرور FTP: ' . ($error['message'] ?? 'خطای نامشخص'));

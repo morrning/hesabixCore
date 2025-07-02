@@ -155,11 +155,13 @@ final class RegistrySettingsController extends AbstractController
             }
 
             // تست دسترسی به مسیر
-            if (!ftp_chdir($ftp, $data['path'])) {
+            if (!@ftp_chdir($ftp, $data['path'])) {
+                $currentDir = ftp_pwd($ftp); // دریافت مسیر فعلی
                 ftp_close($ftp);
                 return $this->json([
                     'success' => false,
-                    'message' => 'مسیر مورد نظر قابل دسترسی نیست'
+                    'message' => 'مسیر مورد نظر قابل دسترسی نیست',
+                    'suggested_path' => $currentDir // پیشنهاد مسیر فعلی
                 ], 400);
             }
 
