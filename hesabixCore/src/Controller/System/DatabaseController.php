@@ -185,12 +185,8 @@ final class DatabaseController extends AbstractController
                 throw new \Exception("خطا در تغییر به مسیر {$remoteDir} در سرور FTP");
             }
 
-            // قبل از آپلود فایل
-            echo("در حال آپلود به: $remoteDir / $remotePath");
-
             // آپلود فایل
             $result = ftp_put($ftp, basename($remotePath), $filepath, FTP_BINARY);
-            echo("نتیجه آپلود: " . ($result ? 'موفق' : 'ناموفق'));
             if (!$result) {
                 $error = error_get_last();
                 ftp_close($ftp);
