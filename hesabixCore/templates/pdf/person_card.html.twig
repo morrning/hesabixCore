@@ -81,7 +81,7 @@
 					<td class="center item">تفضیل</td>
 					<td class="center item">بدهکار</td>
 					<td class="center item">بستانکار</td>
-					<td class="center item">سال مالی</td>
+					<td class="center item">شرح سند</td>
 				</tr>
 				{% set sumBs = 0 %}
 				{% set sumBd = 0 %}
@@ -96,7 +96,7 @@
 						<td class="center item">{{ item.ref.name }}</td>
 						<td class="center item">{{ item.bd | number_format }}</td>
 						<td class="center item">{{ item.bs | number_format }}</td>
-						<td class="center item">{{ item.year.label }}</td>
+						<td class="center item">{{ item.doc.des }}</td>
 					</tr>
 				{% endfor %}
 			</tbody>
