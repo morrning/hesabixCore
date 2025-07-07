@@ -200,6 +200,32 @@
                   </div>
                 </div>
               </div>
+              <div class="row">
+                <div class="col-sm-12 col-md-4">
+                <div class="form-floating mb-4">
+                  <input v-model="data.taxCode" class="form-control" type="text">
+                  <label class="form-label">کد مالیاتی</label>
+                </div>
+              </div>
+                <div class="col-sm-6 col-md-4">
+                  <div class="form-floating mb-4">
+                    <select v-model="data.taxType" class="form-select">
+                      <option value="" disabled selected>انتخاب کنید</option>
+                      <!-- گزینه‌ها بعداً اضافه می‌شوند -->
+                    </select>
+                    <label class="form-label">نوع مالیاتی</label>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-md-4">
+                  <div class="form-floating mb-4">
+                    <select v-model="data.taxUnit" class="form-select">
+                      <option value="" disabled selected>انتخاب کنید</option>
+                      <!-- گزینه‌ها بعداً اضافه می‌شوند -->
+                    </select>
+                    <label class="form-label">واحد مالیاتی</label>
+                  </div>
+                </div>
+              </div>
             </v-card-text>
           </v-card>
         </v-tabs-window-item>
@@ -251,7 +277,10 @@ export default {
         speedAccess: false,
         withoutTax: false,
         barcodes: '',
-        prices: []
+        prices: [],
+        taxCode: '',
+        taxType: '',
+        taxUnit: ''
       },
       listCats: [],
       currencyConfig: {
